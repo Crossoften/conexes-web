@@ -1,0 +1,16 @@
+.status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status--green {
+  background: #e6f7ec;
+  color: #1f9254;
+}
+
+.status--red {
+  background: #fdeaea;
+  color: #d14343;
+}

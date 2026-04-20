@@ -1,0 +1,216 @@
+// src/app/features/stakeholders/components/stakeholder-detail-modal/stakeholder-detail.modal.scss
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+// ── Cabeçalho (Roxo) ──────────────────────────
+.modal-header {
+  background-color: var(--brand-purple, #6366F1); // Ajuste se a variável for diferente
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #ffffff;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.header-text {
+  h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+  }
+  p {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9;
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &--orange {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--brand-orange, #F97316);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+  }
+
+  &--close {
+    background: transparent;
+    color: #fff;
+    opacity: 0.7;
+    padding: 8px;
+    
+    &:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+}
+
+// ── Corpo do Modal ────────────────────────────
+.modal-body {
+  padding: 24px 32px 32px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Abas (Tabs) ───────────────────────────────
+.modal-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0 0 12px 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #6B7280);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+
+  svg { opacity: 0.7; }
+
+  &:hover {
+    color: var(--text-primary);
+    svg { opacity: 1; }
+  }
+
+  &.active {
+    color: var(--brand-purple, #6366F1);
+    svg { opacity: 1; }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--brand-purple, #6366F1);
+      border-radius: 2px 2px 0 0;
+    }
+  }
+}
+
+// ── Conteúdo / Info Box ───────────────────────
+.info-box {
+  background-color: #FAFAFE; // Fundo cinza bem claro conforme a imagem
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.info-header {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  
+  strong {
+    font-weight: 700;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px 24px;
+}
+
+.col-span-2 { grid-column: span 2; }
+.col-span-4 { grid-column: span 4; }
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 13px;
+  color: var(--text-secondary, #6B7280);
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14.5px;
+  color: var(--text-primary, #111827);
+  font-weight: 500;
+}
+
+// ── Animações ─────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

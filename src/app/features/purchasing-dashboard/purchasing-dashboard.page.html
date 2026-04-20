@@ -1,0 +1,135 @@
+<!-- src/app/features/purchasing-dashboard/purchasing-dashboard.page.html -->
+<div class="page">
+
+  <!-- Título -->
+  <h1 class="page-title">Dashboard</h1>
+
+  <!-- Métricas -->
+  <div class="metrics-grid">
+
+    <!-- Total de requisições -->
+    <div class="metric-card">
+      <div class="metric-card__body">
+        <span class="metric-card__label">Total de requisições</span>
+        <span class="metric-card__value">{{ metrics[0].value }}</span>
+      </div>
+      <div class="metric-card__icon metric-card__icon--purple">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+          <path d="M3 3h18v18H3z" fill="none"/>
+          <path d="M7 17V9M12 17V5M17 17v-5" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Pendentes -->
+    <div class="metric-card">
+      <div class="metric-card__body">
+        <span class="metric-card__label">Pendentes</span>
+        <span class="metric-card__value">{{ metrics[1].value }}</span>
+      </div>
+      <div class="metric-card__icon metric-card__icon--orange">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 7v5.5l3 1.5" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Em andamento -->
+    <div class="metric-card">
+      <div class="metric-card__body">
+        <span class="metric-card__label">Em andamento</span>
+        <span class="metric-card__value">{{ metrics[2].value }}</span>
+      </div>
+      <div class="metric-card__icon metric-card__icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 7v5.5l3 1.5" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Valor estimado -->
+    <div class="metric-card">
+      <div class="metric-card__body">
+        <span class="metric-card__label">Valor estimado</span>
+        <span class="metric-card__value metric-card__value--lg">{{ metrics[3].value }}</span>
+      </div>
+      <div class="metric-card__icon metric-card__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 7v1m0 8v1M9.5 10a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3m0 2h.01"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Painéis -->
+  <div class="panels-grid">
+
+    <!-- Requisições Recentes -->
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Requisições Recentes</h2>
+        <a class="panel__link" routerLink="/quotations">Ver todas</a>
+      </div>
+
+      <div class="req-list">
+        @for (req of requisitions; track req.id) {
+          <div class="req-card">
+            <div class="req-card__top">
+              <span class="req-card__code">{{ req.code }}</span>
+              <span class="req-status-badge"
+                [style.background]="statusColors[req.status] + '20'"
+                [style.color]="statusColors[req.status]">
+                {{ statusLabels[req.status] }}
+              </span>
+            </div>
+            <div class="req-card__middle">
+              <span class="req-card__title">{{ req.title }}</span>
+              <span class="req-card__value">{{ formatCurrency(req.value) }}</span>
+            </div>
+            <div class="req-card__bottom">
+              <span class="req-card__meta">{{ req.author }} · {{ req.date }}</span>
+              <span class="req-card__stage">{{ req.stage }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Distribuição por status -->
+    <div class="panel">
+      <div class="panel__header">
+        <h2 class="panel__title">Distribuição por status</h2>
+      </div>
+
+      <div class="distribution-list">
+        @for (item of distribution; track item.status) {
+          <div class="dist-item">
+            <span class="dist-item__label">{{ item.label }}</span>
+            <div class="dist-item__bar-wrap">
+              <div class="dist-item__bar"
+                [style.width]="getBarWidth(item.count, item.total)"
+                [style.background]="item.color">
+              </div>
+            </div>
+            <span class="dist-item__count">{{ item.count }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Card de pendências -->
+      <div class="pending-card">
+        <p class="pending-card__count">{{ pendingCount }} requisições pendentes</p>
+        <p class="pending-card__desc">Aguardando aprovação ou análise</p>
+      </div>
+    </div>
+
+  </div>
+</div>

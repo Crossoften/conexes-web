@@ -1,0 +1,140 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Cadastro de entidade</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Dados Gerais da entidade</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova entidade/filial.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form">
+        
+        <div class="form-grid">
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>CPNJ<span class="req">*</span></label>
+              <div class="select-wrap">
+                <input type="text" class="form-control" formControlName="cnpj" placeholder="00.000.000/0001-00">
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Inscrição estadual</label>
+              <input type="text" class="form-control" formControlName="stateRegistration" placeholder="Digite Aqui a Inscrição Estadual da Entidade">
+            </div>
+            <div class="form-group">
+              <label>Data de Constituição</label>
+              <input type="text" class="form-control" formControlName="constitutionDate" placeholder="00/00/0000">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Razão Social<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="legalName" placeholder="Digite aqui...">
+            </div>
+            <div class="form-group">
+              <label>Nome Fantasia<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="tradeName" placeholder="Digite aqui...">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>CEP<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="zipCode">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Endereço<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="address">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Nro<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="number" placeholder="Digite aqui...">
+            </div>
+            <div class="form-group">
+              <label>Complemento</label>
+              <input type="text" class="form-control" formControlName="complement" placeholder="Digite aqui...">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Telefone principal<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="phone" placeholder="Digite aqui...">
+            </div>
+            <div class="form-group">
+              <label>Telefone celular<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="mobile" placeholder="Digite aqui...">
+            </div>
+            <div class="form-group">
+              <label>Email do Dirigente<span class="req">*</span></label>
+              <input type="email" class="form-control" formControlName="managerEmail" placeholder="Digite aqui...">
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-container">
+          <button type="button" class="tab-button active">Dados do certificado digital</button>
+          <button type="button" class="tab-button">Dados contador</button>
+        </div>
+
+        <div class="tab-content">
+          <h3 class="section-subtitle">Dados do certificado digital</h3>
+          
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Senha do certificado</label>
+              <input type="password" class="form-control" formControlName="certPassword" placeholder="Digite aqui...">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-2 mt-24">
+            <div class="form-group">
+              <label>Alterar certificado digital</label>
+              <div class="dropzone">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Alterar Logotipo da entidade</label>
+              <div class="dropzone">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/entity-registry">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="saveDraft()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Salvar rascunho
+        </button>
+
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

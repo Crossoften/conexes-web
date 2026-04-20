@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.npm
+
+# Build output
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+# Misc
+.DS_Store
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Angular cache
+.angular/
+
+# System Files
+Thumbs.db
+
+# Environment (nunca commitar envs com secrets)
+src/environments/environment.prod.ts

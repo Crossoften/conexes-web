@@ -1,0 +1,108 @@
+<!-- src/app/layout/sidebar/sidebar.component.html -->
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()">
+
+  <!-- Logo -->
+  <div class="sidebar__logo">
+    <div class="sidebar__logo-img">
+      <!--
+        Coloque sua logo em: src/assets/images/logo.png
+        e ajuste o src abaixo:
+      -->
+      <img
+        src="assets/images/logo-conexao.png"
+        alt="Conexão 3° Setor"
+        (error)="logoImg.style.display='none'; logoFallback.style.display='block'"
+        #logoImg>
+      <svg #logoFallback class="sidebar__logo-fallback" style="display:none"
+           viewBox="0 0 38 38" fill="none">
+        <circle cx="19" cy="19" r="19" fill="#EDE9FE"/>
+        <path d="M19 4C14 4 9.5 7 7 12l12 7 7-12A14.9 14.9 0 0 0 19 4z" fill="#F97316"/>
+        <path d="M26 7L19 19l8 12c3.3-2.6 5-6.6 5-12 0-3.5-1-6.6-2.5-9.1z" fill="#7C3AED" opacity=".85"/>
+        <path d="M7 12C5 15 4 17 4 19c0 7 5 13 12.5 14.7L19 19z" fill="#7C3AED"/>
+        <circle cx="19" cy="19" r="5" fill="white"/>
+      </svg>
+    </div>
+    <div class="sidebar__logo-text">
+      <span>Conexão</span>
+      <strong>3° SETOR</strong>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="sidebar__nav" aria-label="Menu principal">
+    @for (item of navItems; track item.label) {
+      <div
+        class="nav-item"
+        [class.nav-item--open]="isOpen(item)">
+
+        <!-- Item sem filhos -->
+        @if (!item.children) {
+          <a
+            class="nav-trigger"
+            [class.nav-trigger--active]="item.route && isActiveChild(item.route)"
+            [class.nav-trigger--disabled]="item.disabled"
+            [routerLink]="item.disabled ? null : item.route"
+            [attr.title]="collapsed() ? item.label : null"
+            [attr.aria-label]="item.label">
+            <app-sidebar-icon [name]="item.icon" />
+            <span class="nav-trigger__label">{{ item.label }}</span>
+            @if (item.badge) {
+              <span class="nav-trigger__badge">{{ item.badge }}</span>
+            }
+          </a>
+        }
+
+        <!-- Item com filhos (accordion) -->
+        @if (item.children) {
+          <button
+            class="nav-trigger"
+            [class.nav-trigger--active]="isActiveParent(item)"
+            [class.nav-trigger--open]="isOpen(item)"
+            (click)="toggle(item.label)"
+            [attr.title]="collapsed() ? item.label : null"
+            [attr.aria-expanded]="isOpen(item)"
+            [attr.aria-label]="item.label">
+            <app-sidebar-icon [name]="item.icon" />
+            <span class="nav-trigger__label">{{ item.label }}</span>
+            <svg class="nav-trigger__chevron" viewBox="0 0 16 16" fill="none"
+                 aria-hidden="true">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- Submenu -->
+          <div class="nav-children" [attr.aria-hidden]="!isOpen(item)">
+            <div class="nav-children__inner">
+              @for (child of item.children; track child.route) {
+                <a
+                  class="nav-child"
+                  [class.nav-child--active]="isActiveChild(child.route)"
+                  [class.nav-child--disabled]="child.disabled"
+                  [routerLink]="child.disabled ? null : child.route">
+                  <span class="nav-child__dot" aria-hidden="true"></span>
+                  {{ child.label }}
+                </a>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+  </nav>
+
+  <!-- User footer -->
+  <!-- <div class="sidebar__footer">
+    <div class="sidebar__user">
+      <div class="sidebar__user-avatar" aria-hidden="true">
+        {{ auth.userInitials() }}
+      </div>
+      <div class="sidebar__user-info">
+        <span class="sidebar__user-name">{{ auth.user()?.name }}</span>
+        <span class="sidebar__user-role">{{ auth.user()?.role }}</span>
+      </div>
+    </div>
+  </div> -->
+
+</aside>

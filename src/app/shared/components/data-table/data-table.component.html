@@ -1,0 +1,43 @@
+<table class="table">
+  <thead>
+    <tr>
+      @for (col of columns; track col.key) {
+        <th>{{ col.label }}</th>
+      }
+      @if (hasActions()) {
+        <th>Ações</th>
+      }
+    </tr>
+  </thead>
+
+  <tbody>
+    @for (row of data; track trackByIndex($index)) {
+      <tr>
+        @for (col of columns; track col.key) {
+          <td>
+
+            @if (col.type === 'status') {
+              <app-status-badge
+                [status]="getValue(row, col.key)">
+              </app-status-badge>
+            } @else {
+              {{ getValue(row, col.key) }}
+            }
+
+          </td>
+        }
+
+        @if (hasActions()) {
+          <td>
+            @for (action of actions; track action.label) {
+              <button class="btn-action"
+                      (click)="action.action(row)">
+                {{ action.label }}
+              </button>
+            }
+          </td>
+        }
+      </tr>
+    }
+  </tbody>
+</table>

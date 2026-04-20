@@ -1,0 +1,211 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Gestão de orçamentos</h1>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-header">
+      <h2 class="card-title">Novo orçamento</h2>
+      <p class="card-subtitle">Defina os parâmetros do orçamento.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <h3 class="section-title">Informações básicas</h3>
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Título do orçamento<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="titulo" [class.is-invalid]="form.get('titulo')?.invalid && form.get('titulo')?.touched">
+            </div>
+          </div>
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Periodicidade do Controle <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="periodicidade" [class.is-invalid]="form.get('periodicidade')?.invalid && form.get('periodicidade')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Lançamento <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="tipoLancamento" [class.is-invalid]="form.get('tipoLancamento')?.invalid && form.get('tipoLancamento')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="descricao">
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Período</h3>
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Mês Início <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="mesInicio" [class.is-invalid]="form.get('mesInicio')?.invalid && form.get('mesInicio')?.touched"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Ano Início <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="anoInicio" [class.is-invalid]="form.get('anoInicio')?.invalid && form.get('anoInicio')?.touched"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Mês Fim <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="mesFim" [class.is-invalid]="form.get('mesFim')?.invalid && form.get('mesFim')?.touched"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Ano Fim <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="anoFim" [class.is-invalid]="form.get('anoFim')?.invalid && form.get('anoFim')?.touched"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Projeto/Centro de custo</h3>
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Projeto / Centro de Custo</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="projetoCentroCusto"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Subprojeto</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Atividade</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="atividade"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Formas de acompanhamento</h3>
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-4">
+            
+            <label class="form-control-pill" [class.checked]="form.get('acompCategoria')?.value">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="acompCategoria">
+                <span class="checkbox__box"></span>
+              </div>
+              Categoria/Conta
+            </label>
+
+            <label class="form-control-pill" [class.checked]="form.get('acompProjeto')?.value">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="acompProjeto">
+                <span class="checkbox__box"></span>
+              </div>
+              Projeto/Centro de custo
+            </label>
+
+            <label class="form-control-pill" [class.checked]="form.get('acompSubprojeto')?.value">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="acompSubprojeto">
+                <span class="checkbox__box"></span>
+              </div>
+              Subprojeto
+            </label>
+
+            <label class="form-control-pill" [class.checked]="form.get('acompAtividade')?.value">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="acompAtividade">
+                <span class="checkbox__box"></span>
+              </div>
+              Atividade
+            </label>
+
+          </div>
+        </div>
+
+        <h3 class="section-title">Restringir movimentações</h3>
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-4">
+            <label class="form-control-pill form-control-pill--sm">
+              <div class="toggle-switch">
+                <input type="checkbox" formControlName="restringirMovimentacoes">
+                <span class="slider"></span>
+              </div>
+              <span>{{ form.get('restringirMovimentacoes')?.value ? 'Sim' : 'Não' }}</span>
+            </label>
+          </div>
+        </div>
+
+        <h3 class="section-title">Ocultar orçamento</h3>
+        <div class="form-grid">
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Usuários</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="usuarios"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Grupos de permissões</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="gruposPermissoes"><option value="">Selecione</option></select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/budgets">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <polyline points="3 3 3 8 8 8"></polyline>
+            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+          </svg>
+          Reiniciar formulário
+        </button>
+
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Salvar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

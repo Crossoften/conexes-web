@@ -1,0 +1,125 @@
+// src/app/features/stakeholders/new/stakeholder-new.page.scss
+:host { display: block; }
+
+.new-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+// ── Cabeçalho ─────────────────────────────────
+.page-header { margin-bottom: 20px; }
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+// ── Wizard bar ────────────────────────────────
+.wizard-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-radius: 50px;
+  overflow: hidden;
+  border: 1.5px solid var(--surface-border);
+  margin-bottom: 28px;
+  background: #F3F4F6;
+}
+
+.wizard-step {
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: default;
+  text-align: center;
+  transition: all var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--active {
+    background: var(--brand-purple);
+    color: #fff;
+    font-weight: 600;
+    cursor: default;
+    border-radius: 50px;
+  }
+
+  &--done {
+    color: var(--text-secondary);
+    cursor: pointer;
+    &:hover { background: var(--brand-purple-light); color: var(--brand-purple); }
+  }
+}
+
+// ── Conteúdo ──────────────────────────────────
+.step-content { flex: 1; }
+
+// ── Rodapé ────────────────────────────────────
+.page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.footer-right { display: flex; align-items: center; gap: 12px; }
+
+.btn-back {
+  padding: 10px 24px;
+  border: 1.5px solid var(--brand-orange);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--brand-orange);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition);
+
+  &:hover { background: var(--brand-orange-light); }
+}
+
+.btn-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--brand-orange);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--brand-orange);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition);
+
+  &:hover { background: var(--brand-orange-light); }
+}
+
+.btn-next {
+  padding: 10px 32px;
+  border: none;
+  border-radius: 50px;
+  background: var(--brand-orange);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(249,115,22,.3);
+  transition: background var(--transition), transform 100ms;
+
+  &:hover { background: #EA6B0A; transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+}

@@ -1,0 +1,102 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Transferências e Lançamentos Bancários</h1>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-header">
+      <h2 class="card-title">Dados da transferência</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <div class="form-grid">
+          
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Descrição da transferência<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description" [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
+            </div>
+            
+            <div class="form-group">
+              <label>Origem transferência<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="origin" [class.is-invalid]="form.get('origin')?.invalid && form.get('origin')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Destino transferência<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="destination" [class.is-invalid]="form.get('destination')?.invalid && form.get('destination')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Data da operação<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="operationDate" [class.is-invalid]="form.get('operationDate')?.invalid && form.get('operationDate')?.touched">
+            </div>
+
+            <div class="form-group">
+              <label>Valor transferência<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="transferValue" [class.is-invalid]="form.get('transferValue')?.invalid && form.get('transferValue')?.touched">
+            </div>
+
+            <div class="form-group">
+              <label>Crédito em data diferente</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="differentDateCredit">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Observações</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="observations">
+            </div>
+          </div>
+
+        </div>
+
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/financial-transfers">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <polyline points="3 3 3 8 8 8"></polyline>
+            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+          </svg>
+          Reiniciar formulário
+        </button>
+
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Salvar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,240 @@
+<!-- src/app/features/stakeholders/new/step1/step1.component.html -->
+<div class="step" [formGroup]="$any(form())">
+
+  <!-- Cabeçalho da etapa -->
+  <div class="step-header">
+    <h2 class="step-title">
+      <strong>Etapa 1</strong>/3 – Dados Gerais – Informações cadastrais gerais
+    </h2>
+    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
+  </div>
+
+  <!-- Seção: Dados gerais -->
+  <div class="form-section">
+
+    <!-- Linha 1: Pessoa | CPF/CNPJ | Nome -->
+    <div class="form-row form-row--3">
+
+      <div class="field" [class.field--error]="isInvalid('personType')">
+        <label class="field-label">Pessoa <span class="required">*</span></label>
+        <div class="select-wrap">
+          <select class="select" formControlName="personType">
+            <option value="">Selecione</option>
+            <option value="PF">Pessoa Física</option>
+            <option value="PJ">Pessoa Jurídica</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        @if (isInvalid('personType')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
+      </div>
+
+      <div class="field" [class.field--error]="isInvalid('document')">
+        <label class="field-label">CPF/CNPJ <span class="required">*</span></label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="document">
+        @if (isInvalid('document')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
+      </div>
+
+      <div class="field" [class.field--error]="isInvalid('name')">
+        <label class="field-label">Nome do fornecedor/outros <span class="required">*</span></label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="name">
+        @if (isInvalid('name')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
+      </div>
+
+    </div>
+
+    <!-- Linha 2: Tipo | CEP | Endereço | Nro | Complemento -->
+    <div class="form-row form-row--address">
+
+      <div class="field">
+        <label class="field-label">Tipo</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="type">
+      </div>
+
+      <div class="field">
+        <label class="field-label">CEP</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="zipCode">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Endereço</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="address">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Nro</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="addressNum">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Complemento</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="complement">
+      </div>
+
+    </div>
+
+    <!-- Linha 3: Telefone | Celular | E-mail -->
+    <div class="form-row form-row--3">
+
+      <div class="field">
+        <label class="field-label">Telefone principal</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="phone">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Telefone celular</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="mobile">
+      </div>
+
+      <div class="field">
+        <label class="field-label">E-mail de contato</label>
+        <input class="input" type="email" placeholder="Digite aqui..." formControlName="email">
+      </div>
+
+    </div>
+
+    <!-- Linha 4: Inscrições + Atividades -->
+    <div class="form-row form-row--5">
+
+      <div class="field">
+        <label class="field-label">Inscrição Estadual</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="stateReg">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Inscrição Municipal</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="cityReg">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Atividade principal</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="mainActivity">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Atividade secundária</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="secondActivity">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Natureza jurídica</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="legalNature">
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Sub-abas -->
+  <div class="sub-tabs">
+    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'rateio'"
+      (click)="activeTab.set('rateio')">
+      Dados de rateio
+    </button>
+    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'bancario'"
+      (click)="activeTab.set('bancario')">
+      Dados bancários
+    </button>
+  </div>
+
+  <!-- Sub-aba: Dados de rateio -->
+  @if (activeTab() === 'rateio') {
+    <div class="sub-section">
+      <h3 class="sub-title">Dados de rateio e parametrização contábil</h3>
+      <div class="form-row form-row--2-auto">
+        <div class="field">
+          <label class="field-label">Rateio padrão</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="apportionDefault">
+        </div>
+        <div class="field">
+          <label class="field-label">Conta contábil</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountingAccount">
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Sub-aba: Dados bancários -->
+  @if (activeTab() === 'bancario') {
+    <div class="sub-section">
+      <h3 class="sub-title">Dados bancários</h3>
+
+      <label class="checkbox-wrap">
+        <span class="checkbox">
+          <input type="checkbox" class="checkbox__input" formControlName="differentHolder">
+          <span class="checkbox__box"></span>
+        </span>
+        <span class="checkbox-label">Dados do correntista diferentes dos dados do fornecedor</span>
+      </label>
+
+      <div class="form-row form-row--3">
+        <div class="field">
+          <label class="field-label">Pessoa</label>
+          <input class="input input--filled" type="text" placeholder="Dado preenchido"
+                 formControlName="holderPerson" [readonly]="!f['differentHolder'].value">
+        </div>
+        <div class="field">
+          <label class="field-label">Nome correntista</label>
+          <input class="input input--filled" type="text" placeholder="Dado preenchido"
+                 formControlName="holderName" [readonly]="!f['differentHolder'].value">
+        </div>
+        <div class="field">
+          <label class="field-label">Documento correntista</label>
+          <input class="input input--filled" type="text" placeholder="Dado preenchido"
+                 formControlName="holderDocument" [readonly]="!f['differentHolder'].value">
+        </div>
+      </div>
+
+      <div class="form-row form-row--6">
+        <div class="field">
+          <label class="field-label">Banco</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="bank">
+        </div>
+        <div class="field">
+          <label class="field-label">Agência</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="agency">
+        </div>
+        <div class="field">
+          <label class="field-label">Dígito</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="agencyDigit">
+        </div>
+        <div class="field">
+          <label class="field-label">Conta</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="account">
+        </div>
+        <div class="field">
+          <label class="field-label">Dígito</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountDigit">
+        </div>
+        <div class="field">
+          <label class="field-label">Tipo de conta</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountType">
+        </div>
+      </div>
+
+      <div class="form-row form-row--3-auto">
+        <div class="field">
+          <label class="field-label">Tipo PIX</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="pixType">
+        </div>
+        <div class="field">
+          <label class="field-label">Chave PIX</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="pixKey">
+        </div>
+        <div class="field">
+          <label class="field-label">Forma pagamento padrão</label>
+          <input class="input" type="text" formControlName="defaultPaymentMethod">
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

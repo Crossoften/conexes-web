@@ -1,0 +1,136 @@
+<!-- src/app/features/stakeholders/new/step2/step2.component.html -->
+<div class="step" [formGroup]="$any(form())">
+
+  <div class="step-header">
+    <h2 class="step-title">
+      <strong>Etapa 2</strong>/3 – Classificação e Risco – Classificação, risco e avaliação do fornecedor
+    </h2>
+    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
+  </div>
+
+  <!-- Sub-abas -->
+  <div class="sub-tabs">
+    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'privacidade'"
+      (click)="activeTab.set('privacidade')">
+      Avaliação de Privacidade e Segurança da Informação
+    </button>
+    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'compliance'"
+      (click)="activeTab.set('compliance')">
+      Avaliação Política de Compliance
+    </button>
+  </div>
+
+  <!-- Sub-aba: Privacidade -->
+  @if (activeTab() === 'privacidade') {
+    <div class="sub-section">
+      <h3 class="sub-title">Avaliação de Privacidade e Segurança da Informação</h3>
+
+      <div class="form-row form-row--3">
+        <div class="field" [class.field--error]="isInvalid('privacyEvaluated')">
+          <label class="field-label">Avaliado <span class="required">*</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="privacyEvaluated">
+              <option value="Não">Não</option>
+              <option value="Sim">Sim</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field" [class.field--error]="isInvalid('privacyDate')">
+          <label class="field-label">Data da Avaliação <span class="required">*</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="privacyDate">
+              <option value="">dd/mm/aa</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          @if (isInvalid('privacyDate')) {
+            <span class="field-error">Campo obrigatório</span>
+          }
+        </div>
+
+        <div class="field" [class.field--error]="isInvalid('supplierRisk')">
+          <label class="field-label">Risco do Fornecedor <span class="required">*</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="supplierRisk">
+              <option value="Sem risco">Sem risco</option>
+              <option value="Baixo">Baixo</option>
+              <option value="Médio">Médio</option>
+              <option value="Alto">Alto</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" [class.field--error]="isInvalid('privacyObservations')">
+        <label class="field-label">Observações <span class="required">*</span></label>
+        <input class="input" type="text" placeholder="Digite aqui..."
+               formControlName="privacyObservations">
+        @if (isInvalid('privacyObservations')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Sub-aba: Compliance -->
+  @if (activeTab() === 'compliance') {
+    <div class="sub-section">
+      <h3 class="sub-title">Avaliação Política de Compliance</h3>
+
+      <!-- KYP 1 -->
+      <div class="kyp-group">
+        <p class="kyp-label">KYP (Know Your Partner)</p>
+        <div class="form-row form-row--2-auto">
+          <div class="field">
+            <label class="field-label">Prazo Início</label>
+            <input class="input" type="text" placeholder="dd/mm/aa" formControlName="kypStartDate1">
+          </div>
+          <div class="field">
+            <label class="field-label">Prazo Fim</label>
+            <input class="input" type="text" placeholder="dd/mm/aa" formControlName="kypEndDate1">
+          </div>
+        </div>
+      </div>
+
+      <!-- KYP 2 -->
+      <div class="kyp-group">
+        <p class="kyp-label">KYP (Know Your Partner)</p>
+        <div class="form-row form-row--2-auto">
+          <div class="field">
+            <label class="field-label">Prazo Início</label>
+            <input class="input" type="text" placeholder="dd/mm/aa" formControlName="kypStartDate2">
+          </div>
+          <div class="field">
+            <label class="field-label">Prazo Fim</label>
+            <input class="input" type="text" placeholder="dd/mm/aa" formControlName="kypEndDate2">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Avaliação de risco</label>
+        <input class="input input--filled" type="text" placeholder="Dado preenchido"
+               formControlName="riskEvaluation" readonly>
+      </div>
+
+      <div class="field" [class.field--error]="isInvalid('complianceObservations')">
+        <label class="field-label">Observações <span class="required">*</span></label>
+        <input class="input" type="text" placeholder="Digite aqui..."
+               formControlName="complianceObservations">
+        @if (isInvalid('complianceObservations')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
+      </div>
+    </div>
+  }
+
+</div>

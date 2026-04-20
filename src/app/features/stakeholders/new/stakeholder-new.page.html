@@ -1,0 +1,56 @@
+<!-- src/app/features/stakeholders/new/stakeholder-new.page.html -->
+<div class="new-page">
+
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <h1 class="page-title">Cadastro de stakeholders</h1>
+  </div>
+
+  <!-- Wizard steps bar -->
+  <div class="wizard-bar">
+    @for (step of steps; track $index) {
+      <button
+        class="wizard-step"
+        [class.wizard-step--active]="$index === currentStep()"
+        [class.wizard-step--done]="$index < currentStep()"
+        (click)="$index < currentStep() && currentStep.set($index)">
+        {{ step.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Conteúdo da etapa -->
+  <div class="step-content">
+    @switch (currentStep()) {
+      @case (0) {
+        <app-step1 [form]="step1Form" />
+      }
+      @case (1) {
+        <app-step2 [form]="step2Form" />
+      }
+      @case (2) {
+        <app-step3 [form]="step3Form" />
+      }
+    }
+  </div>
+
+  <!-- Rodapé fixo -->
+  <div class="page-footer">
+    <button class="btn-back" (click)="back()">Voltar</button>
+
+    <div class="footer-right">
+      <button class="btn-draft" (click)="saveDraft()">
+        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+          <path d="M4 14v2h12v-2M10 3v10M7 10l3 3 3-3"
+                stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Salvar rascunho
+      </button>
+      <button class="btn-next" (click)="next()">
+        {{ isLast() ? 'Finalizar' : 'Próximo' }}
+      </button>
+    </div>
+  </div>
+
+</div>

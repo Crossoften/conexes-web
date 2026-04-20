@@ -1,0 +1,153 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Contas a receber</h1>
+    <button class="btn-novo">
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nova conta
+    </button>
+  </div>
+
+  <div class="summary-cards-grid">
+    @for (summary of store.summaries(); track $index) {
+      <div class="summary-card">
+        @if (summary.isAccountInfo) {
+          <h3 class="summary-card__title">Dados da conta</h3>
+          <div class="summary-card__content">
+            <p class="summary-card__line summary-card__line--bold">{{ summary.bankName }}</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.agency }}</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.account }}</p>
+            <p class="summary-card__line summary-card__line--balance">Saldo: {{ summary.balance }}</p>
+          </div>
+        } @else {
+          <h3 class="summary-card__title summary-card__title--muted">{{ summary.title }}</h3>
+          <div class="summary-card__content">
+            <p class="summary-card__line summary-card__line--bold">Crédito</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.credit }}</p>
+            <p class="summary-card__line summary-card__line--bold" style="margin-top: 4px;">Débito</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.debit }}</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card">
+    
+    <div class="card-section filter-bar toolbar-section">
+      
+      <div class="view-selector-wrap">
+        <label class="view-selector-label">Selecione a visão</label>
+        <div class="select-wrap">
+          <select class="select select--bg-gray" [value]="store.view()" (change)="store.setView($any($event.target).value)">
+            @for (opt of viewOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <button class="btn-outline" (click)="openFilters()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filtros
+      </button>
+
+      <div class="toolbar-actions-right">
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Exportar excel
+        </button>
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Importar XML
+        </button>
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Captura de NF
+        </button>
+      </div>
+
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+            <th class="th th--sortable" (click)="store.setSort('code')">Cód <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('contractorDoc')">Doc da contratante <span class="sort-icon" [ngClass]="'sort--' + getSortState('contractorDoc')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('contractorName')">Nome contratante <span class="sort-icon" [ngClass]="'sort--' + getSortState('contractorName')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('issueDate')">Data emissão <span class="sort-icon" [ngClass]="'sort--' + getSortState('issueDate')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('invoiceNumber')">Número da NF <span class="sort-icon" [ngClass]="'sort--' + getSortState('invoiceNumber')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+            <th class="th th--center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.pageItems(); track item.id) {
+            <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+              <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+              <td class="td td--mono">{{ item.code }}</td>
+              <td class="td td--mono">{{ item.contractorDoc }}</td>
+              <td class="td">{{ item.contractorName }}</td>
+              <td class="td">{{ item.issueDate }}</td>
+              <td class="td">{{ item.invoiceNumber }}</td>
+              <td class="td">{{ item.status }}</td>
+              
+              <td class="td td--center">
+                <div class="action-icons">
+                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <button class="icon-btn" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="pagination__nav">
+        <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        @for (p of pageNumbers(); track $index) {
+          @if (p === '...') { <span class="pag-ellipsis">···</span> } @else { <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button> }
+        }
+        <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="select-wrap">
+        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
+          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (store.isFilterModalOpen()) {
+  <div class="modal-overlay" (click)="closeFilters()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Filtros - Busca Detalhada</h2>
+        <button class="modal-close" (click)="closeFilters()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="filter-grid">
+          <div class="form-group"><label>Status</label><select class="select" [(ngModel)]="localFilters.status"><option value="">Selecione</option></select></div>
+          <div class="form-group"><label>Contratante</label><input type="text" class="input" placeholder="Buscar" [(ngModel)]="localFilters.contractor"></div>
+          <div class="form-group"><label>Período</label><input type="text" class="input" placeholder="00/00/0000" [(ngModel)]="localFilters.dateRange"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
+        <button class="btn-solid btn-solid--purple" (click)="applyFilters()">Filtrar</button>
+      </div>
+    </div>
+  </div>
+}

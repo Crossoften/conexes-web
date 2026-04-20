@@ -1,0 +1,178 @@
+// src/app/features/budgets/new/budget-new.page.scss
+:host { display: block; }
+
+// ── Tipografia e Cabeçalho ────────────────────
+.page-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  margin-bottom: 24px;
+}
+
+// ── Card ──────────────────────────────────────
+.card {
+  background: var(--surface-primary, #ffffff);
+  border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header { padding: 24px 32px 16px 32px; }
+.card-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0; }
+.card-subtitle { font-size: 13.5px; color: var(--text-secondary, #6B7280); margin: 0; }
+.card-body { padding: 16px 32px 32px 32px; }
+
+// ── Formulário Genérico ───────────────────────
+.section-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 16px 0; }
+.mb-8 { margin-bottom: 32px; }
+
+.form-grid { display: flex; flex-direction: column; gap: 20px; }
+.form-row { display: grid; gap: 20px; }
+.grid-cols-1 { grid-template-columns: 1fr; }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.form-group {
+  display: flex; flex-direction: column; gap: 8px;
+  label { font-size: 13px; font-weight: 600; color: var(--text-primary, #111827); }
+  .req { color: var(--brand-danger, #EF4444); margin-left: 2px; }
+}
+
+.form-control {
+  width: 100%; padding: 10px 16px; border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 50px; font-size: 13.5px; font-family: var(--font-body); color: var(--text-primary);
+  background: var(--surface-primary); outline: none; transition: border-color var(--transition, 0.2s ease), box-shadow var(--transition, 0.2s ease);
+  &::placeholder { color: var(--text-muted, #9CA3AF); }
+  &:focus { border-color: var(--brand-orange, #F97316); box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); }
+  &.is-invalid { border-color: var(--brand-danger, #EF4444); }
+}
+
+// Selects
+.select-wrap {
+  position: relative; display: flex; align-items: center;
+  select { appearance: none; cursor: pointer; padding-right: 40px; color: var(--text-secondary); }
+}
+.select-chevron { position: absolute; right: 16px; width: 16px; height: 16px; color: var(--text-muted, #6B7280); pointer-events: none; }
+
+// ── Pílulas interativas (Checkboxes e Toggles) ─
+.form-control-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 50px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  &:hover { border-color: #D1D5DB; }
+  
+  &.checked {
+    border-color: var(--brand-purple, #7C3AED);
+    color: var(--brand-purple, #7C3AED);
+    background-color: rgba(124, 58, 237, 0.02);
+  }
+
+  &--sm {
+    width: fit-content;
+    min-width: 120px;
+  }
+}
+
+// Checkbox Quadrado Clássico
+.checkbox { display: inline-flex; align-items: center; justify-content: center; position: relative; width: 18px; height: 18px; }
+.checkbox__input { position: absolute; opacity: 0; width: 0; height: 0; }
+.checkbox__box {
+  width: 100%; height: 100%; border-radius: 4px; border: 1.5px solid var(--surface-border-mid, #D1D5DB);
+  background: #fff; display: flex; align-items: center; justify-content: center; transition: all 150ms;
+}
+.checkbox__input:checked ~ .checkbox__box {
+  background: var(--brand-purple, #7C3AED); border-color: var(--brand-purple, #7C3AED);
+  &::after { content: ''; width: 9px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); display: block; }
+}
+
+// Toggle Switch (Interruptor)
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  flex-shrink: 0;
+
+  input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #D1D5DB; // Cinza desativado
+    transition: .3s;
+    border-radius: 34px;
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+  }
+
+  input:checked + .slider {
+    background-color: var(--brand-purple, #7C3AED);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(16px);
+  }
+}
+
+
+// ── Rodapé e Botões ───────────────────────────
+.card-footer {
+  padding: 24px 32px;
+  border-top: 1px solid var(--surface-border-mid, #E5E7EB);
+  background: #ffffff;
+  border-bottom-left-radius: var(--radius-lg, 12px);
+  border-bottom-right-radius: var(--radius-lg, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-actions-right { display: flex; align-items: center; gap: 16px; }
+
+.btn-outline, .btn-solid {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px;
+  border-radius: 50px; font-size: 14px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all var(--transition, 0.2s ease); text-decoration: none;
+}
+
+.btn-outline {
+  background: transparent;
+  &--orange {
+    color: var(--brand-orange, #F97316); border: 1px solid var(--brand-orange, #F97316);
+    &:hover { background: #FFF7ED; }
+  }
+}
+
+.btn-solid {
+  border: none;
+  &--orange {
+    background: var(--brand-orange, #F97316); color: #ffffff; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
+    &:hover { background: darken(#F97316, 5%); transform: translateY(-1px); }
+    &:active { transform: translateY(0); }
+  }
+}

@@ -1,0 +1,33 @@
+<!-- src/app/layout/shell/shell.component.html -->
+<div class="shell" [class.shell--collapsed]="sidebarCollapsed()">
+
+  <app-sidebar [collapsed]="sidebarCollapsed()" />
+
+  <!-- Botão de colapso -->
+  <button
+    class="shell__toggle"
+    (click)="toggleSidebar()"
+    [attr.aria-label]="sidebarCollapsed() ? 'Expandir menu' : 'Recolher menu'"
+    [attr.aria-expanded]="!sidebarCollapsed()">
+    <svg viewBox="0 0 16 16" fill="none" width="12" height="12" aria-hidden="true">
+      @if (sidebarCollapsed()) {
+        <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      } @else {
+        <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      }
+    </svg>
+  </button>
+
+  <div class="shell__main">
+    <app-topbar
+      [parentLabel]="breadcrumb().parent"
+      [currentLabel]="breadcrumb().current"
+    />
+    <main class="shell__content" id="main-content">
+      <router-outlet />
+    </main>
+  </div>
+
+</div>

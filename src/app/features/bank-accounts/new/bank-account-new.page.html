@@ -1,0 +1,196 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Cadastro de conta bancária</h1>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-header">
+      <h2 class="card-title">Dados Gerais – Informações da conta</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <div class="form-grid mb-6">
+          
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Banco<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="banco" [class.is-invalid]="form.get('banco')?.invalid && form.get('banco')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Fonte Pagadora<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="fontePagadora" [class.is-invalid]="form.get('fontePagadora')?.invalid && form.get('fontePagadora')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tipo de conta<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="tipoConta" [class.is-invalid]="form.get('tipoConta')?.invalid && form.get('tipoConta')?.touched">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Data de abertura<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataAbertura" [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Apelido da conta<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="apelidoConta" [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Agencia + Digito<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00000 0" formControlName="agenciaDigito" [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Numero da conta + Digito<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00000 0" formControlName="numeroContaDigito" [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Saldo inicial<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="saldoInicial" [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Telefone principal<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefonePrincipal" [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Telefone celular<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefoneCelular" [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
+            </div>
+            <div class="form-group col-span-2">
+              <label>E-mail de contato<span class="req">*</span></label>
+              <input type="email" class="form-control" placeholder="Digite aqui..." formControlName="emailContato" [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Conta contábil</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contaContabil1">
+            </div>
+            <div class="form-group">
+              <label>Contato</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contato">
+            </div>
+            <div class="form-group">
+              <label>Telefone Contato</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefoneContato">
+            </div>
+            <div class="form-group">
+              <label>Celular Contato</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="celularContato">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Tipo do recurso</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tipoRecurso">
+            </div>
+            <div class="form-group">
+              <label>Conta contábil</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contaContabil2">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1 mt-2">
+            <label class="checkbox-inline">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="dadosDiferentes">
+                <span class="checkbox__box"></span>
+              </div>
+              Dados do correntista diferentes dos dados do fornecedor
+            </label>
+          </div>
+
+        </div>
+
+        <div class="segmented-tabs mb-6">
+          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'PARAMS'" (click)="setTab('PARAMS')">
+            Configurações de parâmetros
+          </button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'BOLETO'" (click)="setTab('BOLETO')">
+            Dados para emissão de boleto
+          </button>
+        </div>
+
+        @if (activeTab === 'PARAMS') {
+          <h3 class="section-title">Configurações de parâmetros</h3>
+          <p class="section-subtitle">Preencha todas as informações necessárias.</p>
+          <div class="form-grid">
+            <div class="form-row grid-cols-3">
+              <div class="form-group"><label>Número do convênio de pagamento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="numeroConvenioPagamento"></div>
+              <div class="form-group"><label>CNPJ Conta</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="cnpjConta"></div>
+              <div class="form-group"><label>Intervalo de pagamento CNAB</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab1"></div>
+            </div>
+            <div class="form-row grid-cols-3">
+              <div class="form-group"><label>Hash API Pagamentos</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="hashApiPagamentos"></div>
+              <div class="form-group"><label>Código Movimento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoMovimento"></div>
+              <div class="form-group"><label>Intervalo de pagamento CNAB</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab2"></div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab === 'BOLETO') {
+          <h3 class="section-title">Dados para emissão de boleto</h3>
+          <div class="form-grid">
+            <div class="form-row grid-cols-3">
+              <div class="form-group"><label>Sequencial do nosso número</label><input type="text" class="form-control disabled-bg" formControlName="sequencialNossoNumero"></div>
+              <div class="form-group"><label>Código beneficiário</label><input type="text" class="form-control disabled-bg" formControlName="codigoBeneficiario"></div>
+              <div class="form-group"><label>Carteira</label><input type="text" class="form-control disabled-bg" formControlName="carteira"></div>
+            </div>
+            <div class="form-row grid-cols-3">
+              <div class="form-group"><label>Número do convênio de cobrança</label><input type="text" class="form-control disabled-bg" formControlName="numeroConvenioCobranca"></div>
+              <div class="form-group"><label>Variação da Carteira</label><input type="text" class="form-control disabled-bg" formControlName="variacaoCarteira"></div>
+              <div class="form-group"><label>Modalidade</label><input type="text" class="form-control disabled-bg" formControlName="modalidade"></div>
+            </div>
+          </div>
+        }
+
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/bank-accounts">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <polyline points="3 3 3 8 8 8"></polyline>
+            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+          </svg>
+          Reiniciar formulário
+        </button>
+
+        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Salvar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

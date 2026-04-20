@@ -1,0 +1,155 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Centro de custos e projetos</h1>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-header">
+      <h2 class="card-title">Dados de projetos/centro de custo</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <div class="form-grid">
+          
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Tipo do Projeto/Centro de Custos <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="projectType" [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="PROJETO">Projeto</option>
+                  <option value="CENTRO_CUSTO">Centro de Custos</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Código do Projeto/Centro de Custos<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="projectCode" [class.is-invalid]="form.get('projectCode')?.invalid && form.get('projectCode')?.touched">
+                  <option value="">Selecione</option>
+                  </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Título do Projeto/Centro de Custos<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="projectTitle" [class.is-invalid]="form.get('projectTitle')?.invalid && form.get('projectTitle')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Código Contábil</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="accountingCode">
+                  <option value="">Digite aqui...</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Fonte Pagadora</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="payingSource">
+                  <option value="">Selecione</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Data de Início</label>
+              <input type="text" class="form-control" placeholder="dd/mm/aaaa" formControlName="startDate">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Descrição da Categoria</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="categoryDescription">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1 mt-2">
+            <label class="checkbox-inline">
+              <div class="checkbox">
+                <input type="checkbox" class="checkbox__input" formControlName="restrictInterest">
+                <span class="checkbox__box"></span>
+              </div>
+              Restringir alocação de juros e multa
+            </label>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Restrição em orçamentos</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="budgetRestriction">
+            </div>
+          </div>
+
+        </div>
+
+        <div class="linked-accounts-section">
+          <h3 class="section-title-sm">Composição de contas vinculadas</h3>
+          
+          <div class="linked-box">
+            <div class="linked-box__label">Origem (Caixa)</div>
+            
+            <div class="linked-box__input">
+              <div class="form-group">
+                <label>Selecionar conta<span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="linkedAccount" [class.is-invalid]="form.get('linkedAccount')?.invalid && form.get('linkedAccount')?.touched">
+                    <option value="">Selecione</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="linked-box__actions">
+              <button type="button" class="btn-square-outline" title="Adicionar">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+              <button type="button" class="btn-square-outline" title="Remover">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/cost-centers">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <polyline points="3 3 3 8 8 8"></polyline>
+            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+          </svg>
+          Reiniciar formulário
+        </button>
+
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Próximo
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,253 @@
+// src/app/features/purchasing-dashboard/purchasing-dashboard.page.scss
+:host { display: block; }
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  margin-bottom: 20px;
+}
+
+// ── Métricas ──────────────────────────────────
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: var(--surface-primary);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.metric-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-card__label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.metric-card__value {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1;
+
+  &--lg { font-size: 24px; }
+}
+
+.metric-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--purple { background: #EDE9FE; color: #7C3AED; }
+  &--orange { background: #FFF7ED; color: #F97316; }
+  &--blue   { background: #EFF6FF; color: #3B82F6; }
+  &--green  { background: #F0FDF4; color: #22C55E; }
+}
+
+// ── Painéis ───────────────────────────────────
+.panels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.panel {
+  background: var(--surface-primary);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.panel__link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-orange);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 150ms;
+
+  &:hover { opacity: 0.8; text-decoration: underline; }
+}
+
+// ── Lista de requisições ──────────────────────
+.req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.req-card {
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color var(--transition), background var(--transition);
+
+  &:hover { border-color: var(--surface-border-mid); background: #FAFAFE; }
+}
+
+.req-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.req-card__code {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+}
+
+.req-status-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.req-card__middle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.req-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.req-card__value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  font-family: var(--font-display);
+}
+
+.req-card__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.req-card__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.req-card__stage {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+// ── Distribuição por status ───────────────────
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dist-item {
+  display: grid;
+  grid-template-columns: 90px 1fr 24px;
+  align-items: center;
+  gap: 12px;
+}
+
+.dist-item__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dist-item__bar-wrap {
+  height: 8px;
+  background: #F3F4F6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dist-item__bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 600ms cubic-bezier(.4,0,.2,1);
+  min-width: 4px;
+}
+
+.dist-item__count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+// ── Card de pendências ────────────────────────
+.pending-card {
+  background: #FFF7ED;
+  border: 1.5px solid #FED7AA;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+
+.pending-card__count {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 2px;
+}
+
+.pending-card__desc {
+  font-size: 12.5px;
+  color: #B45309;
+}

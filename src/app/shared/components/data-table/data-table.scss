@@ -1,0 +1,32 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  padding: 12px 10px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+td {
+  padding: 12px 10px;
+  border-top: 1px solid #f1f1f1;
+  color: #111827;
+}
+
+tr:hover {
+  background: #fafafa;
+}
+
+/* botão ação */
+.btn-action {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+}

@@ -1,0 +1,180 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Contas a pagar</h1>
+    <button class="btn-novo" routerLink="new">
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nova conta
+    </button>
+  </div>
+
+  <div class="summary-cards-grid">
+    @for (summary of store.summaries(); track $index) {
+      <div class="summary-card">
+        @if (summary.isAccountInfo) {
+          <h3 class="summary-card__title">Dados da conta</h3>
+          <div class="summary-card__content">
+            <p class="summary-card__line summary-card__line--bold">{{ summary.bankName }}</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.agency }}</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.account }}</p>
+            <p class="summary-card__line summary-card__line--balance">Saldo: {{ summary.balance }}</p>
+          </div>
+        } @else {
+          <h3 class="summary-card__title summary-card__title--muted">{{ summary.title }}</h3>
+          <div class="summary-card__content">
+            <p class="summary-card__line summary-card__line--bold">Crédito</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.credit }}</p>
+            <p class="summary-card__line summary-card__line--bold" style="margin-top: 4px;">Débito</p>
+            <p class="summary-card__line summary-card__line--bold">{{ summary.debit }}</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card">
+    
+    <div class="card-section" style="padding-bottom: 0; border-bottom: none;">
+      <h2 class="card-inner-title">Relação de contas a pagar</h2>
+    </div>
+
+    <div class="card-section filter-bar toolbar-section">
+      
+      <div class="view-selector-wrap">
+        <label class="view-selector-label">Selecione a visão</label>
+        <div class="select-wrap">
+          <select class="select select--bg-gray" [value]="store.view()" (change)="store.setView($any($event.target).value)">
+            @for (opt of viewOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <button class="btn-outline" (click)="openFilters()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filtros
+      </button>
+
+      <div class="toolbar-actions-right">
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Exportar excel
+        </button>
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Importar XML
+        </button>
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload de arquivo
+        </button>
+      </div>
+
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+            <th class="th th--sortable" (click)="store.setSort('displayId')">ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('displayId')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('type')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('type')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('document')">Dcto <span class="sort-icon" [ngClass]="'sort--' + getSortState('document')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('company')">Empresa <span class="sort-icon" [ngClass]="'sort--' + getSortState('company')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('history')">Histórico <span class="sort-icon" [ngClass]="'sort--' + getSortState('history')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('registrationDate')">Data cadastro <span class="sort-icon" [ngClass]="'sort--' + getSortState('registrationDate')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('issueDate')">Emissão <span class="sort-icon" [ngClass]="'sort--' + getSortState('issueDate')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('dueDate')">Vencimento <span class="sort-icon" [ngClass]="'sort--' + getSortState('dueDate')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('value')">Valor <span class="sort-icon" [ngClass]="'sort--' + getSortState('value')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+            <th class="th th--center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.pageItems(); track item.id) {
+            <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+              <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+              <td class="td td--mono">{{ item.displayId }}</td>
+              <td class="td">{{ item.type }}</td>
+              <td class="td">{{ item.document }}</td>
+              <td class="td">{{ item.company }}</td>
+              <td class="td">{{ item.history }}</td>
+              <td class="td">{{ item.registrationDate }}</td>
+              <td class="td">{{ item.issueDate }}</td>
+              <td class="td">{{ item.dueDate }}</td>
+              <td class="td">{{ item.value }}</td>
+              <td class="td">{{ item.status }}</td>
+              
+              <td class="td td--center">
+                <div class="action-icons">
+                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <button class="icon-btn" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="pagination__nav">
+        <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        @for (p of pageNumbers(); track $index) {
+          @if (p === '...') { <span class="pag-ellipsis">···</span> } @else { <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button> }
+        }
+        <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="select-wrap">
+        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
+          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (store.isFilterModalOpen()) {
+  <div class="modal-overlay" (click)="closeFilters()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Filtros - Busca Detalhada</h2>
+        <button class="modal-close" (click)="closeFilters()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="filter-grid">
+          <div class="form-group"><label>Emissão</label><select class="select" [(ngModel)]="localFilters.issue"><option value="">Selecione</option></select></div>
+          <div class="form-group"><label>Status</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.status"></div>
+          <div class="form-group"><label>De - Ate</label><input type="text" class="input" placeholder="00/00/0000" [(ngModel)]="localFilters.dateRange"></div>
+          
+          <div class="form-group col-span-full"><label>Fornecedor</label><select class="select" [(ngModel)]="localFilters.supplier"><option value="">Selecione o fornecedor</option></select></div>
+          
+          <div class="form-group"><label>Status das Remessas</label><select class="select" [(ngModel)]="localFilters.remittanceStatus"><option value="">Selecione</option></select></div>
+          <div class="form-group"><label>Tipo Despesa</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.expenseType"></div>
+          <div class="form-group"><label>Tipo de Pagamento</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.paymentType"></div>
+          <div class="form-group"><label>Contrato</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.contract"></div>
+
+          <div class="form-group"><label>Requisição</label><select class="select" [(ngModel)]="localFilters.requisition"><option value="">Selecione</option></select></div>
+          <div class="form-group"><label>Conta Bancária Baixa</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.writeOffAccount"></div>
+          <div class="form-group"><label>Conta Pagadora</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.payingAccount"></div>
+          <div class="form-group"><label>Categoria/Conta</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.categoryAccount"></div>
+
+          <div class="form-group col-span-2"><label>Projeto/Centro de Custos</label><select class="select" [(ngModel)]="localFilters.costCenter"><option value="">Selecione</option></select></div>
+          <div class="form-group col-span-2"><label>Subprojeto</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.subProject"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
+        <button class="btn-solid btn-solid--purple" (click)="applyFilters()">Filtrar</button>
+      </div>
+    </div>
+  </div>
+}

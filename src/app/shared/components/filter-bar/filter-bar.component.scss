@@ -1,0 +1,17 @@
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.input, .select {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.search {
+  min-width: 220px;
+}

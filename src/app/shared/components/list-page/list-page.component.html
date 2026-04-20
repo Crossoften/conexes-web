@@ -1,0 +1,43 @@
+<div class="list-page">
+
+  <!-- título fora do card -->
+  <h1 class="list-page__title">{{ config.title }}</h1>
+
+  <!-- CARD -->
+  <div class="list-card">
+
+    <!-- toolbar -->
+    <div class="list-card__toolbar">
+      <div class="toolbar__left">
+        <!-- espaço para coisas como “Selecione a visão” depois -->
+      </div>
+
+      <div class="toolbar__right">
+        @for (btn of config.toolbar; track btn.label) {
+          <button
+            class="btn"
+            [class.btn--primary]="btn.variant === 'primary'"
+            (click)="btn.action()">
+            {{ btn.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- filtros -->
+    <app-filter-bar
+      class="list-card__filters"
+      [filters]="config.filters"
+      (search)="onSearch($event)"
+      (filterChange)="onFilterChange($event)">
+    </app-filter-bar>
+
+    <!-- tabela -->
+    <app-data-table
+      [columns]="columnsUnsafe"
+      [data]="dataUnsafe"
+      [actions]="actionsUnsafe">
+    </app-data-table>
+
+  </div>
+</div>

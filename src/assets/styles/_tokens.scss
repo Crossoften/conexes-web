@@ -1,0 +1,74 @@
+// ─────────────────────────────────────────────
+// Design Tokens — fonte única de verdade
+// src/assets/styles/_tokens.scss
+// ─────────────────────────────────────────────
+
+:root {
+  // ── Brand ──────────────────────────────────
+  --brand-purple:        #7C3AED;
+  --brand-purple-dark:   #5B21B6;
+  --brand-purple-light:  #EDE9FE;
+  --brand-purple-mid:    #8B5CF6;
+  --brand-orange:        #F97316;
+  --brand-orange-light:  #FFF7ED;
+
+  // ── Layout ─────────────────────────────────
+  --sidebar-bg:          #FFFFFF;
+  --sidebar-width:       260px;
+  --sidebar-collapsed:   72px;
+  --sidebar-border:      #F3F0FF;
+  --topbar-height:       64px;
+  --content-bg:          #F8F7FF;
+
+  // ── Surfaces ───────────────────────────────
+  --surface-primary:     #FFFFFF;
+  --surface-border:      #F3F0FF;
+  --surface-border-mid:  #EDE9FE;
+
+  // ── Text ───────────────────────────────────
+  --text-primary:        #1E1B4B;
+  --text-secondary:      #6B7280;
+  --text-muted:          #9CA3AF;
+  --text-on-brand:       #FFFFFF;
+
+  // ── Nav ────────────────────────────────────
+  --nav-hover-bg:             #F5F3FF;
+  --nav-active-child-bg:      #EDE9FE;
+  --nav-child-active-color:   #7C3AED;
+
+  // ── Status (semântico) ─────────────────────
+  --status-success-bg:   #D1FAE5;
+  --status-success-text: #065F46;
+  --status-warning-bg:   #FEF3C7;
+  --status-warning-text: #92400E;
+  --status-danger-bg:    #FEE2E2;
+  --status-danger-text:  #991B1B;
+  --status-info-bg:      #DBEAFE;
+  --status-info-text:    #1E40AF;
+  --status-neutral-bg:   #F3F4F6;
+  --status-neutral-text: #6B7280;
+  --status-purple-bg:    #EDE9FE;
+  --status-purple-text:  #5B21B6;
+
+  // ── Radius ─────────────────────────────────
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  // ── Shadows ────────────────────────────────
+  --shadow-card:     0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sidebar:  2px 0 16px rgba(124,58,237,.06);
+  --shadow-modal:    0 20px 60px rgba(124,58,237,.18), 0 8px 24px rgba(0,0,0,.08);
+  --shadow-dropdown: 0 8px 24px rgba(0,0,0,.12);
+
+  // ── Typography ─────────────────────────────
+  --font-display: 'Sora', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  // ── Motion ─────────────────────────────────
+  --transition:      220ms cubic-bezier(.4,0,.2,1);
+  --transition-slow: 350ms cubic-bezier(.4,0,.2,1);
+}

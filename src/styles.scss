@@ -1,0 +1,54 @@
+// ─────────────────────────────────────────────
+// Global styles — Conexão 3° Setor
+// ─────────────────────────────────────────────
+
+@use 'assets/styles/tokens' as *;
+@use 'assets/styles/typography' as *;
+@use 'assets/styles/utilities' as *;
+
+// Reset
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+// Scrollbar global
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-purple-light) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--brand-purple-light);
+  border-radius: 3px;
+}

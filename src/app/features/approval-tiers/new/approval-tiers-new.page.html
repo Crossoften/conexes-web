@@ -1,0 +1,107 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Cadastro de alçadas de aprovação</h1>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-header">
+      <h2 class="card-title">Alçadas de autorização de pagamento – Financeiro</h2>
+      <p class="card-subtitle">Dados da alçada de pagamento.</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <div class="form-grid">
+          
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Descrição da alçada<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="description" [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="1">Exemplo Descrição</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Aprovador<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="approver" [class.is-invalid]="form.get('approver')?.invalid && form.get('approver')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="1">Nome Aprovador</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Nível de alçada<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="tierLevel" [class.is-invalid]="form.get('tierLevel')?.invalid && form.get('tierLevel')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Valor mínimo<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="minValue" [class.is-invalid]="form.get('minValue')?.invalid && form.get('minValue')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="0">R$ 0,00</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Valor máximo<span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="maxValue" [class.is-invalid]="form.get('maxValue')?.invalid && form.get('maxValue')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="999999">R$ 999.999,00</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/approval-tiers">
+        Voltar
+      </button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <polyline points="3 3 3 8 8 8"></polyline>
+            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+          </svg>
+          Reiniciar formulário
+        </button>
+
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Próximo
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

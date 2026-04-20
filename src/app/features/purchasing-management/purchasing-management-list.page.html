@@ -1,0 +1,137 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Gerenciamento de Requisições</h1>
+    <button class="btn-novo" routerLink="quotations/new">
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nova requisição
+    </button>
+  </div>
+
+  <div class="card">
+    
+    <div class="card-section" style="padding-bottom: 0; border-bottom: none;">
+      <h2 class="card-inner-title">Relações de requisições</h2>
+    </div>
+
+    <div class="card-section filter-bar">
+      <div class="search-wrap">
+        <input class="search" type="text" placeholder="Buscar" [value]="store.filters().search" (input)="onSearch($any($event.target).value)">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="select-wrap">
+        <select class="select select--pill" [value]="store.filters().stage" (change)="store.setStage($any($event.target).value)">
+          @for (opt of stageOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="select-wrap">
+        <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
+          @for (opt of typeOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="select-wrap">
+        <select class="select select--pill" [value]="store.filters().period" (change)="store.setPeriod($any($event.target).value)">
+          @for (opt of periodOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="select-wrap">
+        <select class="select select--pill" [value]="store.filters().status" (change)="store.setStatus($any($event.target).value)">
+          @for (opt of statusOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <button class="btn-outline btn-pill">
+        Exportar
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="12" y1="18" x2="12" y2="12"></line>
+          <polyline points="9 15 12 18 15 15"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+            <th class="th th--sortable" (click)="store.setSort('typeId')">Tipo/ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('typeId')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('title')">Titulo <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('costCenter')">Centro de custo <span class="sort-icon" [ngClass]="'sort--' + getSortState('costCenter')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('group')">Grupo <span class="sort-icon" [ngClass]="'sort--' + getSortState('group')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('requester')">Requisitante <span class="sort-icon" [ngClass]="'sort--' + getSortState('requester')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('stage')">Etapa <span class="sort-icon" [ngClass]="'sort--' + getSortState('stage')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('reqDate')">Data Requisição/<br>Entrega <span class="sort-icon" [ngClass]="'sort--' + getSortState('reqDate')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('status')">Status<br>Requisição <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+            <th class="th th--center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.pageItems(); track item.id) {
+            <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+              <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+              <td class="td td--mono">{{ item.typeId }}</td>
+              <td class="td td--name">{{ item.title }}</td>
+              <td class="td">{{ item.costCenter }}</td>
+              <td class="td">{{ item.group }}</td>
+              <td class="td">{{ item.requester }}</td>
+              <td class="td">{{ item.stage }}</td>
+              
+              <td class="td td--dates">
+                <span class="date-line">Requisição: {{ item.reqDate }}</span>
+                <span class="date-line">Entrega: {{ item.deliveryDate }}</span>
+              </td>
+
+              <td class="td">
+                <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">
+                  @if (item.status === 'ACTIVE') {
+                    <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  } @else {
+                    <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10" r="1" fill="currentColor"/></svg>
+                  }
+                  {{ statusConfig[item.status].label }}
+                </span>
+              </td>
+
+              <td class="td td--center">
+                <div class="action-icons">
+                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                  <button class="icon-btn" title="Cancelar/Excluir"><svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                  <button class="icon-btn" title="Duplicar"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="pagination__nav">
+        <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        @for (p of pageNumbers(); track $index) {
+          @if (p === '...') { <span class="pag-ellipsis">···</span> } @else { <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button> }
+        }
+        <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="select-wrap">
+        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
+          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+</div>

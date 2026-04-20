@@ -1,0 +1,60 @@
+@import "../../chart-of-accounts/new/chart-of-accounts-new.page.scss";
+
+.tab-container {
+  display: flex;
+  background: #F3F4F6;
+  border-radius: 50px;
+  padding: 4px;
+  margin-top: 32px;
+  margin-bottom: 24px;
+}
+
+.tab-button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: #6366F1; // Roxo conforme o layout
+    color: #ffffff;
+  }
+}
+
+.section-subtitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.dropzone {
+  border: 1px dashed #D1D5DB;
+  background: #F9FAFB;
+  border-radius: 12px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #F3F4F6;
+    border-color: var(--brand-orange);
+  }
+
+  .upload-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+  }
+}
+
+.mt-24 { margin-top: 24px; }

@@ -1,0 +1,174 @@
+<!-- src/app/features/auth/login/login.page.html -->
+<div class="login-layout">
+
+  <!-- ── ESQUERDA ── -->
+  <div class="left">
+    <div class="left__badge">
+      <span class="left__badge-dot"></span>
+      Plataforma personalizada
+    </div>
+    <h1 class="left__title">Bem-vindo ao<br>Conexão 3° Setor</h1>
+    <p class="left__subtitle">Gestão inteligente de toda a jornada.</p>
+
+    <ul class="features">
+      <li class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="8"/><path d="M7 10l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <p class="feature__title">Gestão Inteligente</p>
+          <p class="feature__desc">Conexão perfeita entre sua empresa e os dados financeiros</p>
+        </div>
+      </li>
+      <li class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 3.5C6.5 3.5 3.5 6 3.5 9.5c0 2 1 3.8 2.5 4.9V17l2-1.2c.6.2 1.3.2 2 .2 3.5 0 6.5-2.5 6.5-6S13.5 3.5 10 3.5z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="feature__title">Módulos personalizados</p>
+          <p class="feature__desc">Acesso a módulos personalizados conforme sua necessidade</p>
+        </div>
+      </li>
+      <li class="feature">
+        <div class="feature__icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="8" width="12" height="10" rx="2"/>
+            <path d="M7 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+        </div>
+        <div>
+          <p class="feature__title">Segurança e Privacidade</p>
+          <p class="feature__desc">Seus dados protegidos com criptografia</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ── DIREITA ── -->
+  <div class="right">
+
+    <div class="logo">
+      <div class="logo__img-wrap">
+        <!--
+          Coloque sua logo em src/assets/images/logo-conexao.png
+          O fallback SVG aparece automaticamente se a imagem não for encontrada
+        -->
+        <img
+          src="assets/images/logo-conexao.png"
+          alt="Conexão 3° Setor"
+          class="logo__img"
+          (error)="logoImg.style.display='none'; logoFallback.style.display='block'"
+          #logoImg>
+        <svg #logoFallback class="logo__fallback" style="display:none"
+             viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="40" r="40" fill="#EDE9FE"/>
+          <path d="M40 12C25 12 12 25 12 40s13 28 28 28 28-13 28-28S55 12 40 12z" fill="#F3F0FF"/>
+          <path d="M40 12C30 12 21 17 16 25l24 15 15-25A27 27 0 0 0 40 12z" fill="#F97316"/>
+          <path d="M55 15l-15 25 16 23c7-5 12-14 12-23 0-9-5-18-13-25z" fill="#7C3AED" opacity=".85"/>
+          <path d="M16 25C12 31 10 35 10 40c0 14 10 26 25 29L40 40 16 25z" fill="#7C3AED"/>
+          <circle cx="40" cy="40" r="10" fill="white"/>
+        </svg>
+      </div>
+      <div class="logo__name">
+        <span>Conexão</span>
+        <strong>3° SETOR</strong>
+      </div>
+    </div>
+
+    <form class="login-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- E-mail -->
+      <div class="field" [class.field--error]="email.invalid && email.touched">
+        <label class="field__label" for="email">E-mail</label>
+        <input class="field__input" id="email" type="email"
+               formControlName="email" autocomplete="email"
+               placeholder="seu@email.com">
+        @if (email.invalid && email.touched) {
+          <span class="field__error" role="alert">
+            {{ email.errors?.['required'] ? 'E-mail obrigatório' : 'E-mail inválido' }}
+          </span>
+        }
+      </div>
+
+      <!-- Senha -->
+      <div class="field" [class.field--error]="password.invalid && password.touched">
+        <label class="field__label" for="password">Senha</label>
+        <div class="field__input-wrap">
+          <input class="field__input" id="password"
+                 [type]="showPassword() ? 'text' : 'password'"
+                 formControlName="password" autocomplete="current-password"
+                 placeholder="••••••••">
+          <button type="button" class="field__eye"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'">
+            @if (!showPassword()) {
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <circle cx="10" cy="10" r="2.5"/>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M3 3l14 14M10 4c4.5 0 8 4 8.5 6-.7 2-2.5 4.2-5 5.3M6.5 6.6C4.5 7.7 2.5 9.7 1.5 10c.5 2 4 6 8.5 6 1.5 0 3-.4 4.2-1"/>
+              </svg>
+            }
+          </button>
+        </div>
+        @if (password.invalid && password.touched) {
+          <span class="field__error" role="alert">
+            {{ password.errors?.['required'] ? 'Senha obrigatória' : 'Mínimo de 6 caracteres' }}
+          </span>
+        }
+      </div>
+
+      <div class="login-form__forgot">
+        <a class="link" routerLink="/auth/forgot-password">Esqueceu a senha?</a>
+      </div>
+
+      @if (errorMsg()) {
+        <div class="login-form__error-banner" role="alert">{{ errorMsg() }}</div>
+      }
+
+      <button class="btn-primary" type="submit" [disabled]="loading()">
+        @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+        @else { Entrar }
+      </button>
+
+      <p class="login-form__register">
+        Não tem uma conta?
+        <a class="link link--orange" routerLink="/auth/register">Cadastre-se</a>
+      </p>
+
+      <div class="divider"><span class="divider__text">ou continue com</span></div>
+
+      <button class="btn-social btn-social--google" type="button" (click)="onGoogle()">
+        <svg viewBox="0 0 18 18" fill="none" width="18" height="18" aria-hidden="true">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.233 17.64 11.925 17.64 9.2z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Continuar com Google
+      </button>
+
+      <button class="btn-social btn-social--facebook" type="button" (click)="onFacebook()">
+        <svg viewBox="0 0 18 18" fill="currentColor" width="18" height="18" aria-hidden="true">
+          <path d="M18 9a9 9 0 1 0-10.406 8.892v-6.29H5.309V9h2.285V7.017c0-2.255 1.343-3.502 3.4-3.502.985 0 2.015.176 2.015.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.602h-2.097v6.29A9.002 9.002 0 0 0 18 9z"/>
+        </svg>
+        Continuar com Facebook
+      </button>
+
+    </form>
+
+    <footer class="right__footer">© 2026 Conexes. Todos os direitos reservados.</footer>
+  </div>
+
+</div>

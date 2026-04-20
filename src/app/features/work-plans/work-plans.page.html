@@ -1,0 +1,225 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Plano de trabalho</h1>
+    <button class="btn-novo">
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Novo plano
+    </button>
+  </div>
+
+  <div class="tabs-pill">
+    <button class="tab-btn" 
+      [class.active]="store.activeTab() === 'dashboard'" 
+      (click)="store.setTab('dashboard')">
+      Dashboard
+    </button>
+    <button class="tab-btn" 
+      [class.active]="store.activeTab() === 'proposals'" 
+      (click)="store.setTab('proposals')">
+      Propostas
+    </button>
+    <button class="tab-btn" 
+      [class.active]="store.activeTab() === 'active-plans'" 
+      (click)="store.setTab('active-plans')">
+      Planos ativos
+    </button>
+  </div>
+
+  @if (store.activeTab() === 'dashboard') {
+    <div class="metrics-grid">
+      @for (metric of store.metrics(); track metric.id) {
+        <div class="metric-card">
+          <div class="metric-card__body">
+            <span class="metric-card__label">{{ metric.label }}</span>
+            <span class="metric-card__value">{{ metric.value }}</span>
+          </div>
+          <div class="metric-card__icon" [ngClass]="'metric-card__icon--' + metric.color">
+            @if (metric.icon === 'cube') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            }
+            @if (metric.icon === 'clock') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            }
+            @if (metric.icon === 'check') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            }
+            @if (metric.icon === 'trend') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="panels-grid">
+      <div class="panel-column">
+        <h2 class="section-title">Propostas recentes</h2>
+        <div class="table-card">
+          <div class="table-card__header">
+            <div class="search-wrap">
+              <input class="search" type="text" placeholder="Buscar">
+              <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <a class="view-all-link" (click)="store.setTab('proposals')">Ver todas</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th class="th th--check"></th><th class="th">Nome da proposta</th><th class="th">Status</th></tr></thead>
+              <tbody>
+                @for (item of store.dashboardProposals(); track item.id) {
+                  <tr class="tr">
+                    <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></label></td>
+                    <td class="td td--name">{{ item.title }}</td>
+                    <td class="td">
+                      <span class="status-badge" [ngClass]="'status-badge--' + proposalStatusConfig[item.status].variant">
+                        {{ proposalStatusConfig[item.status].label }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-column">
+        <h2 class="section-title">Planos ativos</h2>
+        <div class="table-card">
+          <div class="table-card__header">
+            <div class="search-wrap">
+              <input class="search" type="text" placeholder="Buscar">
+              <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <a class="view-all-link" (click)="store.setTab('active-plans')">Ver todas</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th class="th th--check"></th><th class="th">Nome do plano</th><th class="th">Status</th></tr></thead>
+              <tbody>
+                @for (item of store.dashboardPlans(); track item.id) {
+                  <tr class="tr">
+                    <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></label></td>
+                    <td class="td td--name">{{ item.title }}</td>
+                    <td class="td">
+                      <span class="status-badge status-badge--success">{{ planStatusConfig[item.status].label }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="card-section filter-bar">
+        <div class="search-wrap">
+          <input class="search" type="text" placeholder="Buscar" [value]="store.filters().search" (input)="onSearch($any($event.target).value)">
+          <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="select-wrap">
+          <select class="select select--pill" [value]="store.filters().status" (change)="store.setStatus($any($event.target).value)">
+            @for (opt of statusOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <div class="select-wrap">
+          <select class="select select--pill" [value]="store.filters().instrument" (change)="store.setInstrument($any($event.target).value)">
+            @for (opt of instrumentOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <button class="btn-outline btn-pill">
+          Exportar
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
+        </button>
+
+        <button class="btn-outline btn-pill btn-import">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Importar
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+              <th class="th th--sortable" (click)="store.setSort('title')">Título <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('agency')">Órgão <span class="sort-icon" [ngClass]="'sort--' + getSortState('agency')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('startDate')">Data início <span class="sort-icon" [ngClass]="'sort--' + getSortState('startDate')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('transferValue')">Valor repasse <span class="sort-icon" [ngClass]="'sort--' + getSortState('transferValue')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('team')">Equipe <span class="sort-icon" [ngClass]="'sort--' + getSortState('team')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('receivedValue')">Valor recebido <span class="sort-icon" [ngClass]="'sort--' + getSortState('receivedValue')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('type')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('type')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+              <th class="th th--center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of store.pageItems(); track item.id) {
+              <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+                <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+                <td class="td td--mono">{{ item.title }}</td>
+                <td class="td">{{ item.agency }}</td>
+                <td class="td">{{ item.startDate }}</td>
+                <td class="td">{{ item.transferValue }}</td>
+                <td class="td">{{ item.team }}</td>
+                <td class="td">{{ item.receivedValue }}</td>
+                <td class="td"><span class="type-badge">{{ item.type }}</span></td>
+                <td class="td">
+                  @if (isProposal(item)) {
+                    <span class="status-badge" [ngClass]="'status-badge--' + proposalStatusConfig[item.status].variant">
+                      @if (item.status === 'ANALYSIS') {
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                      }
+                      {{ proposalStatusConfig[item.status].label }}
+                    </span>
+                  }
+                  @if (isPlan(item)) {
+                    <span class="status-badge status-badge--success">
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      {{ planStatusConfig[item.status].label }}
+                    </span>
+                  }
+                </td>
+                <td class="td td--center">
+                  <div class="action-icons">
+                    <button class="icon-btn" title="Editar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <div class="pagination__nav">
+          <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          @for (p of pageNumbers(); track $index) {
+            @if (p === '...') { <span class="pag-ellipsis">···</span> } @else { <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button> }
+          }
+          <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <div class="select-wrap">
+          <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
+            @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+  }
+</div>

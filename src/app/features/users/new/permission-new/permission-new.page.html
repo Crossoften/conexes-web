@@ -1,0 +1,90 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Cadastro de usuários e permissões</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Cadastro de Permissões</h2>
+      <p class="card-subtitle">Identificação da permissão</p>
+    </div>
+
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+          
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Título<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title" [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Descrição<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description" [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Centro de custo<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="costCenter" [class.is-invalid]="form.get('costCenter')?.invalid && form.get('costCenter')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Projeto</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="project">
+            </div>
+            <div class="form-group">
+              <label>Atividade</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="activity">
+            </div>
+          </div>
+
+          <div class="permissions-section mt-8">
+            <h3 class="section-title">Acesso módulo financeiro</h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="th">Módulo</th>
+                    <th class="th">Submenu</th>
+                    <th class="th th--center">Visualização</th>
+                    <th class="th th--center">Inclusão</th>
+                    <th class="th th--center">Edição</th>
+                    <th class="th th--center">Exclusão</th>
+                    <th class="th th--center">Acesso limitado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (mod of modules; track mod.name; let i = $index) {
+                    <tr class="tr">
+                      <td class="td td--bold">{{ mod.name }}</td>
+                      <td class="td">{{ mod.submenu }}</td>
+                      
+                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.view" (change)="togglePermission(i, 'view')"><span class="checkbox__box"></span></label></td>
+                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.add" (change)="togglePermission(i, 'add')"><span class="checkbox__box"></span></label></td>
+                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.edit" (change)="togglePermission(i, 'edit')"><span class="checkbox__box"></span></label></td>
+                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.del" (change)="togglePermission(i, 'del')"><span class="checkbox__box"></span></label></td>
+                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.limit" (change)="togglePermission(i, 'limit')"><span class="checkbox__box"></span></label></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-outline btn-outline--orange" routerLink="/users">Voltar</button>
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline><rect x="10" y="10" width="4" height="4" rx="1"></rect></svg>
+          Reiniciar formulário
+        </button>
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">Próximo</button>
+      </div>
+    </div>
+  </div>
+</div>
