@@ -1,10 +1,10 @@
 // src/app/features/agencies/agencies-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AgenciesStore } from './agencies.store';
-import { Agency, AgencyStatus, AgencyType, AGENCY_STATUS_CONFIG } from './agencies.model';
+import { Agency, AGENCY_STATUS_CONFIG } from './agencies.model';
 
 @Component({
   selector: 'app-agencies-list',
@@ -14,21 +14,14 @@ import { Agency, AgencyStatus, AgencyType, AGENCY_STATUS_CONFIG } from './agenci
   templateUrl: './agencies-list.page.html',
   styleUrl: './agencies-list.page.scss',
 })
-export class AgenciesListPage {
+export class AgenciesListPage implements OnInit {
   readonly store        = inject(AgenciesStore);
-  readonly router       = inject(Router);
   readonly statusConfig = AGENCY_STATUS_CONFIG;
 
-  readonly statusOptions: { label: string; value: AgencyStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Ativo',              value: 'ACTIVE' },
-    { label: 'Inativo',            value: 'INACTIVE' },
-  ];
-
-  readonly typeOptions: { label: string; value: AgencyType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'Público',          value: 'PUBLIC' },
-    { label: 'Privado',          value: 'PRIVATE' },
+  readonly statusOptions = [
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -54,9 +47,17 @@ export class AgenciesListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -67,9 +68,9 @@ export class AgenciesListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  trackById(_: number, item: Agency) { return item.id; }
+  trackById(_: number, item: Agency): number { return item.id; }
 }

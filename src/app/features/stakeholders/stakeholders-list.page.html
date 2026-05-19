@@ -11,9 +11,9 @@
   </div>
 
   <div class="card">
-    
+
     <div class="controls-section">
-      
+
       <div class="vision-group">
         <label>Selecione a visão</label>
         <div class="select-wrap">
@@ -26,13 +26,19 @@
 
       <div class="filter-bar">
         <div class="search-wrap">
-          <input class="search" type="text" placeholder="Buscar" [value]="store.filters().search" (input)="onSearch($any($event.target).value)">
+          <input class="search" type="text" placeholder="Buscar"
+            [value]="store.filters().search"
+            (input)="onSearch($any($event.target).value)">
           <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
 
         <div class="select-wrap">
-          <select class="select select--pill" [value]="store.filters().status" (change)="store.setStatus($any($event.target).value)">
-            @for (opt of statusOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+          <select class="select select--pill"
+            [value]="store.filters().status"
+            (change)="onStatusChange($any($event.target).value)">
+            @for (opt of statusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -66,7 +72,15 @@
       <table class="table">
         <thead>
           <tr>
-            <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+            <th class="th th--check">
+              <label class="checkbox">
+                <input type="checkbox" class="checkbox__input"
+                  [checked]="store.allPageSelected()"
+                  [indeterminate]="store.somePageSelected()"
+                  (change)="store.toggleAllPage()">
+                <span class="checkbox__box"></span>
+              </label>
+            </th>
             <th class="th th--sortable" (click)="store.setSort('code')">Código <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('personType')">Pessoa <span class="sort-icon" [ngClass]="'sort--' + getSortState('personType')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('document')">CNPJ/CPF <span class="sort-icon" [ngClass]="'sort--' + getSortState('document')"></span></th>
@@ -75,35 +89,56 @@
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
-        
+
         <tbody>
-          @for (item of store.pageItems(); track item.id) {
-            <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
-              <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
-              <td class="td td--mono">{{ item.code }}</td>
-              <td class="td">{{ item.personType }}</td>
-              <td class="td td--mono">{{ item.document }}</td>
-              <td class="td td--name" style="color: var(--text-secondary);">{{ item.name }}</td>
-              <td class="td">
-                @if (item.status === 'ACTIVE') {
-                  <span class="status-badge status-badge--success">
-                    <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Ativo
-                  </span>
-                } @else {
-                  <span class="status-badge status-badge--danger">
-                    <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                    Inativo
-                  </span>
-                }
-              </td>
-              <td class="td td--center">
-                <button type="button" class="btn-ver" (click)="$event.stopPropagation(); openModal(item)">
-                  <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/></svg>
-                  Ver
-                </button>
-              </td>
-            </tr>
+          @if (store.loading()) {
+            <tr><td colspan="7" class="td td--empty">Carregando...</td></tr>
+          } @else if (store.error()) {
+            <tr><td colspan="7" class="td td--empty td--error">{{ store.error() }}</td></tr>
+          } @else if (store.items().length === 0) {
+            <tr><td colspan="7" class="td td--empty">Nenhum stakeholder encontrado.</td></tr>
+          } @else {
+            @for (item of store.items(); track item.id) {
+              <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+                <td class="td td--check">
+                  <label class="checkbox">
+                    <input type="checkbox" class="checkbox__input"
+                      [checked]="store.selectedIds().has(item.id)"
+                      (change)="store.toggleRow(item.id)">
+                    <span class="checkbox__box"></span>
+                  </label>
+                </td>
+                <td class="td td--mono">{{ item.code }}</td>
+                <td class="td">{{ item.personType }}</td>
+                <td class="td td--mono">{{ item.document }}</td>
+                <td class="td td--name" style="color: var(--text-secondary);">{{ item.name }}</td>
+                <td class="td">
+                  @if (item.status === 'Active') {
+                    <span class="status-badge status-badge--success">
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Ativo
+                    </span>
+                  } @else if (item.status === 'Pending') {
+                    <span class="status-badge status-badge--warning">
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                      Pendente
+                    </span>
+                  } @else {
+                    <span class="status-badge status-badge--danger">
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                      Inativo
+                    </span>
+                  }
+                </td>
+                <td class="td td--center">
+                  <button type="button" class="btn-ver"
+                    (click)="$event.stopPropagation(); openModal(item)">
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/></svg>
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
@@ -111,15 +146,36 @@
 
     <div class="pagination">
       <div class="pagination__nav">
-        <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="pag-btn" aria-label="Anterior"
+          [disabled]="store.pagination().page === 1"
+          (click)="store.setPage(store.pagination().page - 1)">
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
         @for (p of pageNumbers(); track $index) {
-          @if (p === '...') { <span class="pag-ellipsis">···</span> } @else { <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button> }
+          @if (p === '...') {
+            <span class="pag-ellipsis">···</span>
+          } @else {
+            <button class="pag-btn pag-btn--num"
+              [class.pag-btn--active]="p === store.pagination().page"
+              (click)="goToPage(p)">{{ p }}</button>
+          }
         }
-        <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+
+        <button class="pag-btn" aria-label="Próxima"
+          [disabled]="store.pagination().page === store.totalPages()"
+          (click)="store.setPage(store.pagination().page + 1)">
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
+
       <div class="select-wrap">
-        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
-          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+        <select class="select select--sm"
+          [value]="store.pagination().pageSize"
+          (change)="store.setPageSize(+$any($event.target).value)">
+          @for (s of pageSizeOptions; track s) {
+            <option [value]="s">{{ s }} / página</option>
+          }
         </select>
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
@@ -129,8 +185,9 @@
 </div>
 
 @if (isModalOpen) {
-  <app-stakeholder-detail-modal 
-    [stakeholder]="selectedStakeholder" 
-    (close)="closeModal()">
+  <app-stakeholder-detail-modal
+    [stakeholder]="selectedStakeholder"
+    (close)="closeModal()"
+    (delete)="onDelete($event)">
   </app-stakeholder-detail-modal>
 }

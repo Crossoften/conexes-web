@@ -1,10 +1,17 @@
 // src/app/features/employees/new/employee-new.page.ts
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { EmployeesService } from '../employees.service';
+import { EmployeePayload } from '../employees.model';
+import { environment } from '../../../../environments/environment';
 
 type EmployeeTab = 'PARAMS' | 'BOLETO';
+
+interface EntityItem   { id?: number; cnpj?: string; legalName: string; tradeName: string; }
+interface PositionItem { id: number; name: string; title?: string; }
 
 @Component({
   selector: 'app-employee-new',
@@ -13,63 +20,185 @@ type EmployeeTab = 'PARAMS' | 'BOLETO';
   templateUrl: './employee-new.page.html',
   styleUrl: './employee-new.page.scss',
 })
-export class EmployeeNewPage {
-  form: FormGroup;
+export class EmployeeNewPage implements OnInit {
+  private fb     = inject(FormBuilder);
+  private router = inject(Router);
+  private svc    = inject(EmployeesService);
+  private http   = inject(HttpClient);
+
+  readonly loading      = signal(false);
+  readonly errorMsg     = signal<string | null>(null);
+  readonly entities     = signal<EntityItem[]>([]);
+  readonly positions    = signal<PositionItem[]>([]);
+  readonly loadingLists = signal(true);
+
   activeTab: EmployeeTab = 'PARAMS';
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      // Aba: Configurações de parâmetros (Dados Gerais - Colaboradores)
-      entidade: ['', Validators.required],
-      tipoResponsavel: ['', Validators.required],
-      cargo: ['', Validators.required],
-      
-      formacao: ['', Validators.required],
-      vinculo: ['', Validators.required],
-      cargaHorariaMensal: ['', Validators.required],
-      
-      dataAdmissao: ['', Validators.required],
-      dataDemissao: ['', Validators.required],
-      cns: ['', Validators.required],
-      salario: ['', Validators.required],
-      
-      cpf: ['', Validators.required],
-      orgaoClasse: [''],
-      emailInstitucional: [''],
-      emailPessoal: [''],
-      
-      cep: ['', Validators.required],
-      endereco: ['', Validators.required],
-      nro: ['', Validators.required],
-      complemento: [''],
-      
-      telefone: ['', Validators.required],
-      celular: [''],
+  // Lista temporária — substituir quando GET /v1/positions estiver disponível
+  private readonly POSITIONS_FALLBACK: PositionItem[] = [
+    { id: 1,  name: 'Diretor Executivo'           },
+    { id: 2,  name: 'Diretor Financeiro'           },
+    { id: 3,  name: 'Diretor Administrativo'       },
+    { id: 4,  name: 'Coordenador de Projetos'      },
+    { id: 5,  name: 'Coordenador Financeiro'       },
+    { id: 6,  name: 'Analista Financeiro'          },
+    { id: 7,  name: 'Analista de Projetos'         },
+    { id: 8,  name: 'Assistente Administrativo'    },
+    { id: 9,  name: 'Assistente Financeiro'        },
+    { id: 10, name: 'Técnico de Contabilidade'     },
+    { id: 11, name: 'Contador'                     },
+    { id: 12, name: 'Advogado'                     },
+    { id: 13, name: 'Educador Social'              },
+    { id: 14, name: 'Psicólogo'                    },
+    { id: 15, name: 'Assistente Social'            },
+    { id: 16, name: 'Enfermeiro'                   },
+    { id: 17, name: 'Médico'                       },
+    { id: 18, name: 'Auxiliar de Serviços Gerais'  },
+    { id: 19, name: 'Motorista'                    },
+    { id: 20, name: 'Outros'                       },
+  ];
 
-      // Aba: Dados para emissão de boleto (Dados Gerais - Pagamentos)
-      parceria: ['', Validators.required],
-      origemRecurso: ['', Validators.required],
-      referencia: ['', Validators.required],
-      cargaHorariaPag: ['', Validators.required],
-      valorBruto: [''],
-      cargaHorariaPag2: ['', Validators.required] // Repetido conforme mockup
+  form: FormGroup = this.fb.group({
+    entidade:           ['', Validators.required],
+    nome:               ['', Validators.required],
+    tipoResponsavel:    ['', Validators.required],
+    cargo:              ['', Validators.required],
+    formacao:           ['', Validators.required],
+    vinculo:            ['', Validators.required],
+    cargaHorariaMensal: ['', Validators.required],
+    dataAdmissao:       ['', Validators.required],
+    dataDemissao:       [''],
+    cns:                ['', Validators.required],
+    salario:            ['', Validators.required],
+    cpf:                ['', Validators.required],
+    orgaoClasse:        [''],
+    emailInstitucional: [''],
+    emailPessoal:       [''],
+    cep:                ['', Validators.required],
+    endereco:           ['', Validators.required],
+    nro:                ['', Validators.required],
+    complemento:        [''],
+    telefone:           ['', Validators.required],
+    celular:            [''],
+    parceria:           [''],
+    origemRecurso:      [''],
+    referencia:         [''],
+    grossValue:         [''],
+  });
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    // Cargos: usa fallback imediato, atualiza se o back retornar dados
+    this.positions.set(this.POSITIONS_FALLBACK);
+
+    this.http.get<PositionItem[]>(`${environment.apiUrl}/v1/positions`).subscribe({
+      next: items => { if (items?.length > 0) this.positions.set(items); },
+    });
+
+    // Entidades: carrega do back
+    this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
+      next: items => { this.entities.set(items); this.loadingLists.set(false); },
+      error: () => this.loadingLists.set(false),
     });
   }
 
-  setTab(tab: EmployeeTab) {
-    this.activeTab = tab;
+  // ── Máscaras ──────────────────────────────────────────────────────────────
+
+  applyCpfMask(event: Event): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 11);
+    const masked = digits
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    input.value = masked;
+    this.form.get('cpf')?.setValue(masked, { emitEvent: false });
   }
 
-  resetForm() {
+  applyCepMask(event: Event): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 8);
+    const masked = digits.replace(/(\d{5})(\d{1,3})$/, '$1-$2');
+    input.value = masked;
+    this.form.get('cep')?.setValue(masked, { emitEvent: false });
+  }
+
+  applyPhoneMask(event: Event, controlName: string): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 11);
+    const masked = digits
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
+    input.value = masked;
+    this.form.get(controlName)?.setValue(masked, { emitEvent: false });
+  }
+
+  onlyNumbers(event: KeyboardEvent): boolean {
+    return /\d/.test(event.key) || event.key === 'Backspace' || event.key === 'Tab';
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
+  setTab(tab: EmployeeTab): void { this.activeTab = tab; }
+
+  resetForm(): void {
     this.form.reset();
+    this.activeTab = 'PARAMS';
+    this.errorMsg.set(null);
   }
 
-  onSubmit() {
-    if (this.form.valid) {
-      console.log('Form data:', this.form.value);
-      // Lógica de salvamento aqui
-    } else {
+  onSubmit(): void {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
     }
+
+    this.loading.set(true);
+    this.errorMsg.set(null);
+
+    const v = this.form.value;
+
+    const payload: EmployeePayload = {
+      entityId:           (v.entidade && v.entidade !== 'undefined') ? Number(v.entidade) : 0,
+      name:               v.nome ?? '',
+      cpf:                v.cpf                        ?? '',
+      email:              v.emailInstitucional          ?? '',
+      phone:              v.telefone                   ?? '',
+      cellPhone:          v.celular                    ?? '',
+      title:              v.tipoResponsavel            ?? '',
+      responsibleType:    v.tipoResponsavel            ?? '',
+      positionId:         Number(v.cargo)              || 0,
+      formation:          v.formacao                   ?? '',
+      linkType:           v.vinculo                    ?? '',
+      workingHours:       Number(v.cargaHorariaMensal) || 0,
+      startDate:          v.dataAdmissao               ?? '',
+      endDate:            v.dataDemissao               ?? '',
+      cns:                v.cns                        ?? '',
+      salary:             Number(v.salario)            || 0,
+      professionalBoard:  v.orgaoClasse                ?? '',
+      personalEmail:      v.emailPessoal               ?? '',
+      institutionalEmail: v.emailInstitucional         ?? '',
+      zipCode:            v.cep                        ?? '',
+      address:            v.endereco                   ?? '',
+      number:             v.nro                        ?? '',
+      complement:         v.complemento                ?? '',
+      partnershipId:      Number(v.parceria)           || 0,
+      resourceOrigin:     v.origemRecurso              ?? '',
+      reference:          v.referencia                 ?? '',
+      grossValue:         Number(v.grossValue)         || 0,
+    };
+
+    this.svc.create(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/employees']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const msg = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
+        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+      },
+    });
   }
 }

@@ -1,11 +1,11 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Cadastrar os Orgãos Concessores da Parceria</h1>
+    <h1 class="page-title">Cadastrar os Órgãos Concessores da Parceria</h1>
   </div>
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Dados Gerais do concessor</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova entidade/filial.</p>
@@ -13,58 +13,85 @@
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <div class="form-grid mb-8">
-          
+
           <div class="form-row grid-cols-2">
             <div class="form-group">
               <label class="flex-label">
-                CPNJ<span class="req">*</span>
+                CNPJ <span class="req">*</span>
                 <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="cnpj" [class.is-invalid]="form.get('cnpj')?.invalid && form.get('cnpj')?.touched">
-                  <option value="">00.000.000/0001-00</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <input type="text" class="form-control" placeholder="00.000.000/0001-00"
+                formControlName="cnpj"
+                [class.is-invalid]="form.get('cnpj')?.invalid && form.get('cnpj')?.touched"
+                (input)="applyCnpjMask($event)"
+                (keydown)="onlyNumbers($event)">
+              @if (form.get('cnpj')?.invalid && form.get('cnpj')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
 
             <div class="form-group">
               <label>Razão Social <span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite Aqui a Inscrição Estadual da Entidade" formControlName="razaoSocial" [class.is-invalid]="form.get('razaoSocial')?.invalid && form.get('razaoSocial')?.touched">
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="razaoSocial"
+                [class.is-invalid]="form.get('razaoSocial')?.invalid && form.get('razaoSocial')?.touched">
+              @if (form.get('razaoSocial')?.invalid && form.get('razaoSocial')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
           </div>
 
           <div class="form-row grid-cols-2">
             <div class="form-group">
               <label>Nome Fantasia <span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="nomeFantasia" [class.is-invalid]="form.get('nomeFantasia')?.invalid && form.get('nomeFantasia')?.touched">
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="nomeFantasia"
+                [class.is-invalid]="form.get('nomeFantasia')?.invalid && form.get('nomeFantasia')?.touched">
+              @if (form.get('nomeFantasia')?.invalid && form.get('nomeFantasia')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
             <div class="form-group">
               <label>Emancipação</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="emancipacao">
+              <input type="date" class="form-control" formControlName="emancipacao">
             </div>
           </div>
 
           <div class="form-row grid-cols-4">
             <div class="form-group">
-              <label>CEP<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="cep" [class.is-invalid]="form.get('cep')?.invalid && form.get('cep')?.touched"><option value="">Selecione</option></select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>CEP <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00000-000"
+                formControlName="cep"
+                [class.is-invalid]="form.get('cep')?.invalid && form.get('cep')?.touched"
+                (input)="applyCepMask($event)"
+                (keydown)="onlyNumbers($event)">
+              @if (form.get('cep')?.invalid && form.get('cep')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
             <div class="form-group">
-              <label>Endereço<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="endereco" [class.is-invalid]="form.get('endereco')?.invalid && form.get('endereco')?.touched"><option value="">Selecione</option></select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Endereço <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="endereco"
+                [class.is-invalid]="form.get('endereco')?.invalid && form.get('endereco')?.touched">
+              @if (form.get('endereco')?.invalid && form.get('endereco')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
             <div class="form-group">
-              <label>Nro<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="nro" [class.is-invalid]="form.get('nro')?.invalid && form.get('nro')?.touched">
+              <label>Nro <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="nro"
+                [class.is-invalid]="form.get('nro')?.invalid && form.get('nro')?.touched">
+              @if (form.get('nro')?.invalid && form.get('nro')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
             <div class="form-group">
               <label>Complemento</label>
@@ -74,16 +101,29 @@
 
           <div class="form-row grid-cols-4">
             <div class="form-group">
-              <label>Orgão gestor<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="orgaoGestor" [class.is-invalid]="form.get('orgaoGestor')?.invalid && form.get('orgaoGestor')?.touched">
+              <label>Órgão Gestor <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="orgaoGestor"
+                [class.is-invalid]="form.get('orgaoGestor')?.invalid && form.get('orgaoGestor')?.touched">
+              @if (form.get('orgaoGestor')?.invalid && form.get('orgaoGestor')?.touched) {
+                <span class="field-error">Campo obrigatório</span>
+              }
             </div>
             <div class="form-group">
               <label>Telefone celular</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefoneCelular">
+              <input type="text" class="form-control" placeholder="(00) 00000-0000"
+                formControlName="telefoneCelular"
+                (input)="applyPhoneMask($event)"
+                (keydown)="onlyNumbers($event)">
             </div>
             <div class="form-group col-span-2">
-              <label>Email</label>
-              <input type="email" class="form-control" placeholder="Digite aqui..." formControlName="email">
+              <label>E-mail</label>
+              <input type="email" class="form-control" placeholder="email@exemplo.com"
+                formControlName="email"
+                [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
+              @if (form.get('email')?.invalid && form.get('email')?.touched) {
+                <span class="field-error">E-mail inválido</span>
+              }
             </div>
           </div>
 
@@ -91,14 +131,16 @@
 
         <div class="upload-section mt-8">
           <h3 class="section-title">Logotipo do concessor</h3>
-          <p class="section-subtitle" style="margin-bottom: 12px; color: var(--text-primary); font-weight: 500;">Alterar Logotipo do concessor</p>
-          
+          <p class="section-subtitle" style="margin-bottom: 12px; color: var(--text-primary); font-weight: 500;">
+            Alterar Logotipo do concessor
+          </p>
           <div class="upload-area">
             <svg viewBox="0 0 24 24" fill="none" width="24" height="24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
+            <span class="upload-area__text">Clique ou arraste para fazer upload</span>
           </div>
         </div>
 
@@ -109,7 +151,6 @@
       <button class="btn-outline btn-outline--orange" routerLink="/agencies">
         Voltar
       </button>
-
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="onSaveDraft()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -119,9 +160,9 @@
           </svg>
           Salvar rascunho
         </button>
-
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Salvar }
         </button>
       </div>
     </div>

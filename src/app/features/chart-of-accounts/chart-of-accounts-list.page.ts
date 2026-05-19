@@ -1,35 +1,38 @@
 // src/app/features/chart-of-accounts/chart-of-accounts-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AccountsStore } from './chart-of-accounts.store';
+import { ChartOfAccountsService } from './chart-of-accounts.service';
+import { ChartOfAccountsDetailModalComponent } from './components/chart-of-accounts-detail.modal';
 import { Account, AccountStatus, AccountType, ACCOUNT_STATUS_CONFIG } from './chart-of-accounts.model';
 
 @Component({
   selector: 'app-chart-of-accounts-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, ChartOfAccountsDetailModalComponent],
   providers: [AccountsStore],
   templateUrl: './chart-of-accounts-list.page.html',
   styleUrl: './chart-of-accounts-list.page.scss',
 })
-export class ChartOfAccountsListPage {
+export class ChartOfAccountsListPage implements OnInit {
   readonly store        = inject(AccountsStore);
   readonly router       = inject(Router);
+  private  svc          = inject(ChartOfAccountsService);
   readonly statusConfig = ACCOUNT_STATUS_CONFIG;
 
   readonly statusOptions: { label: string; value: AccountStatus | '' }[] = [
     { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'ACTIVE'   },
-    { label: 'Inativo',            value: 'INACTIVE' },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
   readonly typeOptions: { label: string; value: AccountType | '' }[] = [
     { label: 'Selecione o tipo', value: '' },
-    { label: 'T',                value: 'T' },
-    { label: 'A',                value: 'A' },
-    { label: 'S',                value: 'S' },
+    { label: 'Totalizadora',     value: 'T' },
+    { label: 'Analítica',        value: 'A' },
+    { label: 'Sintética',        value: 'S' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -55,12 +58,22 @@ export class ChartOfAccountsListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
+
+  // ── Sort / Pagination ─────────────────────────────────────────────────────
 
   getSortState(col: keyof Account): 'none' | 'asc' | 'desc' {
     const { column, direction } = this.store.sort();
@@ -68,9 +81,42 @@ export class ChartOfAccountsListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  trackById(_: number, item: Account) { return item.id; }
+  trackById(_: number, item: Account): number { return item.id; }
+
+  toStr(id: number): string { return String(id); }
+
+  // ── Modal de detalhes ─────────────────────────────────────────────────────
+
+  selectedAccount: Account | null = null;
+  isModalOpen  = false;
+  modalLoading = false;
+
+  openModal(item: Account): void {
+    this.modalLoading = true;
+    this.svc.getById(item.id).subscribe({
+      next: account => {
+        this.selectedAccount = account;
+        this.isModalOpen     = true;
+        this.modalLoading    = false;
+      },
+      error: () => { this.modalLoading = false; },
+    });
+  }
+
+  closeModal(): void {
+    this.isModalOpen     = false;
+    this.selectedAccount = null;
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+
+  onDelete(id: number): void {
+    if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
+    this.store.deleteById(id);
+    this.closeModal();
+  }
 }

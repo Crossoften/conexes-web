@@ -15,19 +15,16 @@
         <div class="form-grid">
           <div class="form-row grid-cols-3">
             <div class="form-group">
-              <label>CPNJ<span class="req">*</span></label>
-              <div class="select-wrap">
-                <input type="text" class="form-control" formControlName="cnpj" placeholder="00.000.000/0001-00">
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>CNPJ<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="cnpj" placeholder="00.000.000/0001-00">
             </div>
             <div class="form-group">
               <label>Inscrição estadual</label>
-              <input type="text" class="form-control" formControlName="stateRegistration" placeholder="Digite Aqui a Inscrição Estadual da Entidade">
+              <input type="text" class="form-control" formControlName="stateRegistration" placeholder="Digite Aqui a Inscrição Estadual">
             </div>
             <div class="form-group">
               <label>Data de Constituição</label>
-              <input type="text" class="form-control" formControlName="constitutionDate" placeholder="00/00/0000">
+              <input type="date" class="form-control" formControlName="constitutionDate">
             </div>
           </div>
 
@@ -45,21 +42,11 @@
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>CEP<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="zipCode">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <input type="text" class="form-control" formControlName="zipCode" placeholder="00000-000">
             </div>
             <div class="form-group">
               <label>Endereço<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="address">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <input type="text" class="form-control" formControlName="address" placeholder="Rua, Av...">
             </div>
             <div class="form-group">
               <label>Nro<span class="req">*</span></label>
@@ -71,34 +58,49 @@
             </div>
           </div>
 
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Cidade<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="city" placeholder="Digite a cidade...">
+            </div>
+            <div class="form-group">
+              <label>Estado (UF)<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="state" placeholder="Ex: SP, MG...">
+            </div>
+          </div>
+
           <div class="form-row grid-cols-3">
             <div class="form-group">
               <label>Telefone principal<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="phone" placeholder="Digite aqui...">
+              <input type="text" class="form-control" formControlName="mainPhone" placeholder="Digite aqui...">
             </div>
             <div class="form-group">
               <label>Telefone celular<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="mobile" placeholder="Digite aqui...">
+              <input type="text" class="form-control" formControlName="cellPhone" placeholder="Digite aqui...">
             </div>
             <div class="form-group">
               <label>Email do Dirigente<span class="req">*</span></label>
-              <input type="email" class="form-control" formControlName="managerEmail" placeholder="Digite aqui...">
+              <input type="email" class="form-control" formControlName="directorEmail" placeholder="Digite aqui...">
             </div>
           </div>
         </div>
 
         <div class="tab-container">
-          <button type="button" class="tab-button active">Dados do certificado digital</button>
-          <button type="button" class="tab-button">Dados contador</button>
+          <button type="button" class="tab-button" [ngClass]="{ 'active': activeTab === 'certificado' }" (click)="activeTab = 'certificado'">
+            Dados do certificado digital
+          </button>
+          <button type="button" class="tab-button" [ngClass]="{ 'active': activeTab === 'contador' }" (click)="activeTab = 'contador'">
+            Dados contador
+          </button>
         </div>
 
-        <div class="tab-content">
+        <div class="tab-content" *ngIf="activeTab === 'certificado'">
           <h3 class="section-subtitle">Dados do certificado digital</h3>
           
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>Senha do certificado</label>
-              <input type="password" class="form-control" formControlName="certPassword" placeholder="Digite aqui...">
+              <input type="password" class="form-control" formControlName="digitalCertPassword" placeholder="Digite aqui...">
             </div>
           </div>
 
@@ -117,6 +119,67 @@
             </div>
           </div>
         </div>
+
+        <div class="tab-content" *ngIf="activeTab === 'contador'">
+          <h3 class="section-subtitle">Dados do Contador</h3>
+          
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Nome do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantName" placeholder="Nome completo">
+            </div>
+            <div class="form-group">
+              <label>CPF do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00">
+            </div>
+            <div class="form-group">
+              <label>CRC do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantCrc" placeholder="UF-000000/O">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>CEP do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000">
+            </div>
+            <div class="form-group">
+              <label>Endereço do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantAddress" placeholder="Rua, Av...">
+            </div>
+            <div class="form-group">
+              <label>Número<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantNumber" placeholder="Nº">
+            </div>
+            <div class="form-group">
+              <label>Complemento</label>
+              <input type="text" class="form-control" formControlName="accountantComplement" placeholder="Apto, Sala...">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Telefone do Contador<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantPhone" placeholder="Digite aqui...">
+            </div>
+            <div class="form-group">
+              <label>E-mail do Contador<span class="req">*</span></label>
+              <input type="email" class="form-control" formControlName="accountantEmail" placeholder="exemplo@email.com">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Escritório de Contabilidade<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantOffice" placeholder="Nome do escritório">
+            </div>
+            <div class="form-group">
+              <label>Telefone do Escritório<span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="Digite aqui...">
+            </div>
+          </div>
+        </div>
+
       </form>
     </div>
 
@@ -131,7 +194,7 @@
           Salvar rascunho
         </button>
 
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
           Salvar
         </button>
       </div>

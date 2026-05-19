@@ -43,9 +43,9 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Cadastro de entidades',        route: '/entity-registry' },
       { label: 'Contas bancárias e bancos',    route: '/bank-accounts' },
       { label: 'Colaboradores e dirigentes',   route: '/employees' },
-      { label: 'Cargos, funções e hierarquia', route: '/positions' },
+      { label: 'Corpo diretivo', route: '/positions' },
       { label: 'Anexos da entidade',           route: '/entity-attachments' },
-      { label: 'Corpo diretivo',               route: '/board-members' },
+      // { label: 'Corpo diretivo',               route: '/board-members' },
     ],
   },
   {

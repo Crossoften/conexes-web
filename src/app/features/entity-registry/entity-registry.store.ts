@@ -1,7 +1,8 @@
 // src/app/features/entity-registry/entity-registry.store.ts
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { EntityRegistry, EntityStatus, EntityType } from './entity-registry.model';
-import { ENTITY_REGISTRY_MOCK } from './entity-registry.mock';
 
 interface State {
   items: EntityRegistry[];
@@ -10,13 +11,19 @@ interface State {
   sort: { column: keyof EntityRegistry | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
   selectedIds: Set<string>;
-  expandedIds: Set<string>; // Gerencia as linhas expansíveis
+  expandedIds: Set<string>;
 }
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class EntityRegistryStore {
+  private readonly http = inject(HttpClient);
+  // URL Real de Homologação unificada para o ecossistema da Feature
+  private readonly apiUrl = 'https://homolog.crosoften.com:8045/v1/institutional/entities';
+
   private readonly state = signal<State>({
-    items: ENTITY_REGISTRY_MOCK,
+    items: [], // Inicializa vazio para ser preenchido exclusivamente com dados reais da API
     loading: false,
     filters: { search: '', status: '', type: '' },
     sort: { column: '', direction: '' },
@@ -68,6 +75,37 @@ export class EntityRegistryStore {
     const items = this.pageItems();
     return items.some(item => this.selectedIds().has(item.id)) && !this.allPageSelected();
   });
+
+  // CHAMADA REQUISICAO GET - REAL DA API
+  async loadEntities() {
+    this.state.update(s => ({ ...s, loading: true }));
+    try {
+      const data = await firstValueFrom(this.http.get<EntityRegistry[]>(this.apiUrl));
+      this.state.update(s => ({ ...s, items: data, loading: false }));
+    } catch (error) {
+      this.state.update(s => ({ ...s, loading: false }));
+      console.error('❌ Falha crítica ao buscar listagem do Back-end:', error);
+      // O mock foi removido daqui para garantir que falhas de conexão/URL fiquem visíveis na tela
+    }
+  }
+
+  // CHAMADA REQUISICAO POST - REAL DA API
+  async createEntityRegistry(payload: any) {
+    this.state.update(s => ({ ...s, loading: true }));
+    try {
+      const newEntity = await firstValueFrom(this.http.post<EntityRegistry>(this.apiUrl, payload));
+      this.state.update(s => ({ 
+        ...s, 
+        items: [newEntity, ...s.items], 
+        loading: false 
+      }));
+      alert('Entidade cadastrada com sucesso!');
+    } catch (error) {
+      this.state.update(s => ({ ...s, loading: false }));
+      console.error('❌ Falha crítica ao cadastrar no Back-end:', error);
+      alert('Falha ao registrar a entidade no servidor.');
+    }
+  }
 
   // Updaters
   setSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } })); }

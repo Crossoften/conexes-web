@@ -1,97 +1,193 @@
 // src/app/features/stakeholders/stakeholders.store.ts
-import { Injectable, computed, signal } from '@angular/core';
-
-export interface Stakeholder {
-  id: string;
-  code: string;
-  personType: string; // PF ou PJ
-  document: string; // CNPJ/CPF
-  name: string;
-  status: 'ACTIVE' | 'INACTIVE';
-}
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { StakeholdersService } from './stakeholders.service';
+import {
+  StakeholderFilters,
+  StakeholderListItem,
+  StakeholderStatus,
+  PersonType,
+} from './stakeholders.model';
 
 interface State {
-  items: Stakeholder[];
-  filters: { search: string; status: string; type: string };
-  sort: { column: string; direction: 'asc' | 'desc' | '' };
+  items:      StakeholderListItem[];
+  total:      number;
+  loading:    boolean;
+  error:      string | null;
+  filters:    { search: string; status: StakeholderStatus | ''; personType: PersonType | '' };
+  sort:       { column: string; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
-  selectedIds: Set<string>;
+  selectedIds: Set<number>;
 }
 
 @Injectable()
 export class StakeholdersStore {
-  // Mock inicial
+  private svc = inject(StakeholdersService);
+
   private readonly state = signal<State>({
-    items: Array.from({ length: 25 }, (_, i) => ({
-      id: `stk-${i + 1}`,
-      code: '00000000',
-      personType: i === 0 ? 'PF' : 'PJ',
-      document: '00000000-00',
-      name: 'M FARIA CIA LTDA (MATRIZ E FILIAIS)',
-      status: i >= 5 ? 'INACTIVE' : 'ACTIVE',
-    })),
-    filters: { search: '', status: '', type: '' },
-    sort: { column: '', direction: '' },
+    items:      [],
+    total:      0,
+    loading:    false,
+    error:      null,
+    filters:    { search: '', status: '', personType: '' },
+    sort:       { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
   });
 
-  // Selectors
-  readonly filters = computed(() => this.state().filters);
-  readonly sort = computed(() => this.state().sort);
-  readonly pagination = computed(() => this.state().pagination);
+  // ── Selectors ─────────────────────────────────────────────────────────────
+
+  readonly items       = computed(() => this.state().items);
+  readonly total       = computed(() => this.state().total);
+  readonly loading     = computed(() => this.state().loading);
+  readonly error       = computed(() => this.state().error);
+  readonly filters     = computed(() => this.state().filters);
+  readonly sort        = computed(() => this.state().sort);
+  readonly pagination  = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
 
-  readonly filteredItems = computed(() => {
-    let result = this.state().items;
-    const f = this.filters();
-    if (f.search) result = result.filter(i => i.name.toLowerCase().includes(f.search.toLowerCase()));
-    if (f.status) result = result.filter(i => i.status === f.status);
-    return result;
-  });
-
-  readonly filteredTotal = computed(() => this.filteredItems().length);
-
-  readonly pageItems = computed(() => {
-    const { page, pageSize } = this.pagination();
-    const start = (page - 1) * pageSize;
-    return this.filteredItems().slice(start, start + pageSize);
-  });
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.total() / this.pagination().pageSize))
+  );
 
   readonly allPageSelected = computed(() => {
-    const items = this.pageItems();
-    return items.length > 0 && items.every((item: any) => this.selectedIds().has(item.id));
+    const items = this.items();
+    return items.length > 0 && items.every(item => this.selectedIds().has(item.id));
   });
 
   readonly somePageSelected = computed(() => {
-    const items = this.pageItems();
-    return items.some((item: any) => this.selectedIds().has(item.id)) && !this.allPageSelected();
+    const items = this.items();
+    return items.some(item => this.selectedIds().has(item.id)) && !this.allPageSelected();
   });
 
-  // Updaters
-  setSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } })); }
-  setStatus(status: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } })); }
-  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); }
-  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); }
-  setSort(column: string) {
-    this.state.update(s => {
-      const direction = s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
-      return { ...s, sort: { column, direction } };
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  async load(): Promise<void> {
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+
+    const { page, pageSize } = this.state().pagination;
+    const { search, status, personType } = this.state().filters;
+
+    const filters: StakeholderFilters = {
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+    };
+
+    if (search)     filters.name       = search;
+    if (status)     filters.status     = status;
+    if (personType) filters.personType = personType;
+
+    this.svc.getAll(filters).subscribe({
+      next: res => {
+        // Suporte a resposta paginada { data, total } ou array simples
+        const items = Array.isArray(res) ? res : (res as any).data ?? [];
+        const total = Array.isArray(res) ? items.length : (res as any).total ?? items.length;
+        this.state.update(s => ({ ...s, items, total, loading: false }));
+      },
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao carregar stakeholders.';
+        this.state.update(s => ({ ...s, loading: false, error: msg }));
+      },
     });
   }
-  toggleRow(id: string) {
+
+  async deleteById(id: number): Promise<void> {
+    this.svc.delete(id).subscribe({
+      next: () => this.load(),
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao excluir stakeholder.';
+        this.state.update(s => ({ ...s, error: msg }));
+      },
+    });
+  }
+
+  // ── Filters ───────────────────────────────────────────────────────────────
+
+  setSearch(search: string): void {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...s.filters, search },
+      pagination: { ...s.pagination, page: 1 },
+    }));
+    this.load();
+  }
+
+  setStatus(status: StakeholderStatus | ''): void {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...s.filters, status },
+      pagination: { ...s.pagination, page: 1 },
+    }));
+    this.load();
+  }
+
+  setPersonType(personType: PersonType | ''): void {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...s.filters, personType },
+      pagination: { ...s.pagination, page: 1 },
+    }));
+    this.load();
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  setPage(page: number): void {
+    this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } }));
+    this.load();
+  }
+
+  setPageSize(pageSize: number): void {
+    this.state.update(s => ({
+      ...s,
+      pagination: { ...s.pagination, pageSize, page: 1 },
+    }));
+    this.load();
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
+
+  setSort(column: string): void {
+    this.state.update(s => {
+      const direction =
+        s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
+      return { ...s, sort: { column, direction } };
+    });
+    // Ordenação client-side — o back não suporta sort por query param ainda
+    this.state.update(s => {
+      const { column, direction } = s.sort;
+      const sorted = [...s.items].sort((a, b) => {
+        const aVal = (a as any)[column] ?? '';
+        const bVal = (b as any)[column] ?? '';
+        return direction === 'asc'
+          ? String(aVal).localeCompare(String(bVal))
+          : String(bVal).localeCompare(String(aVal));
+      });
+      return { ...s, items: sorted };
+    });
+  }
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+
+  toggleRow(id: number): void {
     this.state.update(s => {
       const newSet = new Set(s.selectedIds);
       newSet.has(id) ? newSet.delete(id) : newSet.add(id);
       return { ...s, selectedIds: newSet };
     });
   }
-  toggleAllPage(items: any[]) {
+
+  toggleAllPage(): void {
     this.state.update(s => {
       const newSet = new Set(s.selectedIds);
-      const allSelected = items.every(item => newSet.has(item.id));
-      items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
+      const allSelected = s.items.every(item => newSet.has(item.id));
+      s.items.forEach(item =>
+        allSelected ? newSet.delete(item.id) : newSet.add(item.id)
+      );
       return { ...s, selectedIds: newSet };
     });
+  }
+
+  clearSelection(): void {
+    this.state.update(s => ({ ...s, selectedIds: new Set() }));
   }
 }

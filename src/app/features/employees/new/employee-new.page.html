@@ -5,79 +5,184 @@
   </div>
 
   <div class="card">
-    
+
     <div class="card-body" style="padding-top: 24px;">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <div class="segmented-tabs mb-6">
           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'PARAMS'" (click)="setTab('PARAMS')">
             Configurações de parâmetros
           </button>
           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'BOLETO'" (click)="setTab('BOLETO')">
-            Dados para emissão de boleto
+            Dados de pagamento
           </button>
         </div>
 
         @if (activeTab === 'PARAMS') {
           <h3 class="section-title">Dados Gerais – Colaboradores</h3>
           <p class="section-subtitle">Preencha todas as informações necessárias.</p>
-          
+
           <div class="form-grid">
-            
+
+            <div class="form-row grid-cols-1">
+              <div class="form-group">
+                <label>Nome completo <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite o nome completo..." formControlName="nome"
+                  [class.is-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched">
+                @if (form.get('nome')?.invalid && form.get('nome')?.touched) {
+                  <span class="field-error">Campo obrigatório</span>
+                }
+              </div>
+            </div>
+
             <div class="form-row grid-cols-3">
               <div class="form-group">
-                <label>Entidade<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="entidade" [class.is-invalid]="form.get('entidade')?.invalid && form.get('entidade')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Entidade <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="entidade"
+                    [class.is-invalid]="form.get('entidade')?.invalid && form.get('entidade')?.touched">
+                    <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                    @for (e of entities(); track e.cnpj) {
+                      <option [value]="e.id ?? e.cnpj">{{ e.tradeName || e.legalName }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
+
               <div class="form-group">
-                <label>Tipo responsável<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="tipoResponsavel" [class.is-invalid]="form.get('tipoResponsavel')?.invalid && form.get('tipoResponsavel')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Tipo responsável <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="tipoResponsavel"
+                    [class.is-invalid]="form.get('tipoResponsavel')?.invalid && form.get('tipoResponsavel')?.touched">
+                    <option value="">Selecione</option>
+                    <option value="COLABORADOR">Colaborador</option>
+                    <option value="DIRIGENTE">Dirigente</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
+
               <div class="form-group">
-                <label>Cargo<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="cargo" [class.is-invalid]="form.get('cargo')?.invalid && form.get('cargo')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Cargo <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="cargo"
+                    [class.is-invalid]="form.get('cargo')?.invalid && form.get('cargo')?.touched">
+                    <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                    @for (p of positions(); track p.id) {
+                      <option [value]="p.id">{{ p.title || p.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
             </div>
 
             <div class="form-row grid-cols-4">
               <div class="form-group col-span-2">
-                <label>Formação<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="formacao" [class.is-invalid]="form.get('formacao')?.invalid && form.get('formacao')?.touched">
+                <label>Formação <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="formacao"
+                  [class.is-invalid]="form.get('formacao')?.invalid && form.get('formacao')?.touched">
               </div>
               <div class="form-group">
-                <label>Vínculo<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="vinculo" [class.is-invalid]="form.get('vinculo')?.invalid && form.get('vinculo')?.touched">
+                <label>Vínculo <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="vinculo"
+                  [class.is-invalid]="form.get('vinculo')?.invalid && form.get('vinculo')?.touched">
               </div>
               <div class="form-group">
-                <label>Carga horária mensal<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="cargaHorariaMensal" [class.is-invalid]="form.get('cargaHorariaMensal')?.invalid && form.get('cargaHorariaMensal')?.touched">
+                <label>Carga horária mensal <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Ex: 160" formControlName="cargaHorariaMensal"
+                  [class.is-invalid]="form.get('cargaHorariaMensal')?.invalid && form.get('cargaHorariaMensal')?.touched"
+                  (keydown)="onlyNumbers($event)">
               </div>
             </div>
 
             <div class="form-row grid-cols-4">
-              <div class="form-group"><label>Data Admissão<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="dataAdmissao" [class.is-invalid]="form.get('dataAdmissao')?.invalid && form.get('dataAdmissao')?.touched"></div>
-              <div class="form-group"><label>Data Demissão<span class="req">*</span></label><input type="text" class="form-control" placeholder="00000 0" formControlName="dataDemissao" [class.is-invalid]="form.get('dataDemissao')?.invalid && form.get('dataDemissao')?.touched"></div>
-              <div class="form-group"><label>Cartão Nacional de Saúde (CNS)<span class="req">*</span></label><input type="text" class="form-control" placeholder="00000 0" formControlName="cns" [class.is-invalid]="form.get('cns')?.invalid && form.get('cns')?.touched"></div>
-              <div class="form-group"><label>Salário<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="salario" [class.is-invalid]="form.get('salario')?.invalid && form.get('salario')?.touched"></div>
+              <div class="form-group">
+                <label>Data Admissão <span class="req">*</span></label>
+                <input type="date" class="form-control" formControlName="dataAdmissao"
+                  [class.is-invalid]="form.get('dataAdmissao')?.invalid && form.get('dataAdmissao')?.touched">
+              </div>
+              <div class="form-group">
+                <label>Data Demissão</label>
+                <input type="date" class="form-control" formControlName="dataDemissao">
+              </div>
+              <div class="form-group">
+                <label>Cartão Nacional de Saúde (CNS) <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="000000000000000" formControlName="cns"
+                  [class.is-invalid]="form.get('cns')?.invalid && form.get('cns')?.touched">
+              </div>
+              <div class="form-group">
+                <label>Salário <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="0,00" formControlName="salario"
+                  [class.is-invalid]="form.get('salario')?.invalid && form.get('salario')?.touched">
+              </div>
             </div>
 
             <div class="form-row grid-cols-4">
-              <div class="form-group"><label>CPF<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="cpf" [class.is-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched"></div>
-              <div class="form-group"><label>Órgão de Classe</label><input type="text" class="form-control" placeholder="00000 0" formControlName="orgaoClasse"></div>
-              <div class="form-group"><label>E-Mail Institucional</label><input type="email" class="form-control" placeholder="00000 0" formControlName="emailInstitucional"></div>
-              <div class="form-group"><label>E-Mail Pessoal</label><input type="email" class="form-control" placeholder="Digite aqui..." formControlName="emailPessoal"></div>
+              <div class="form-group">
+                <label>CPF <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="000.000.000-00" formControlName="cpf"
+                  [class.is-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched"
+                  (input)="applyCpfMask($event)"
+                  (keydown)="onlyNumbers($event)">
+              </div>
+              <div class="form-group">
+                <label>Órgão de Classe</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="orgaoClasse">
+              </div>
+              <div class="form-group">
+                <label>E-mail Institucional</label>
+                <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailInstitucional">
+              </div>
+              <div class="form-group">
+                <label>E-mail Pessoal</label>
+                <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailPessoal">
+              </div>
             </div>
 
             <div class="form-row grid-cols-4">
-              <div class="form-group"><label>CEP<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="cep" [class.is-invalid]="form.get('cep')?.invalid && form.get('cep')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Endereço<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="endereco" [class.is-invalid]="form.get('endereco')?.invalid && form.get('endereco')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Nro<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="nro" [class.is-invalid]="form.get('nro')?.invalid && form.get('nro')?.touched"></div>
-              <div class="form-group"><label>Complemento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="complemento"></div>
+              <div class="form-group">
+                <label>CEP <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="00000-000" formControlName="cep"
+                  [class.is-invalid]="form.get('cep')?.invalid && form.get('cep')?.touched"
+                  (input)="applyCepMask($event)"
+                  (keydown)="onlyNumbers($event)">
+              </div>
+              <div class="form-group">
+                <label>Endereço <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="endereco"
+                  [class.is-invalid]="form.get('endereco')?.invalid && form.get('endereco')?.touched">
+              </div>
+              <div class="form-group">
+                <label>Nro <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="nro"
+                  [class.is-invalid]="form.get('nro')?.invalid && form.get('nro')?.touched">
+              </div>
+              <div class="form-group">
+                <label>Complemento</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="complemento">
+              </div>
             </div>
 
             <div class="form-row grid-cols-4">
-              <div class="form-group"><label>Telefone<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefone" [class.is-invalid]="form.get('telefone')?.invalid && form.get('telefone')?.touched"></div>
-              <div class="form-group"><label>Celular</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="celular"></div>
+              <div class="form-group">
+                <label>Telefone <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefone"
+                  [class.is-invalid]="form.get('telefone')?.invalid && form.get('telefone')?.touched"
+                  (input)="applyPhoneMask($event, 'telefone')"
+                  (keydown)="onlyNumbers($event)">
+              </div>
+              <div class="form-group">
+                <label>Celular</label>
+                <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="celular"
+                  (input)="applyPhoneMask($event, 'celular')"
+                  (keydown)="onlyNumbers($event)">
+              </div>
             </div>
 
           </div>
@@ -86,23 +191,26 @@
         @if (activeTab === 'BOLETO') {
           <h3 class="section-title">Dados Gerais – Pagamentos</h3>
           <p class="section-subtitle">Preencha todas as informações necessárias.</p>
-          
+
           <div class="payment-box mt-4">
             <div class="payment-grid">
-              <div class="form-group"><label>Parceria<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="parceria"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Origem Recurso<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="origemRecurso"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Referencia<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="referencia"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Carga Horária<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="cargaHorariaPag"><option value="">00:00</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Valor bruto</label><div class="select-wrap"><select class="form-control" formControlName="valorBruto"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              <div class="form-group"><label>Carga Horária<span class="req">*</span></label><div class="select-wrap"><select class="form-control" formControlName="cargaHorariaPag2"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-            </div>
-            <div class="payment-actions">
-              <button type="button" class="btn-square-outline" title="Adicionar">
-                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              </button>
-              <button type="button" class="btn-square-outline" title="Remover">
-                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              </button>
+              <div class="form-group">
+                <label>Parceria (ID)</label>
+                <input type="text" class="form-control" placeholder="ID da parceria" formControlName="parceria"
+                  (keydown)="onlyNumbers($event)">
+              </div>
+              <div class="form-group">
+                <label>Origem do Recurso</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="origemRecurso">
+              </div>
+              <div class="form-group">
+                <label>Referência</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="referencia">
+              </div>
+              <div class="form-group">
+                <label>Valor Bruto</label>
+                <input type="text" class="form-control" placeholder="0,00" formControlName="grossValue">
+              </div>
             </div>
           </div>
         }
@@ -114,19 +222,17 @@
       <button class="btn-outline btn-outline--orange" routerLink="/employees">
         Voltar
       </button>
-
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
           </svg>
           Reiniciar formulário
         </button>
-
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Salvar }
         </button>
       </div>
     </div>

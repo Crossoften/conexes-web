@@ -1,9 +1,9 @@
 // src/app/features/cost-centers/cost-centers-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { CostCentersStore } from './cost-centers.store';
-import { RouterLink, Router } from '@angular/router';
 import { CostCenter, CostCenterStatus, CostCenterType, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
 
 @Component({
@@ -14,21 +14,21 @@ import { CostCenter, CostCenterStatus, CostCenterType, COST_CENTER_STATUS_CONFIG
   templateUrl: './cost-centers-list.page.html',
   styleUrl: './cost-centers-list.page.scss',
 })
-export class CostCentersListPage {
+export class CostCentersListPage implements OnInit {
   readonly store        = inject(CostCentersStore);
   readonly statusConfig = COST_CENTER_STATUS_CONFIG;
 
   readonly statusOptions: { label: string; value: CostCenterStatus | '' }[] = [
     { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'ACTIVE'   },
-    { label: 'Inativo',            value: 'INACTIVE' },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
   readonly typeOptions: { label: string; value: CostCenterType | '' }[] = [
     { label: 'Selecione o tipo', value: '' },
-    { label: 'T', value: 'T' },
-    { label: 'A', value: 'A' },
-    { label: 'S', value: 'S' },
+    { label: 'T',                value: 'T' },
+    { label: 'A',                value: 'A' },
+    { label: 'S',                value: 'S' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -54,11 +54,24 @@ export class CostCentersListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
+  }
+
+  onDelete(id: number): void {
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    this.store.deleteById(id);
   }
 
   getSortState(col: keyof CostCenter): 'none' | 'asc' | 'desc' {
@@ -67,9 +80,11 @@ export class CostCentersListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  trackById(_: number, item: CostCenter) { return item.id; }
+  toStr(id: number): string { return String(id); }
+
+  trackById(_: number, item: CostCenter): number { return item.id; }
 }

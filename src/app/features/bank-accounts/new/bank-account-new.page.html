@@ -5,7 +5,7 @@
   </div>
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Dados Gerais – Informações da conta</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
@@ -13,74 +13,110 @@
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <div class="form-grid mb-6">
-          
+
+          <div class="form-row grid-cols-4">
+
+            <!-- Banco → populado com bancos vindos do back -->
+            <div class="form-group">
+              <label>Banco <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="banco"
+                  [class.is-invalid]="form.get('banco')?.invalid && form.get('banco')?.touched">
+                  <option value="">
+                    {{ loadingLists() ? 'Carregando...' : 'Selecione' }}
+                  </option>
+                  @for (bank of banks(); track bank.id) {
+                    <option [value]="bank.id">{{ bank.code }} — {{ bank.name }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <!-- Fonte Pagadora → populado com entidades do back -->
+            <div class="form-group">
+              <label>Fonte Pagadora <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="fontePagadora"
+                  [class.is-invalid]="form.get('fontePagadora')?.invalid && form.get('fontePagadora')?.touched">
+                  <option value="">
+                    {{ loadingLists() ? 'Carregando...' : 'Selecione' }}
+                  </option>
+                  @for (entity of entities(); track entity.id) {
+                    <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Tipo de conta <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="tipoConta"
+                  [class.is-invalid]="form.get('tipoConta')?.invalid && form.get('tipoConta')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="Checking">Conta Corrente</option>
+                  <option value="Savings">Conta Poupança</option>
+                  <option value="Salary">Conta Salário</option>
+                  <option value="Payment">Conta Pagamento</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Data de abertura <span class="req">*</span></label>
+              <input type="date" class="form-control" formControlName="dataAbertura"
+                [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
+            </div>
+
+          </div>
+
           <div class="form-row grid-cols-4">
             <div class="form-group">
-              <label>Banco<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="banco" [class.is-invalid]="form.get('banco')?.invalid && form.get('banco')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Apelido da conta <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="apelidoConta"
+                [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
             </div>
             <div class="form-group">
-              <label>Fonte Pagadora<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="fontePagadora" [class.is-invalid]="form.get('fontePagadora')?.invalid && form.get('fontePagadora')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Agência + Dígito <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00000 0" formControlName="agenciaDigito"
+                [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
             </div>
             <div class="form-group">
-              <label>Tipo de conta<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="tipoConta" [class.is-invalid]="form.get('tipoConta')?.invalid && form.get('tipoConta')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Número da conta + Dígito <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="00000 0" formControlName="numeroContaDigito"
+                [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
             </div>
             <div class="form-group">
-              <label>Data de abertura<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataAbertura" [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
+              <label>Saldo inicial <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="0,00" formControlName="saldoInicial"
+                [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
             </div>
           </div>
 
           <div class="form-row grid-cols-4">
             <div class="form-group">
-              <label>Apelido da conta<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="apelidoConta" [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
+              <label>Telefone principal <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefonePrincipal"
+                [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
             </div>
             <div class="form-group">
-              <label>Agencia + Digito<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="00000 0" formControlName="agenciaDigito" [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
-            </div>
-            <div class="form-group">
-              <label>Numero da conta + Digito<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="00000 0" formControlName="numeroContaDigito" [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
-            </div>
-            <div class="form-group">
-              <label>Saldo inicial<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="saldoInicial" [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
-            </div>
-          </div>
-
-          <div class="form-row grid-cols-4">
-            <div class="form-group">
-              <label>Telefone principal<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefonePrincipal" [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
-            </div>
-            <div class="form-group">
-              <label>Telefone celular<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefoneCelular" [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
+              <label>Telefone celular <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefoneCelular"
+                [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
             </div>
             <div class="form-group col-span-2">
-              <label>E-mail de contato<span class="req">*</span></label>
-              <input type="email" class="form-control" placeholder="Digite aqui..." formControlName="emailContato" [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
+              <label>E-mail de contato <span class="req">*</span></label>
+              <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailContato"
+                [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
             </div>
           </div>
 
@@ -95,11 +131,11 @@
             </div>
             <div class="form-group">
               <label>Telefone Contato</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="telefoneContato">
+              <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefoneContato">
             </div>
             <div class="form-group">
               <label>Celular Contato</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="celularContato">
+              <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="celularContato">
             </div>
           </div>
 
@@ -140,30 +176,67 @@
           <p class="section-subtitle">Preencha todas as informações necessárias.</p>
           <div class="form-grid">
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Número do convênio de pagamento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="numeroConvenioPagamento"></div>
-              <div class="form-group"><label>CNPJ Conta</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="cnpjConta"></div>
-              <div class="form-group"><label>Intervalo de pagamento CNAB</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab1"></div>
+              <div class="form-group">
+                <label>Número do convênio de pagamento</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="numeroConvenioPagamento">
+              </div>
+              <div class="form-group">
+                <label>CNPJ Conta</label>
+                <input type="text" class="form-control" placeholder="00.000.000/0000-00" formControlName="cnpjConta">
+              </div>
+              <div class="form-group">
+                <label>Intervalo de pagamento CNAB</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab1">
+              </div>
             </div>
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Hash API Pagamentos</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="hashApiPagamentos"></div>
-              <div class="form-group"><label>Código Movimento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoMovimento"></div>
-              <div class="form-group"><label>Intervalo de pagamento CNAB</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab2"></div>
+              <div class="form-group">
+                <label>Hash API Pagamentos</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="hashApiPagamentos">
+              </div>
+              <div class="form-group">
+                <label>Código Movimento</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoMovimento">
+              </div>
+              <div class="form-group">
+                <label>Tipo CNAB</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="intervaloPagamentoCnab2">
+              </div>
             </div>
           </div>
         }
 
         @if (activeTab === 'BOLETO') {
           <h3 class="section-title">Dados para emissão de boleto</h3>
+          <p class="section-subtitle">Campos preenchidos automaticamente pelo sistema.</p>
           <div class="form-grid">
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Sequencial do nosso número</label><input type="text" class="form-control disabled-bg" formControlName="sequencialNossoNumero"></div>
-              <div class="form-group"><label>Código beneficiário</label><input type="text" class="form-control disabled-bg" formControlName="codigoBeneficiario"></div>
-              <div class="form-group"><label>Carteira</label><input type="text" class="form-control disabled-bg" formControlName="carteira"></div>
+              <div class="form-group">
+                <label>Sequencial do nosso número</label>
+                <input type="text" class="form-control disabled-bg" formControlName="sequencialNossoNumero" readonly>
+              </div>
+              <div class="form-group">
+                <label>Código beneficiário</label>
+                <input type="text" class="form-control disabled-bg" formControlName="codigoBeneficiario" readonly>
+              </div>
+              <div class="form-group">
+                <label>Carteira</label>
+                <input type="text" class="form-control disabled-bg" formControlName="carteira" readonly>
+              </div>
             </div>
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Número do convênio de cobrança</label><input type="text" class="form-control disabled-bg" formControlName="numeroConvenioCobranca"></div>
-              <div class="form-group"><label>Variação da Carteira</label><input type="text" class="form-control disabled-bg" formControlName="variacaoCarteira"></div>
-              <div class="form-group"><label>Modalidade</label><input type="text" class="form-control disabled-bg" formControlName="modalidade"></div>
+              <div class="form-group">
+                <label>Número do convênio de cobrança</label>
+                <input type="text" class="form-control disabled-bg" formControlName="numeroConvenioCobranca" readonly>
+              </div>
+              <div class="form-group">
+                <label>Variação da Carteira</label>
+                <input type="text" class="form-control disabled-bg" formControlName="variacaoCarteira" readonly>
+              </div>
+              <div class="form-group">
+                <label>Modalidade</label>
+                <input type="text" class="form-control disabled-bg" formControlName="modalidade" readonly>
+              </div>
             </div>
           </div>
         }
@@ -175,19 +248,17 @@
       <button class="btn-outline btn-outline--orange" routerLink="/bank-accounts">
         Voltar
       </button>
-
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
           </svg>
           Reiniciar formulário
         </button>
-
-        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Salvar }
         </button>
       </div>
     </div>

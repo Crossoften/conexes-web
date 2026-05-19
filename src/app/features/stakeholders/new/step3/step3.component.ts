@@ -22,15 +22,31 @@ export class Step3Component {
     return ctrl?.invalid && ctrl?.touched;
   }
 
+  /** Telefone: (00) 00000-0000 */
+  applyPhoneMask(event: Event, controlName: string): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 11);
+    const masked = digits
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
+    input.value = masked;
+    this.f[controlName]?.setValue(masked, { emitEvent: false });
+  }
+
+  /** Apenas números */
+  onlyNumbers(event: KeyboardEvent): boolean {
+    return /\d/.test(event.key) || event.key === 'Backspace' || event.key === 'Tab';
+  }
+
   readonly aliquotFields = [
     { aliq: 'aliqIRRF',   aliqLabel: 'Alíquota % IRRF',   cod: 'codIRRF',   codLabel: 'Cód. IRRF'   },
     { aliq: 'aliqPIS',    aliqLabel: 'Alíquota % PIS',    cod: 'codPIS',    codLabel: 'Cód. PIS'    },
-    { aliq: 'aliqPCC',    aliqLabel: 'Alíquota % PCC',    cod: 'codPCC',    codLabel: 'Cod. PCC'    },
-    { aliq: 'aliqCOFINS', aliqLabel: 'Alíquota % CofINS', cod: 'codCOFINS', codLabel: 'Cód. COFINS' },
+    { aliq: 'aliqPCC',    aliqLabel: 'Alíquota % PCC',    cod: 'codPCC',    codLabel: 'Cód. PCC'    },
+    { aliq: 'aliqCOFINS', aliqLabel: 'Alíquota % COFINS', cod: 'codCOFINS', codLabel: 'Cód. COFINS' },
     { aliq: 'aliqINSS',   aliqLabel: 'Alíquota % INSS',   cod: 'codINSS',   codLabel: 'Cód. INSS'   },
     { aliq: 'aliqCSLL',   aliqLabel: 'Alíquota % CSLL',   cod: 'codCSLL',   codLabel: 'Cód. CSLL'   },
-    { aliq: 'aliqISS',    aliqLabel: 'Alíquota % ISS',    cod: 'codISS',    codLabel: 'Cod. ISS'    },
-    { aliq: 'aliqIBS',    aliqLabel: 'Alíquota % IBS',    cod: 'codIBS',    codLabel: 'Cod. IBS'    },
-    { aliq: 'aliqCBS',    aliqLabel: 'Alíquota % CBS',    cod: 'codCBS',    codLabel: 'Cod. CBS'    },
+    { aliq: 'aliqISS',    aliqLabel: 'Alíquota % ISS',    cod: 'codISS',    codLabel: 'Cód. ISS'    },
+    { aliq: 'aliqIBS',    aliqLabel: 'Alíquota % IBS',    cod: 'codIBS',    codLabel: 'Cód. IBS'    },
+    { aliq: 'aliqCBS',    aliqLabel: 'Alíquota % CBS',    cod: 'codCBS',    codLabel: 'Cód. CBS'    },
   ];
 }

@@ -1,58 +1,133 @@
 // src/app/core/auth/auth.service.ts
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+// ── Contratos com o back-end ──────────────────────────────────────────────────
+
+interface LoginRequest {
+  email:    string;
+  password: string;
+}
+
+interface LoginResponse {
+  token: string;
+  id:    number;
+  role:  string;
+}
+
+interface MySelfResponse {
+  id:        number;
+  name:      string;
+  email:     string;
+  phone:     string;
+  code:      string;
+  role:      string;
+  status:    string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Model interno do front ────────────────────────────────────────────────────
 
 export interface AuthUser {
   id:     string;
   name:   string;
   email:  string;
+  phone:  string;
+  code:   string;
   role:   string;
+  status: string;
   avatar: string | null;
 }
 
+// ── Chaves do localStorage ────────────────────────────────────────────────────
+
+const STORAGE_USER  = 'auth_user';
+const STORAGE_TOKEN = 'auth_token';
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http   = inject(HttpClient);
   private router = inject(Router);
 
-  private _user = signal<AuthUser | null>(this.loadFromStorage());
+  private _user = signal<AuthUser | null>(this.loadUserFromStorage());
 
   readonly user         = this._user.asReadonly();
   readonly isLoggedIn   = computed(() => this._user() !== null);
   readonly userInitials = computed(() => {
     const name = this._user()?.name ?? '';
-    return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   });
 
+  // ── Login ─────────────────────────────────────────────────────────────────
+
   async login(email: string, password: string): Promise<void> {
-    await new Promise(r => setTimeout(r, 900));
+    // 1. Autentica e obtém o token
+    const loginRes = await firstValueFrom(
+      this.http.post<LoginResponse>(`${environment.apiUrl}/v1/login`, {
+        email,
+        password,
+      } as LoginRequest)
+    );
 
-    if (!email || !password) throw new Error('Credenciais inválidas');
+    // 2. Persiste o token antes de chamar /my-self (o interceptor vai usá-lo)
+    localStorage.setItem(STORAGE_TOKEN, loginRes.token);
 
+    // 3. Busca os dados completos do usuário
+    const me = await firstValueFrom(
+      this.http.get<MySelfResponse>(`${environment.apiUrl}/v1/my-self`)
+    );
+
+    // 4. Monta o model interno e persiste
     const user: AuthUser = {
-      id:     '1',
-      name:   'João Mendes',
-      email,
-      role:   'Administrador',
+      id:     String(me.id),
+      name:   me.name,
+      email:  me.email,
+      phone:  me.phone,
+      code:   me.code,
+      role:   me.role,
+      status: me.status,
       avatar: null,
     };
 
     this._user.set(user);
-    localStorage.setItem('auth_user', JSON.stringify(user));
+    localStorage.setItem(STORAGE_USER, JSON.stringify(user));
   }
+
+  // ── Logout ────────────────────────────────────────────────────────────────
 
   logout(): void {
     this._user.set(null);
-    localStorage.removeItem('auth_user');
+    localStorage.removeItem(STORAGE_USER);
+    localStorage.removeItem(STORAGE_TOKEN);
     this.router.navigate(['/auth/login']);
   }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   isAuthenticated(): boolean {
     return this._user() !== null;
   }
 
-  private loadFromStorage(): AuthUser | null {
+  getToken(): string | null {
+    return localStorage.getItem(STORAGE_TOKEN);
+  }
+
+  // ── Inicialização ─────────────────────────────────────────────────────────
+
+  private loadUserFromStorage(): AuthUser | null {
     try {
-      const raw = localStorage.getItem('auth_user');
+      const raw = localStorage.getItem(STORAGE_USER);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;

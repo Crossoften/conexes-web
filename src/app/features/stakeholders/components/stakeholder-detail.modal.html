@@ -1,7 +1,7 @@
 <div class="modal-overlay" (click)="onClose()">
-  
+
   <div class="modal-container" (click)="$event.stopPropagation()">
-    
+
     <div class="modal-header">
       <div class="header-content">
         <div class="header-icon">
@@ -11,11 +11,11 @@
           </svg>
         </div>
         <div class="header-text">
-          <h2>Fornecedor: {{ stakeholder?.code || '000000' }}</h2>
+          <h2>Fornecedor: {{ stakeholder?.code || '—' }}</h2>
           <p>Acompanhe todas as informações cadastradas para o fornecedor.</p>
         </div>
       </div>
-      
+
       <div class="header-actions">
         <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
           <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -30,7 +30,7 @@
     </div>
 
     <div class="modal-body">
-      
+
       <div class="modal-tabs">
         <button class="tab-btn" [class.active]="activeTab === 'GERAIS'" (click)="setTab('GERAIS')">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -47,73 +47,74 @@
       </div>
 
       <div class="tab-content">
-        
+
         @if (activeTab === 'GERAIS') {
           <div class="info-box">
             <div class="info-header">
-              <strong>Pessoa:</strong> {{ stakeholder?.personType || 'PJ' }} | <strong>CPNJ/CPF:</strong> {{ stakeholder?.document || '372349283' }}
+              <strong>Pessoa:</strong> {{ stakeholder?.personType || '—' }} |
+              <strong>CNPJ/CPF:</strong> {{ stakeholder?.document || '—' }}
             </div>
-            
+
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">Nome do fornecedor</span>
-                <span class="info-value">{{ stakeholder?.name || 'Nome exemplo' }}</span>
+                <span class="info-value">{{ stakeholder?.name || '—' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Tipo</span>
-                <span class="info-value">{{ stakeholder?.type || 'CPF' }}</span>
+                <span class="info-value">{{ typeLabel || '—' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">CEP</span>
-                <span class="info-value">{{ stakeholder?.cep || '000000' }}</span>
+                <span class="info-value">{{ primaryAddress?.zipCode || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Endereço completo</span>
-                <span class="info-value">{{ stakeholder?.address || 'Rua exemplo, 027191 - Bairro - nro 91' }}</span>
+                <span class="info-value">{{ fullAddress || '—' }}</span>
               </div>
 
               <div class="info-item">
                 <span class="info-label">Telefone principal</span>
-                <span class="info-value">{{ stakeholder?.phone || '0000000000' }}</span>
+                <span class="info-value">{{ stakeholder?.phone || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">E-mail contato</span>
-                <span class="info-value">{{ stakeholder?.email || 'mail@mail.com' }}</span>
+                <span class="info-value">{{ stakeholder?.email || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Natureza jurídica</span>
-                <span class="info-value">{{ stakeholder?.legalNature || 'Exemplo' }}</span>
+                <span class="info-value">{{ stakeholder?.legalNature || '—' }}</span>
               </div>
 
               <div class="info-item col-span-2">
                 <span class="info-label">Inscrição Estadual</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.stateRegistration || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Inscrição Municipal</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.municipalRegistration || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Atividade principal</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.mainActivity || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Atividade secundária</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.secondaryActivity || '—' }}</span>
               </div>
 
               <div class="info-item col-span-2">
                 <span class="info-label">Rateio padrão</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.standardApportionment || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
                 <span class="info-label">Conta contábil</span>
-                <span class="info-value">Exemplo</span>
+                <span class="info-value">{{ stakeholder?.accountId || '—' }}</span>
               </div>
 
               <div class="info-item col-span-4">
                 <span class="info-label">Dados bancários</span>
-                <span class="info-value">Agencia - Conta corrente - 0</span>
+                <span class="info-value">{{ bankSummary || '—' }}</span>
               </div>
             </div>
           </div>
@@ -121,13 +122,71 @@
 
         @if (activeTab === 'RISCO') {
           <div class="info-box">
-            <p>Conteúdo de Classificação e risco...</p>
+            <div class="info-grid">
+              <div class="info-item col-span-2">
+                <span class="info-label">Privacidade avaliada</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvaluated ? 'Sim' : 'Não' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Data de avaliação</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvalDate || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Risco de privacidade</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.privacyRisk || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Observações de privacidade</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.privacyObservations || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">KYP — Data inicial</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypInitialDate || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">KYP — Data final</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypFinalDate || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Risco de compliance</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.complianceRisk || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Observações de compliance</span>
+                <span class="info-value">{{ stakeholder?.riskClassification?.complianceObservations || '—' }}</span>
+              </div>
+            </div>
           </div>
         }
 
         @if (activeTab === 'OBSERVACOES') {
           <div class="info-box">
-            <p>Conteúdo de Observações e contatos...</p>
+            <div class="info-grid">
+              <div class="info-item col-span-2">
+                <span class="info-label">Nome do contato</span>
+                <span class="info-value">{{ primaryContact?.name || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">E-mail do contato</span>
+                <span class="info-value">{{ primaryContact?.email || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Telefone</span>
+                <span class="info-value">{{ primaryContact?.phone || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Celular</span>
+                <span class="info-value">{{ primaryContact?.cellphone || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Cargo</span>
+                <span class="info-value">{{ primaryContact?.position || '—' }}</span>
+              </div>
+              <div class="info-item col-span-4">
+                <span class="info-label">Observações</span>
+                <span class="info-value">{{ primaryContact?.observation || '—' }}</span>
+              </div>
+            </div>
           </div>
         }
 

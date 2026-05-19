@@ -10,12 +10,10 @@
 
   <!-- Sub-abas -->
   <div class="sub-tabs">
-    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'contato'"
-      (click)="activeTab.set('contato')">
+    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'contato'" (click)="activeTab.set('contato')">
       Dados de contato
     </button>
-    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'impostos'"
-      (click)="activeTab.set('impostos')">
+    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'impostos'" (click)="activeTab.set('impostos')">
       Cadastro de impostos e retenções
     </button>
   </div>
@@ -26,51 +24,40 @@
       <h3 class="sub-title">Dados de contato</h3>
 
       <div class="field" [class.field--error]="isInvalid('contactName')">
-        <label class="field-label">Nome do contato <span class="required">*</span></label>
-        <div class="select-wrap">
-          <select class="select" formControlName="contactName">
-            <option value="">Não</option>
-          </select>
-          <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-            <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <label class="field-label">Nome do contato</label>
+        <input class="input" type="text" placeholder="Digite o nome do contato..." formControlName="contactName">
         @if (isInvalid('contactName')) {
           <span class="field-error">Campo obrigatório</span>
         }
       </div>
 
       <div class="form-row form-row--3">
-        <div class="field" [class.field--error]="isInvalid('contactPhone')">
-          <label class="field-label">Telefone principal <span class="required">*</span></label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="contactPhone">
-          @if (isInvalid('contactPhone')) {
-            <span class="field-error">Campo obrigatório</span>
-          }
+        <div class="field">
+          <label class="field-label">Telefone principal</label>
+          <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactPhone"
+            (input)="applyPhoneMask($event, 'contactPhone')"
+            (keydown)="onlyNumbers($event)">
         </div>
-        <div class="field" [class.field--error]="isInvalid('contactMobile')">
-          <label class="field-label">Telefone celular <span class="required">*</span></label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="contactMobile">
-          @if (isInvalid('contactMobile')) {
-            <span class="field-error">Campo obrigatório</span>
-          }
+        <div class="field">
+          <label class="field-label">Telefone celular</label>
+          <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactMobile"
+            (input)="applyPhoneMask($event, 'contactMobile')"
+            (keydown)="onlyNumbers($event)">
         </div>
         <div class="field" [class.field--error]="isInvalid('contactEmail')">
-          <label class="field-label">E-mail de contato <span class="required">*</span></label>
-          <input class="input" type="email" placeholder="Digite aqui..." formControlName="contactEmail">
+          <label class="field-label">E-mail de contato</label>
+          <input class="input" type="email" placeholder="email@exemplo.com" formControlName="contactEmail">
           @if (isInvalid('contactEmail')) {
-            <span class="field-error">Campo obrigatório</span>
+            <span class="field-error">E-mail inválido</span>
           }
         </div>
       </div>
 
-      <div class="field" [class.field--error]="isInvalid('observations')">
-        <label class="field-label">Observações <span class="required">*</span></label>
+      <div class="field">
+        <label class="field-label">Observações</label>
         <input class="input" type="text" placeholder="Digite aqui..." formControlName="observations">
-        @if (isInvalid('observations')) {
-          <span class="field-error">Campo obrigatório</span>
-        }
       </div>
+
     </div>
   }
 
@@ -80,32 +67,22 @@
       <h3 class="sub-title">Cadastro de impostos e retenções</h3>
       <p class="sub-desc">Preencha e configure todas as informações necessárias.</p>
 
-      <!-- Código + Título do serviço -->
       <div class="form-row form-row--2">
-        <div class="field" [class.field--error]="isInvalid('serviceClassCode')">
-          <label class="field-label">Código de Classificação do Serviço <span class="required">*</span></label>
+        <div class="field">
+          <label class="field-label">Código de Classificação do Serviço</label>
           <div class="select-wrap">
             <select class="select" formControlName="serviceClassCode">
               <option value="">Selecione</option>
             </select>
-            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          @if (isInvalid('serviceClassCode')) {
-            <span class="field-error">Campo obrigatório</span>
-          }
         </div>
-        <div class="field" [class.field--error]="isInvalid('serviceTitle')">
-          <label class="field-label">Título do Serviço <span class="required">*</span></label>
+        <div class="field">
+          <label class="field-label">Título do Serviço</label>
           <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceTitle">
-          @if (isInvalid('serviceTitle')) {
-            <span class="field-error">Campo obrigatório</span>
-          }
         </div>
       </div>
 
-      <!-- Configuração de Retenção -->
       <div class="retention-box">
         <h4 class="retention-title">Configuração de Retenção de Impostos</h4>
 
@@ -128,14 +105,14 @@
                  formControlName="totalRetentions" readonly>
         </div>
 
-        <!-- Alíquotas -->
         <div class="aliquots">
           <h4 class="aliquots-title">Alíquotas</h4>
           <div class="aliquots-grid">
             @for (item of aliquotFields; track item.aliq) {
               <div class="field">
                 <label class="field-label">{{ item.aliqLabel }}</label>
-                <input class="input" type="text" placeholder="%" [formControlName]="item.aliq">
+                <input class="input" type="text" placeholder="%" [formControlName]="item.aliq"
+                  (keydown)="onlyNumbers($event)">
               </div>
               <div class="field">
                 <label class="field-label">{{ item.codLabel }}</label>
@@ -143,9 +120,7 @@
                   <select class="select select--sm" [formControlName]="item.cod">
                     <option value="">Sem código</option>
                   </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
             }
@@ -153,38 +128,33 @@
         </div>
       </div>
 
-      <!-- Serviços -->
       <div class="services-box">
         <h4 class="retention-title">Serviços</h4>
         <div class="form-row form-row--4">
           <div class="field">
-            <label class="field-label">Nome <span class="required">*</span></label>
+            <label class="field-label">Nome</label>
             <div class="select-wrap">
               <select class="select" formControlName="serviceName">
                 <option value="">Selecione</option>
               </select>
-              <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
           <div class="field">
-            <label class="field-label">Descrição <span class="required">*</span></label>
+            <label class="field-label">Descrição</label>
             <div class="select-wrap">
               <select class="select" formControlName="serviceDesc">
                 <option value="">Selecione</option>
               </select>
-              <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
           <div class="field">
-            <label class="field-label">Código Externo <span class="required">*</span></label>
+            <label class="field-label">Código Externo</label>
             <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceExtCode">
           </div>
           <div class="field">
-            <label class="field-label">Órgão Concessor <span class="required">*</span></label>
+            <label class="field-label">Órgão Concessor</label>
             <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceGrantor">
           </div>
         </div>
@@ -195,9 +165,7 @@
             <select class="select" formControlName="serviceRedemption">
               <option value="">Selecione</option>
             </select>
-            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>
 
@@ -207,12 +175,11 @@
             <select class="select" formControlName="serviceLinked">
               <option value="">Selecione</option>
             </select>
-            <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>
       </div>
+
     </div>
   }
 

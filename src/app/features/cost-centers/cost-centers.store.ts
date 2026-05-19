@@ -1,8 +1,8 @@
 // src/app/features/cost-centers/cost-centers.store.ts
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
-import { computed } from '@angular/core';
+import { inject, computed } from '@angular/core';
 import { CostCenter, CostCenterStatus, CostCenterType } from './cost-centers.model';
-import { COST_CENTERS_MOCK } from './cost-centers.mock';
+import { CostCentersService } from './cost-centers.service';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -29,15 +29,17 @@ interface CostCentersState {
   sort:       CostCenterSort;
   pagination: CostCenterPagination;
   loading:    boolean;
+  error:      string | null;
 }
 
 const initialState: CostCentersState = {
-  items:      COST_CENTERS_MOCK,
+  items:      [],
   expanded:   new Set(),
   filters:    { search: '', status: '', type: '' },
   sort:       { column: '', direction: null },
   pagination: { page: 1, pageSize: 10 },
   loading:    false,
+  error:      null,
 };
 
 export const CostCentersStore = signalStore(
@@ -50,7 +52,7 @@ export const CostCentersStore = signalStore(
       return items().filter(c => {
         const q = search.toLowerCase();
         return (
-          (!search || c.title.toLowerCase().includes(q) || c.number.includes(search)) &&
+          (!search || c.title.toLowerCase().includes(q) || c.code.includes(search)) &&
           (!status || c.status === status) &&
           (!type   || c.type   === type)
         );
@@ -81,44 +83,80 @@ export const CostCentersStore = signalStore(
     return { pageItems, filteredTotal, expandedIds };
   }),
 
-  withMethods(store => ({
+  withMethods(store => {
+    const svc = inject(CostCentersService);
 
-    setSearch(search: string) {
-      patchState(store, s => ({ filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
-    },
+    return {
 
-    setStatus(status: CostCenterStatus | '') {
-      patchState(store, s => ({ filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
-    },
+      // ── API ─────────────────────────────────────────────────────────────
 
-    setType(type: CostCenterType | '') {
-      patchState(store, s => ({ filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
-    },
+      load() {
+        patchState(store, { loading: true, error: null });
+        svc.getAll().subscribe({
+          next: items => patchState(store, { items, loading: false }),
+          error: err  => patchState(store, {
+            loading: false,
+            error: err?.error?.message ?? 'Erro ao carregar centros de custo.',
+          }),
+        });
+      },
 
-    setPage(page: number) {
-      patchState(store, s => ({ pagination: { ...s.pagination, page } }));
-    },
+      deleteById(id: number) {
+        svc.delete(id).subscribe({
+          next: () => patchState(store, s => ({
+            items: s.items.filter(c => c.id !== id),
+          })),
+          error: err => patchState(store, {
+            error: err?.error?.message ?? 'Erro ao excluir registro.',
+          }),
+        });
+      },
 
-    setPageSize(pageSize: number) {
-      patchState(store, _ => ({ pagination: { pageSize, page: 1 } }));
-    },
+      // ── Filters ──────────────────────────────────────────────────────────
 
-    setSort(column: keyof CostCenter) {
-      patchState(store, s => {
-        const same = s.sort.column === column;
-        const direction: SortDirection = same
-          ? s.sort.direction === 'asc' ? 'desc' : s.sort.direction === 'desc' ? null : 'asc'
-          : 'asc';
-        return { sort: { column: direction ? column : '' as keyof CostCenter | '', direction } };
-      });
-    },
+      setSearch(search: string) {
+        patchState(store, s => ({ filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
+      },
 
-    toggleExpand(id: string) {
-      patchState(store, s => {
-        const next = new Set(s.expanded);
-        next.has(id) ? next.delete(id) : next.add(id);
-        return { expanded: next };
-      });
-    },
-  })),
+      setStatus(status: CostCenterStatus | '') {
+        patchState(store, s => ({ filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
+      },
+
+      setType(type: CostCenterType | '') {
+        patchState(store, s => ({ filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
+      },
+
+      // ── Pagination ───────────────────────────────────────────────────────
+
+      setPage(page: number) {
+        patchState(store, s => ({ pagination: { ...s.pagination, page } }));
+      },
+
+      setPageSize(pageSize: number) {
+        patchState(store, { pagination: { pageSize, page: 1 } });
+      },
+
+      // ── Sort ─────────────────────────────────────────────────────────────
+
+      setSort(column: keyof CostCenter) {
+        patchState(store, s => {
+          const same = s.sort.column === column;
+          const direction: SortDirection = same
+            ? s.sort.direction === 'asc' ? 'desc' : s.sort.direction === 'desc' ? null : 'asc'
+            : 'asc';
+          return { sort: { column: direction ? column : '' as keyof CostCenter | '', direction } };
+        });
+      },
+
+      // ── Expand ───────────────────────────────────────────────────────────
+
+      toggleExpand(id: string) {
+        patchState(store, s => {
+          const next = new Set(s.expanded);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return { expanded: next };
+        });
+      },
+    };
+  }),
 );

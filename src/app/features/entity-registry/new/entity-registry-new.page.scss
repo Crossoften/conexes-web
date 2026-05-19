@@ -1,5 +1,16 @@
+/* entity-registry-new.page.scss */
 @import "../../chart-of-accounts/new/chart-of-accounts-new.page.scss";
 
+// ── Forçar as Bordas Arredondadas Originais (Resolvendo o Bug do Import) ──
+.form-control {
+  border-radius: 24px !important; // Devolve o visual arredondado das caixas de texto
+}
+
+.btn-outline, .btn-solid, .tab-button {
+  border-radius: 50px !important; // Garante os botões e abas em formato de pílula
+}
+
+// ── Estrutura do Container de Abas ────────────────────────────────────────
 .tab-container {
   display: flex;
   background: #F3F4F6;
@@ -14,7 +25,6 @@
   border: none;
   background: transparent;
   padding: 12px;
-  border-radius: 50px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -22,7 +32,7 @@
   transition: all 0.2s ease;
 
   &.active {
-    background: #6366F1; // Roxo conforme o layout
+    background: #6366F1; // Roxo ativo do layout
     color: #ffffff;
   }
 }
@@ -34,6 +44,44 @@
   color: var(--text-primary);
 }
 
+// ── Ajuste Fino Contra o Efeito Espremido nos Dados do Contador ──────────
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; // Distância vertical uniforme e elegante entre as linhas do form
+
+  .form-row {
+    display: grid;
+    gap: 20px; // Alinhado com o padrão de 20px de espaçamento do projeto
+    align-items: flex-start;
+    width: 100%;
+
+    // Linha 1: Nome, CPF, CRC
+    &.grid-cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    // Linha 2: CEP, Endereço, Número, Complemento
+    // Mudança crucial: Dá mais espaço físico para o Endereço e Complemento não esmagarem o label
+    &.grid-cols-4 {
+      grid-template-columns: 1.2fr 3.2fr 1.1fr 2.5fr; 
+    }
+
+    // Linhas de Contato e Escritório
+    &.grid-cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  // Ajuste do rótulo para não quebrar de forma estranha
+  .form-group {
+    label {
+      white-space: nowrap; // Impede que o label quebre em duas linhas e atropele o input
+    }
+  }
+}
+
+// ── Componente de Upload ──────────────────────────────────────────────────
 .dropzone {
   border: 1px dashed #D1D5DB;
   background: #F9FAFB;

@@ -1,69 +1,89 @@
 // src/app/features/entity-registry/entity-registry-list.page.ts
-import { Component, inject, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { Component, OnInit, inject, computed } from '@angular/core';
 import { EntityRegistryStore } from './entity-registry.store';
-import { EntityRegistry, EntityStatus, EntityType } from './entity-registry.model';
-import { RouterLink } from "@angular/router";
+import { AsyncPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { EntityRegistry } from './entity-registry.model';
 
 @Component({
   selector: 'app-entity-registry-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
-  providers: [EntityRegistryStore],
+  imports: [NgIf, NgFor, NgClass, RouterLink, AsyncPipe],
   templateUrl: './entity-registry-list.page.html',
-  styleUrl: './entity-registry-list.page.scss',
+  styleUrls: ['./entity-registry-list.page.scss']
 })
-export class EntityRegistryListPage {
-  readonly store = inject(EntityRegistryStore);
+export class EntityRegistryListPage implements OnInit {
+  protected readonly store = inject(EntityRegistryStore);
 
-  readonly statusOptions: { label: string; value: EntityStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
+  protected readonly statusOptions = [
     { label: 'Ativo', value: 'ACTIVE' },
-    { label: 'Inativo', value: 'INACTIVE' },
+    { label: 'Inativo', value: 'INACTIVE' }
   ];
 
-  readonly typeOptions: { label: string; value: EntityType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'Pessoa Física', value: 'PF' },
-    { label: 'Pessoa Jurídica', value: 'PJ' },
+  protected readonly typeOptions = [
+    { label: 'Matriz', value: 'MAIN' },
+    { label: 'Filial', value: 'BRANCH' }
   ];
 
-  readonly pageSizeOptions = [10, 25, 50];
+  protected readonly pageSizeOptions = [5, 10, 20, 50];
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
-
-  readonly pageNumbers = computed((): (number | '...')[] => {
-    const total = this.totalPages();
-    const current = this.store.pagination().page;
-    const pages: (number | '...')[] = [];
-
-    if (total <= 7) {
-      for (let i = 1; i <= total; i++) pages.push(i);
-      return pages;
-    }
-    pages.push(1);
-    if (current > 3) pages.push('...');
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
-    if (current < total - 2) pages.push('...');
-    pages.push(total);
-    return pages;
+  protected readonly totalPages = computed(() => {
+    const total = this.store.filteredTotal();
+    const size = this.store.pagination().pageSize;
+    return Math.max(1, Math.ceil(total / size));
   });
 
-  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  // Corrigida a assinatura do tipo do computed para aceitar strings em harmonia com o HTML
+  protected readonly pageNumbers = computed<(number | string)[]>(() => {
+    const pages = this.totalPages();
+    
+    if (pages <= 7) {
+      return Array.from({ length: pages }, (_, i) => i + 1);
+    }
 
-  onSearch(value: string) {
-    if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
+    const current = this.store.pagination().page;
+    const items: (number | string)[] = [];
+
+    items.push(1);
+    if (current > 3) {
+      items.push('...');
+    }
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(pages - 1, current + 1);
+
+    for (let i = start; i <= end; i++) {
+      items.push(i);
+    }
+
+    if (current < pages - 2) {
+      items.push('...');
+    }
+    items.push(pages);
+
+    return items;
+  });
+
+  ngOnInit() {
+    // Força o disparo automático da requisição GET real no servidor
+    this.store.loadEntities();
   }
 
-  getSortState(col: keyof EntityRegistry): 'none' | 'asc' | 'desc' {
-    const { column, direction } = this.store.sort();
-    if (column !== col || !direction) return 'none';
-    return direction;
+  protected onSearch(value: string): void {
+    this.store.setSearch(value);
   }
 
-  goToPage(p: number | '...') {
-    if (typeof p === 'number') this.store.setPage(p);
+  protected goToPage(page: number | string): void {
+    if (typeof page === 'number') {
+      this.store.setPage(page);
+    }
+  }
+
+  protected getSortState(column: keyof EntityRegistry): 'asc' | 'desc' | '' {
+    const currentSort = this.store.sort();
+    if (currentSort.column === column) {
+      return currentSort.direction as 'asc' | 'desc';
+    }
+    return '';
   }
 }

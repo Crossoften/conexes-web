@@ -1,25 +1,53 @@
 // src/app/features/chart-of-accounts/chart-of-accounts.model.ts
 
-export type AccountStatus = 'ACTIVE' | 'INACTIVE';
+export type AccountStatus = 'Active' | 'Inactive';
 export type AccountType   = 'T' | 'A' | 'S'; // Totalizadora, Analítica, Sintética
 
-export interface AccountChild {
-  id:          string;
-  title:       string;
-  description: string;
-  status:      AccountStatus;
-}
+// ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface Account {
-  id:          string;
-  number:      string;
-  title:       string;
-  type:        AccountType;
-  budgetMgmt:  string;
-  description: string;
-  status:      AccountStatus;
-  children?:   AccountChild[];
+  id:                 number;
+  code:               string;
+  title:              string;
+  category:           string;
+  categoryGroup:      string;
+  categoryType:       string;
+  accountType:        AccountType | string;
+  budgetManagement:   boolean;
+  description:        string;
+  status:             AccountStatus;
+  secondaryActivity:  string;
+  creditProvision:    string;
+  debitProvision:     string;
+  creditWriteOff:     string;
+  debitWriteOff:      string;
+  parentId:           number | null;
+  children?:          Account[];
+  createdAt?:         string;
+  updatedAt?:         string;
 }
+
+// ── Payload de criação / edição ───────────────────────────────────────────────
+
+export interface AccountPayload {
+  code:               string;
+  title:              string;
+  category:           string;
+  categoryGroup:      string;
+  categoryType:       string;
+  accountType:        string;
+  budgetManagement:   boolean;
+  description:        string;
+  status:             AccountStatus;
+  secondaryActivity:  string;
+  creditProvision:    string;
+  debitProvision:     string;
+  creditWriteOff:     string;
+  debitWriteOff:      string;
+  parentId:           number | null;
+}
+
+// ── Labels e configs de UI ────────────────────────────────────────────────────
 
 export interface StatusConfig {
   label:   string;
@@ -27,12 +55,12 @@ export interface StatusConfig {
 }
 
 export const ACCOUNT_STATUS_CONFIG: Record<AccountStatus, StatusConfig> = {
-  ACTIVE:   { label: 'Ativo',   variant: 'success' },
-  INACTIVE: { label: 'Inativo', variant: 'danger'  },
+  Active:   { label: 'Ativo',   variant: 'success' },
+  Inactive: { label: 'Inativo', variant: 'danger'  },
 };
 
-export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  T: 'T',
-  A: 'A',
-  S: 'S',
+export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  T: 'Totalizadora',
+  A: 'Analítica',
+  S: 'Sintética',
 };

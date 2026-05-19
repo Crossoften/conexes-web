@@ -1,10 +1,10 @@
 // src/app/features/employees/employees-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { EmployeesStore } from './employees.store';
-import { Employee, EmployeeStatus, EmployeeType } from './employees.model';
-import { RouterLink } from "@angular/router";
+import { Employee } from './employees.model';
 
 @Component({
   selector: 'app-employees-list',
@@ -14,27 +14,29 @@ import { RouterLink } from "@angular/router";
   templateUrl: './employees-list.page.html',
   styleUrl: './employees-list.page.scss',
 })
-export class EmployeesListPage {
+export class EmployeesListPage implements OnInit {
   readonly store = inject(EmployeesStore);
 
-  readonly statusOptions: { label: string; value: EmployeeStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Ativo', value: 'ACTIVE' },
-    { label: 'Inativo', value: 'INACTIVE' },
+  readonly statusOptions = [
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
-  readonly typeOptions: { label: string; value: EmployeeType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'Colaborador', value: 'COLABORADOR' },
-    { label: 'Dirigente', value: 'DIRIGENTE' },
+  readonly typeOptions = [
+    { label: 'Selecione o tipo', value: ''            },
+    { label: 'Colaborador',      value: 'COLABORADOR' },
+    { label: 'Dirigente',        value: 'DIRIGENTE'   },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
+  );
 
   readonly pageNumbers = computed((): (number | '...')[] => {
-    const total = this.totalPages();
+    const total   = this.totalPages();
     const current = this.store.pagination().page;
     const pages: (number | '...')[] = [];
 
@@ -50,9 +52,17 @@ export class EmployeesListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -63,7 +73,9 @@ export class EmployeesListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  trackById(_: number, item: Employee): number { return item.id; }
 }

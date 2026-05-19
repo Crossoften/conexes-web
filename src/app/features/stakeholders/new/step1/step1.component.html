@@ -1,7 +1,6 @@
 <!-- src/app/features/stakeholders/new/step1/step1.component.html -->
 <div class="step" [formGroup]="$any(form())">
 
-  <!-- Cabeçalho da etapa -->
   <div class="step-header">
     <h2 class="step-title">
       <strong>Etapa 1</strong>/3 – Dados Gerais – Informações cadastrais gerais
@@ -9,7 +8,6 @@
     <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
   </div>
 
-  <!-- Seção: Dados gerais -->
   <div class="form-section">
 
     <!-- Linha 1: Pessoa | CPF/CNPJ | Nome -->
@@ -23,9 +21,7 @@
             <option value="PF">Pessoa Física</option>
             <option value="PJ">Pessoa Jurídica</option>
           </select>
-          <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-            <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         @if (isInvalid('personType')) {
           <span class="field-error">Campo obrigatório</span>
@@ -34,7 +30,10 @@
 
       <div class="field" [class.field--error]="isInvalid('document')">
         <label class="field-label">CPF/CNPJ <span class="required">*</span></label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="document">
+        <input class="input" type="text" formControlName="document"
+          [placeholder]="f['personType'].value === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'"
+          (input)="applyDocumentMask($event)"
+          (keydown)="onlyNumbers($event)">
         @if (isInvalid('document')) {
           <span class="field-error">Campo obrigatório</span>
         }
@@ -55,12 +54,24 @@
 
       <div class="field">
         <label class="field-label">Tipo</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="type">
+        <div class="select-wrap">
+          <select class="select" formControlName="type">
+            <option value="">Selecione</option>
+            <option value="Supplier">Fornecedor</option>
+            <option value="Customer">Cliente</option>
+            <option value="Donor">Doador</option>
+            <option value="SupportedProject">Projeto Apoiado</option>
+            <option value="Other">Outros</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
       </div>
 
       <div class="field">
         <label class="field-label">CEP</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="zipCode">
+        <input class="input" type="text" placeholder="00000-000" formControlName="zipCode"
+          (input)="applyCepMask($event)"
+          (keydown)="onlyNumbers($event)">
       </div>
 
       <div class="field">
@@ -70,7 +81,7 @@
 
       <div class="field">
         <label class="field-label">Nro</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="addressNum">
+        <input class="input" type="text" placeholder="Nro" formControlName="addressNum">
       </div>
 
       <div class="field">
@@ -85,17 +96,24 @@
 
       <div class="field">
         <label class="field-label">Telefone principal</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="phone">
+        <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="phone"
+          (input)="applyPhoneMask($event, 'phone')"
+          (keydown)="onlyNumbers($event)">
       </div>
 
       <div class="field">
         <label class="field-label">Telefone celular</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="mobile">
+        <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="mobile"
+          (input)="applyPhoneMask($event, 'mobile')"
+          (keydown)="onlyNumbers($event)">
       </div>
 
-      <div class="field">
+      <div class="field" [class.field--error]="isInvalid('email')">
         <label class="field-label">E-mail de contato</label>
-        <input class="input" type="email" placeholder="Digite aqui..." formControlName="email">
+        <input class="input" type="email" placeholder="email@exemplo.com" formControlName="email">
+        @if (isInvalid('email')) {
+          <span class="field-error">E-mail inválido</span>
+        }
       </div>
 
     </div>
@@ -134,12 +152,10 @@
 
   <!-- Sub-abas -->
   <div class="sub-tabs">
-    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'rateio'"
-      (click)="activeTab.set('rateio')">
+    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'rateio'" (click)="activeTab.set('rateio')">
       Dados de rateio
     </button>
-    <button class="sub-tab" [class.sub-tab--active]="activeTab() === 'bancario'"
-      (click)="activeTab.set('bancario')">
+    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'bancario'" (click)="activeTab.set('bancario')">
       Dados bancários
     </button>
   </div>
@@ -178,17 +194,23 @@
         <div class="field">
           <label class="field-label">Pessoa</label>
           <input class="input input--filled" type="text" placeholder="Dado preenchido"
-                 formControlName="holderPerson" [readonly]="!f['differentHolder'].value">
+            [value]="f['differentHolder'].value ? f['holderPerson'].value : f['personType'].value"
+            [readonly]="!f['differentHolder'].value"
+            formControlName="holderPerson">
         </div>
         <div class="field">
           <label class="field-label">Nome correntista</label>
           <input class="input input--filled" type="text" placeholder="Dado preenchido"
-                 formControlName="holderName" [readonly]="!f['differentHolder'].value">
+            [value]="f['differentHolder'].value ? f['holderName'].value : f['name'].value"
+            [readonly]="!f['differentHolder'].value"
+            formControlName="holderName">
         </div>
         <div class="field">
           <label class="field-label">Documento correntista</label>
           <input class="input input--filled" type="text" placeholder="Dado preenchido"
-                 formControlName="holderDocument" [readonly]="!f['differentHolder'].value">
+            [value]="f['differentHolder'].value ? f['holderDocument'].value : f['document'].value"
+            [readonly]="!f['differentHolder'].value"
+            formControlName="holderDocument">
         </div>
       </div>
 
@@ -199,30 +221,53 @@
         </div>
         <div class="field">
           <label class="field-label">Agência</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="agency">
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="agency"
+            (keydown)="onlyNumbers($event)">
         </div>
         <div class="field">
-          <label class="field-label">Dígito</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="agencyDigit">
+          <label class="field-label">Dígito ag.</label>
+          <input class="input" type="text" placeholder="0" formControlName="agencyDigit"
+            (keydown)="onlyNumbers($event)">
         </div>
         <div class="field">
           <label class="field-label">Conta</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="account">
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="account"
+            (keydown)="onlyNumbers($event)">
         </div>
         <div class="field">
-          <label class="field-label">Dígito</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountDigit">
+          <label class="field-label">Dígito cc.</label>
+          <input class="input" type="text" placeholder="0" formControlName="accountDigit"
+            (keydown)="onlyNumbers($event)">
         </div>
         <div class="field">
           <label class="field-label">Tipo de conta</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountType">
+          <div class="select-wrap">
+            <select class="select" formControlName="accountType">
+              <option value="">Selecione</option>
+              <option value="Checking">Conta Corrente</option>
+              <option value="Savings">Conta Poupança</option>
+              <option value="Salary">Conta Salário</option>
+              <option value="Payment">Conta Pagamento</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </div>
       </div>
 
       <div class="form-row form-row--3-auto">
         <div class="field">
           <label class="field-label">Tipo PIX</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="pixType">
+          <div class="select-wrap">
+            <select class="select" formControlName="pixType">
+              <option value="">Selecione</option>
+              <option value="CPF">CPF</option>
+              <option value="CNPJ">CNPJ</option>
+              <option value="Email">E-mail</option>
+              <option value="Phone">Telefone</option>
+              <option value="RandomKey">Chave aleatória</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </div>
         <div class="field">
           <label class="field-label">Chave PIX</label>
@@ -230,7 +275,33 @@
         </div>
         <div class="field">
           <label class="field-label">Forma pagamento padrão</label>
-          <input class="input" type="text" formControlName="defaultPaymentMethod">
+          <div class="select-wrap">
+            <select class="select" formControlName="defaultPaymentMethod">
+              <option value="">Selecione</option>
+              <option value="EletronicTransferSameOwner">Transferência eletrônica (mesmo titular)</option>
+              <option value="EletronicTransferOtherOwner">Transferência eletrônica (outro titular)</option>
+              <option value="TEDSameOwner">TED (mesmo titular)</option>
+              <option value="TEDOtherOwner">TED (outro titular)</option>
+              <option value="DOCSameOwner">DOC (mesmo titular)</option>
+              <option value="DOCOtherOwner">DOC (outro titular)</option>
+              <option value="BoletoSameBank">Boleto (mesmo banco)</option>
+              <option value="BoletoOtherBank">Boleto (outro banco)</option>
+              <option value="PIX">PIX</option>
+              <option value="UtilityBill">Conta de consumo</option>
+              <option value="DARFWithBarcode">DARF com código de barras</option>
+              <option value="DARFWithoutBarcode">DARF sem código de barras</option>
+              <option value="GARE">GARE</option>
+              <option value="SP_ICMS">SP ICMS</option>
+              <option value="GNRE_StateTaxes">GNRE / Tributos estaduais</option>
+              <option value="GPS">GPS</option>
+              <option value="FGTS">FGTS</option>
+              <option value="IPVA">IPVA</option>
+              <option value="DPVAT">DPVAT</option>
+              <option value="IPTU">IPTU</option>
+              <option value="INSS_MunicipalTaxes">INSS / Tributos municipais</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </div>
       </div>
 

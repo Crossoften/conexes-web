@@ -1,10 +1,10 @@
 // src/app/features/bank-accounts/bank-accounts-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { BankAccountsStore } from './bank-accounts.store';
 import { BankAccountStatus, BANK_ACCOUNT_STATUS_CONFIG } from './bank-accounts.model';
-import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-bank-accounts-list',
@@ -14,28 +14,32 @@ import { RouterLink } from "@angular/router";
   templateUrl: './bank-accounts-list.page.html',
   styleUrl: './bank-accounts-list.page.scss',
 })
-export class BankAccountsListPage {
-  readonly store = inject(BankAccountsStore);
+export class BankAccountsListPage implements OnInit {
+  readonly store        = inject(BankAccountsStore);
   readonly statusConfig = BANK_ACCOUNT_STATUS_CONFIG;
 
   readonly statusOptions: { label: string; value: BankAccountStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Ativo', value: 'ACTIVE' },
-    { label: 'Inativo', value: 'INACTIVE' },
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',           value: 'Inactive' },
   ];
 
   readonly typeOptions: { label: string; value: string }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'Caixinha', value: 'Caixinha' },
-    { label: 'Conta Corrente', value: 'Conta Corrente' },
+    { label: 'Selecione o tipo', value: ''         },
+    { label: 'Conta Corrente',   value: 'Checking' },
+    { label: 'Conta Poupança',   value: 'Savings'  },
+    { label: 'Conta Salário',    value: 'Salary'   },
+    { label: 'Conta Pagamento',  value: 'Payment'  },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
+  );
 
   readonly pageNumbers = computed((): (number | '...')[] => {
-    const total = this.totalPages();
+    const total   = this.totalPages();
     const current = this.store.pagination().page;
     const pages: (number | '...')[] = [];
 
@@ -51,9 +55,17 @@ export class BankAccountsListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -64,7 +76,9 @@ export class BankAccountsListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  toStr(id: number): string { return String(id); }
 }

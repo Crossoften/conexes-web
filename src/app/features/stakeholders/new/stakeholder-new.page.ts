@@ -7,9 +7,11 @@ import { buildStakeholderForm } from './stakeholder-new.form';
 import { Step1Component } from './step1/step1.component';
 import { Step2Component } from './step2/step2.component';
 import { Step3Component } from './step3/step3.component';
+import { StakeholdersService } from '../stakeholders.service';
+import { mapFormToPayload } from '../stakeholders.mapper';
 
 export const WIZARD_STEPS = [
-  { label: 'Etapa 1 - Dados gerais',           shortLabel: 'Etapa 1 - Dados gerais'          },
+  { label: 'Etapa 1 - Dados gerais',           shortLabel: 'Etapa 1 - Dados gerais'           },
   { label: 'Etapa 2 - Classificação e Risco',   shortLabel: 'Etapa 2 - Classificação e Risco'  },
   { label: 'Etapa 3 - Observações e contatos',  shortLabel: 'Etapa 3 - Observações e contatos' },
 ];
@@ -23,6 +25,7 @@ export const WIZARD_STEPS = [
 })
 export class StakeholderNewPage {
   private router = inject(Router);
+  private svc    = inject(StakeholdersService);
 
   readonly form  = buildStakeholderForm();
   readonly steps = WIZARD_STEPS;
@@ -30,6 +33,9 @@ export class StakeholderNewPage {
   readonly currentStep = signal(0);
   readonly isFirst     = computed(() => this.currentStep() === 0);
   readonly isLast      = computed(() => this.currentStep() === this.steps.length - 1);
+
+  readonly loading  = signal(false);
+  readonly errorMsg = signal<string | null>(null);
 
   get step1Form() { return this.form.get('step1')!; }
   get step2Form() { return this.form.get('step2')!; }
@@ -39,33 +45,58 @@ export class StakeholderNewPage {
     return [this.step1Form, this.step2Form, this.step3Form][this.currentStep()];
   }
 
-  next() {
+  next(): void {
     const stepForm = this.currentStepForm();
     if (stepForm.invalid) {
       stepForm.markAllAsTouched();
       return;
     }
-    if (!this.isLast()) this.currentStep.update(s => s + 1);
-    else this.submit();
+    if (!this.isLast()) {
+      this.currentStep.update(s => s + 1);
+    } else {
+      this.submit();
+    }
   }
 
-  back() {
-    if (!this.isFirst()) this.currentStep.update(s => s - 1);
-    else this.router.navigate(['/stakeholders']);
+  back(): void {
+    this.errorMsg.set(null);
+    if (!this.isFirst()) {
+      this.currentStep.update(s => s - 1);
+    } else {
+      this.router.navigate(['/stakeholders']);
+    }
   }
 
-  saveDraft() {
-    console.log('Salvar rascunho', this.form.value);
-    // TODO: conectar ao service
+  saveDraft(): void {
+    // Salva localmente enquanto não há endpoint de rascunho no back
+    const draft = JSON.stringify(this.form.value);
+    localStorage.setItem('stakeholder_draft', draft);
+    console.info('[StakeholderNew] Rascunho salvo no localStorage.');
   }
 
-  private submit() {
+  private submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    console.log('Salvar stakeholder', this.form.value);
-    // TODO: conectar ao service → navegar de volta
-    this.router.navigate(['/stakeholders']);
+
+    this.loading.set(true);
+    this.errorMsg.set(null);
+    console.log('FORM VALUE:', JSON.stringify(this.form.value, null, 2));
+    const payload = mapFormToPayload(this.form.value);
+    console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
+
+    this.svc.create(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/stakeholders']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const msg = err?.error?.message ?? 'Erro ao salvar stakeholder. Tente novamente.';
+        this.errorMsg.set(msg);
+      },
+    });
   }
+  
 }

@@ -1,0 +1,125 @@
+<div class="modal-overlay" (click)="onClose()">
+
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>Conta: {{ account?.code || '—' }}</h2>
+          <p>Acompanhe todas as informações cadastradas para a conta.</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="modal-tabs">
+        <button class="tab-btn tab-btn--active">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          Campos da categoria/conta
+        </button>
+      </div>
+
+      <div class="tab-content">
+        <div class="info-box">
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">Título Categoria</span>
+              <span class="info-value">{{ account?.title || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Tipo da Categoria</span>
+              <span class="info-value">{{ account?.categoryType || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Tipo de Conta</span>
+              <span class="info-value">{{ accountTypeLabel || '—' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Código da Categoria</span>
+              <span class="info-value">{{ account?.code || '—' }}</span>
+            </div>
+            <!-- <div class="info-item col-span-2">
+              <span class="info-label">Título da Categoria</span>
+              <span class="info-value">{{ account?.categoryGroup || '—' }}</span>
+            </div> -->
+
+            <div class="info-item col-span-2">
+              <span class="info-label">Categoria para Provisão de Crédito</span>
+              <span class="info-value">{{ account?.creditProvision || '—' }}</span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Categoria para Provisão de Débito</span>
+              <span class="info-value">{{ account?.debitProvision || '—' }}</span>
+            </div>
+
+            <div class="info-item col-span-2">
+              <span class="info-label">Categoria para Baixa de Crédito</span>
+              <span class="info-value">{{ account?.creditWriteOff || '—' }}</span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Categoria para Baixa de Débito</span>
+              <span class="info-value">{{ account?.debitWriteOff || '—' }}</span>
+            </div>
+
+            <div class="info-item col-span-2">
+              <span class="info-label">Gestão de Orçamento</span>
+              <span class="info-value">{{ account?.budgetManagement ? 'Sim' : 'Não' }}</span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Status</span>
+              <span class="info-value">
+                <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">
+                  {{ statusLabel }}
+                </span>
+              </span>
+            </div>
+
+            <div class="info-item col-span-4">
+              <span class="info-label">Descrição da Categoria</span>
+              <span class="info-value">{{ account?.description || '—' }}</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
