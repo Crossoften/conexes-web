@@ -5,72 +5,80 @@
   </div>
 
   <div class="card">
-    
+
     <div class="card-body" style="padding-top: 32px;">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <h3 class="section-title">Dados Gerais – Corpo diretivo</h3>
         <p class="section-subtitle">Preencha todas as informações necessárias.</p>
-        
+
         <div class="form-grid mb-8">
-          
+
           <div class="form-row grid-cols-3">
+
             <div class="form-group">
-              <label>Entidade<span class="req">*</span></label>
+              <label>Entidade <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="entidadeSelect" [class.is-invalid]="form.get('entidadeSelect')?.invalid && form.get('entidadeSelect')?.touched">
-                  <option value="">Selecione</option>
+                <select class="form-control" formControlName="entidadeSelect"
+                  [class.is-invalid]="form.get('entidadeSelect')?.invalid && form.get('entidadeSelect')?.touched">
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  @for (e of entities(); track e.cnpj) {
+                    <option [value]="e.id ?? e.cnpj">{{ e.tradeName || e.legalName }}</option>
+                  }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
+
             <div class="form-group">
-              <label>Tipo<span class="req">*</span></label>
+              <label>Tipo <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="tipo" [class.is-invalid]="form.get('tipo')?.invalid && form.get('tipo')?.touched">
+                <select class="form-control" formControlName="tipo"
+                  [class.is-invalid]="form.get('tipo')?.invalid && form.get('tipo')?.touched">
                   <option value="">Selecione</option>
+                  <option value="Corpo Diretivo">Corpo Diretivo</option>
+                  <option value="Conselho Fiscal">Conselho Fiscal</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
+
             <div class="form-group">
-              <label>Finalidade<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="finalidade" [class.is-invalid]="form.get('finalidade')?.invalid && form.get('finalidade')?.touched">
+              <label>Finalidade <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="finalidade"
+                [class.is-invalid]="form.get('finalidade')?.invalid && form.get('finalidade')?.touched">
             </div>
+
           </div>
 
           <div class="form-row grid-cols-3">
+
             <div class="form-group">
-              <label>Descrição<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="descricao" [class.is-invalid]="form.get('descricao')?.invalid && form.get('descricao')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Descrição <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="descricao"
+                [class.is-invalid]="form.get('descricao')?.invalid && form.get('descricao')?.touched">
             </div>
+
             <div class="form-group">
-              <label>Data de eleição<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataEleicao" [class.is-invalid]="form.get('dataEleicao')?.invalid && form.get('dataEleicao')?.touched">
+              <label>Data de eleição <span class="req">*</span></label>
+              <input type="date" class="form-control" formControlName="dataEleicao"
+                [class.is-invalid]="form.get('dataEleicao')?.invalid && form.get('dataEleicao')?.touched">
             </div>
+
             <div class="form-group">
               <label>Código Certidão Audesp</label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoAudesp">
             </div>
+
           </div>
 
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>Entidade<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="entidadeInput" [class.is-invalid]="form.get('entidadeInput')?.invalid && form.get('entidadeInput')?.touched">
-            </div>
-            <div class="form-group">
-              <label>Celular</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="celular">
-            </div>
-          </div>
         </div>
 
+        <!-- Integrantes -->
         <div class="accordion-section">
           <div class="accordion-header" (click)="toggleIntegrantes()">
             <div>
@@ -86,45 +94,62 @@
             <div class="accordion-body mt-4">
               <div class="gray-box">
                 <div class="gray-box__grid">
+
                   <div class="form-group">
-                    <label>Colaborador<span class="req">*</span></label>
+                    <label>Colaborador</label>
                     <div class="select-wrap">
-                      <select class="form-control" formControlName="colaborador" [class.is-invalid]="form.get('colaborador')?.invalid && form.get('colaborador')?.touched">
-                        <option value="">Selecione</option>
+                      <select class="form-control"
+                        [(ngModel)]="selectedCollaborator"
+                        [ngModelOptions]="{ standalone: true }">
+                        <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                        @for (c of collaborators(); track c.id) {
+                          <option [value]="c.id">{{ c.name }}</option>
+                        }
                       </select>
                       <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
                   </div>
-                  
+
                   <div class="form-group">
-                    <label>Data inicio<span class="req">*</span></label>
-                    <div class="select-wrap">
-                      <select class="form-control" formControlName="dataInicio" [class.is-invalid]="form.get('dataInicio')?.invalid && form.get('dataInicio')?.touched">
-                        <option value="">Selecione</option>
-                      </select>
-                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
+                    <label>Data início</label>
+                    <input type="date" class="form-control"
+                      [(ngModel)]="selectedStartDate"
+                      [ngModelOptions]="{ standalone: true }">
                   </div>
 
                   <div class="form-group">
                     <label>Data término</label>
-                    <div class="select-wrap">
-                      <select class="form-control" formControlName="dataTermino">
-                        <option value="">Selecione</option>
-                      </select>
-                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
+                    <input type="date" class="form-control"
+                      [(ngModel)]="selectedEndDate"
+                      [ngModelOptions]="{ standalone: true }">
                   </div>
 
                   <div class="gray-box__actions">
-                    <button type="button" class="btn-square-outline" title="Adicionar">
+                    <button type="button" class="btn-square-outline" title="Adicionar" (click)="addMember()">
                       <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
-                    <button type="button" class="btn-square-outline" title="Remover">
-                      <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </button>
                   </div>
+
                 </div>
+
+                <!-- Lista de membros adicionados -->
+                @if (members.length > 0) {
+                  <div class="linked-list mt-4">
+                    @for (member of members; track $index) {
+                      <div class="linked-list__item">
+                        <span class="linked-list__account">{{ getCollaboratorName(member.collaboratorId) }}</span>
+                        <span class="linked-list__origin">{{ member.startDate }}</span>
+                        @if (member.endDate) {
+                          <span class="linked-list__origin">→ {{ member.endDate }}</span>
+                        }
+                        <button type="button" class="icon-btn" title="Remover" (click)="removeMember($index)">
+                          <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+
               </div>
             </div>
           }
@@ -137,19 +162,17 @@
       <button class="btn-outline btn-outline--orange" routerLink="/positions">
         Voltar
       </button>
-
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
           </svg>
           Reiniciar formulário
         </button>
-
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Salvar }
         </button>
       </div>
     </div>

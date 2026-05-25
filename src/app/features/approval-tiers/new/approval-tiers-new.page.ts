@@ -1,8 +1,14 @@
 // src/app/features/approval-tiers/new/approval-tiers-new.page.ts
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { ApprovalTiersService } from '../approval-tiers.service';
+import { ApprovalTierPayload } from '../approval-tiers.model';
+import { environment } from '../../../../environments/environment';
+
+interface UserItem { id: number; name: string; email?: string; }
 
 @Component({
   selector: 'app-approval-tiers-new',
@@ -11,35 +17,79 @@ import { NgClass } from '@angular/common';
   templateUrl: './approval-tiers-new.page.html',
   styleUrl: './approval-tiers-new.page.scss',
 })
-export class ApprovalTiersNewPage {
-  form: FormGroup;
+export class ApprovalTiersNewPage implements OnInit {
+  private fb     = inject(FormBuilder);
+  private router = inject(Router);
+  private svc    = inject(ApprovalTiersService);
+  private http   = inject(HttpClient);
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      description: ['', Validators.required],
-      approver: ['', Validators.required],
-      tierLevel: ['', Validators.required],
-      minValue: ['', Validators.required],
-      maxValue: ['', Validators.required]
+  readonly loading      = signal(false);
+  readonly errorMsg     = signal<string | null>(null);
+  readonly users        = signal<UserItem[]>([]);
+  readonly loadingLists = signal(true);
+
+  readonly purchaseRoleOptions = [
+    { label: 'Solicitante',  value: 'Requester' },
+    { label: 'Aprovador',    value: 'Approver'  },
+    { label: 'Gerente',      value: 'Manager'   },
+    { label: 'Diretor',      value: 'Director'  },
+  ];
+
+  form: FormGroup = this.fb.group({
+    description:  ['', Validators.required],
+    approver:     ['', Validators.required],
+    purchaseRole: ['', Validators.required],
+    tierLevel:    ['', Validators.required],
+    minValue:     ['', Validators.required],
+    maxValue:     ['', Validators.required],
+  });
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.http.get<UserItem[]>(`${environment.apiUrl}/v1/users`).subscribe({
+      next: items => { this.users.set(items); this.loadingLists.set(false); },
+      error: () => this.loadingLists.set(false),
     });
   }
 
-  resetForm() {
-    this.form.reset({
-      description: '',
-      approver: '',
-      tierLevel: '',
-      minValue: '',
-      maxValue: ''
-    });
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
+  resetForm(): void {
+    this.form.reset();
+    this.errorMsg.set(null);
   }
 
-  onSubmit() {
-    if (this.form.valid) {
-      console.log('Form data:', this.form.value);
-      // Lógica de salvamento e navegação para o "Próximo" passo
-    } else {
+  onSubmit(): void {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
     }
+
+    this.loading.set(true);
+    this.errorMsg.set(null);
+
+    const v = this.form.value;
+
+    const payload: ApprovalTierPayload = {
+      description:  v.description   ?? '',
+      level:        Number(v.tierLevel)  || 1,
+      minValue:     Number(v.minValue)   || 0,
+      maxValue:     Number(v.maxValue)   || 0,
+      purchaseRole: v.purchaseRole   ?? 'Requester',
+      userId:       Number(v.approver)   || 0,
+    };
+
+    this.svc.create(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/approval-tiers']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const msg = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
+        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+      },
+    });
   }
 }

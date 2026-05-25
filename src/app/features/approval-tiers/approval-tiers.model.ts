@@ -1,16 +1,37 @@
 // src/app/features/approval-tiers/approval-tiers.model.ts
-export type ApprovalTierStatus = 'ACTIVE' | 'INACTIVE';
+
+export type ApprovalTierStatus   = 'Active' | 'Inactive';
+export type ApprovalPurchaseRole = 'Requester' | 'Approver' | 'Manager' | 'Director';
+
+// ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface ApprovalTier {
-  id: string;
-  level: number;
-  description: string;
-  approver: string;
-  valueRange: string;
-  status: ApprovalTierStatus;
+  id:           number;
+  description:  string;
+  level:        number;
+  minValue:     number;
+  maxValue:     number;
+  purchaseRole: ApprovalPurchaseRole | string;
+  userId:       number;
+  status?:      ApprovalTierStatus;
+  createdAt?:   string;
+  updatedAt?:   string;
 }
 
-export const APPROVAL_TIER_STATUS_CONFIG: Record<ApprovalTierStatus, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
-  ACTIVE: { label: 'Ativo', variant: 'success' },
-  INACTIVE: { label: 'Inativo', variant: 'danger' },
+// ── Payload de criação ────────────────────────────────────────────────────────
+
+export interface ApprovalTierPayload {
+  description:  string;
+  level:        number;
+  minValue:     number;
+  maxValue:     number;
+  purchaseRole: string;
+  userId:       number;
+}
+
+// ── Labels e configs de UI ────────────────────────────────────────────────────
+
+export const APPROVAL_TIER_STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
+  Active:   { label: 'Ativo',   variant: 'success' },
+  Inactive: { label: 'Inativo', variant: 'danger'  },
 };

@@ -5,7 +5,7 @@
   </div>
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Dados do Serviço</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
@@ -13,34 +13,40 @@
 
     <div class="card-body">
       <form [formGroup]="form">
-        
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <div class="form-grid mb-6">
           <div class="form-row grid-cols-3">
+
             <div class="form-group">
-              <label>Fornecedor<span class="req">*</span></label>
+              <label>Fornecedor <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="fornecedor" [class.is-invalid]="form.get('fornecedor')?.invalid && form.get('fornecedor')?.touched">
-                  <option value="">Selecione</option>
-                  <option value="1">Fornecedor A</option>
+                <select class="form-control" formControlName="fornecedor"
+                  [class.is-invalid]="form.get('fornecedor')?.invalid && form.get('fornecedor')?.touched">
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  @for (s of stakeholders(); track s.id) {
+                    <option [value]="s.id">{{ s.name }} — {{ s.document }}</option>
+                  }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
 
             <div class="form-group">
-              <label>Código de Classificação do Serviço<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="codigoServico" [class.is-invalid]="form.get('codigoServico')?.invalid && form.get('codigoServico')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Código de Classificação do Serviço <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoServico"
+                [class.is-invalid]="form.get('codigoServico')?.invalid && form.get('codigoServico')?.touched">
             </div>
 
             <div class="form-group">
-              <label>Título do Serviço<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tituloServico" [class.is-invalid]="form.get('tituloServico')?.invalid && form.get('tituloServico')?.touched">
+              <label>Título do Serviço <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tituloServico"
+                [class.is-invalid]="form.get('tituloServico')?.invalid && form.get('tituloServico')?.touched">
             </div>
+
           </div>
         </div>
 
@@ -59,20 +65,18 @@
         @if (activeTab === 'CONFIG') {
           <h3 class="section-title">Configuração de Retenção de Impostos</h3>
           <div class="form-grid">
-            
+
             <div class="form-row grid-cols-1">
               <div class="form-group">
                 <label>Buscar por Natureza da Operação</label>
-                <div class="search-wrap-full">
-                  <input type="text" class="form-control search-input-pl" placeholder="Buscar" formControlName="naturezaOperacao">
-                </div>
+                <input type="text" class="form-control" placeholder="Buscar" formControlName="naturezaOperacao">
               </div>
             </div>
 
             <div class="form-row grid-cols-1 mt-2">
               <label class="checkbox-inline">
                 <div class="checkbox">
-                  <input type="checkbox" class="checkbox__input" formControlName="definirAlíquotasManual">
+                  <input type="checkbox" class="checkbox__input" formControlName="definirAliquotasManual">
                   <span class="checkbox__box"></span>
                 </div>
                 Definir Alíquotas Manualmente
@@ -82,7 +86,7 @@
             <div class="form-row grid-cols-4 mt-2">
               <div class="form-group col-span-1">
                 <label>Resumo / Total das Retenções</label>
-                <input type="text" class="form-control disabled-bg" formControlName="resumoRetencoes">
+                <input type="text" class="form-control disabled-bg" formControlName="resumoRetencoes" readonly>
               </div>
             </div>
 
@@ -93,38 +97,26 @@
           <h3 class="section-title">Alíquotas</h3>
           <div class="light-bg-box">
             <div class="form-grid">
-              
+
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % IRRF</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIRRF"></div>
-                <div class="form-group"><label>Cód. IRRF</label><div class="select-wrap"><select class="form-control" formControlName="codIRRF"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % PIS</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqPIS"></div>
-                <div class="form-group"><label>Cód. PIS</label><div class="select-wrap"><select class="form-control" formControlName="codPIS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="form-group"><label>Cód. IRRF</label><input type="text" class="form-control" placeholder="Código" formControlName="irfCode"></div>
+                <div class="form-group"><label>Alíquota % PIS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPIS"></div>
+                <div class="form-group"><label>Cód. PIS</label><input type="text" class="form-control" placeholder="Código" formControlName="pisCode"></div>
               </div>
 
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % PCC</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPCC"></div>
-                <div class="form-group"><label>Cód. PCC</label><div class="select-wrap"><select class="form-control" formControlName="codPCC"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % COFINS</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqCOFINS"></div>
-                <div class="form-group"><label>Cód. COFINS</label><div class="select-wrap"><select class="form-control" formControlName="codCOFINS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="form-group"><label>Cód. PCC</label><input type="text" class="form-control" placeholder="Código" formControlName="pccCode"></div>
+                <div class="form-group"><label>Alíquota % COFINS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCOFINS"></div>
+                <div class="form-group"><label>Cód. COFINS</label><input type="text" class="form-control" placeholder="Código" formControlName="cofinsCode"></div>
               </div>
 
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % INSS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqINSS"></div>
-                <div class="form-group"><label>Cód. INSS</label><div class="select-wrap"><select class="form-control" formControlName="codINSS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqCSLL"></div>
-                <div class="form-group"><label>Cód. CSLL</label><div class="select-wrap"><select class="form-control" formControlName="codCSLL"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % ISS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqISS"></div>
-                <div class="form-group"><label>Cód. ISS</label><div class="select-wrap"><select class="form-control" formControlName="codISS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCSLL"></div>
                 <div class="form-group"><label>Alíquota % IBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIBS"></div>
-                <div class="form-group"><label>Cód. IBS</label><div class="select-wrap"><select class="form-control" formControlName="codIBS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % CBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCBS"></div>
-                <div class="form-group"><label>Cód. CBS</label><div class="select-wrap"><select class="form-control" formControlName="codCBS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
               </div>
 
             </div>
@@ -134,39 +126,85 @@
         @if (activeTab === 'SERVICOS') {
           <h3 class="section-title">Serviços</h3>
           <div class="form-grid">
-            
+
             <div class="form-row grid-cols-4">
               <div class="form-group">
-                <label>Nome<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="servNome"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Nome</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.name" [ngModelOptions]="{ standalone: true }">
               </div>
               <div class="form-group">
-                <label>Descrição<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="servDescricao"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Descrição</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.description" [ngModelOptions]="{ standalone: true }">
               </div>
               <div class="form-group">
-                <label>Código Externo<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="servCodExterno">
+                <label>Código Externo</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.externalCode" [ngModelOptions]="{ standalone: true }">
               </div>
               <div class="form-group">
-                <label>Orgão Concessor<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="servOrgao">
+                <label>Órgão Concessor</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.grantorOrgan" [ngModelOptions]="{ standalone: true }">
               </div>
             </div>
 
-            <div class="form-row grid-cols-1">
+            <div class="form-row grid-cols-4">
               <div class="form-group">
-                <label>Esse serviço possui redenção?</label>
-                <div class="select-wrap"><select class="form-control" formControlName="servRedencao"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Órgão Acessor</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.accessorOrgan" [ngModelOptions]="{ standalone: true }">
+              </div>
+              <div class="form-group">
+                <label>Link Concessão</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  [(ngModel)]="newService.concessionLink" [ngModelOptions]="{ standalone: true }">
+              </div>
+              <div class="form-group">
+                <label>ID Centro de Custo</label>
+                <input type="text" class="form-control" placeholder="0"
+                  [(ngModel)]="newService.costCenterId" [ngModelOptions]="{ standalone: true }">
+              </div>
+              <div class="form-group">
+                <label>ID Projeto</label>
+                <input type="text" class="form-control" placeholder="0"
+                  [(ngModel)]="newService.projectId" [ngModelOptions]="{ standalone: true }">
               </div>
             </div>
 
-            <div class="form-row grid-cols-1">
-              <div class="form-group">
-                <label>Esse serviço está vinculado a qual órgão concessor, centro de custo, projeto, atividade?</label>
-                <div class="select-wrap"><select class="form-control" formControlName="servVinculo"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
+            <div class="form-row grid-cols-1 mt-2">
+              <label class="checkbox-inline">
+                <div class="checkbox">
+                  <input type="checkbox" class="checkbox__input"
+                    [(ngModel)]="newService.hasRetention" [ngModelOptions]="{ standalone: true }">
+                  <span class="checkbox__box"></span>
+                </div>
+                Esse serviço possui retenção?
+              </label>
             </div>
+
+            <div class="form-row grid-cols-1">
+              <button type="button" class="btn-outline btn-outline--orange" style="width: fit-content;" (click)="addService()">
+                + Adicionar serviço
+              </button>
+            </div>
+
+            <!-- Lista de serviços adicionados -->
+            @if (services.length > 0) {
+              <div class="linked-list mt-2">
+                @for (svc of services; track $index) {
+                  <div class="linked-list__item">
+                    <span class="linked-list__account">{{ svc.name }}</span>
+                    <span class="linked-list__origin">{{ svc.externalCode }}</span>
+                    <span class="linked-list__origin">{{ svc.hasRetention ? 'Com retenção' : 'Sem retenção' }}</span>
+                    <button type="button" class="icon-btn" title="Remover" (click)="removeService($index)">
+                      <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
 
           </div>
         }
@@ -178,19 +216,18 @@
       <button class="btn-outline btn-outline--orange" routerLink="/taxes">
         Voltar
       </button>
-
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
           </svg>
           Reiniciar formulário
         </button>
-
-        <button type="button" class="btn-solid btn-solid--orange" (click)="onNextOrSubmit()">
-          @if (activeTab === 'SERVICOS') { Salvar } @else { Próximo }
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onNextOrSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else if (activeTab === 'SERVICOS') { Salvar }
+          @else { Próximo }
         </button>
       </div>
     </div>

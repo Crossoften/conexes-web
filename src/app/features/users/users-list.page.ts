@@ -1,10 +1,10 @@
 // src/app/features/users/users-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { UsersStore } from './users.store';
-import { User, UserStatus, USER_STATUS_CONFIG } from './users.model';
+import { User, USER_STATUS_CONFIG } from './users.model';
 
 @Component({
   selector: 'app-users-list',
@@ -14,15 +14,14 @@ import { User, UserStatus, USER_STATUS_CONFIG } from './users.model';
   templateUrl: './users-list.page.html',
   styleUrl: './users-list.page.scss',
 })
-export class UsersListPage {
+export class UsersListPage implements OnInit {
   readonly store        = inject(UsersStore);
-  readonly router       = inject(Router);
   readonly statusConfig = USER_STATUS_CONFIG;
 
-  readonly statusOptions: { label: string; value: UserStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Ativo',              value: 'ACTIVE' },
-    { label: 'Inativo',            value: 'INACTIVE' },
+  readonly statusOptions = [
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -48,9 +47,17 @@ export class UsersListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -61,9 +68,9 @@ export class UsersListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  trackById(_: number, item: User) { return item.id; }
+  trackById(_: number, item: User): number { return item.id; }
 }

@@ -1,8 +1,10 @@
 // src/app/features/users/new/permission-new/permission-new.page.ts
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { UsersService } from '../../users.service';
+import { ModulePermission, DEFAULT_MODULES } from '../../users.model';
 
 @Component({
   selector: 'app-permission-new',
@@ -11,44 +13,74 @@ import { NgClass } from '@angular/common';
   templateUrl: './permission-new.page.html',
   styleUrl: './permission-new.page.scss',
 })
-export class PermissionNewPage {
-  form: FormGroup;
+export class PermissionNewPage implements OnInit {
+  private fb     = inject(FormBuilder);
+  private router = inject(Router);
+  private svc    = inject(UsersService);
 
-  // Mock de módulos para renderizar a tabela de permissões
-  modules = [
-    { name: 'Gestão de cadastro', submenu: 'Stakeholders, Plano de contas', view: true, add: true, edit: true, del: true, limit: true },
-    { name: 'Contratos e parcerias', submenu: 'Exemplo', view: true, add: true, edit: true, del: true, limit: true },
-    { name: 'Entidades', submenu: 'Exemplo', view: false, add: false, edit: false, del: false, limit: false },
-    { name: 'Suprimentos/compras', submenu: 'Exemplo', view: false, add: false, edit: false, del: false, limit: false },
-    { name: 'Financeiro', submenu: 'Conciliação, Contas a receber', view: false, add: false, edit: false, del: false, limit: false },
-    { name: 'Prestação de contas', submenu: 'Exemplo', view: false, add: false, edit: false, del: false, limit: false },
-  ];
+  readonly loading  = signal(false);
+  readonly errorMsg = signal<string | null>(null);
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      title: ['', Validators.required],
-      description: ['', Validators.required],
-      costCenter: ['', Validators.required],
-      project: [''],
-      activity: ['']
-    });
-  }
+  // Cópia dos módulos para edição
+  modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
 
-  togglePermission(index: number, field: 'view' | 'add' | 'edit' | 'del' | 'limit') {
-    this.modules[index][field] = !this.modules[index][field];
-  }
+  form: FormGroup = this.fb.group({
+    title:       [''],
+    description: [''],
+    costCenter:  [''],
+    project:     [''],
+    activity:    [''],
+  });
 
-  resetForm() {
-    this.form.reset();
-    // Reseta as checkboxes
-    this.modules.forEach(m => { m.view = false; m.add = false; m.edit = false; m.del = false; m.limit = false; });
-  }
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  onSubmit() {
-    if (this.form.valid) {
-      console.log('Permission Data:', this.form.value, 'Matrix:', this.modules);
-    } else {
-      this.form.markAllAsTouched();
+  ngOnInit(): void {
+    // Se não há dados do step 1, redireciona de volta
+    if (!this.svc.draftUserData()) {
+      this.router.navigate(['/users/new-user']);
     }
+  }
+
+  // ── Módulos / permissões ──────────────────────────────────────────────────
+
+  togglePermission(index: number, field: keyof Pick<ModulePermission, 'canView' | 'canCreate' | 'canEdit' | 'canDelete' | 'isUnlimited'>): void {
+    this.modules[index] = { ...this.modules[index], [field]: !this.modules[index][field] };
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
+  resetForm(): void {
+    this.form.reset();
+    this.modules = DEFAULT_MODULES.map(m => ({ ...m }));
+    this.errorMsg.set(null);
+  }
+
+  onSubmit(): void {
+    const draft = this.svc.draftUserData();
+    if (!draft) {
+      this.router.navigate(['/users/new-user']);
+      return;
+    }
+
+    this.loading.set(true);
+    this.errorMsg.set(null);
+
+    const payload = {
+      ...draft,
+      modulePermissions: this.modules,
+    } as any;
+
+    this.svc.create(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.svc.clearDraft();
+        this.router.navigate(['/users']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const msg = err?.error?.message ?? 'Erro ao salvar usuário. Tente novamente.';
+        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+      },
+    });
   }
 }

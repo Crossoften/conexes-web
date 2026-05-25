@@ -2,11 +2,12 @@
 
   <div class="page-header">
     <h1 class="page-title">Cadastro de usuários e permissões</h1>
-    <button class="btn-novo" [routerLink]="store.activeTab() === 'users' ? 'new-user' : 'new-permission'">
+    <button class="btn-novo"
+      [routerLink]="store.activeTab() === 'users' ? 'new-user' : 'new-permission'">
       <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
         <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      Novo usuário
+      {{ store.activeTab() === 'users' ? 'Novo usuário' : 'Nova permissão' }}
     </button>
   </div>
 
@@ -14,14 +15,10 @@
 
     <div class="card-section tabs-section">
       <div class="tabs-pill">
-        <button class="tab-btn" 
-          [class.active]="store.activeTab() === 'users'" 
-          (click)="store.setTab('users')">
+        <button class="tab-btn" [class.active]="store.activeTab() === 'users'" (click)="store.setTab('users')">
           Usuários
         </button>
-        <button class="tab-btn" 
-          [class.active]="store.activeTab() === 'permissions'" 
-          (click)="store.setTab('permissions')">
+        <button class="tab-btn" [class.active]="store.activeTab() === 'permissions'" (click)="store.setTab('permissions')">
           Permissões
         </button>
       </div>
@@ -47,9 +44,7 @@
             <option [value]="opt.value">{{ opt.label }}</option>
           }
         </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
-          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
 
@@ -66,24 +61,12 @@
                 <span class="checkbox__box"></span>
               </label>
             </th>
-            <th class="th th--sortable" (click)="store.setSort('name')">
-              Nome <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span>
-            </th>
-            <th class="th th--sortable" (click)="store.setSort('company')">
-              Empresa <span class="sort-icon" [ngClass]="'sort--' + getSortState('company')"></span>
-            </th>
-            <th class="th th--sortable" (click)="store.setSort('login')">
-              Login <span class="sort-icon" [ngClass]="'sort--' + getSortState('login')"></span>
-            </th>
-            <th class="th th--sortable" (click)="store.setSort('email')">
-              E-mail <span class="sort-icon" [ngClass]="'sort--' + getSortState('email')"></span>
-            </th>
-            <th class="th th--sortable" (click)="store.setSort('permissions')">
-              Permissões <span class="sort-icon" [ngClass]="'sort--' + getSortState('permissions')"></span>
-            </th>
-            <th class="th th--sortable" (click)="store.setSort('status')">
-              Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span>
-            </th>
+            <th class="th th--sortable" (click)="store.setSort('name')">Nome <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('surname')">Sobrenome <span class="sort-icon" [ngClass]="'sort--' + getSortState('surname')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('email')">E-mail <span class="sort-icon" [ngClass]="'sort--' + getSortState('email')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('jobTitle')">Cargo <span class="sort-icon" [ngClass]="'sort--' + getSortState('jobTitle')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('role')">Perfil <span class="sort-icon" [ngClass]="'sort--' + getSortState('role')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -91,10 +74,15 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton">
-                <td colspan="8"><div class="skeleton"></div></td>
-              </tr>
+              <tr class="tr--skeleton"><td colspan="8"><div class="skeleton"></div></td></tr>
             }
+          } @else if (store.error()) {
+            <tr>
+              <td class="td--empty" colspan="8">
+                <p class="empty-title">Erro ao carregar dados</p>
+                <span class="empty-desc">{{ store.error() }}</span>
+              </td>
+            </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
               <td class="td--empty" colspan="8">
@@ -104,7 +92,6 @@
             </tr>
           } @else {
             @for (item of store.pageItems(); track item.id) {
-
               <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
                 <td class="td td--check">
                   <label class="checkbox">
@@ -114,43 +101,28 @@
                     <span class="checkbox__box"></span>
                   </label>
                 </td>
-
                 <td class="td td--name">{{ item.name }}</td>
-                <td class="td">{{ item.company }}</td>
-                <td class="td td--mono">{{ item.login }}</td>
+                <td class="td">{{ item.surname }}</td>
                 <td class="td">{{ item.email }}</td>
-                <td class="td td--mono">{{ item.permissions }}</td>
-
+                <td class="td">{{ item.jobTitle }}</td>
+                <td class="td">{{ item.role }}</td>
                 <td class="td">
-                  <span class="status-badge"
-                    [ngClass]="'status-badge--' + statusConfig[item.status].variant">
-                    @if (item.status === 'ACTIVE') {
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
-                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
-                        <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
+                  <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status]?.variant">
+                    @if (item.status === 'Active') {
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     } @else {
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
-                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
-                        <path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-                      </svg>
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
                     }
-                    {{ statusConfig[item.status].label }}
+                    {{ statusConfig[item.status]?.label }}
                   </span>
                 </td>
-
                 <td class="td td--center">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                        <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-                      </svg>
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
                     <button class="icon-btn" title="Editar">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                        <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                   </div>
                 </td>
@@ -163,26 +135,33 @@
 
     <div class="pagination">
       <div class="pagination__nav">
-        <button class="pag-btn" aria-label="Anterior" [disabled]="store.pagination().page === 1" (click)="store.setPage(store.pagination().page - 1)">
+        <button class="pag-btn" aria-label="Anterior"
+          [disabled]="store.pagination().page === 1"
+          (click)="store.setPage(store.pagination().page - 1)">
           <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-
         @for (p of pageNumbers(); track $index) {
           @if (p === '...') {
             <span class="pag-ellipsis">···</span>
           } @else {
-            <button class="pag-btn pag-btn--num" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button>
+            <button class="pag-btn pag-btn--num"
+              [class.pag-btn--active]="p === store.pagination().page"
+              (click)="goToPage(p)">{{ p }}</button>
           }
         }
-
-        <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)">
+        <button class="pag-btn" aria-label="Próxima"
+          [disabled]="store.pagination().page === totalPages()"
+          (click)="store.setPage(store.pagination().page + 1)">
           <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
-
       <div class="select-wrap">
-        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
-          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
+        <select class="select select--sm"
+          [value]="store.pagination().pageSize"
+          (change)="store.setPageSize(+$any($event.target).value)">
+          @for (s of pageSizeOptions; track s) {
+            <option [value]="s">{{ s }} / página</option>
+          }
         </select>
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>

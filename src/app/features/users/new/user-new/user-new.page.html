@@ -6,59 +6,84 @@
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Cadastro de usuário</h2>
-      <p class="card-subtitle">Dados do usuário</p>
+      <p class="card-subtitle">Dados do usuário — Etapa 1 de 2</p>
     </div>
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="form-grid">
-          
+
           <div class="form-row grid-cols-3">
             <div class="form-group">
-              <label>Nome<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="firstName" [class.is-invalid]="form.get('firstName')?.invalid && form.get('firstName')?.touched">
+              <label>Nome <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="firstName"
+                [class.is-invalid]="form.get('firstName')?.invalid && form.get('firstName')?.touched">
             </div>
             <div class="form-group">
-              <label>Sobrenome<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="lastName" [class.is-invalid]="form.get('lastName')?.invalid && form.get('lastName')?.touched">
+              <label>Sobrenome <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="lastName"
+                [class.is-invalid]="form.get('lastName')?.invalid && form.get('lastName')?.touched">
             </div>
             <div class="form-group">
-              <label>CPF<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="cpf" [class.is-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched">
+              <label>CPF <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="000.000.000-00" formControlName="cpf"
+                [class.is-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched"
+                (input)="applyCpfMask($event)"
+                (keydown)="onlyNumbers($event)">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Cargo</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="jobTitle">
+            </div>
+            <div class="form-group">
+              <label>Área</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="area">
+            </div>
+            <div class="form-group">
+              <label>Telefone celular</label>
+              <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="phone"
+                (input)="applyPhoneMask($event)"
+                (keydown)="onlyNumbers($event)">
             </div>
           </div>
 
           <div class="form-row grid-cols-4">
-            <div class="form-group">
-              <label>Empresa<span class="req">*</span></label>
-              <div class="select-wrap"><select class="form-control" formControlName="company"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="form-group col-span-2">
+              <label>E-mail <span class="req">*</span></label>
+              <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="email"
+                [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
             </div>
             <div class="form-group">
-              <label>Cargo<span class="req">*</span></label>
-              <div class="select-wrap"><select class="form-control" formControlName="role"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Usuário (login) <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="username"
+                [class.is-invalid]="form.get('username')?.invalid && form.get('username')?.touched">
             </div>
             <div class="form-group">
-              <label>Área<span class="req">*</span></label>
-              <div class="select-wrap"><select class="form-control" formControlName="area"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            </div>
-            <div class="form-group">
-              <label>Tel celular<span class="req">*</span></label>
-              <div class="select-wrap"><select class="form-control" formControlName="cellphone"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Perfil de acesso <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="role"
+                  [class.is-invalid]="form.get('role')?.invalid && form.get('role')?.touched">
+                  <option value="">Selecione</option>
+                  @for (opt of roleOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </div>
 
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>E-mail<span class="req">*</span></label>
-              <input type="email" class="form-control" placeholder="Digite aqui..." formControlName="email">
-            </div>
-            <div class="form-group">
-              <label>Usuário<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="username">
-            </div>
-            <div class="form-group">
-              <label>Perfil de Permissões<span class="req">*</span></label>
-              <div class="select-wrap"><select class="form-control" formControlName="permissionProfile"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="form-row grid-cols-4">
+            <div class="form-group col-span-2">
+              <label>Senha <span class="req">*</span></label>
+              <input type="password" class="form-control" placeholder="Mínimo 6 caracteres" formControlName="password"
+                [class.is-invalid]="form.get('password')?.invalid && form.get('password')?.touched">
+              @if (form.get('password')?.errors?.['minlength'] && form.get('password')?.touched) {
+                <span class="field-error">Mínimo de 6 caracteres</span>
+              }
             </div>
           </div>
 
@@ -70,10 +95,12 @@
       <button class="btn-outline btn-outline--orange" routerLink="/users">Voltar</button>
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline><rect x="10" y="10" width="4" height="4" rx="1"></rect></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
           Reiniciar formulário
         </button>
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">Próximo</button>
+        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+          Próximo →
+        </button>
       </div>
     </div>
   </div>

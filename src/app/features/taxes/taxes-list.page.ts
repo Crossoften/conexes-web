@@ -1,28 +1,27 @@
 // src/app/features/taxes/taxes-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TaxesStore } from './taxes.store';
-import { Tax, TaxStatus, TAX_STATUS_CONFIG } from './taxes.model';
+import { Tax, TAX_STATUS_CONFIG } from './taxes.model';
 
 @Component({
   selector: 'app-taxes-list',
   standalone: true,
   imports: [FormsModule, NgClass, RouterLink],
-  providers: [TaxesStore], // Provemos localmente igual você fez na outra tela
+  providers: [TaxesStore],
   templateUrl: './taxes-list.page.html',
   styleUrl: './taxes-list.page.scss',
 })
-export class TaxesListPage {
+export class TaxesListPage implements OnInit {
   readonly store        = inject(TaxesStore);
-  readonly router       = inject(Router);
   readonly statusConfig = TAX_STATUS_CONFIG;
 
-  readonly statusOptions: { label: string; value: TaxStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Ativo',              value: 'ACTIVE' },
-    { label: 'Inativo',            value: 'INACTIVE' },
+  readonly statusOptions = [
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Inativo',            value: 'Inactive' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -48,9 +47,17 @@ export class TaxesListPage {
     return pages;
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.store.load();
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -61,9 +68,9 @@ export class TaxesListPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  trackById(_: number, item: Tax) { return item.id; }
+  trackById(_: number, item: Tax): number { return item.id; }
 }

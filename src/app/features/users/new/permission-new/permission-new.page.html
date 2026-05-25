@@ -6,28 +6,33 @@
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Cadastro de Permissões</h2>
-      <p class="card-subtitle">Identificação da permissão</p>
+      <p class="card-subtitle">Identificação da permissão — Etapa 2 de 2</p>
     </div>
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
         <div class="form-grid">
-          
+
           <div class="form-row grid-cols-2">
             <div class="form-group">
-              <label>Título<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title" [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched">
+              <label>Título</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title">
             </div>
             <div class="form-group">
-              <label>Descrição<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description" [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
+              <label>Descrição</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description">
             </div>
           </div>
 
           <div class="form-row grid-cols-3">
             <div class="form-group">
-              <label>Centro de custo<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="costCenter" [class.is-invalid]="form.get('costCenter')?.invalid && form.get('costCenter')?.touched">
+              <label>Centro de custo</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="costCenter">
             </div>
             <div class="form-group">
               <label>Projeto</label>
@@ -51,20 +56,29 @@
                     <th class="th th--center">Inclusão</th>
                     <th class="th th--center">Edição</th>
                     <th class="th th--center">Exclusão</th>
-                    <th class="th th--center">Acesso limitado</th>
+                    <th class="th th--center">Acesso ilimitado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (mod of modules; track mod.name; let i = $index) {
+                  @for (mod of modules; track mod.module; let i = $index) {
                     <tr class="tr">
-                      <td class="td td--bold">{{ mod.name }}</td>
-                      <td class="td">{{ mod.submenu }}</td>
-                      
-                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.view" (change)="togglePermission(i, 'view')"><span class="checkbox__box"></span></label></td>
-                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.add" (change)="togglePermission(i, 'add')"><span class="checkbox__box"></span></label></td>
-                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.edit" (change)="togglePermission(i, 'edit')"><span class="checkbox__box"></span></label></td>
-                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.del" (change)="togglePermission(i, 'del')"><span class="checkbox__box"></span></label></td>
-                      <td class="td td--center"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.limit" (change)="togglePermission(i, 'limit')"><span class="checkbox__box"></span></label></td>
+                      <td class="td td--bold">{{ mod.module }}</td>
+                      <td class="td">{{ mod.subMenu }}</td>
+                      <td class="td td--center">
+                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canView" (change)="togglePermission(i, 'canView')"><span class="checkbox__box"></span></label>
+                      </td>
+                      <td class="td td--center">
+                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canCreate" (change)="togglePermission(i, 'canCreate')"><span class="checkbox__box"></span></label>
+                      </td>
+                      <td class="td td--center">
+                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canEdit" (change)="togglePermission(i, 'canEdit')"><span class="checkbox__box"></span></label>
+                      </td>
+                      <td class="td td--center">
+                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canDelete" (change)="togglePermission(i, 'canDelete')"><span class="checkbox__box"></span></label>
+                      </td>
+                      <td class="td td--center">
+                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.isUnlimited" (change)="togglePermission(i, 'isUnlimited')"><span class="checkbox__box"></span></label>
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -77,13 +91,16 @@
     </div>
 
     <div class="card-footer">
-      <button class="btn-outline btn-outline--orange" routerLink="/users">Voltar</button>
+      <button class="btn-outline btn-outline--orange" routerLink="/users/new-user">← Voltar</button>
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline><rect x="10" y="10" width="4" height="4" rx="1"></rect></svg>
-          Reiniciar formulário
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+          Reiniciar
         </button>
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">Próximo</button>
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Salvar }
+        </button>
       </div>
     </div>
   </div>
