@@ -24,8 +24,15 @@
     .nav-trigger__badge,
     .sidebar__user-info { opacity: 0; pointer-events: none; }
 
-    .nav-trigger { justify-content: center; padding: 9px; }
-    .nav-children { max-height: 0 !important; }
+    .nav-trigger { justify-content: center; padding: 9px; gap: 0; }
+
+    .nav-trigger__label,
+    .nav-trigger__chevron,
+    .nav-trigger__badge { width: 0; overflow: hidden; }
+    .nav-children {
+      max-height: 0;
+      transition: max-height 150ms ease-in; // fecha antes do sidebar terminar de recolher
+    }
   }
 }
 
@@ -171,9 +178,12 @@
 .nav-children {
   overflow: hidden;
   max-height: 0;
-  transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-height 200ms cubic-bezier(0.4, 0, 1, 1); // ease-in: fecha rápido e sem travamento
 
-  .nav-item--open & { max-height: 600px; }
+  .nav-item--open & {
+    max-height: 600px;
+    transition: max-height 300ms cubic-bezier(0, 0, 0.2, 1); // ease-out: abre suave
+  }
 }
 
 .nav-children__inner { padding: 4px 0 4px 14px; }
