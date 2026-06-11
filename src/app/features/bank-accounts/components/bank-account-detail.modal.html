@@ -1,0 +1,395 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Cabeçalho ───────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>Conta bancária: {{ account?.code || '—' }}</h2>
+          <p>{{ account?.nickname || '' }}
+            @if (account?.bankName) { · {{ account?.bankName }} }
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        @if (mode === 'view') {
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        }
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Corpo ────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      @if (error) {
+        <div class="modal-error">{{ error }}</div>
+      }
+
+      <div class="modal-tabs">
+        <button class="tab-btn" [class.active]="activeTab === 'GERAIS'" (click)="setTab('GERAIS')">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Dados gerais
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'PARAMS'" (click)="setTab('PARAMS')">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M20 12h-2M17.66 17.66l-1.41-1.41M12 20v-2M6.34 17.66l1.41-1.41M4 12h2M6.34 6.34l1.41 1.41"/></svg>
+          Parâmetros CNAB
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'BOLETO'" (click)="setTab('BOLETO')">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Dados de boleto
+        </button>
+      </div>
+
+      <!-- ── VIEW MODE ─────────────────────────────────────────────────── -->
+      @if (mode === 'view') {
+
+        @if (activeTab === 'GERAIS') {
+          <div class="info-box">
+            <div class="info-header">
+              <strong>Status:</strong>
+              <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">{{ statusLabel }}</span>
+              &nbsp;|&nbsp;
+              <strong>Tipo:</strong> {{ accountTypeLabel }}
+              &nbsp;|&nbsp;
+              <strong>Banco:</strong> {{ bankName }}
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Código</span>
+                <span class="info-value mono">{{ account?.code || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Apelido</span>
+                <span class="info-value">{{ account?.nickname || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Agência</span>
+                <span class="info-value mono">{{ account?.agency || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Conta</span>
+                <span class="info-value mono">{{ account?.account || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Saldo inicial</span>
+                <span class="info-value">{{ account?.initialBalance | number:'1.2-2' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Data de abertura</span>
+                <span class="info-value">{{ account?.openDate || '—' }}</span>
+              </div>
+              @if (account?.closingDate) {
+                <div class="info-item">
+                  <span class="info-label">Data de encerramento</span>
+                  <span class="info-value">{{ account?.closingDate }}</span>
+                </div>
+              }
+              <div class="info-item col-span-2">
+                <span class="info-label">Telefone principal</span>
+                <span class="info-value">{{ account?.phone || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Telefone celular</span>
+                <span class="info-value">{{ account?.cellPhone || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">E-mail de contato</span>
+                <span class="info-value">{{ account?.contactEmail || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Contato</span>
+                <span class="info-value">{{ account?.contactName || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Conta contábil</span>
+                <span class="info-value">{{ account?.accountingAccount || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Tipo de recurso</span>
+                <span class="info-value">{{ account?.resourceType || '—' }}</span>
+              </div>
+              <div class="info-item col-span-4">
+                <span class="info-label">Dados do correntista diferentes do fornecedor</span>
+                <span class="info-value">{{ account?.isAccountHolderDataDifferent ? 'Sim' : 'Não' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab === 'PARAMS') {
+          <div class="info-box">
+            <div class="info-grid">
+              <div class="info-item col-span-2">
+                <span class="info-label">Número do convênio de pagamento</span>
+                <span class="info-value mono">{{ account?.convPaymentNumber || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">CNPJ da conta</span>
+                <span class="info-value mono">{{ account?.accountCnpj || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Intervalo de pagamento CNAB</span>
+                <span class="info-value">{{ account?.paymentInterval || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Tipo CNAB</span>
+                <span class="info-value">{{ account?.cnabType || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Hash API Pagamentos</span>
+                <span class="info-value mono">{{ account?.hash || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Código de movimento</span>
+                <span class="info-value mono">{{ account?.movementCode || '—' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab === 'BOLETO') {
+          <div class="info-box">
+            <div class="info-grid">
+              <div class="info-item col-span-2">
+                <span class="info-label">Sequencial do nosso número</span>
+                <span class="info-value mono">{{ account?.boletoSequential || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Código beneficiário</span>
+                <span class="info-value mono">{{ account?.beneficiaryCode || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Carteira</span>
+                <span class="info-value mono">{{ account?.wallet || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Número do convênio de cobrança</span>
+                <span class="info-value mono">{{ account?.convCollectionNumber || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Variação da carteira</span>
+                <span class="info-value mono">{{ account?.walletVariation || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Modalidade</span>
+                <span class="info-value">{{ account?.modality || '—' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+      }
+
+      <!-- ── EDIT MODE ──────────────────────────────────────────────────── -->
+      @if (mode === 'edit') {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          @if (activeTab === 'GERAIS') {
+            <div class="form-grid">
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Banco <span class="req">*</span></label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="banco"
+                      [class.is-invalid]="form.get('banco')?.invalid && form.get('banco')?.touched">
+                      <option value="">Selecione</option>
+                      @for (bank of banks; track bank.id) {
+                        <option [value]="bank.id">{{ bank.code }} — {{ bank.name }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo de conta <span class="req">*</span></label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="tipoConta"
+                      [class.is-invalid]="form.get('tipoConta')?.invalid && form.get('tipoConta')?.touched">
+                      <option value="">Selecione</option>
+                      <option value="Checking">Conta Corrente</option>
+                      <option value="Savings">Conta Poupança</option>
+                      <option value="Salary">Conta Salário</option>
+                      <option value="Payment">Conta Pagamento</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Apelido da conta <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="apelidoConta"
+                    [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Data de abertura <span class="req">*</span></label>
+                  <input type="date" class="form-control" formControlName="dataAbertura"
+                    [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Agência + Dígito <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="agenciaDigito"
+                    [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Número da conta + Dígito <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="numeroContaDigito"
+                    [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Saldo inicial <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="saldoInicial"
+                    [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Telefone principal <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="telefonePrincipal"
+                    [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Telefone celular <span class="req">*</span></label>
+                  <input type="text" class="form-control" formControlName="telefoneCelular"
+                    [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">E-mail de contato <span class="req">*</span></label>
+                  <input type="email" class="form-control" formControlName="emailContato"
+                    [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Contato</label>
+                  <input type="text" class="form-control" formControlName="contato">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Conta contábil</label>
+                  <input type="text" class="form-control" formControlName="contaContabil">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Tipo do recurso</label>
+                  <input type="text" class="form-control" formControlName="tipoRecurso">
+                </div>
+              </div>
+              <div class="form-row grid-cols-1">
+                <label class="checkbox-inline">
+                  <div class="checkbox">
+                    <input type="checkbox" class="checkbox__input" formControlName="dadosDiferentes">
+                    <span class="checkbox__box"></span>
+                  </div>
+                  Dados do correntista diferentes dos dados do fornecedor
+                </label>
+              </div>
+            </div>
+          }
+
+          @if (activeTab === 'PARAMS') {
+            <div class="form-grid">
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Número do convênio de pagamento</label>
+                  <input type="text" class="form-control" formControlName="numeroConvenioPagamento">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CNPJ Conta</label>
+                  <input type="text" class="form-control" formControlName="cnpjConta">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Intervalo de pagamento CNAB</label>
+                  <input type="text" class="form-control" formControlName="intervaloPagamento">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo CNAB</label>
+                  <input type="text" class="form-control" formControlName="tipoCnab">
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Hash API Pagamentos</label>
+                  <input type="text" class="form-control" formControlName="hashApi">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Código Movimento</label>
+                  <input type="text" class="form-control" formControlName="codigoMovimento">
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (activeTab === 'BOLETO') {
+            <div class="form-grid">
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Sequencial do nosso número</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="sequencialNossoNumero" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Código beneficiário</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="codigoBeneficiario" readonly>
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Carteira</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="carteira" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Número do convênio de cobrança</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="numeroConvenioCobranca" readonly>
+                </div>
+              </div>
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label">Variação da Carteira</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="variacaoCarteira" readonly>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Modalidade</label>
+                  <input type="text" class="form-control disabled-bg" formControlName="modalidade" readonly>
+                </div>
+              </div>
+            </div>
+          }
+
+        </form>
+      }
+
+    </div>
+
+    <!-- ── Footer (só no modo edição) ──────────────────────────────────── -->
+    @if (mode === 'edit') {
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="onClose()">Cancelar</button>
+        <button class="btn-save" [disabled]="saving" (click)="onSubmit()">
+          @if (saving) { Salvando… } @else { Salvar alterações }
+        </button>
+      </div>
+    }
+
+  </div>
+</div>

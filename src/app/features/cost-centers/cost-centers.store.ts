@@ -101,6 +101,12 @@ export const CostCentersStore = signalStore(
         });
       },
 
+      updateItem(updated: CostCenter) {
+        patchState(store, s => ({
+          items: s.items.map(c => c.id === updated.id ? updated : c),
+        }));
+      },
+
       deleteById(id: number) {
         svc.delete(id).subscribe({
           next: () => patchState(store, s => ({

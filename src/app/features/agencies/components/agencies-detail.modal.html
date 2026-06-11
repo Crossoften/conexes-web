@@ -1,0 +1,245 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" [class.modal-container--lg]="mode === 'edit'" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ agency?.legalName || '—' }}</h2>
+          <p>{{ mode === 'view' ? 'Acompanhe todas as informações cadastradas para este órgão.' : 'Atualize as informações cadastradas para este órgão.' }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <ng-container *ngIf="mode === 'view'">
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </ng-container>
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      <div *ngIf="loading" class="modal-loading">
+        <p>Carregando informações...</p>
+      </div>
+
+      <ng-container *ngIf="!loading && agency">
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- MODO VIEW                                                        -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'view'">
+          <div class="info-box">
+            <div class="info-grid">
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Razão Social</span>
+                <span class="info-value">{{ agency.legalName || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Nome Fantasia</span>
+                <span class="info-value">{{ agency.tradeName || '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">CNPJ</span>
+                <span class="info-value info-value--mono">{{ agency.cnpj || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Emancipação</span>
+                <span class="info-value">{{ agency.emancipation || '—' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">CEP</span>
+                <span class="info-value info-value--mono">{{ agency.zipCode || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Endereço</span>
+                <span class="info-value">{{ agency.address || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Número</span>
+                <span class="info-value">{{ agency.number || '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Complemento</span>
+                <span class="info-value">{{ agency.complement || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">Órgão Gestor</span>
+                <span class="info-value">{{ agency.managingOrgan || '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Telefone</span>
+                <span class="info-value info-value--mono">{{ agency.phone || '—' }}</span>
+              </div>
+              <div class="info-item col-span-2">
+                <span class="info-label">E-mail</span>
+                <span class="info-value">{{ agency.email || '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Status</span>
+                <span class="info-value">
+                  <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">
+                    {{ statusLabel }}
+                  </span>
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </ng-container>
+        <!-- /MODO VIEW -->
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- MODO EDIT                                                        -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'edit'">
+          <form [formGroup]="form">
+            <div class="form-grid">
+
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label>CNPJ <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="00.000.000/0001-00"
+                    formControlName="cnpj"
+                    (input)="applyCnpjMask($event)"
+                    (keydown)="onlyNumbers($event)">
+                  @if (form.get('cnpj')?.invalid && form.get('cnpj')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Razão Social <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="legalName">
+                  @if (form.get('legalName')?.invalid && form.get('legalName')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-row grid-cols-2">
+                <div class="form-group">
+                  <label>Nome Fantasia <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="tradeName">
+                  @if (form.get('tradeName')?.invalid && form.get('tradeName')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Emancipação</label>
+                  <input type="date" class="form-control" formControlName="emancipation">
+                </div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group">
+                  <label>CEP <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="00000-000"
+                    formControlName="zipCode"
+                    (input)="applyCepMask($event)"
+                    (keydown)="onlyNumbers($event)">
+                  @if (form.get('zipCode')?.invalid && form.get('zipCode')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Endereço <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="address">
+                  @if (form.get('address')?.invalid && form.get('address')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Nro <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="number">
+                  @if (form.get('number')?.invalid && form.get('number')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Complemento</label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="complement">
+                </div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group">
+                  <label>Órgão Gestor <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..."
+                    formControlName="managingOrgan">
+                  @if (form.get('managingOrgan')?.invalid && form.get('managingOrgan')?.touched) {
+                    <span class="field-error">Campo obrigatório</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label>Telefone</label>
+                  <input type="text" class="form-control" placeholder="(00) 00000-0000"
+                    formControlName="phone"
+                    (input)="applyPhoneMask($event)"
+                    (keydown)="onlyNumbers($event)">
+                </div>
+                <div class="form-group col-span-2">
+                  <label>E-mail</label>
+                  <input type="email" class="form-control" placeholder="email@exemplo.com"
+                    formControlName="email">
+                  @if (form.get('email')?.invalid && form.get('email')?.touched) {
+                    <span class="field-error">E-mail inválido</span>
+                  }
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </ng-container>
+        <!-- /MODO EDIT -->
+
+      </ng-container>
+    </div>
+    <!-- /Body -->
+
+    <!-- ── Footer (só aparece no modo edit) ───────────────────────────────── -->
+    <div class="modal-footer" *ngIf="!loading && mode === 'edit'">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onCancelEdit()">
+        Cancelar
+      </button>
+      <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+        Salvar alterações
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,15 +1,16 @@
 // src/app/features/agencies/agencies-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AgenciesStore } from './agencies.store';
-import { Agency, AGENCY_STATUS_CONFIG } from './agencies.model';
+import { Agency, AgencyUpdatePayload, AGENCY_STATUS_CONFIG } from './agencies.model';
+import { AgencyDetailModalComponent } from './components/agencies-detail.modal';
 
 @Component({
   selector: 'app-agencies-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, NgIf, RouterLink, AgencyDetailModalComponent],
   providers: [AgenciesStore],
   templateUrl: './agencies-list.page.html',
   styleUrl: './agencies-list.page.scss',
@@ -17,6 +18,11 @@ import { Agency, AGENCY_STATUS_CONFIG } from './agencies.model';
 export class AgenciesListPage implements OnInit {
   readonly store        = inject(AgenciesStore);
   readonly statusConfig = AGENCY_STATUS_CONFIG;
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  readonly selectedAgency = signal<Agency | null>(null);
+  readonly showModal      = signal(false);
+  readonly modalLoading   = signal(false);
 
   readonly statusOptions = [
     { label: 'Selecione o status', value: ''         },
@@ -27,7 +33,7 @@ export class AgenciesListPage implements OnInit {
   readonly pageSizeOptions = [10, 25, 50];
 
   readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
+    Math.max(1, Math.ceil(this.store.total() / this.store.pagination().pageSize))
   );
 
   readonly pageNumbers = computed((): (number | '...')[] => {
@@ -53,7 +59,7 @@ export class AgenciesListPage implements OnInit {
     this.store.load();
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Search debounce ───────────────────────────────────────────────────────
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -62,14 +68,62 @@ export class AgenciesListPage implements OnInit {
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
 
+  // ── Sort ──────────────────────────────────────────────────────────────────
+
   getSortState(col: keyof Agency): 'none' | 'asc' | 'desc' {
     const { column, direction } = this.store.sort();
     if (column !== col || !direction) return 'none';
     return direction;
   }
 
+  // ── Pagination ────────────────────────────────────────────────────────────
+
   goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
+  }
+
+  // ── Modal handlers ────────────────────────────────────────────────────────
+
+  onView(item: Agency): void {
+    this.selectedAgency.set(item);
+    this.showModal.set(true);
+  }
+
+  onEdit(item: Agency): void {
+    this.selectedAgency.set(item);
+    this.showModal.set(true);
+  }
+
+  onCloseModal(): void {
+    this.showModal.set(false);
+    this.selectedAgency.set(null);
+  }
+
+  onSaved(payload: AgencyUpdatePayload): void {
+    const id = this.selectedAgency()?.id;
+    if (!id) return;
+    this.modalLoading.set(true);
+    this.store.update(id, payload,
+      () => {
+        this.modalLoading.set(false);
+        this.onCloseModal();
+      },
+      () => {
+        this.modalLoading.set(false);
+      }
+    );
+  }
+
+  onDelete(id: number): void {
+    this.store.delete(id,
+      () => this.onCloseModal(),
+    );
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  onExport(): void {
+    this.store.exportExcel();
   }
 
   trackById(_: number, item: Agency): number { return item.id; }

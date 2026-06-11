@@ -1,0 +1,283 @@
+<!-- src/app/features/cost-centers/components/cost-centers-detail.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ──────────────────────────────────────────────────────────── -->
+    <div class="modal-header" [class.modal-header--edit]="mode === 'edit'">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ item?.title || ('#' + item?.id) || '—' }}</h2>
+          <p>
+            @if (mode === 'view') { Acompanhe todas as informações cadastradas para este projeto/centro de custo. }
+            @else { Edite as informações e salve ao finalizar. }
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        @if (mode === 'view') {
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        }
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ────────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      <!-- ── Tabs ──────────────────────────────────────────────────────────── -->
+      <div class="modal-tabs">
+        <button class="tab-btn active">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Dados gerais
+        </button>
+      </div>
+
+      <div class="tab-content">
+
+        <!-- ══ VIEW MODE ════════════════════════════════════════════════════ -->
+        @if (mode === 'view') {
+          <div class="info-box">
+            <div class="info-header">
+              <strong>Código:</strong> {{ item?.code || '—' }} |
+              <strong>Status:</strong>
+              <span class="status-badge status-badge--{{ statusVariant }}">{{ statusLabel }}</span>
+            </div>
+
+            <div class="info-grid">
+
+              <div class="info-item">
+                <span class="info-label">Tipo</span>
+                <span class="info-value">{{ item?.type || '—' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Código contábil</span>
+                <span class="info-value">{{ item?.accountingCode || '—' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Fonte pagadora</span>
+                <span class="info-value">{{ item?.payingSource || '—' }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Data de início</span>
+                <span class="info-value">{{ item?.startDate ? (item!.startDate | slice:0:10) : '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-4">
+                <span class="info-label">Descrição da categoria</span>
+                <span class="info-value">{{ item?.categoryDescription || '—' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Restringir juros e multa</span>
+                <span class="info-value">{{ item?.restrictInterestFine ? 'Sim' : 'Não' }}</span>
+              </div>
+
+              <div class="info-item col-span-2">
+                <span class="info-label">Restrição em orçamentos</span>
+                <span class="info-value">{{ item?.restrictBudget ? 'Sim' : 'Não' }}</span>
+              </div>
+
+              @if (item?.linkedAccounts?.length) {
+                <div class="info-item col-span-4">
+                  <span class="info-label">Contas vinculadas</span>
+                  <div class="linked-view-list">
+                    @for (linked of item!.linkedAccounts; track $index) {
+                      <span class="linked-view-item">
+                        <span class="linked-view-origin">{{ linked.origin }}</span>
+                        <span class="linked-view-account">{{ getAccountLabel(linked.accountPlanId) }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+
+            </div>
+          </div>
+        }
+
+        <!-- ══ EDIT MODE ════════════════════════════════════════════════════ -->
+        @if (mode === 'edit') {
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+            <div class="edit-box">
+
+              @if (errorMsg()) {
+                <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+              }
+
+              <h3 class="edit-section-title">Dados de projetos/centro de custo</h3>
+
+              <div class="edit-grid">
+
+                <div class="field">
+                  <label class="field-label">Tipo <span class="required">*</span></label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="projectType"
+                      [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
+                      <option value="">Selecione</option>
+                      <option value="Projeto">Projeto</option>
+                      <option value="Centro de Custos">Centro de Custos</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Código <span class="required">*</span></label>
+                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="projectCode"
+                    [class.ng-invalid]="form.get('projectCode')?.invalid && form.get('projectCode')?.touched">
+                </div>
+
+                <div class="field field--wide">
+                  <label class="field-label">Título <span class="required">*</span></label>
+                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="projectTitle"
+                    [class.ng-invalid]="form.get('projectTitle')?.invalid && form.get('projectTitle')?.touched">
+                </div>
+
+                <div class="field field--wide">
+                  <label class="field-label">Código Contábil</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="accountingCode">
+                      <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                      @for (plan of accountPlans(); track plan.id) {
+                        <option [value]="plan.code">{{ plan.code }} — {{ plan.title }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <div class="field field--wide">
+                  <label class="field-label">Fonte Pagadora</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="payingSource">
+                      <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                      @for (entity of entities(); track entity.id) {
+                        <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Data de Início</label>
+                  <input class="input" type="date" formControlName="startDate">
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Status</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="status">
+                      <option value="Active">Ativo</option>
+                      <option value="Inactive">Inativo</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <div class="field field--full">
+                  <label class="field-label">Descrição da Categoria</label>
+                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="categoryDescription">
+                </div>
+
+                <div class="field field--wide">
+                  <label class="checkbox-wrap">
+                    <div class="checkbox">
+                      <input type="checkbox" class="checkbox__input" formControlName="restrictInterest">
+                      <span class="checkbox__box"></span>
+                    </div>
+                    <span class="checkbox-label">Restringir alocação de juros e multa</span>
+                  </label>
+                </div>
+
+                <div class="field field--wide">
+                  <label class="checkbox-wrap">
+                    <div class="checkbox">
+                      <input type="checkbox" class="checkbox__input" formControlName="budgetRestriction">
+                      <span class="checkbox__box"></span>
+                    </div>
+                    <span class="checkbox-label">Restrição em orçamentos</span>
+                  </label>
+                </div>
+
+              </div>
+
+              <!-- Contas vinculadas -->
+              <h3 class="edit-section-title">Composição de contas vinculadas</h3>
+
+              <div class="linked-box">
+                <div class="linked-box__label">Origem (Caixa)</div>
+
+                <div class="linked-box__input">
+                  <div class="field">
+                    <label class="field-label">Selecionar conta</label>
+                    <div class="select-wrap">
+                      <select class="select"
+                        [(ngModel)]="selectedLinkedAccount"
+                        [ngModelOptions]="{ standalone: true }">
+                        <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                        @for (plan of accountPlans(); track plan.id) {
+                          <option [value]="plan.id">{{ plan.code }} — {{ plan.title }}</option>
+                        }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="linked-box__actions">
+                  <button type="button" class="btn-square-outline" title="Adicionar" (click)="addLinkedAccount()">
+                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              @if (linkedAccounts.length > 0) {
+                <div class="linked-list">
+                  @for (linked of linkedAccounts; track $index) {
+                    <div class="linked-list__item">
+                      <span class="linked-list__origin">{{ linked.origin }}</span>
+                      <span class="linked-list__account">{{ getAccountLabel(linked.accountPlanId) }}</span>
+                      <button type="button" class="icon-btn" title="Remover" (click)="removeLinkedAccount($index)">
+                        <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+            </div>
+
+            <!-- Footer edit -->
+            <div class="edit-footer">
+              <button type="button" class="btn-cancel" (click)="onCancelEdit()">Cancelar</button>
+              <button type="submit" class="btn-save" [disabled]="loading()">
+                @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+                @else { Salvar alterações }
+              </button>
+            </div>
+
+          </form>
+        }
+
+      </div>
+    </div>
+  </div>
+</div>

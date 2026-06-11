@@ -1,15 +1,16 @@
 // src/app/features/cost-centers/cost-centers-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CostCentersStore } from './cost-centers.store';
 import { CostCenter, CostCenterStatus, CostCenterType, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
+import { CostCentersDetailModalComponent } from './components/cost-centers-detail.modal';
 
 @Component({
   selector: 'app-cost-centers-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, CostCentersDetailModalComponent],
   providers: [CostCentersStore],
   templateUrl: './cost-centers-list.page.html',
   styleUrl: './cost-centers-list.page.scss',
@@ -17,6 +18,10 @@ import { CostCenter, CostCenterStatus, CostCenterType, COST_CENTER_STATUS_CONFIG
 export class CostCentersListPage implements OnInit {
   readonly store        = inject(CostCentersStore);
   readonly statusConfig = COST_CENTER_STATUS_CONFIG;
+
+  // ── Modal ────────────────────────────────────────────────────────────────
+  readonly selectedItem = signal<CostCenter | null>(null);
+  readonly showModal    = signal(false);
 
   readonly statusOptions: { label: string; value: CostCenterStatus | '' }[] = [
     { label: 'Selecione o status', value: ''         },
@@ -58,6 +63,37 @@ export class CostCentersListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+  }
+
+  // ── Modal handlers ────────────────────────────────────────────────────────
+
+  onView(item: CostCenter): void {
+    this.selectedItem.set(item);
+    this.showModal.set(true);
+  }
+
+  onEdit(item: CostCenter): void {
+    this.selectedItem.set(item);
+    this.showModal.set(true);
+  }
+
+  onModalClose(): void {
+    this.showModal.set(false);
+    this.selectedItem.set(null);
+  }
+
+  onModalSaved(updated: CostCenter): void {
+    // Atualiza o item na lista local do store
+    this.store.updateItem(updated);
+    this.showModal.set(false);
+    this.selectedItem.set(null);
+  }
+
+  onModalDeleted(id: number): void {
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    this.showModal.set(false);
+    this.selectedItem.set(null);
+    this.store.deleteById(id);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+<!-- src/app/features/stakeholders/stakeholders-list.page.html -->
 <div class="page">
 
   <div class="page-header">
@@ -25,11 +26,15 @@
       </div>
 
       <div class="filter-bar">
+
         <div class="search-wrap">
           <input class="search" type="text" placeholder="Buscar"
             [value]="store.filters().search"
             (input)="onSearch($any($event.target).value)">
-          <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
         </div>
 
         <div class="select-wrap">
@@ -44,24 +49,55 @@
         </div>
 
         <div class="select-wrap">
-          <select class="select select--pill"><option value="">Selecione o tipo</option></select>
+          <select class="select select--pill"
+            [value]="store.filters().personType"
+            (change)="onPersonTypeChange($any($event.target).value)">
+            @for (opt of personTypeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
 
-        <button class="btn-outline btn-pill">
-          Exportar
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
+        <button class="btn-outline btn-pill"
+          [disabled]="store.exporting()"
+          (click)="exportExcel()">
+          @if (store.exporting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Exportando...
+          } @else {
+            Exportar
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 18 15 15"/>
+            </svg>
+          }
         </button>
+
       </div>
+
+      @if (store.exportError()) {
+        <p class="export-error">{{ store.exportError() }}</p>
+      }
 
       <div class="secondary-actions">
         <button class="btn-outline btn-outline--gray">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
           Upload arquivo
         </button>
 
         <button class="btn-solid btn-solid--purple">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><rect x="3" y="11" width="18" height="6" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/>
+            <rect x="3" y="11" width="18" height="6" rx="2"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
           Gerenciar lotes de upload
         </button>
       </div>
@@ -81,11 +117,21 @@
                 <span class="checkbox__box"></span>
               </label>
             </th>
-            <th class="th th--sortable" (click)="store.setSort('code')">Código <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('personType')">Pessoa <span class="sort-icon" [ngClass]="'sort--' + getSortState('personType')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('document')">CNPJ/CPF <span class="sort-icon" [ngClass]="'sort--' + getSortState('document')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('name')">Nome/Razão Social <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('code')">
+              Código <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span>
+            </th>
+            <th class="th th--sortable" (click)="store.setSort('personType')">
+              Pessoa <span class="sort-icon" [ngClass]="'sort--' + getSortState('personType')"></span>
+            </th>
+            <th class="th th--sortable" (click)="store.setSort('document')">
+              CNPJ/CPF <span class="sort-icon" [ngClass]="'sort--' + getSortState('document')"></span>
+            </th>
+            <th class="th th--sortable" (click)="store.setSort('name')">
+              Nome/Razão Social <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span>
+            </th>
+            <th class="th th--sortable" (click)="store.setSort('status')">
+              Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span>
+            </th>
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -108,32 +154,46 @@
                     <span class="checkbox__box"></span>
                   </label>
                 </td>
-                <td class="td td--mono">{{ item.code }}</td>
+                <!-- Exibe código ou ID como fallback caso o back retorne code vazio -->
+                <td class="td td--mono">{{ item.code || ('#' + item.id) }}</td>
                 <td class="td">{{ item.personType }}</td>
                 <td class="td td--mono">{{ item.document }}</td>
                 <td class="td td--name" style="color: var(--text-secondary);">{{ item.name }}</td>
                 <td class="td">
                   @if (item.status === 'Active') {
                     <span class="status-badge status-badge--success">
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                       Ativo
                     </span>
                   } @else if (item.status === 'Pending') {
                     <span class="status-badge status-badge--warning">
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M7 4.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                      </svg>
                       Pendente
                     </span>
                   } @else {
                     <span class="status-badge status-badge--danger">
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                      </svg>
                       Inativo
                     </span>
                   }
                 </td>
                 <td class="td td--center">
                   <button type="button" class="btn-ver"
+                    [disabled]="modalLoading"
                     (click)="$event.stopPropagation(); openModal(item)">
-                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/></svg>
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                      <circle cx="10" cy="10" r="2.5"/>
+                    </svg>
                     Ver
                   </button>
                 </td>
@@ -149,7 +209,9 @@
         <button class="pag-btn" aria-label="Anterior"
           [disabled]="store.pagination().page === 1"
           (click)="store.setPage(store.pagination().page - 1)">
-          <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+            <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
 
         @for (p of pageNumbers(); track $index) {
@@ -165,7 +227,9 @@
         <button class="pag-btn" aria-label="Próxima"
           [disabled]="store.pagination().page === store.totalPages()"
           (click)="store.setPage(store.pagination().page + 1)">
-          <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
 
@@ -177,17 +241,38 @@
             <option [value]="s">{{ s }} / página</option>
           }
         </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
     </div>
 
   </div>
 </div>
 
+<!-- ── Toast de feedback ──────────────────────────────────────────────────── -->
+@if (toast) {
+  <div class="toast" [class.toast--success]="toast.type === 'success'" [class.toast--error]="toast.type === 'error'">
+    @if (toast.type === 'success') {
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M6.5 10l2.5 2.5 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    } @else {
+      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 6v5M10 13.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    }
+    <span>{{ toast.message }}</span>
+  </div>
+}
+
 @if (isModalOpen) {
   <app-stakeholder-detail-modal
     [stakeholder]="selectedStakeholder"
     (close)="closeModal()"
-    (delete)="onDelete($event)">
+    (delete)="onDelete($event)"
+    (saved)="onSaved($event)">
   </app-stakeholder-detail-modal>
 }

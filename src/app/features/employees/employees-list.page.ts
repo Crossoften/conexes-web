@@ -1,15 +1,16 @@
 // src/app/features/employees/employees-list.page.ts
 import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EmployeesStore } from './employees.store';
-import { Employee } from './employees.model';
+import { EmployeeDetailModalComponent } from './components/employee-detail.modal';
+import { Employee, EmployeeUpdatePayload } from './employees.model';
 
 @Component({
   selector: 'app-employees-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, NgIf, RouterLink, EmployeeDetailModalComponent],
   providers: [EmployeesStore],
   templateUrl: './employees-list.page.html',
   styleUrl: './employees-list.page.scss',
@@ -56,6 +57,25 @@ export class EmployeesListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+
+  openDetail(item: Employee): void {
+    this.store.openDetail(item);
+  }
+
+  onModalClose(): void {
+    this.store.closeDetail();
+  }
+
+  onModalSaved(payload: EmployeeUpdatePayload): void {
+    const selected = this.store.selected();
+    if (selected) this.store.update(selected.id, payload);
+  }
+
+  onModalDelete(id: number): void {
+    this.store.delete(id);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────

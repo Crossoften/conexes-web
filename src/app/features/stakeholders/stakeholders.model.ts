@@ -165,6 +165,29 @@ export interface StakeholderListResponse {
   total: number;
 }
 
+// ── Dados da Receita Federal (endpoint /cnpj/:cnpj) ──────────────────────────
+// Mapeie apenas os campos que o back retorna; adicione mais conforme necessário.
+
+export interface CnpjData {
+  cnpj:                 string;
+  razaoSocial:          string;   // → name / tradeName
+  nomeFantasia:         string;   // → tradeName
+  email:                string;
+  telefone:             string;   // → phone
+  naturezaJuridica:     string;   // → legalNature
+  atividadePrincipal:   string;   // → mainActivity
+  atividadeSecundaria?: string;   // → secondaryActivity
+  inscricaoEstadual?:   string;   // → stateRegistration
+  logradouro?:          string;   // → addresses[0].street
+  numero?:              string;   // → addresses[0].number
+  complemento?:         string;   // → addresses[0].complement
+  bairro?:              string;   // → addresses[0].district
+  municipio?:           string;   // → addresses[0].city
+  uf?:                  string;   // → addresses[0].state
+  cep?:                 string;   // → addresses[0].zipCode
+  situacao?:            string;   // pode mapear p/ status se útil
+}
+
 // ── Labels e configs de UI ────────────────────────────────────────────────────
 
 export interface StatusConfig {
@@ -189,4 +212,10 @@ export const STAKEHOLDER_TYPE_LABELS: Record<StakeholderType, string> = {
 export const VIEW_TYPES: Record<StakeholderView, StakeholderType[]> = {
   suppliers: ['Supplier', 'Other'],
   clients:   ['Customer', 'Donor', 'SupportedProject'],
+};
+
+export const PERSON_TYPE_LABELS: Record<PersonType, string> = {
+  PF:    'Pessoa Física',
+  PJ:    'Pessoa Jurídica',
+  Other: 'Outro',
 };

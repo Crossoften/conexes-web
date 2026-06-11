@@ -1,0 +1,394 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" [class.modal-container--lg]="mode === 'edit'" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ entity?.legalName || '—' }}</h2>
+          <p>{{ mode === 'view' ? 'Acompanhe todas as informações cadastradas para esta entidade.' : 'Atualize as informações cadastradas para esta entidade.' }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <ng-container *ngIf="mode === 'view'">
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </ng-container>
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="modal-loading">
+        <p>Carregando informações...</p>
+      </div>
+
+      <ng-container *ngIf="!loading && entity">
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- MODO VIEW                                                        -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'view'">
+
+          <div class="modal-tabs">
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'geral'" (click)="activeTab = 'geral'">
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              Dados Gerais
+            </button>
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'contador'" (click)="activeTab = 'contador'">
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Dados Contador
+            </button>
+          </div>
+
+          <!-- Tab: Dados Gerais -->
+          <div class="tab-content" *ngIf="activeTab === 'geral'">
+            <div class="info-box">
+              <div class="info-grid">
+
+                <div class="info-item">
+                  <span class="info-label">CNPJ / CPF</span>
+                  <span class="info-value info-value--mono">{{ entity.cnpj || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Inscrição Estadual</span>
+                  <span class="info-value">{{ entity.stateRegistration || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Data de Constituição</span>
+                  <span class="info-value">{{ entity.constitutionDate || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Tipo</span>
+                  <span class="info-value">{{ typeLabel }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Razão Social</span>
+                  <span class="info-value">{{ entity.legalName || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Nome Fantasia</span>
+                  <span class="info-value">{{ entity.tradeName || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">CEP</span>
+                  <span class="info-value info-value--mono">{{ entity.zipCode || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Endereço</span>
+                  <span class="info-value">{{ entity.address || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Número</span>
+                  <span class="info-value">{{ entity.number || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Complemento</span>
+                  <span class="info-value">{{ entity.complement || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Cidade</span>
+                  <span class="info-value">{{ entity.city || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Estado (UF)</span>
+                  <span class="info-value">{{ entity.state || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Telefone Principal</span>
+                  <span class="info-value info-value--mono">{{ entity.mainPhone || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Telefone Celular</span>
+                  <span class="info-value info-value--mono">{{ entity.cellPhone || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">E-mail do Dirigente</span>
+                  <span class="info-value">{{ entity.directorEmail || '—' }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Status</span>
+                  <span class="info-value">
+                    <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">
+                      {{ statusLabel }}
+                    </span>
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Dados Contador -->
+          <div class="tab-content" *ngIf="activeTab === 'contador'">
+            <div class="info-box">
+              <div class="info-grid">
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Nome do Contador</span>
+                  <span class="info-value">{{ entity.accountantName || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CPF do Contador</span>
+                  <span class="info-value info-value--mono">{{ entity.accountantCpf || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CRC</span>
+                  <span class="info-value">{{ entity.accountantCrc || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">CEP</span>
+                  <span class="info-value info-value--mono">{{ entity.accountantZipCode || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Endereço</span>
+                  <span class="info-value">{{ entity.accountantAddress || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Número</span>
+                  <span class="info-value">{{ entity.accountantNumber || '—' }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Complemento</span>
+                  <span class="info-value">{{ entity.accountantComplement || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Telefone</span>
+                  <span class="info-value info-value--mono">{{ entity.accountantPhone || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">E-mail</span>
+                  <span class="info-value">{{ entity.accountantEmail || '—' }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Escritório de Contabilidade</span>
+                  <span class="info-value">{{ entity.accountantOffice || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Telefone do Escritório</span>
+                  <span class="info-value info-value--mono">{{ entity.accountantOfficePhone || '—' }}</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+        <!-- /MODO VIEW -->
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- MODO EDIT                                                        -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'edit'">
+          <form [formGroup]="form">
+
+            <div class="tab-container">
+              <button type="button" class="tab-button" [class.active]="activeTab === 'geral'" (click)="activeTab = 'geral'">
+                Dados Gerais
+              </button>
+              <button type="button" class="tab-button" [class.active]="activeTab === 'contador'" (click)="activeTab = 'contador'">
+                Dados Contador
+              </button>
+            </div>
+
+            <!-- Tab Edit: Dados Gerais -->
+            <div class="tab-content" *ngIf="activeTab === 'geral'">
+              <div class="form-grid">
+
+                <div class="form-row grid-cols-3">
+                  <div class="form-group">
+                    <label>CNPJ<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="cnpj" placeholder="00.000.000/0001-00">
+                  </div>
+                  <div class="form-group">
+                    <label>Inscrição Estadual</label>
+                    <input type="text" class="form-control" formControlName="stateRegistration" placeholder="Digite aqui...">
+                  </div>
+                  <div class="form-group">
+                    <label>Data de Constituição</label>
+                    <input type="date" class="form-control" formControlName="constitutionDate">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-2">
+                  <div class="form-group">
+                    <label>Razão Social<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="legalName" placeholder="Digite aqui...">
+                  </div>
+                  <div class="form-group">
+                    <label>Nome Fantasia<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="tradeName" placeholder="Digite aqui...">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>CEP<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="zipCode" placeholder="00000-000">
+                  </div>
+                  <div class="form-group">
+                    <label>Endereço<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="address" placeholder="Rua, Av...">
+                  </div>
+                  <div class="form-group">
+                    <label>Número<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="number" placeholder="Nº">
+                  </div>
+                  <div class="form-group">
+                    <label>Complemento</label>
+                    <input type="text" class="form-control" formControlName="complement" placeholder="Apto, Sala...">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-2">
+                  <div class="form-group">
+                    <label>Cidade<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="city" placeholder="Digite a cidade...">
+                  </div>
+                  <div class="form-group">
+                    <label>Estado (UF)<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="state" placeholder="Ex: SP, MG...">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-3">
+                  <div class="form-group">
+                    <label>Telefone Principal<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="mainPhone" placeholder="Digite aqui...">
+                  </div>
+                  <div class="form-group">
+                    <label>Telefone Celular<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="cellPhone" placeholder="Digite aqui...">
+                  </div>
+                  <div class="form-group">
+                    <label>E-mail do Dirigente<span class="req">*</span></label>
+                    <input type="email" class="form-control" formControlName="directorEmail" placeholder="Digite aqui...">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Tab Edit: Dados Contador -->
+            <div class="tab-content" *ngIf="activeTab === 'contador'">
+              <div class="form-grid">
+
+                <div class="form-row grid-cols-3">
+                  <div class="form-group">
+                    <label>Nome do Contador<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantName" placeholder="Nome completo">
+                  </div>
+                  <div class="form-group">
+                    <label>CPF do Contador<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00">
+                  </div>
+                  <div class="form-group">
+                    <label>CRC<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantCrc" placeholder="UF-000000/O">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>CEP<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000">
+                  </div>
+                  <div class="form-group">
+                    <label>Endereço<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantAddress" placeholder="Rua, Av...">
+                  </div>
+                  <div class="form-group">
+                    <label>Número<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantNumber" placeholder="Nº">
+                  </div>
+                  <div class="form-group">
+                    <label>Complemento</label>
+                    <input type="text" class="form-control" formControlName="accountantComplement" placeholder="Apto, Sala...">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-2">
+                  <div class="form-group">
+                    <label>Telefone<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantPhone" placeholder="Digite aqui...">
+                  </div>
+                  <div class="form-group">
+                    <label>E-mail<span class="req">*</span></label>
+                    <input type="email" class="form-control" formControlName="accountantEmail" placeholder="exemplo@email.com">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-2">
+                  <div class="form-group">
+                    <label>Escritório de Contabilidade<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantOffice" placeholder="Nome do escritório">
+                  </div>
+                  <div class="form-group">
+                    <label>Telefone do Escritório<span class="req">*</span></label>
+                    <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="Digite aqui...">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </form>
+        </ng-container>
+        <!-- /MODO EDIT -->
+
+      </ng-container>
+    </div>
+    <!-- /Body -->
+
+    <!-- ── Footer (só aparece no modo edit) ───────────────────────────────── -->
+    <div class="modal-footer" *ngIf="!loading && mode === 'edit'">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onCancelEdit()">
+        Cancelar
+      </button>
+      <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+        Salvar alterações
+      </button>
+    </div>
+
+  </div>
+</div>

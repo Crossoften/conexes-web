@@ -2,12 +2,21 @@
 
   <div class="page-header">
     <h1 class="page-title">Contas bancárias e bancos</h1>
-    <button class="btn-novo" routerLink="new">
-      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
-        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      {{ store.activeTab() === 'ACCOUNTS' ? 'Nova conta bancária' : 'Novo banco' }}
-    </button>
+    @if (store.activeTab() === 'ACCOUNTS') {
+      <button class="btn-novo" routerLink="new">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Nova conta bancária
+      </button>
+    } @else {
+      <button class="btn-novo" (click)="openCreateBank()">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Novo banco
+      </button>
+    }
   </div>
 
   <div class="card">
@@ -167,14 +176,14 @@
                 </td>
                 <td class="td td--center">
                   <div class="action-icons">
-                    <button class="icon-btn" title="Visualizar">
+                    <button class="icon-btn" title="Visualizar" (click)="store.openViewAccount(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
-                    <button class="icon-btn" title="Editar">
+                    <button class="icon-btn" title="Editar" (click)="store.openEditAccount(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button class="icon-btn" title="Histórico">
-                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="store.openDeleteAccount(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
                     </button>
                   </div>
                 </td>
@@ -195,14 +204,14 @@
                 <td class="td">{{ item.name }}</td>
                 <td class="td td--center">
                   <div class="action-icons">
-                    <button class="icon-btn" title="Visualizar">
+                    <button class="icon-btn" title="Visualizar" (click)="openViewBank(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
-                    <button class="icon-btn" title="Editar">
+                    <button class="icon-btn" title="Editar" (click)="openEditBank(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button class="icon-btn" title="Histórico">
-                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="store.openDeleteBank(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M8 6V4h8v2"/></svg>
                     </button>
                   </div>
                 </td>
@@ -249,3 +258,125 @@
 
   </div>
 </div>
+
+<!-- ── Modal: Detalhe / Edição de Conta Bancária ──────────────────────────── -->
+@if (store.accountDetailModal().open) {
+  <app-bank-account-detail-modal
+    [account]="store.accountDetailModal().account"
+    [banks]="store.allBanks()"
+    [mode]="store.accountDetailModal().mode"
+    [saving]="store.accountDetailModal().saving"
+    [error]="store.accountDetailModal().error"
+    (close)="store.closeAccountDetailModal()"
+    (edit)="store.switchAccountModalToEdit()"
+    (delete)="store.openDeleteAccount($event)"
+    (save)="onAccountSave($event)">
+  </app-bank-account-detail-modal>
+}
+
+<!-- ── Modal: Confirmar exclusão de conta ─────────────────────────────────── -->
+@if (store.accountDeleteModal().open) {
+  <div class="modal-backdrop" (click)="store.closeAccountDeleteModal()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">Excluir conta bancária</h2>
+        <button class="modal__close" (click)="store.closeAccountDeleteModal()">
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p class="modal__confirm-text">
+          Tem certeza que deseja excluir a conta
+          <strong>{{ store.accountDeleteModal().account?.nickname }}</strong>?
+          Essa ação não pode ser desfeita.
+        </p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" (click)="store.closeAccountDeleteModal()">Cancelar</button>
+        <button class="btn-danger"
+          [disabled]="store.accountDeleteModal().deleting"
+          (click)="store.confirmDeleteAccount()">
+          @if (store.accountDeleteModal().deleting) { Excluindo… } @else { Excluir }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Modal: Criar / Editar Banco ────────────────────────────────────────── -->
+@if (store.bankModal().open) {
+  <div class="modal-backdrop" (click)="store.closeBankModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          @if (store.bankModal().mode === 'create') { Novo banco }
+          @else if (store.bankModal().mode === 'edit') { Editar banco }
+          @else { Visualizar banco }
+        </h2>
+        <button class="modal__close" (click)="store.closeBankModal()">
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        @if (store.bankModal().error) {
+          <div class="modal__error">{{ store.bankModal().error }}</div>
+        }
+        <div class="field">
+          <label class="field__label">Código <span class="field__required">*</span></label>
+          <input class="field__input" type="text" placeholder="Ex: 001"
+            [value]="bankForm().code"
+            [disabled]="store.bankModal().mode === 'view'"
+            (input)="onBankFormChange('code', $any($event.target).value)">
+        </div>
+        <div class="field">
+          <label class="field__label">Nome <span class="field__required">*</span></label>
+          <input class="field__input" type="text" placeholder="Ex: Banco do Brasil"
+            [value]="bankForm().name"
+            [disabled]="store.bankModal().mode === 'view'"
+            (input)="onBankFormChange('name', $any($event.target).value)">
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" (click)="store.closeBankModal()">
+          {{ store.bankModal().mode === 'view' ? 'Fechar' : 'Cancelar' }}
+        </button>
+        @if (store.bankModal().mode !== 'view') {
+          <button class="btn-novo"
+            [disabled]="store.bankModal().saving || !bankForm().name.trim() || !bankForm().code.trim()"
+            (click)="submitBankForm()">
+            @if (store.bankModal().saving) { Salvando… } @else { Salvar }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Modal: Confirmar exclusão de banco ─────────────────────────────────── -->
+@if (store.deleteModal().open) {
+  <div class="modal-backdrop" (click)="store.closeDeleteModal()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">Excluir banco</h2>
+        <button class="modal__close" (click)="store.closeDeleteModal()">
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p class="modal__confirm-text">
+          Tem certeza que deseja excluir o banco
+          <strong>{{ store.deleteModal().bank?.name }}</strong>?
+          Essa ação não pode ser desfeita.
+        </p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" (click)="store.closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger"
+          [disabled]="store.bankModal().deleting"
+          (click)="store.confirmDeleteBank()">
+          @if (store.bankModal().deleting) { Excluindo… } @else { Excluir }
+        </button>
+      </div>
+    </div>
+  </div>
+}

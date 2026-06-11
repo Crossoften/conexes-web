@@ -85,6 +85,13 @@ export interface BankAccountPayload {
   modality:          string;
 }
 
+// ── Payload de banco ─────────────────────────────────────────────────────────
+
+export interface BankPayload {
+  name: string;
+  code: string;
+}
+
 // ── Resposta da listagem ──────────────────────────────────────────────────────
 
 export interface BankAccountsListResponse {

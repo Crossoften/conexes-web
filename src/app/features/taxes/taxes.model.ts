@@ -74,3 +74,11 @@ export const TAX_STATUS_CONFIG: Record<string, { label: string; variant: 'succes
   Active:   { label: 'Ativo',   variant: 'success' },
   Inactive: { label: 'Inativo', variant: 'danger'  },
 };
+
+// ── Stakeholder (para select e exibição) ──────────────────────────────────────
+
+export interface StakeholderItem {
+  id:       number;
+  name:     string;
+  document: string;
+}

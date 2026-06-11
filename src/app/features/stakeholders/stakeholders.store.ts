@@ -9,14 +9,16 @@ import {
 } from './stakeholders.model';
 
 interface State {
-  items:      StakeholderListItem[];
-  total:      number;
-  loading:    boolean;
-  error:      string | null;
-  filters:    { search: string; status: StakeholderStatus | ''; personType: PersonType | '' };
-  sort:       { column: string; direction: 'asc' | 'desc' | '' };
-  pagination: { page: number; pageSize: number };
-  selectedIds: Set<number>;
+  items:          StakeholderListItem[];
+  total:          number;
+  loading:        boolean;
+  error:          string | null;
+  exporting:      boolean;
+  exportError:    string | null;
+  filters:        { search: string; status: StakeholderStatus | ''; personType: PersonType | '' };
+  sort:           { column: string; direction: 'asc' | 'desc' | '' };
+  pagination:     { page: number; pageSize: number };
+  selectedIds:    Set<number>;
 }
 
 @Injectable()
@@ -24,22 +26,24 @@ export class StakeholdersStore {
   private svc = inject(StakeholdersService);
 
   private readonly state = signal<State>({
-    items:      [],
-    total:      0,
-    loading:    false,
-    error:      null,
-    filters:    { search: '', status: '', personType: '' },
-    sort:       { column: '', direction: '' },
-    pagination: { page: 1, pageSize: 10 },
+    items:       [],
+    total:       0,
+    loading:     false,
+    error:       null,
+    exporting:   false,
+    exportError: null,
+    filters:     { search: '', status: '', personType: '' },
+    sort:        { column: '', direction: '' },
+    pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
   });
-
-  // ── Selectors ─────────────────────────────────────────────────────────────
 
   readonly items       = computed(() => this.state().items);
   readonly total       = computed(() => this.state().total);
   readonly loading     = computed(() => this.state().loading);
   readonly error       = computed(() => this.state().error);
+  readonly exporting   = computed(() => this.state().exporting);
+  readonly exportError = computed(() => this.state().exportError);
   readonly filters     = computed(() => this.state().filters);
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
@@ -59,9 +63,7 @@ export class StakeholdersStore {
     return items.some(item => this.selectedIds().has(item.id)) && !this.allPageSelected();
   });
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-
-  async load(): Promise<void> {
+  load(): void {
     this.state.update(s => ({ ...s, loading: true, error: null }));
 
     const { page, pageSize } = this.state().pagination;
@@ -78,7 +80,6 @@ export class StakeholdersStore {
 
     this.svc.getAll(filters).subscribe({
       next: res => {
-        // Suporte a resposta paginada { data, total } ou array simples
         const items = Array.isArray(res) ? res : (res as any).data ?? [];
         const total = Array.isArray(res) ? items.length : (res as any).total ?? items.length;
         this.state.update(s => ({ ...s, items, total, loading: false }));
@@ -90,7 +91,7 @@ export class StakeholdersStore {
     });
   }
 
-  async deleteById(id: number): Promise<void> {
+  deleteById(id: number): void {
     this.svc.delete(id).subscribe({
       next: () => this.load(),
       error: err => {
@@ -100,36 +101,40 @@ export class StakeholdersStore {
     });
   }
 
-  // ── Filters ───────────────────────────────────────────────────────────────
+  exportExcel(): void {
+    this.state.update(s => ({ ...s, exporting: true, exportError: null }));
+
+    this.svc.exportExcel().subscribe({
+      next: blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = `stakeholders_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.state.update(s => ({ ...s, exporting: false }));
+      },
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao exportar planilha.';
+        this.state.update(s => ({ ...s, exporting: false, exportError: msg }));
+      },
+    });
+  }
 
   setSearch(search: string): void {
-    this.state.update(s => ({
-      ...s,
-      filters: { ...s.filters, search },
-      pagination: { ...s.pagination, page: 1 },
-    }));
+    this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
     this.load();
   }
 
   setStatus(status: StakeholderStatus | ''): void {
-    this.state.update(s => ({
-      ...s,
-      filters: { ...s.filters, status },
-      pagination: { ...s.pagination, page: 1 },
-    }));
+    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
     this.load();
   }
 
   setPersonType(personType: PersonType | ''): void {
-    this.state.update(s => ({
-      ...s,
-      filters: { ...s.filters, personType },
-      pagination: { ...s.pagination, page: 1 },
-    }));
+    this.state.update(s => ({ ...s, filters: { ...s.filters, personType }, pagination: { ...s.pagination, page: 1 } }));
     this.load();
   }
-
-  // ── Pagination ────────────────────────────────────────────────────────────
 
   setPage(page: number): void {
     this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } }));
@@ -137,22 +142,15 @@ export class StakeholdersStore {
   }
 
   setPageSize(pageSize: number): void {
-    this.state.update(s => ({
-      ...s,
-      pagination: { ...s.pagination, pageSize, page: 1 },
-    }));
+    this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } }));
     this.load();
   }
 
-  // ── Sort ──────────────────────────────────────────────────────────────────
-
   setSort(column: string): void {
     this.state.update(s => {
-      const direction =
-        s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
+      const direction = s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
       return { ...s, sort: { column, direction } };
     });
-    // Ordenação client-side — o back não suporta sort por query param ainda
     this.state.update(s => {
       const { column, direction } = s.sort;
       const sorted = [...s.items].sort((a, b) => {
@@ -166,8 +164,6 @@ export class StakeholdersStore {
     });
   }
 
-  // ── Selection ─────────────────────────────────────────────────────────────
-
   toggleRow(id: number): void {
     this.state.update(s => {
       const newSet = new Set(s.selectedIds);
@@ -178,11 +174,9 @@ export class StakeholdersStore {
 
   toggleAllPage(): void {
     this.state.update(s => {
-      const newSet = new Set(s.selectedIds);
+      const newSet      = new Set(s.selectedIds);
       const allSelected = s.items.every(item => newSet.has(item.id));
-      s.items.forEach(item =>
-        allSelected ? newSet.delete(item.id) : newSet.add(item.id)
-      );
+      s.items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
       return { ...s, selectedIds: newSet };
     });
   }

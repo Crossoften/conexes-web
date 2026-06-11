@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { NgClass, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApprovalTiersStore } from './approval-tiers.store';
-import { ApprovalTier, APPROVAL_TIER_STATUS_CONFIG } from './approval-tiers.model';
+import { ApprovalTier, ApprovalTierPayload, APPROVAL_TIER_STATUS_CONFIG } from './approval-tiers.model';
+import { ApprovalTierDetailModalComponent } from './components/approval-tier-detail.modal';
 
 @Component({
   selector: 'app-approval-tiers-list',
   standalone: true,
-  imports: [FormsModule, NgClass, CurrencyPipe, RouterLink],
+  imports: [FormsModule, NgClass, CurrencyPipe, RouterLink, ApprovalTierDetailModalComponent],
   providers: [ApprovalTiersStore],
   templateUrl: './approval-tiers-list.page.html',
   styleUrl: './approval-tiers-list.page.scss',
@@ -47,24 +48,23 @@ export class ApprovalTiersListPage implements OnInit {
     return pages;
   });
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
-
   ngOnInit(): void {
     this.store.load();
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  onTierSave(event: { id: number; payload: ApprovalTierPayload }): void {
+    this.store.saveTier(event.id, event.payload);
+  }
+
+  onExport(): void {
+    this.store.exportExcel();
+  }
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
-  }
-
-  onDelete(id: number): void {
-    if (!confirm('Tem certeza que deseja excluir esta alçada?')) return;
-    this.store.deleteById(id);
   }
 
   getSortState(col: keyof ApprovalTier): 'none' | 'asc' | 'desc' {

@@ -1,15 +1,16 @@
 // src/app/features/bank-accounts/bank-accounts-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BankAccountsStore } from './bank-accounts.store';
-import { BankAccountStatus, BANK_ACCOUNT_STATUS_CONFIG } from './bank-accounts.model';
+import { BankAccountStatus, BANK_ACCOUNT_STATUS_CONFIG, BankPayload, BankAccountPayload } from './bank-accounts.model';
+import { BankAccountDetailModalComponent } from './components/bank-account-detail.modal';
 
 @Component({
   selector: 'app-bank-accounts-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, BankAccountDetailModalComponent],
   providers: [BankAccountsStore],
   templateUrl: './bank-accounts-list.page.html',
   styleUrl: './bank-accounts-list.page.scss',
@@ -55,13 +56,48 @@ export class BankAccountsListPage implements OnInit {
     return pages;
   });
 
+  // ── Bank form (modal criar/editar banco) ──────────────────────────────────
+
+  readonly bankForm = signal<BankPayload>({ name: '', code: '' });
+
+  openCreateBank(): void {
+    this.bankForm.set({ name: '', code: '' });
+    this.store.openCreateBank();
+  }
+
+  openEditBank(bank: any): void {
+    this.bankForm.set({ name: bank.name, code: bank.code });
+    this.store.openEditBank(bank);
+  }
+
+  openViewBank(bank: any): void {
+    this.bankForm.set({ name: bank.name, code: bank.code });
+    this.store.openViewBank(bank);
+  }
+
+  onBankFormChange(field: keyof BankPayload, value: string): void {
+    this.bankForm.update(f => ({ ...f, [field]: value }));
+  }
+
+  submitBankForm(): void {
+    const { name, code } = this.bankForm();
+    if (!name.trim() || !code.trim()) return;
+    this.store.saveBank(this.bankForm());
+  }
+
+  // ── Account detail modal handlers ─────────────────────────────────────────
+
+  onAccountSave(payload: BankAccountPayload): void {
+    this.store.saveAccount(payload);
+  }
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.store.load();
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 

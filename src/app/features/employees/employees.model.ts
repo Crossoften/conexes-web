@@ -70,3 +70,7 @@ export interface EmployeePayload {
   reference:          string;
   grossValue:         number;
 }
+
+// ── Payload de atualização (PATCH — todos os campos opcionais) ─────────────────
+
+export type EmployeeUpdatePayload = Partial<EmployeePayload>;

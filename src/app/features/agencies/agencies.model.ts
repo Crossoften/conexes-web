@@ -6,42 +6,42 @@ export type AgencyType   = 'PUBLIC' | 'PRIVATE';
 // ── Sub-modelos ───────────────────────────────────────────────────────────────
 
 export interface AgencyStaff {
-  serverType:        string;
-  jobTitle:          string;
-  name:              string;
-  appointmentAct:    string;
-  birthDate:         string;
-  rg:                string;
-  cpf:               string;
-  phone:             string;
-  zipCode:           string;
-  address:           string;
-  number:            string;
-  complement:        string;
+  serverType:         string;
+  jobTitle:           string;
+  name:               string;
+  appointmentAct:     string;
+  birthDate:          string;
+  rg:                 string;
+  cpf:                string;
+  phone:              string;
+  zipCode:            string;
+  address:            string;
+  number:             string;
+  complement:         string;
   institutionalEmail: string;
-  personalEmail:     string;
+  personalEmail:      string;
 }
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface Agency {
-  id:             number;
-  cnpj:           string;
-  legalName:      string;
-  tradeName:      string;
-  emancipation:   string;
-  zipCode:        string;
-  address:        string;
-  number:         string;
-  complement:     string;
-  managingOrgan:  string;
-  phone:          string;
-  email:          string;
-  logo:           string;
-  staff:          AgencyStaff[];
-  status?:        AgencyStatus;
-  createdAt?:     string;
-  updatedAt?:     string;
+  id:            number;
+  cnpj:          string;
+  legalName:     string;
+  tradeName:     string;
+  emancipation:  string;
+  zipCode:       string;
+  address:       string;
+  number:        string;
+  complement:    string;
+  managingOrgan: string;
+  phone:         string;
+  email:         string;
+  logo:          string;
+  staff:         AgencyStaff[];
+  status?:       AgencyStatus;
+  createdAt?:    string;
+  updatedAt?:    string;
 }
 
 // ── Payload de criação ────────────────────────────────────────────────────────
@@ -61,6 +61,10 @@ export interface AgencyPayload {
   logo:          string;
   staff:         AgencyStaff[];
 }
+
+// ── Payload de atualização (PATCH — todos opcionais) ──────────────────────────
+
+export type AgencyUpdatePayload = Partial<AgencyPayload>;
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────
 

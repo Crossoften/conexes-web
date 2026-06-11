@@ -10,84 +10,78 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-        @if (errorMsg()) {
-          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
-        }
+      @if (errorMsg()) {
+        <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+      }
 
-        <div class="form-grid">
+      <div class="form-grid">
 
-          <div class="form-row grid-cols-2">
-            <div class="form-group">
-              <label>Título</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title">
-            </div>
-            <div class="form-group">
-              <label>Descrição</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description">
-            </div>
-          </div>
-
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>Centro de custo</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="costCenter">
-            </div>
-            <div class="form-group">
-              <label>Projeto</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="project">
-            </div>
-            <div class="form-group">
-              <label>Atividade</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="activity">
-            </div>
-          </div>
-
-          <div class="permissions-section mt-8">
-            <h3 class="section-title">Acesso módulo financeiro</h3>
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th class="th">Módulo</th>
-                    <th class="th">Submenu</th>
-                    <th class="th th--center">Visualização</th>
-                    <th class="th th--center">Inclusão</th>
-                    <th class="th th--center">Edição</th>
-                    <th class="th th--center">Exclusão</th>
-                    <th class="th th--center">Acesso ilimitado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (mod of modules; track mod.module; let i = $index) {
-                    <tr class="tr">
-                      <td class="td td--bold">{{ mod.module }}</td>
-                      <td class="td">{{ mod.subMenu }}</td>
-                      <td class="td td--center">
-                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canView" (change)="togglePermission(i, 'canView')"><span class="checkbox__box"></span></label>
-                      </td>
-                      <td class="td td--center">
-                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canCreate" (change)="togglePermission(i, 'canCreate')"><span class="checkbox__box"></span></label>
-                      </td>
-                      <td class="td td--center">
-                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canEdit" (change)="togglePermission(i, 'canEdit')"><span class="checkbox__box"></span></label>
-                      </td>
-                      <td class="td td--center">
-                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canDelete" (change)="togglePermission(i, 'canDelete')"><span class="checkbox__box"></span></label>
-                      </td>
-                      <td class="td td--center">
-                        <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.isUnlimited" (change)="togglePermission(i, 'isUnlimited')"><span class="checkbox__box"></span></label>
-                      </td>
-                    </tr>
+        <div class="form-row grid-cols-2">
+          <div class="form-group">
+            <label>Perfil de permissão</label>
+            @if (permsLoading()) {
+              <input class="form-control" disabled placeholder="Carregando...">
+            } @else {
+              <div class="select-wrap">
+                <select class="form-control" (change)="onSelectPermission($event)">
+                  <option value="">Selecione um perfil (opcional)</option>
+                  @for (p of permissions(); track p.id) {
+                    <option [value]="p.id">{{ p.module }} — {{ p.subMenu }}</option>
                   }
-                </tbody>
-              </table>
-            </div>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            }
+            @if (selectedPermissionLabel()) {
+              <span class="field-hint">Permissões pré-preenchidas com base em: <strong>{{ selectedPermissionLabel() }}</strong>. Você pode ajustar abaixo.</span>
+            }
           </div>
-
         </div>
-      </form>
+
+        <div class="permissions-section mt-8">
+          <h3 class="section-title">Acesso módulos</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="th">Módulo</th>
+                  <th class="th">Submenu</th>
+                  <th class="th th--center">Visualização</th>
+                  <th class="th th--center">Inclusão</th>
+                  <th class="th th--center">Edição</th>
+                  <th class="th th--center">Exclusão</th>
+                  <th class="th th--center">Acesso ilimitado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (mod of modules; track mod.module; let i = $index) {
+                  <tr class="tr">
+                    <td class="td td--bold">{{ mod.module }}</td>
+                    <td class="td">{{ mod.subMenu }}</td>
+                    <td class="td td--center">
+                      <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canView" (change)="togglePermission(i, 'canView')"><span class="checkbox__box"></span></label>
+                    </td>
+                    <td class="td td--center">
+                      <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canCreate" (change)="togglePermission(i, 'canCreate')"><span class="checkbox__box"></span></label>
+                    </td>
+                    <td class="td td--center">
+                      <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canEdit" (change)="togglePermission(i, 'canEdit')"><span class="checkbox__box"></span></label>
+                    </td>
+                    <td class="td td--center">
+                      <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.canDelete" (change)="togglePermission(i, 'canDelete')"><span class="checkbox__box"></span></label>
+                    </td>
+                    <td class="td td--center">
+                      <label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="mod.isUnlimited" (change)="togglePermission(i, 'isUnlimited')"><span class="checkbox__box"></span></label>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <div class="card-footer">

@@ -26,16 +26,15 @@ export class UserNewPage {
   ];
 
   form: FormGroup = this.fb.group({
-    firstName:  ['', Validators.required],
-    lastName:   ['', Validators.required],
-    cpf:        ['', Validators.required],
-    jobTitle:   [''],
-    area:       [''],
-    phone:      [''],
-    email:      ['', [Validators.required, Validators.email]],
-    username:   ['', Validators.required],
-    role:       ['', Validators.required],
-    password:   ['', [Validators.required, Validators.minLength(6)]],
+    name:     ['', Validators.required],
+    surname:  ['', Validators.required],
+    document: ['', Validators.required],
+    jobTitle: [''],
+    area:     [''],
+    phone:    [''],
+    email:    ['', [Validators.required, Validators.email]],
+    role:     ['', Validators.required],
+    password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
   // ── Máscaras ──────────────────────────────────────────────────────────────
@@ -48,7 +47,7 @@ export class UserNewPage {
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     input.value = masked;
-    this.form.get('cpf')?.setValue(masked, { emitEvent: false });
+    this.form.get('document')?.setValue(masked, { emitEvent: false });
   }
 
   applyPhoneMask(event: Event): void {
@@ -80,21 +79,19 @@ export class UserNewPage {
 
     const v = this.form.value;
 
-    // Salva os dados do step 1 no service para uso no step 2
     this.svc.saveDraft({
-      name:     v.firstName ?? '',
-      surname:  v.lastName  ?? '',
-      email:    v.email     ?? '',
-      document: v.cpf       ?? '',
-      jobTitle: v.jobTitle  ?? '',
-      area:     v.area      ?? '',
-      phone:    v.phone     ?? '',
-      role:     v.role      ?? 'Viewer',
-      status:   'Active',
-      password: v.password  ?? '',
+      name:              v.name     ?? '',
+      surname:           v.surname  ?? '',
+      email:             v.email    ?? '',
+      document:          v.document ?? '',
+      jobTitle:          v.jobTitle ?? '',
+      area:              v.area     ?? '',
+      phone:             v.phone    ?? '',
+      role:              v.role     ?? 'Viewer',
+      status:            'Active',
+      password:          v.password ?? '',
     });
 
-    // Navega para o step 2 (permissões)
     this.router.navigate(['/users/new-permission']);
   }
 }

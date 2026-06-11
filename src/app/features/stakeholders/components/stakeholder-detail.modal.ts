@@ -1,8 +1,10 @@
 // src/app/features/stakeholders/components/stakeholder-detail.modal.ts
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   Stakeholder,
+  StakeholderPayload,
   STAKEHOLDER_STATUS_CONFIG,
   STAKEHOLDER_TYPE_LABELS,
 } from '../stakeholders.model';
@@ -12,23 +14,209 @@ type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
 @Component({
   selector: 'app-stakeholder-detail-modal',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, ReactiveFormsModule],
   templateUrl: './stakeholder-detail.modal.html',
   styleUrl: './stakeholder-detail.modal.scss',
 })
-export class StakeholderDetailModalComponent {
+export class StakeholderDetailModalComponent implements OnChanges {
   @Input() stakeholder: Stakeholder | null = null;
 
   @Output() close  = new EventEmitter<void>();
-  @Output() edit   = new EventEmitter<Stakeholder>();
   @Output() delete = new EventEmitter<number>();
+  @Output() saved  = new EventEmitter<{ id: number; payload: Partial<StakeholderPayload> }>();
 
-  activeTab: ModalTab = 'GERAIS';
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  mode: 'view' | 'edit' = 'view';
+  activeTab: ModalTab   = 'GERAIS';
 
   readonly statusConfig = STAKEHOLDER_STATUS_CONFIG;
   readonly typeLabels   = STAKEHOLDER_TYPE_LABELS;
 
-  // ── Accessors ─────────────────────────────────────────────────────────────
+  // ── Formulário ────────────────────────────────────────────────────────────
+
+  readonly form = this.fb.group({
+    // Aba GERAIS
+    code:                  [{ value: '', disabled: true }],
+    type:                  [''],
+    personType:            ['', Validators.required],
+    document:              ['', Validators.required],
+    name:                  ['', Validators.required],
+    tradeName:             [''],
+    email:                 ['', Validators.email],
+    phone:                 [''],
+    status:                [''],
+    stateRegistration:     [''],
+    municipalRegistration: [''],
+    mainActivity:          [''],
+    secondaryActivity:     [''],
+    legalNature:           [''],
+    standardApportionment: [''],
+    accountId:             [0],
+
+    // Endereço [0]
+    addrZipCode:    [''],
+    addrStreet:     [''],
+    addrNumber:     [''],
+    addrComplement: [''],
+    addrDistrict:   [''],
+    addrCity:       [''],
+    addrState:      [''],
+
+    // Dados bancários [0]
+    bankAccountName:     [''],
+    bankAccountDocument: [''],
+    bank:                [''],
+    bankAgency:          [''],
+    bankAgencyDigit:     [''],
+    bankAccount:         [''],
+    bankAccountDigit:    [''],
+    bankAccountType:     [''],
+    bankPixType:         [''],
+    bankPixKey:          [''],
+    bankPaymentMethod:   [''],
+
+    // Aba RISCO
+    privacyEvaluated:         [false],
+    privacyEvalDate:          [''],
+    privacyRisk:              [''],
+    privacyObservations:      [''],
+    complianceKypInitialDate: [''],
+    complianceKypFinalDate:   [''],
+    complianceRisk:           [''],
+    complianceObservations:   [''],
+
+    // Aba OBSERVACOES — contato [0]
+    contactName:        [''],
+    contactEmail:       [''],
+    contactPhone:       [''],
+    contactCellphone:   [''],
+    contactPosition:    [''],
+    contactObservation: [''],
+
+    // Impostos e serviços
+    serviceClassCode:     [''],
+    serviceTitle:         [''],
+    operationNature:      [''],
+    totalRetentions:      [0],
+    irfAliquot:           [0],
+    irfCode:              [''],
+    pisAliquot:           [0],
+    pisCode:              [''],
+    pccAliquot:           [0],
+    pccCode:              [''],
+    cofinsAliquot:        [0],
+    cofinsCode:           [''],
+    inssAliquot:          [0],
+    csllAliquot:          [0],
+    ibsAliquot:           [0],
+    cbsAliquot:           [0],
+    serviceName:          [''],
+    serviceDescription:   [''],
+    serviceExternalCode:  [''],
+    serviceGrantorOrgan:  [''],
+    serviceHasRetention:  [false],
+    serviceAccessorOrgan: [''],
+  });
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnChanges(): void {
+    if (this.stakeholder) {
+      this.patchForm(this.stakeholder);
+    }
+  }
+
+  private patchForm(s: Stakeholder): void {
+    const addr    = s.addresses?.[0];
+    const bank    = s.bankData?.[0];
+    const contact = s.contacts?.[0];
+    const risk    = s.riskClassification;
+    const tax     = s.taxesAndServices;
+
+    // patchValue ignora controls disabled, então setamos code diretamente
+    this.form.controls['code'].setValue(s.code ?? '');
+
+    this.form.patchValue({
+      code:                  s.code,
+      type:                  s.type,
+      personType:            s.personType,
+      document:              s.document,
+      name:                  s.name,
+      tradeName:             s.tradeName,
+      email:                 s.email,
+      phone:                 s.phone,
+      status:                s.status,
+      stateRegistration:     s.stateRegistration,
+      municipalRegistration: s.municipalRegistration,
+      mainActivity:          s.mainActivity,
+      secondaryActivity:     s.secondaryActivity,
+      legalNature:           s.legalNature,
+      standardApportionment: s.standardApportionment,
+      accountId:             s.accountId,
+
+      addrZipCode:    addr?.zipCode    ?? '',
+      addrStreet:     addr?.street     ?? '',
+      addrNumber:     addr?.number     ?? '',
+      addrComplement: addr?.complement ?? '',
+      addrDistrict:   addr?.district   ?? '',
+      addrCity:       addr?.city       ?? '',
+      addrState:      addr?.state      ?? '',
+
+      bankAccountName:     bank?.accountName     ?? '',
+      bankAccountDocument: bank?.accountDocument ?? '',
+      bank:                bank?.bank            ?? '',
+      bankAgency:          bank?.agency          ?? '',
+      bankAgencyDigit:     bank?.agencyDigit     ?? '',
+      bankAccount:         bank?.account         ?? '',
+      bankAccountDigit:    bank?.accountDigit    ?? '',
+      bankAccountType:     bank?.accountType     ?? '',
+      bankPixType:         bank?.pixType         ?? '',
+      bankPixKey:          bank?.pixKey          ?? '',
+      bankPaymentMethod:   bank?.paymentMethod   ?? '',
+
+      privacyEvaluated:         risk?.privacyEvaluated         ?? false,
+      privacyEvalDate:          risk?.privacyEvalDate          ?? '',
+      privacyRisk:              risk?.privacyRisk              ?? '',
+      privacyObservations:      risk?.privacyObservations      ?? '',
+      complianceKypInitialDate: risk?.complianceKypInitialDate ?? '',
+      complianceKypFinalDate:   risk?.complianceKypFinalDate   ?? '',
+      complianceRisk:           risk?.complianceRisk           ?? '',
+      complianceObservations:   risk?.complianceObservations   ?? '',
+
+      contactName:        contact?.name        ?? '',
+      contactEmail:       contact?.email       ?? '',
+      contactPhone:       contact?.phone       ?? '',
+      contactCellphone:   contact?.cellphone   ?? '',
+      contactPosition:    contact?.position    ?? '',
+      contactObservation: contact?.observation ?? '',
+
+      serviceClassCode:     tax?.serviceClassCode     ?? '',
+      serviceTitle:         tax?.serviceTitle         ?? '',
+      operationNature:      tax?.operationNature      ?? '',
+      totalRetentions:      tax?.totalRetentions      ?? 0,
+      irfAliquot:           tax?.irfAliquot           ?? 0,
+      irfCode:              tax?.irfCode              ?? '',
+      pisAliquot:           tax?.pisAliquot           ?? 0,
+      pisCode:              tax?.pisCode              ?? '',
+      pccAliquot:           tax?.pccAliquot           ?? 0,
+      pccCode:              tax?.pccCode              ?? '',
+      cofinsAliquot:        tax?.cofinsAliquot        ?? 0,
+      cofinsCode:           tax?.cofinsCode           ?? '',
+      inssAliquot:          tax?.inssAliquot          ?? 0,
+      csllAliquot:          tax?.csllAliquot          ?? 0,
+      ibsAliquot:           tax?.ibsAliquot           ?? 0,
+      cbsAliquot:           tax?.cbsAliquot           ?? 0,
+      serviceName:          tax?.serviceName          ?? '',
+      serviceDescription:   tax?.serviceDescription   ?? '',
+      serviceExternalCode:  tax?.serviceExternalCode  ?? '',
+      serviceGrantorOrgan:  tax?.serviceGrantorOrgan  ?? '',
+      serviceHasRetention:  tax?.serviceHasRetention  ?? false,
+      serviceAccessorOrgan: tax?.serviceAccessorOrgan ?? '',
+    });
+  }
+
+  // ── Accessors para modo view ───────────────────────────────────────────────
 
   get statusLabel(): string {
     if (!this.stakeholder) return '';
@@ -53,8 +241,7 @@ export class StakeholderDetailModalComponent {
     const a = this.primaryAddress;
     if (!a) return '';
     return [a.street, a.number, a.complement, a.district, a.city, a.state]
-      .filter(Boolean)
-      .join(', ');
+      .filter(Boolean).join(', ');
   }
 
   get primaryBankData() {
@@ -65,8 +252,7 @@ export class StakeholderDetailModalComponent {
     const b = this.primaryBankData;
     if (!b) return '';
     return [b.bank, `Ag. ${b.agency}`, `C/C ${b.account}-${b.accountDigit}`]
-      .filter(Boolean)
-      .join(' — ');
+      .filter(Boolean).join(' — ');
   }
 
   get primaryContact() {
@@ -80,14 +266,140 @@ export class StakeholderDetailModalComponent {
   }
 
   onClose(): void {
+    this.mode = 'view';
+    this.activeTab = 'GERAIS';
     this.close.emit();
   }
 
   onEdit(): void {
-    if (this.stakeholder) this.edit.emit(this.stakeholder);
+    this.mode = 'edit';
+  }
+
+  onCancelEdit(): void {
+    this.mode = 'view';
+    if (this.stakeholder) this.patchForm(this.stakeholder);
   }
 
   onDelete(): void {
     if (this.stakeholder) this.delete.emit(this.stakeholder.id);
+  }
+
+  // Converte YYYY-MM-DD (retorno do input date) para ISO 8601 completo.
+  // Envia null se o campo estiver vazio — o back aceita null mas rejeita string vazia.
+  private toIso(date: string | null | undefined): string | null {
+    if (!date) return null;
+    // Já está em formato ISO completo
+    if (date.includes('T')) return date;
+    return new Date(date + 'T00:00:00.000Z').toISOString();
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    if (!this.stakeholder) return;
+
+    const v = this.form.getRawValue(); // getRawValue inclui campos disabled (code)
+
+    // bankData: só envia se ao menos um campo obrigatório estiver preenchido
+    const hasBankData = !!(v.bankAccountName || v.bankAccountDocument || v.bank || v.bankAgency || v.bankAccount);
+    const bankData = hasBankData ? [{
+      accountName:     v.bankAccountName     || '',
+      accountDocument: v.bankAccountDocument || '',
+      bank:            v.bank                || '',
+      agency:          v.bankAgency          || '',
+      agencyDigit:     v.bankAgencyDigit     || '',
+      account:         v.bankAccount         || '',
+      accountDigit:    v.bankAccountDigit    || '',
+      // Enums: undefined se vazio para não violar validação do back
+      accountType:     (v.bankAccountType   || undefined) as any,
+      pixType:         (v.bankPixType       || undefined) as any,
+      pixKey:          v.bankPixKey          || '',
+      paymentMethod:   (v.bankPaymentMethod || undefined) as any,
+    }] : (this.stakeholder!.bankData ?? []);
+
+    // contacts: fallback para o contato original se nome ainda vazio
+    const originalContact = this.stakeholder!.contacts?.[0];
+    const contactName = v.contactName || originalContact?.name || '';
+    const contacts = contactName ? [{
+      name:        contactName,
+      email:       v.contactEmail       || '',
+      phone:       v.contactPhone       || '',
+      cellphone:   v.contactCellphone   || '',
+      position:    v.contactPosition    || '',
+      observation: v.contactObservation || '',
+    }] : (this.stakeholder!.contacts ?? []);
+
+    const payload: Partial<StakeholderPayload> = {
+      code:                  v.code,
+      type:                  v.type as any,
+      personType:            v.personType as any,
+      document:              v.document,
+      name:                  v.name,
+      tradeName:             v.tradeName,
+      email:                 v.email,
+      phone:                 v.phone,
+      status:                v.status as any,
+      stateRegistration:     v.stateRegistration,
+      municipalRegistration: v.municipalRegistration,
+      mainActivity:          v.mainActivity,
+      secondaryActivity:     v.secondaryActivity,
+      legalNature:           v.legalNature,
+      standardApportionment: v.standardApportionment,
+      accountId:             v.accountId,
+
+      addresses: [{
+        zipCode:    v.addrZipCode    ?? '',
+        street:     v.addrStreet     ?? '',
+        number:     v.addrNumber     ?? '',
+        complement: v.addrComplement ?? '',
+        district:   v.addrDistrict   ?? '',
+        city:       v.addrCity       ?? '',
+        state:      v.addrState      ?? '',
+      }],
+
+      bankData,
+      contacts,
+
+      riskClassification: {
+        privacyEvaluated:         v.privacyEvaluated         ?? false,
+        privacyEvalDate:          this.toIso(v.privacyEvalDate),
+        privacyRisk:              v.privacyRisk              ?? '',
+        privacyObservations:      v.privacyObservations      ?? '',
+        complianceKypInitialDate: this.toIso(v.complianceKypInitialDate),
+        complianceKypFinalDate:   this.toIso(v.complianceKypFinalDate),
+        complianceRisk:           v.complianceRisk           ?? '',
+        complianceObservations:   v.complianceObservations   ?? '',
+      },
+
+      taxesAndServices: {
+        serviceClassCode:     v.serviceClassCode     ?? '',
+        serviceTitle:         v.serviceTitle         ?? '',
+        operationNature:      v.operationNature      ?? '',
+        totalRetentions:      v.totalRetentions      ?? 0,
+        irfAliquot:           v.irfAliquot           ?? 0,
+        irfCode:              v.irfCode              ?? '',
+        pisAliquot:           v.pisAliquot           ?? 0,
+        pisCode:              v.pisCode              ?? '',
+        pccAliquot:           v.pccAliquot           ?? 0,
+        pccCode:              v.pccCode              ?? '',
+        cofinsAliquot:        v.cofinsAliquot        ?? 0,
+        cofinsCode:           v.cofinsCode           ?? '',
+        inssAliquot:          v.inssAliquot          ?? 0,
+        csllAliquot:          v.csllAliquot          ?? 0,
+        ibsAliquot:           v.ibsAliquot           ?? 0,
+        cbsAliquot:           v.cbsAliquot           ?? 0,
+        serviceName:          v.serviceName          ?? '',
+        serviceDescription:   v.serviceDescription   ?? '',
+        serviceExternalCode:  v.serviceExternalCode  ?? '',
+        serviceGrantorOrgan:  v.serviceGrantorOrgan  ?? '',
+        serviceHasRetention:  v.serviceHasRetention  ?? false,
+        serviceAccessorOrgan: v.serviceAccessorOrgan ?? '',
+      },
+    };
+
+    this.saved.emit({ id: this.stakeholder.id, payload });
   }
 }

@@ -1,0 +1,164 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Cabeçalho ───────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ tier?.description || '—' }}</h2>
+          <p>Nível {{ tier?.level }} · {{ purchaseRoleLabel }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        @if (mode === 'view') {
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        }
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Corpo ────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      @if (error) {
+        <div class="modal-error">{{ error }}</div>
+      }
+
+      <!-- ════ VIEW ════ -->
+      @if (mode === 'view') {
+        <div class="info-box">
+          <div class="info-header">
+            <strong>Aprovador:</strong> {{ userName }}
+            &nbsp;|&nbsp;
+            <strong>Papel:</strong> {{ purchaseRoleLabel }}
+          </div>
+          <div class="info-grid">
+            <div class="info-item col-span-2">
+              <span class="info-label">Descrição</span>
+              <span class="info-value">{{ tier?.description || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nível de alçada</span>
+              <span class="info-value mono">{{ tier?.level ?? '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Papel de compra</span>
+              <span class="info-value">{{ purchaseRoleLabel }}</span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Aprovador</span>
+              <span class="info-value">{{ userName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Valor mínimo</span>
+              <span class="info-value mono">{{ tier?.minValue | currency:'BRL' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Valor máximo</span>
+              <span class="info-value mono">{{ tier?.maxValue | currency:'BRL' }}</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ════ EDIT ════ -->
+      @if (mode === 'edit') {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="form-grid">
+
+            <div class="form-row grid-cols-2">
+              <div class="form-group">
+                <label class="form-label">Descrição da alçada <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..."
+                  formControlName="description"
+                  [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Aprovador <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="approver"
+                    [class.is-invalid]="form.get('approver')?.invalid && form.get('approver')?.touched">
+                    <option value="">Selecione</option>
+                    @for (u of users; track u.id) {
+                      <option [value]="u.id">{{ u.name }}{{ u.email ? ' — ' + u.email : '' }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row grid-cols-4">
+              <div class="form-group">
+                <label class="form-label">Nível de alçada <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="tierLevel"
+                    [class.is-invalid]="form.get('tierLevel')?.invalid && form.get('tierLevel')?.touched">
+                    <option value="">Selecione</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Papel de compra <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="purchaseRole"
+                    [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
+                    <option value="">Selecione</option>
+                    @for (opt of purchaseRoleOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Valor mínimo <span class="req">*</span></label>
+                <input type="number" class="form-control" placeholder="0,00" min="0"
+                  formControlName="minValue"
+                  [class.is-invalid]="form.get('minValue')?.invalid && form.get('minValue')?.touched">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Valor máximo <span class="req">*</span></label>
+                <input type="number" class="form-control" placeholder="0,00" min="0"
+                  formControlName="maxValue"
+                  [class.is-invalid]="form.get('maxValue')?.invalid && form.get('maxValue')?.touched">
+              </div>
+            </div>
+
+          </div>
+        </form>
+      }
+
+    </div>
+
+    <!-- ── Footer (edição) ──────────────────────────────────────────────── -->
+    @if (mode === 'edit') {
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="onClose()">Cancelar</button>
+        <button class="btn-save" [disabled]="saving" (click)="onSubmit()">
+          @if (saving) { Salvando… } @else { Salvar alterações }
+        </button>
+      </div>
+    }
+
+  </div>
+</div>

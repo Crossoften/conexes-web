@@ -6,7 +6,13 @@ import { RouterLink } from '@angular/router';
 import { StakeholdersStore } from './stakeholders.store';
 import { StakeholdersService } from './stakeholders.service';
 import { StakeholderDetailModalComponent } from './components/stakeholder-detail.modal';
-import { Stakeholder, StakeholderListItem, StakeholderStatus } from './stakeholders.model';
+import {
+  Stakeholder,
+  StakeholderListItem,
+  StakeholderPayload,
+  StakeholderStatus,
+  PersonType,
+} from './stakeholders.model';
 
 @Component({
   selector: 'app-stakeholders-list',
@@ -20,6 +26,8 @@ export class StakeholdersPage implements OnInit {
   readonly store = inject(StakeholdersStore);
   private  svc   = inject(StakeholdersService);
 
+  // ── Opções dos filtros ────────────────────────────────────────────────────
+
   readonly statusOptions = [
     { label: 'Selecione o status', value: ''         },
     { label: 'Ativo',              value: 'Active'   },
@@ -27,7 +35,16 @@ export class StakeholdersPage implements OnInit {
     { label: 'Pendente',           value: 'Pending'  },
   ];
 
+  readonly personTypeOptions = [
+    { label: 'Selecione o tipo', value: ''      },
+    { label: 'Pessoa Física',    value: 'PF'    },
+    { label: 'Pessoa Jurídica',  value: 'PJ'    },
+    { label: 'Outro',            value: 'Other' },
+  ];
+
   readonly pageSizeOptions = [10, 25, 50];
+
+  // ── Paginação ─────────────────────────────────────────────────────────────
 
   readonly pageNumbers = computed((): (number | '...')[] => {
     const total   = this.store.totalPages();
@@ -55,7 +72,7 @@ export class StakeholdersPage implements OnInit {
     this.store.load();
   }
 
-  // ── Search com debounce ───────────────────────────────────────────────────
+  // ── Filtros ───────────────────────────────────────────────────────────────
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -66,6 +83,16 @@ export class StakeholdersPage implements OnInit {
 
   onStatusChange(value: string): void {
     this.store.setStatus(value as StakeholderStatus | '');
+  }
+
+  onPersonTypeChange(value: string): void {
+    this.store.setPersonType(value as PersonType | '');
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  exportExcel(): void {
+    this.store.exportExcel();
   }
 
   // ── Sort ──────────────────────────────────────────────────────────────────
@@ -82,31 +109,69 @@ export class StakeholdersPage implements OnInit {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  // ── Modal de detalhes ─────────────────────────────────────────────────────
-  // O modal precisa do Stakeholder completo, mas a listagem retorna StakeholderListItem.
-  // Por isso buscamos o detalhe via service antes de abrir.
+  // ── Modal ─────────────────────────────────────────────────────────────────
 
   selectedStakeholder: Stakeholder | null = null;
   isModalOpen  = false;
   modalLoading = false;
+  saveLoading  = false;
+  saveError:   string | null = null;
+
+  // ── Toast de feedback ─────────────────────────────────────────────────────
+
+  toast: { message: string; type: 'success' | 'error' } | null = null;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  showToast(message: string, type: 'success' | 'error'): void {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toast = { message, type };
+    this.toastTimer = setTimeout(() => { this.toast = null; }, 4000);
+  }
 
   openModal(item: StakeholderListItem): void {
     this.modalLoading = true;
+    this.saveError    = null;
     this.svc.getById(item.id).subscribe({
       next: stakeholder => {
         this.selectedStakeholder = stakeholder;
         this.isModalOpen  = true;
         this.modalLoading = false;
       },
-      error: () => {
-        this.modalLoading = false;
-      },
+      error: () => { this.modalLoading = false; },
     });
   }
 
   closeModal(): void {
-    this.isModalOpen = false;
+    this.isModalOpen         = false;
     this.selectedStakeholder = null;
+    this.saveError           = null;
+  }
+
+  // ── Salvar edição (PATCH) ─────────────────────────────────────────────────
+  // O modal emite { id, payload } via @Output() saved.
+  // Após salvar com sucesso, rebusca o detalhe para atualizar o modal
+  // e recarrega a listagem para refletir eventuais mudanças de nome/status.
+
+  onSaved(event: { id: number; payload: Partial<StakeholderPayload> }): void {
+    this.saveLoading = true;
+    this.saveError   = null;
+
+    this.svc.update(event.id, event.payload).subscribe({
+      next: () => {
+        this.saveLoading = false;
+        this.closeModal();
+        this.store.load();
+        this.showToast('Stakeholder salvo com sucesso!', 'success');
+      },
+      error: err => {
+        this.saveLoading = false;
+        const raw = err?.error?.message;
+        const msg = Array.isArray(raw)
+          ? raw.join(' | ')
+          : (raw ?? 'Erro ao salvar alterações.');
+        this.showToast(msg, 'error');
+      },
+    });
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

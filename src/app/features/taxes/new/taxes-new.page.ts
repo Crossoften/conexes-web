@@ -3,10 +3,8 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { TaxesService } from '../taxes.service';
 import { TaxPayload, TaxService } from '../taxes.model';
-import { environment } from '../../../../environments/environment';
 
 type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -23,7 +21,6 @@ export class TaxesNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
   private svc    = inject(TaxesService);
-  private http   = inject(HttpClient);
 
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
@@ -65,12 +62,13 @@ export class TaxesNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/v1/stakeholders`).subscribe({
-      next: items => {
-        const mapped = items.map(s => ({
+    this.svc.getStakeholders().subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
+        const mapped = list.map((s: any) => ({
           id:       s.id,
-          name:     s.name     ?? s.tradeName ?? s.legalName ?? '',
-          document: s.document ?? s.cnpj      ?? '',
+          name:     s.name ?? s.tradeName ?? s.legalName ?? '',
+          document: s.document ?? s.cnpj ?? '',
         }));
         this.stakeholders.set(mapped);
         this.loadingLists.set(false);

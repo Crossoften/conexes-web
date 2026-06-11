@@ -36,27 +36,6 @@ export class BankAccountNewPage implements OnInit {
 
   activeTab: BankAccountTab = 'PARAMS';
 
-  // Lista temporária — substituir quando GET /v1/banks estiver disponível no back
-  private readonly BANKS_FALLBACK: Bank[] = [
-    { id: 1,  code: '001', name: 'Banco do Brasil',         status: 'Active' },
-    { id: 2,  code: '033', name: 'Santander',               status: 'Active' },
-    { id: 3,  code: '041', name: 'Banrisul',                status: 'Active' },
-    { id: 4,  code: '077', name: 'Banco Inter',             status: 'Active' },
-    { id: 5,  code: '104', name: 'Caixa Econômica Federal', status: 'Active' },
-    { id: 6,  code: '208', name: 'BTG Pactual',             status: 'Active' },
-    { id: 7,  code: '212', name: 'Banco Original',          status: 'Active' },
-    { id: 8,  code: '237', name: 'Bradesco',                status: 'Active' },
-    { id: 9,  code: '260', name: 'Nu Pagamentos (Nubank)',   status: 'Active' },
-    { id: 10, code: '290', name: 'PagSeguro (PagBank)',      status: 'Active' },
-    { id: 11, code: '336', name: 'C6 Bank',                 status: 'Active' },
-    { id: 12, code: '341', name: 'Itaú Unibanco',           status: 'Active' },
-    { id: 13, code: '380', name: 'PicPay',                  status: 'Active' },
-    { id: 14, code: '422', name: 'Banco Safra',             status: 'Active' },
-    { id: 15, code: '633', name: 'Banco Rendimento',        status: 'Active' },
-    { id: 16, code: '748', name: 'Sicredi',                 status: 'Active' },
-    { id: 17, code: '756', name: 'Sicoob',                  status: 'Active' },
-  ];
-
   form: FormGroup = this.fb.group({
     banco:             ['', Validators.required],
     fontePagadora:     ['', Validators.required],
@@ -93,14 +72,10 @@ export class BankAccountNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    // Bancos: usa fallback imediato, atualiza se o back retornar dados
-    this.banks.set(this.BANKS_FALLBACK);
-
-    this.svc.getAll().subscribe({
-      next: res => {
-        const banks = Array.isArray(res) ? [] : ((res as any).banks ?? []);
-        if (banks.length > 0) this.banks.set(banks);
-      },
+    // Bancos: carrega do endpoint dedicado
+    this.svc.getAllBanks().subscribe({
+      next: banks => this.banks.set(banks),
+      error: () => {},
     });
 
     // Entidades: carrega do back

@@ -52,6 +52,54 @@
   &--tinted { background: #FAFAFE; }
 }
 
+// ── Seção de controles (filtros + exportar) ───
+.controls-section {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ── Botões pill (outline) ─────────────────────
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 50px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-pill {
+  background: var(--surface-primary, #ffffff);
+  color: var(--text-secondary, #4B5563);
+  border: 1.5px solid var(--surface-border-mid, #E5E7EB);
+
+  &:hover {
+    border-color: var(--brand-purple-mid, #C4B5FD);
+    color: var(--brand-purple, #6366F1);
+    background: var(--brand-purple-light, #F5F3FF);
+  }
+
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 // ── Filtros ───────────────────────────────────
 .filter-bar {
   display: flex;

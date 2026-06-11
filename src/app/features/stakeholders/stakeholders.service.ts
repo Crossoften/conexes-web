@@ -8,6 +8,7 @@ import {
   StakeholderFilters,
   StakeholderListResponse,
   StakeholderPayload,
+  CnpjData,
 } from './stakeholders.model';
 
 @Injectable({ providedIn: 'root' })
@@ -20,12 +21,12 @@ export class StakeholdersService {
   getAll(filters: StakeholderFilters = {}): Observable<StakeholderListResponse> {
     let params = new HttpParams();
 
-    if (filters.name)       params = params.set('name',       filters.name);
-    if (filters.document)   params = params.set('document',   filters.document);
-    if (filters.personType) params = params.set('personType', filters.personType);
-    if (filters.status)     params = params.set('status',     filters.status);
-    if (filters.take)       params = params.set('take',       filters.take);
-    if (filters.skip != null) params = params.set('skip',     filters.skip);
+    if (filters.name)          params = params.set('name',       filters.name);
+    if (filters.document)      params = params.set('document',   filters.document);
+    if (filters.personType)    params = params.set('personType', filters.personType);
+    if (filters.status)        params = params.set('status',     filters.status);
+    if (filters.take != null)  params = params.set('take',       filters.take);
+    if (filters.skip != null)  params = params.set('skip',       filters.skip);
 
     return this.http.get<StakeholderListResponse>(this.base, { params });
   }
@@ -52,5 +53,22 @@ export class StakeholdersService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
+  }
+
+  // ── Exportar Excel ────────────────────────────────────────────────────────
+  // Retorna Blob para que o componente possa fazer download do arquivo.
+
+  exportExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/export/excel`, {
+      responseType: 'blob',
+    });
+  }
+
+  // ── Consulta CNPJ na Receita Federal ──────────────────────────────────────
+  // Usado no cadastro de PJ para pré-preencher os campos automaticamente.
+
+  getCnpjData(cnpj: string): Observable<CnpjData> {
+    const clean = cnpj.replace(/\D/g, '');
+    return this.http.get<CnpjData>(`${this.base}/cnpj/${clean}`);
   }
 }

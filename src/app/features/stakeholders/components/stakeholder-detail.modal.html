@@ -1,197 +1,668 @@
+<!-- src/app/features/stakeholders/components/stakeholder-detail.modal.html -->
 <div class="modal-overlay" (click)="onClose()">
-
   <div class="modal-container" (click)="$event.stopPropagation()">
 
-    <div class="modal-header">
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header" [class.modal-header--edit]="mode === 'edit'">
       <div class="header-content">
         <div class="header-icon">
           <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
           </svg>
         </div>
         <div class="header-text">
-          <h2>Fornecedor: {{ stakeholder?.code || '—' }}</h2>
-          <p>Acompanhe todas as informações cadastradas para o fornecedor.</p>
+          <h2>Fornecedor: {{ stakeholder?.code || ('#' + stakeholder?.id) || '—' }}</h2>
+          <p>
+            @if (mode === 'view') { Acompanhe todas as informações cadastradas para o fornecedor. }
+            @else { Edite as informações do fornecedor e salve ao finalizar. }
+          </p>
         </div>
       </div>
 
       <div class="header-actions">
-        <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        @if (mode === 'view') {
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        }
         <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
 
+    <!-- ── Tabs ───────────────────────────────────────────────────────────── -->
     <div class="modal-body">
-
       <div class="modal-tabs">
         <button class="tab-btn" [class.active]="activeTab === 'GERAIS'" (click)="setTab('GERAIS')">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           Dados gerais
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'RISCO'" (click)="setTab('RISCO')">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           Classificação e risco
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'OBSERVACOES'" (click)="setTab('OBSERVACOES')">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Observações e contatos
         </button>
       </div>
 
-      <div class="tab-content">
+      <!-- ══ VIEW MODE ══════════════════════════════════════════════════════ -->
+      @if (mode === 'view') {
+        <div class="tab-content">
 
-        @if (activeTab === 'GERAIS') {
-          <div class="info-box">
-            <div class="info-header">
-              <strong>Pessoa:</strong> {{ stakeholder?.personType || '—' }} |
-              <strong>CNPJ/CPF:</strong> {{ stakeholder?.document || '—' }}
-            </div>
-
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="info-label">Nome do fornecedor</span>
-                <span class="info-value">{{ stakeholder?.name || '—' }}</span>
+          @if (activeTab === 'GERAIS') {
+            <div class="info-box">
+              <div class="info-header">
+                <strong>Pessoa:</strong> {{ stakeholder?.personType || '—' }} |
+                <strong>CNPJ/CPF:</strong> {{ stakeholder?.document || '—' }}
               </div>
-              <div class="info-item">
-                <span class="info-label">Tipo</span>
-                <span class="info-value">{{ typeLabel || '—' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">CEP</span>
-                <span class="info-value">{{ primaryAddress?.zipCode || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Endereço completo</span>
-                <span class="info-value">{{ fullAddress || '—' }}</span>
-              </div>
-
-              <div class="info-item">
-                <span class="info-label">Telefone principal</span>
-                <span class="info-value">{{ stakeholder?.phone || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">E-mail contato</span>
-                <span class="info-value">{{ stakeholder?.email || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Natureza jurídica</span>
-                <span class="info-value">{{ stakeholder?.legalNature || '—' }}</span>
-              </div>
-
-              <div class="info-item col-span-2">
-                <span class="info-label">Inscrição Estadual</span>
-                <span class="info-value">{{ stakeholder?.stateRegistration || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Inscrição Municipal</span>
-                <span class="info-value">{{ stakeholder?.municipalRegistration || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Atividade principal</span>
-                <span class="info-value">{{ stakeholder?.mainActivity || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Atividade secundária</span>
-                <span class="info-value">{{ stakeholder?.secondaryActivity || '—' }}</span>
-              </div>
-
-              <div class="info-item col-span-2">
-                <span class="info-label">Rateio padrão</span>
-                <span class="info-value">{{ stakeholder?.standardApportionment || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Conta contábil</span>
-                <span class="info-value">{{ stakeholder?.accountId || '—' }}</span>
-              </div>
-
-              <div class="info-item col-span-4">
-                <span class="info-label">Dados bancários</span>
-                <span class="info-value">{{ bankSummary || '—' }}</span>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Nome do fornecedor</span>
+                  <span class="info-value">{{ stakeholder?.name || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Tipo</span>
+                  <span class="info-value">{{ typeLabel || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CEP</span>
+                  <span class="info-value">{{ primaryAddress?.zipCode || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Endereço completo</span>
+                  <span class="info-value">{{ fullAddress || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Telefone principal</span>
+                  <span class="info-value">{{ stakeholder?.phone || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">E-mail contato</span>
+                  <span class="info-value">{{ stakeholder?.email || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Natureza jurídica</span>
+                  <span class="info-value">{{ stakeholder?.legalNature || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Inscrição Estadual</span>
+                  <span class="info-value">{{ stakeholder?.stateRegistration || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Inscrição Municipal</span>
+                  <span class="info-value">{{ stakeholder?.municipalRegistration || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Atividade principal</span>
+                  <span class="info-value">{{ stakeholder?.mainActivity || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Atividade secundária</span>
+                  <span class="info-value">{{ stakeholder?.secondaryActivity || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Rateio padrão</span>
+                  <span class="info-value">{{ stakeholder?.standardApportionment || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Conta contábil</span>
+                  <span class="info-value">{{ stakeholder?.accountId || '—' }}</span>
+                </div>
+                <div class="info-item col-span-4">
+                  <span class="info-label">Dados bancários</span>
+                  <span class="info-value">{{ bankSummary || '—' }}</span>
+                </div>
               </div>
             </div>
+          }
+
+          @if (activeTab === 'RISCO') {
+            <div class="info-box">
+              <div class="info-grid">
+                <div class="info-item col-span-2">
+                  <span class="info-label">Privacidade avaliada</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvaluated ? 'Sim' : 'Não' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Data de avaliação</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvalDate || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Risco de privacidade</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.privacyRisk || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Observações de privacidade</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.privacyObservations || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">KYP — Data inicial</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypInitialDate || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">KYP — Data final</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypFinalDate || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Risco de compliance</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.complianceRisk || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Observações de compliance</span>
+                  <span class="info-value">{{ stakeholder?.riskClassification?.complianceObservations || '—' }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (activeTab === 'OBSERVACOES') {
+            <div class="info-box">
+              <div class="info-grid">
+                <div class="info-item col-span-2">
+                  <span class="info-label">Nome do contato</span>
+                  <span class="info-value">{{ primaryContact?.name || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">E-mail do contato</span>
+                  <span class="info-value">{{ primaryContact?.email || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Telefone</span>
+                  <span class="info-value">{{ primaryContact?.phone || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Celular</span>
+                  <span class="info-value">{{ primaryContact?.cellphone || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Cargo</span>
+                  <span class="info-value">{{ primaryContact?.position || '—' }}</span>
+                </div>
+                <div class="info-item col-span-4">
+                  <span class="info-label">Observações</span>
+                  <span class="info-value">{{ primaryContact?.observation || '—' }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+
+      <!-- ══ EDIT MODE ══════════════════════════════════════════════════════ -->
+      @if (mode === 'edit') {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="tab-content">
+
+          <!-- ── Aba GERAIS ──────────────────────────────────────────────── -->
+          @if (activeTab === 'GERAIS') {
+            <div class="edit-box">
+
+              <h3 class="edit-section-title">Identificação</h3>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">Código</label>
+                  <input class="input" type="text" formControlName="code">
+                </div>
+                <div class="field">
+                  <label class="field-label">Tipo</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="type">
+                      <option value="">Selecione</option>
+                      <option value="Supplier">Fornecedor</option>
+                      <option value="Customer">Cliente</option>
+                      <option value="Donor">Doador</option>
+                      <option value="SupportedProject">Projeto Apoiado</option>
+                      <option value="Other">Outros</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Status</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="status">
+                      <option value="Active">Ativo</option>
+                      <option value="Inactive">Inativo</option>
+                      <option value="Pending">Pendente</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Pessoa <span class="required">*</span></label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="personType">
+                      <option value="PF">Pessoa Física</option>
+                      <option value="PJ">Pessoa Jurídica</option>
+                      <option value="Other">Outro</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">CPF/CNPJ <span class="required">*</span></label>
+                  <input class="input" type="text" formControlName="document">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Nome / Razão Social <span class="required">*</span></label>
+                  <input class="input" type="text" formControlName="name">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Nome fantasia</label>
+                  <input class="input" type="text" formControlName="tradeName">
+                </div>
+                <div class="field">
+                  <label class="field-label">E-mail</label>
+                  <input class="input" type="email" formControlName="email">
+                </div>
+                <div class="field">
+                  <label class="field-label">Telefone</label>
+                  <input class="input" type="text" formControlName="phone">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Natureza jurídica</label>
+                  <input class="input" type="text" formControlName="legalNature">
+                </div>
+                <div class="field">
+                  <label class="field-label">Inscrição Estadual</label>
+                  <input class="input" type="text" formControlName="stateRegistration">
+                </div>
+                <div class="field">
+                  <label class="field-label">Inscrição Municipal</label>
+                  <input class="input" type="text" formControlName="municipalRegistration">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Atividade principal</label>
+                  <input class="input" type="text" formControlName="mainActivity">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Atividade secundária</label>
+                  <input class="input" type="text" formControlName="secondaryActivity">
+                </div>
+                <div class="field">
+                  <label class="field-label">Rateio padrão</label>
+                  <input class="input" type="text" formControlName="standardApportionment">
+                </div>
+                <div class="field">
+                  <label class="field-label">Conta contábil</label>
+                  <input class="input" type="number" formControlName="accountId">
+                </div>
+              </div>
+
+              <h3 class="edit-section-title">Endereço</h3>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">CEP</label>
+                  <input class="input" type="text" formControlName="addrZipCode">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Logradouro</label>
+                  <input class="input" type="text" formControlName="addrStreet">
+                </div>
+                <div class="field">
+                  <label class="field-label">Número</label>
+                  <input class="input" type="text" formControlName="addrNumber">
+                </div>
+                <div class="field">
+                  <label class="field-label">Complemento</label>
+                  <input class="input" type="text" formControlName="addrComplement">
+                </div>
+                <div class="field">
+                  <label class="field-label">Bairro</label>
+                  <input class="input" type="text" formControlName="addrDistrict">
+                </div>
+                <div class="field">
+                  <label class="field-label">Cidade</label>
+                  <input class="input" type="text" formControlName="addrCity">
+                </div>
+                <div class="field">
+                  <label class="field-label">Estado</label>
+                  <input class="input" type="text" formControlName="addrState">
+                </div>
+              </div>
+
+              <h3 class="edit-section-title">Dados bancários</h3>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">Nome do correntista</label>
+                  <input class="input" type="text" formControlName="bankAccountName">
+                </div>
+                <div class="field">
+                  <label class="field-label">Documento do correntista</label>
+                  <input class="input" type="text" formControlName="bankAccountDocument">
+                </div>
+                <div class="field">
+                  <label class="field-label">Banco</label>
+                  <input class="input" type="text" formControlName="bank">
+                </div>
+                <div class="field">
+                  <label class="field-label">Agência</label>
+                  <input class="input" type="text" formControlName="bankAgency">
+                </div>
+                <div class="field">
+                  <label class="field-label">Dígito ag.</label>
+                  <input class="input" type="text" formControlName="bankAgencyDigit">
+                </div>
+                <div class="field">
+                  <label class="field-label">Conta</label>
+                  <input class="input" type="text" formControlName="bankAccount">
+                </div>
+                <div class="field">
+                  <label class="field-label">Dígito cc.</label>
+                  <input class="input" type="text" formControlName="bankAccountDigit">
+                </div>
+                <div class="field">
+                  <label class="field-label">Tipo de conta</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="bankAccountType">
+                      <option value="">Selecione</option>
+                      <option value="Checking">Conta Corrente</option>
+                      <option value="Savings">Conta Poupança</option>
+                      <option value="Salary">Conta Salário</option>
+                      <option value="Payment">Conta Pagamento</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Tipo PIX</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="bankPixType">
+                      <option value="">Selecione</option>
+                      <option value="CPF">CPF</option>
+                      <option value="CNPJ">CNPJ</option>
+                      <option value="Email">E-mail</option>
+                      <option value="Phone">Telefone</option>
+                      <option value="RandomKey">Chave aleatória</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Chave PIX</label>
+                  <input class="input" type="text" formControlName="bankPixKey">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Forma de pagamento padrão</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="bankPaymentMethod">
+                      <option value="">Selecione</option>
+                      <option value="EletronicTransferSameOwner">Transferência eletrônica (mesmo titular)</option>
+                      <option value="EletronicTransferOtherOwner">Transferência eletrônica (outro titular)</option>
+                      <option value="TEDSameOwner">TED (mesmo titular)</option>
+                      <option value="TEDOtherOwner">TED (outro titular)</option>
+                      <option value="DOCSameOwner">DOC (mesmo titular)</option>
+                      <option value="DOCOtherOwner">DOC (outro titular)</option>
+                      <option value="BoletoSameBank">Boleto (mesmo banco)</option>
+                      <option value="BoletoOtherBank">Boleto (outro banco)</option>
+                      <option value="PIX">PIX</option>
+                      <option value="UtilityBill">Conta de consumo</option>
+                      <option value="DARFWithBarcode">DARF com código de barras</option>
+                      <option value="DARFWithoutBarcode">DARF sem código de barras</option>
+                      <option value="GARE">GARE</option>
+                      <option value="GPS">GPS</option>
+                      <option value="FGTS">FGTS</option>
+                      <option value="IPVA">IPVA</option>
+                      <option value="IPTU">IPTU</option>
+                      <option value="INSS_MunicipalTaxes">INSS / Tributos municipais</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          }
+
+          <!-- ── Aba RISCO ──────────────────────────────────────────────── -->
+          @if (activeTab === 'RISCO') {
+            <div class="edit-box">
+
+              <h3 class="edit-section-title">Avaliação de Privacidade e Segurança da Informação</h3>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">Avaliado</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="privacyEvaluated">
+                      <option [ngValue]="false">Não</option>
+                      <option [ngValue]="true">Sim</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Data da avaliação</label>
+                  <input class="input" type="date" formControlName="privacyEvalDate">
+                </div>
+                <div class="field">
+                  <label class="field-label">Risco do fornecedor</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="privacyRisk">
+                      <option value="">Sem risco</option>
+                      <option value="Baixo">Baixo</option>
+                      <option value="Médio">Médio</option>
+                      <option value="Alto">Alto</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Observações</label>
+                  <input class="input" type="text" formControlName="privacyObservations">
+                </div>
+              </div>
+
+              <h3 class="edit-section-title">Avaliação Política de Compliance / KYP</h3>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">KYP — Prazo início</label>
+                  <input class="input" type="date" formControlName="complianceKypInitialDate">
+                </div>
+                <div class="field">
+                  <label class="field-label">KYP — Prazo fim</label>
+                  <input class="input" type="date" formControlName="complianceKypFinalDate">
+                </div>
+                <div class="field">
+                  <label class="field-label">Risco de compliance</label>
+                  <input class="input" type="text" placeholder="Dado preenchido" formControlName="complianceRisk" readonly>
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Observações</label>
+                  <input class="input" type="text" formControlName="complianceObservations">
+                </div>
+              </div>
+
+            </div>
+          }
+
+          <!-- ── Aba OBSERVACOES ────────────────────────────────────────── -->
+          @if (activeTab === 'OBSERVACOES') {
+            <div class="edit-box">
+
+              <h3 class="edit-section-title">Dados de contato</h3>
+              <div class="edit-grid">
+                <div class="field field--wide">
+                  <label class="field-label">Nome do contato</label>
+                  <input class="input" type="text" formControlName="contactName">
+                </div>
+                <div class="field">
+                  <label class="field-label">Telefone principal</label>
+                  <input class="input" type="text" formControlName="contactPhone">
+                </div>
+                <div class="field">
+                  <label class="field-label">Telefone celular</label>
+                  <input class="input" type="text" formControlName="contactCellphone">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">E-mail de contato</label>
+                  <input class="input" type="email" formControlName="contactEmail">
+                </div>
+                <div class="field field--full">
+                  <label class="field-label">Observações</label>
+                  <input class="input" type="text" formControlName="contactObservation">
+                </div>
+              </div>
+
+              <h3 class="edit-section-title">Cadastro de impostos e retenções</h3>
+              <div class="edit-grid">
+                <div class="field field--wide">
+                  <label class="field-label">Código de Classificação do Serviço</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="serviceClassCode">
+                      <option value="">Selecione</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Título do Serviço</label>
+                  <input class="input" type="text" formControlName="serviceTitle">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Natureza da Operação</label>
+                  <input class="input" type="text" formControlName="operationNature">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Total das Retenções</label>
+                  <input class="input" type="text" formControlName="totalRetentions" readonly>
+                </div>
+              </div>
+
+              <h4 class="edit-subsection-title">Alíquotas</h4>
+              <div class="edit-grid">
+                <div class="field">
+                  <label class="field-label">IRRF — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="irfAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">IRRF — Código</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="irfCode">
+                      <option value="">Sem código</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">PIS — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="pisAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">PIS — Código</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="pisCode">
+                      <option value="">Sem código</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">PCC — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="pccAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">PCC — Código</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="pccCode">
+                      <option value="">Sem código</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">COFINS — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="cofinsAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">COFINS — Código</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="cofinsCode">
+                      <option value="">Sem código</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">INSS — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="inssAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">CSLL — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="csllAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">IBS — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="ibsAliquot">
+                </div>
+                <div class="field">
+                  <label class="field-label">CBS — Alíquota (%)</label>
+                  <input class="input" type="number" formControlName="cbsAliquot">
+                </div>
+              </div>
+
+              <h4 class="edit-subsection-title">Serviços</h4>
+              <div class="edit-grid">
+                <div class="field field--wide">
+                  <label class="field-label">Nome do serviço</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="serviceName">
+                      <option value="">Selecione</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Descrição do serviço</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="serviceDescription">
+                      <option value="">Selecione</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Código externo</label>
+                  <input class="input" type="text" formControlName="serviceExternalCode">
+                </div>
+                <div class="field">
+                  <label class="field-label">Órgão concedente</label>
+                  <input class="input" type="text" formControlName="serviceGrantorOrgan">
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Possui redenção?</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="serviceHasRetention">
+                      <option [ngValue]="false">Não</option>
+                      <option [ngValue]="true">Sim</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field field--wide">
+                  <label class="field-label">Órgão acessor / vínculo</label>
+                  <input class="input" type="text" formControlName="serviceAccessorOrgan">
+                </div>
+              </div>
+
+            </div>
+          }
+
+          <!-- ── Footer ────────────────────────────────────────────────── -->
+          <div class="edit-footer">
+            <button type="button" class="btn-cancel" (click)="onCancelEdit()">Cancelar</button>
+            <button type="submit" class="btn-save">Salvar alterações</button>
           </div>
-        }
 
-        @if (activeTab === 'RISCO') {
-          <div class="info-box">
-            <div class="info-grid">
-              <div class="info-item col-span-2">
-                <span class="info-label">Privacidade avaliada</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvaluated ? 'Sim' : 'Não' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Data de avaliação</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.privacyEvalDate || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Risco de privacidade</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.privacyRisk || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Observações de privacidade</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.privacyObservations || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">KYP — Data inicial</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypInitialDate || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">KYP — Data final</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.complianceKypFinalDate || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Risco de compliance</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.complianceRisk || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Observações de compliance</span>
-                <span class="info-value">{{ stakeholder?.riskClassification?.complianceObservations || '—' }}</span>
-              </div>
-            </div>
-          </div>
-        }
+        </form>
+      }
 
-        @if (activeTab === 'OBSERVACOES') {
-          <div class="info-box">
-            <div class="info-grid">
-              <div class="info-item col-span-2">
-                <span class="info-label">Nome do contato</span>
-                <span class="info-value">{{ primaryContact?.name || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">E-mail do contato</span>
-                <span class="info-value">{{ primaryContact?.email || '—' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Telefone</span>
-                <span class="info-value">{{ primaryContact?.phone || '—' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Celular</span>
-                <span class="info-value">{{ primaryContact?.cellphone || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
-                <span class="info-label">Cargo</span>
-                <span class="info-value">{{ primaryContact?.position || '—' }}</span>
-              </div>
-              <div class="info-item col-span-4">
-                <span class="info-label">Observações</span>
-                <span class="info-value">{{ primaryContact?.observation || '—' }}</span>
-              </div>
-            </div>
-          </div>
-        }
-
-      </div>
     </div>
-
   </div>
 </div>

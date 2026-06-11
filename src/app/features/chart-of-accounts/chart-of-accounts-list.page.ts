@@ -89,13 +89,24 @@ export class ChartOfAccountsListPage implements OnInit {
 
   toStr(id: number): string { return String(id); }
 
-  // ── Modal de detalhes ─────────────────────────────────────────────────────
+  // ── Modal ─────────────────────────────────────────────────────────────────
 
-  selectedAccount: Account | null = null;
+  selectedAccount: Account | null  = null;
+  modalInitialMode: 'view' | 'edit' = 'view';
   isModalOpen  = false;
   modalLoading = false;
 
-  openModal(item: Account): void {
+  openViewModal(item: Account): void {
+    this.modalInitialMode = 'view';
+    this._openModal(item);
+  }
+
+  openEditModal(item: Account): void {
+    this.modalInitialMode = 'edit';
+    this._openModal(item);
+  }
+
+  private _openModal(item: Account): void {
     this.modalLoading = true;
     this.svc.getById(item.id).subscribe({
       next: account => {
@@ -110,6 +121,12 @@ export class ChartOfAccountsListPage implements OnInit {
   closeModal(): void {
     this.isModalOpen     = false;
     this.selectedAccount = null;
+  }
+
+  // Chamado quando o modal salva com sucesso — recarrega a lista
+  onSaved(): void {
+    this.store.load();
+    this.closeModal();
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // src/app/features/approval-tiers/approval-tiers.model.ts
 
 export type ApprovalTierStatus   = 'Active' | 'Inactive';
-export type ApprovalPurchaseRole = 'Requester' | 'Approver' | 'Manager' | 'Director';
+export type ApprovalPurchaseRole = 'Requester' | 'Buyer' | 'RequestSupervisor' | 'PurchaseSupervisor' | 'InvoiceReceiver' | 'Finance' | 'Manager';
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 

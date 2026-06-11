@@ -1,16 +1,17 @@
 // src/app/features/employees/employees.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
-import { Employee } from './employees.model';
+import { Employee, EmployeeUpdatePayload } from './employees.model';
 import { EmployeesService } from './employees.service';
 
 interface State {
-  items:      Employee[];
-  loading:    boolean;
-  error:      string | null;
-  filters:    { search: string; status: string; type: string };
-  sort:       { column: keyof Employee | ''; direction: 'asc' | 'desc' | '' };
-  pagination: { page: number; pageSize: number };
+  items:       Employee[];
+  loading:     boolean;
+  error:       string | null;
+  filters:     { search: string; status: string; type: string };
+  sort:        { column: keyof Employee | ''; direction: 'asc' | 'desc' | '' };
+  pagination:  { page: number; pageSize: number };
   selectedIds: Set<number>;
+  selected:    Employee | null;
 }
 
 @Injectable()
@@ -18,13 +19,14 @@ export class EmployeesStore {
   private svc = inject(EmployeesService);
 
   private readonly state = signal<State>({
-    items:      [],
-    loading:    false,
-    error:      null,
-    filters:    { search: '', status: '', type: '' },
-    sort:       { column: '', direction: '' },
-    pagination: { page: 1, pageSize: 10 },
+    items:       [],
+    loading:     false,
+    error:       null,
+    filters:     { search: '', status: '', type: '' },
+    sort:        { column: '', direction: '' },
+    pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
+    selected:    null,
   });
 
   // ── Selectors ─────────────────────────────────────────────────────────────
@@ -35,6 +37,7 @@ export class EmployeesStore {
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
+  readonly selected    = computed(() => this.state().selected);
 
   readonly filteredItems = computed(() => {
     let result = this.state().items;
@@ -71,7 +74,7 @@ export class EmployeesStore {
     return items.some(item => this.selectedIds().has(item.id)) && !this.allPageSelected();
   });
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  // ── Actions: Load ─────────────────────────────────────────────────────────
 
   load(): void {
     this.state.update(s => ({ ...s, loading: true, error: null }));
@@ -81,6 +84,54 @@ export class EmployeesStore {
         ...s,
         loading: false,
         error: err?.error?.message ?? 'Erro ao carregar colaboradores.',
+      })),
+    });
+  }
+
+  // ── Actions: Select (modal) ───────────────────────────────────────────────
+
+  openDetail(employee: Employee): void {
+    this.state.update(s => ({ ...s, selected: employee }));
+  }
+
+  closeDetail(): void {
+    this.state.update(s => ({ ...s, selected: null }));
+  }
+
+  // ── Actions: Update ───────────────────────────────────────────────────────
+
+  update(id: number, payload: EmployeeUpdatePayload): void {
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.update(id, payload).subscribe({
+      next: updated => this.state.update(s => ({
+        ...s,
+        loading:  false,
+        selected: null,
+        items:    s.items.map(item => item.id === id ? updated : item),
+      })),
+      error: err => this.state.update(s => ({
+        ...s,
+        loading: false,
+        error: err?.error?.message ?? 'Erro ao atualizar colaborador.',
+      })),
+    });
+  }
+
+  // ── Actions: Delete ───────────────────────────────────────────────────────
+
+  delete(id: number): void {
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.delete(id).subscribe({
+      next: () => this.state.update(s => ({
+        ...s,
+        loading:  false,
+        selected: null,
+        items:    s.items.filter(item => item.id !== id),
+      })),
+      error: err => this.state.update(s => ({
+        ...s,
+        loading: false,
+        error: err?.error?.message ?? 'Erro ao excluir colaborador.',
       })),
     });
   }
@@ -118,7 +169,7 @@ export class EmployeesStore {
     this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } }));
   }
 
-  // ── Selection ─────────────────────────────────────────────────────────────
+  // ── Row Selection ─────────────────────────────────────────────────────────
 
   toggleRow(id: number): void {
     this.state.update(s => {

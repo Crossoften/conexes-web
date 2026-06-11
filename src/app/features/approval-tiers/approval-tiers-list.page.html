@@ -12,28 +12,49 @@
 
   <div class="card">
 
-    <div class="card-section filter-bar">
+    <div class="controls-section">
 
-      <div class="search-wrap">
-        <input class="search" type="text" placeholder="Buscar"
-          [value]="store.filters().search"
-          (input)="onSearch($any($event.target).value)"
-          aria-label="Buscar">
-        <svg class="search-icon" viewBox="0 0 20 20" fill="none">
-          <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
+      <div class="filter-bar">
 
-      <div class="select-wrap">
-        <select class="select select--pill"
-          [value]="store.filters().status"
-          (change)="store.setStatus($any($event.target).value)">
-          @for (opt of statusOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
+        <div class="search-wrap">
+          <input class="search" type="text" placeholder="Buscar"
+            [value]="store.filters().search"
+            (input)="onSearch($any($event.target).value)"
+            aria-label="Buscar">
+          <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+            <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="select-wrap">
+          <select class="select select--pill"
+            [value]="store.filters().status"
+            (change)="store.setStatus($any($event.target).value)">
+            @for (opt of statusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <button class="btn-outline btn-pill"
+          [disabled]="store.exporting()"
+          (click)="onExport()">
+          @if (store.exporting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Exportando...
+          } @else {
+            Exportar
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 18 15 15"/>
+            </svg>
           }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
       </div>
 
     </div>
@@ -54,7 +75,7 @@
             <th class="th th--sortable" (click)="store.setSort('level')">Nível <span class="sort-icon" [ngClass]="'sort--' + getSortState('level')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('purchaseRole')">Papel <span class="sort-icon" [ngClass]="'sort--' + getSortState('purchaseRole')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('userId')">Aprovador (ID) <span class="sort-icon" [ngClass]="'sort--' + getSortState('userId')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('userId')">Aprovador <span class="sort-icon" [ngClass]="'sort--' + getSortState('userId')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('minValue')">Valor mínimo <span class="sort-icon" [ngClass]="'sort--' + getSortState('minValue')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('maxValue')">Valor máximo <span class="sort-icon" [ngClass]="'sort--' + getSortState('maxValue')"></span></th>
             <th class="th th--center">Ações</th>
@@ -94,22 +115,19 @@
                 <td class="td td--mono">{{ item.level }}</td>
                 <td class="td td--name">{{ item.description }}</td>
                 <td class="td">{{ item.purchaseRole }}</td>
-                <td class="td td--mono">{{ item.userId }}</td>
+                <td class="td">{{ store.getUserName(item.userId) }}</td>
                 <td class="td td--mono">{{ item.minValue | currency:'BRL' }}</td>
                 <td class="td td--mono">{{ item.maxValue | currency:'BRL' }}</td>
                 <td class="td td--center">
                   <div class="action-icons">
-                    <button class="icon-btn" title="Visualizar">
+                    <button class="icon-btn" title="Visualizar" (click)="store.openView(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
-                    <button class="icon-btn" title="Editar">
+                    <button class="icon-btn" title="Editar" (click)="store.openEdit(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button class="icon-btn" title="Excluir" (click)="onDelete(item.id)">
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="store.openDelete(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <button class="icon-btn" title="Duplicar">
-                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   </div>
                 </td>
@@ -156,3 +174,47 @@
 
   </div>
 </div>
+
+<!-- ── Modal: Detalhe / Edição ────────────────────────────────────────────── -->
+@if (store.detailModal().open) {
+  <app-approval-tier-detail-modal
+    [tier]="store.detailModal().tier"
+    [users]="store.users()"
+    [mode]="store.detailModal().mode"
+    [saving]="store.detailModal().saving"
+    [error]="store.detailModal().error"
+    (close)="store.closeDetailModal()"
+    (edit)="store.switchToEdit()"
+    (delete)="store.openDelete($event)"
+    (save)="onTierSave($event)">
+  </app-approval-tier-detail-modal>
+}
+
+<!-- ── Modal: Confirmar exclusão ─────────────────────────────────────────── -->
+@if (store.deleteModal().open) {
+  <div class="modal-backdrop" (click)="store.closeDeleteModal()">
+    <div class="modal modal--sm" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">Excluir alçada</h2>
+        <button class="modal__close" (click)="store.closeDeleteModal()">
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p class="modal__confirm-text">
+          Tem certeza que deseja excluir a alçada
+          <strong>{{ store.deleteModal().tier?.description }}</strong>?
+          Essa ação não pode ser desfeita.
+        </p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-outline" (click)="store.closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger"
+          [disabled]="store.deleteModal().deleting"
+          (click)="store.confirmDelete()">
+          @if (store.deleteModal().deleting) { Excluindo… } @else { Excluir }
+        </button>
+      </div>
+    </div>
+  </div>
+}

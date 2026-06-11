@@ -1,0 +1,434 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" [class.modal-container--lg]="mode === 'edit'" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ employee?.name || '—' }}</h2>
+          <p>{{ mode === 'view' ? 'Acompanhe todas as informações cadastradas para este colaborador.' : 'Atualize as informações cadastradas para este colaborador.' }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <ng-container *ngIf="mode === 'view'">
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </ng-container>
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      <div *ngIf="loading" class="modal-loading">
+        <p>Carregando informações...</p>
+      </div>
+
+      <ng-container *ngIf="!loading && employee">
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- MODO VIEW                                                          -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'view'">
+
+          <div class="modal-tabs">
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'PARAMS'" (click)="activeTab = 'PARAMS'">
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Dados Gerais
+            </button>
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'BOLETO'" (click)="activeTab = 'BOLETO'">
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              Dados de Pagamento
+            </button>
+          </div>
+
+          <!-- Tab View: Dados Gerais -->
+          <div class="tab-content" *ngIf="activeTab === 'PARAMS'">
+            <div class="info-box">
+              <div class="info-grid">
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Nome Completo</span>
+                  <span class="info-value">{{ employee.name || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CPF</span>
+                  <span class="info-value info-value--mono">{{ employee.cpf || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CNS</span>
+                  <span class="info-value info-value--mono">{{ employee.cns || '—' }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Entidade</span>
+                  <span class="info-value">{{ entityName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Tipo Responsável</span>
+                  <span class="info-value">{{ employee.responsibleType || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Cargo</span>
+                  <span class="info-value">{{ positionName }}</span>
+                </div>
+
+                <div class="info-item col-span-2">
+                  <span class="info-label">Formação</span>
+                  <span class="info-value">{{ employee.formation || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Vínculo</span>
+                  <span class="info-value">{{ employee.linkType || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Carga Horária Mensal</span>
+                  <span class="info-value">{{ employee.workingHours ? employee.workingHours + 'h' : '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Data Admissão</span>
+                  <span class="info-value">{{ employee.startDate || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Data Demissão</span>
+                  <span class="info-value">{{ employee.endDate || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Salário</span>
+                  <span class="info-value">{{ employee.salary ? (employee.salary | number:'1.2-2') : '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Status</span>
+                  <span class="info-value">
+                    <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">
+                      {{ statusLabel }}
+                    </span>
+                  </span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Órgão de Classe</span>
+                  <span class="info-value">{{ employee.professionalBoard || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">E-mail Institucional</span>
+                  <span class="info-value">{{ employee.institutionalEmail || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">E-mail Pessoal</span>
+                  <span class="info-value">{{ employee.personalEmail || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">CEP</span>
+                  <span class="info-value info-value--mono">{{ employee.zipCode || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Endereço</span>
+                  <span class="info-value">{{ employee.address || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Número</span>
+                  <span class="info-value">{{ employee.number || '—' }}</span>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Complemento</span>
+                  <span class="info-value">{{ employee.complement || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Telefone</span>
+                  <span class="info-value info-value--mono">{{ employee.phone || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Celular</span>
+                  <span class="info-value info-value--mono">{{ employee.cellPhone || '—' }}</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab View: Dados de Pagamento -->
+          <div class="tab-content" *ngIf="activeTab === 'BOLETO'">
+            <div class="info-box">
+              <div class="info-grid">
+
+                <div class="info-item">
+                  <span class="info-label">Parceria (ID)</span>
+                  <span class="info-value">{{ employee.partnershipId || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Origem do Recurso</span>
+                  <span class="info-value">{{ employee.resourceOrigin || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Referência</span>
+                  <span class="info-value">{{ employee.reference || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Valor Bruto</span>
+                  <span class="info-value">{{ employee.grossValue ? (employee.grossValue | number:'1.2-2') : '—' }}</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+        <!-- /MODO VIEW -->
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- MODO EDIT                                                          -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="mode === 'edit'">
+
+          <form [formGroup]="form">
+
+            <div class="tab-container">
+              <button type="button" class="tab-button" [class.active]="activeTab === 'PARAMS'" (click)="activeTab = 'PARAMS'">
+                Configurações de parâmetros
+              </button>
+              <button type="button" class="tab-button" [class.active]="activeTab === 'BOLETO'" (click)="activeTab = 'BOLETO'">
+                Dados de pagamento
+              </button>
+            </div>
+
+            <!-- Tab Edit: Dados Gerais -->
+            <div *ngIf="activeTab === 'PARAMS'">
+              <div class="form-grid">
+
+                <div class="form-row grid-cols-1">
+                  <div class="form-group">
+                    <label>Nome completo <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Digite o nome completo..." formControlName="nome"
+                      [class.is-invalid]="form.get('nome')?.invalid && form.get('nome')?.touched">
+                    <span class="field-error" *ngIf="form.get('nome')?.invalid && form.get('nome')?.touched">Campo obrigatório</span>
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-3">
+                  <div class="form-group">
+                    <label>Entidade <span class="req">*</span></label>
+                    <div class="select-wrap">
+                      <select class="form-control" formControlName="entidade"
+                        [class.is-invalid]="form.get('entidade')?.invalid && form.get('entidade')?.touched">
+                        <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                        @for (e of entities(); track e.cnpj) {
+                          <option [value]="e.id ?? e.cnpj">{{ e.tradeName || e.legalName }}</option>
+                        }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Tipo responsável <span class="req">*</span></label>
+                    <div class="select-wrap">
+                      <select class="form-control" formControlName="tipoResponsavel"
+                        [class.is-invalid]="form.get('tipoResponsavel')?.invalid && form.get('tipoResponsavel')?.touched">
+                        <option value="">Selecione</option>
+                        <option value="COLABORADOR">Colaborador</option>
+                        <option value="DIRIGENTE">Dirigente</option>
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Cargo <span class="req">*</span></label>
+                    <div class="select-wrap">
+                      <select class="form-control" formControlName="cargo"
+                        [class.is-invalid]="form.get('cargo')?.invalid && form.get('cargo')?.touched">
+                        <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                        @for (p of positions(); track p.id) {
+                          <option [value]="p.id">{{ p.title || p.name }}</option>
+                        }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group col-span-2">
+                    <label>Formação <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="formacao"
+                      [class.is-invalid]="form.get('formacao')?.invalid && form.get('formacao')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Vínculo <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="vinculo"
+                      [class.is-invalid]="form.get('vinculo')?.invalid && form.get('vinculo')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Carga horária mensal <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Ex: 160" formControlName="cargaHorariaMensal"
+                      [class.is-invalid]="form.get('cargaHorariaMensal')?.invalid && form.get('cargaHorariaMensal')?.touched"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>Data Admissão <span class="req">*</span></label>
+                    <input type="date" class="form-control" formControlName="dataAdmissao"
+                      [class.is-invalid]="form.get('dataAdmissao')?.invalid && form.get('dataAdmissao')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Data Demissão</label>
+                    <input type="date" class="form-control" formControlName="dataDemissao">
+                  </div>
+                  <div class="form-group">
+                    <label>CNS <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="000000000000000" formControlName="cns"
+                      [class.is-invalid]="form.get('cns')?.invalid && form.get('cns')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Salário <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="0,00" formControlName="salario"
+                      [class.is-invalid]="form.get('salario')?.invalid && form.get('salario')?.touched">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>CPF <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="000.000.000-00" formControlName="cpf"
+                      [class.is-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched"
+                      (input)="applyCpfMask($event)"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                  <div class="form-group">
+                    <label>Órgão de Classe</label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="orgaoClasse">
+                  </div>
+                  <div class="form-group">
+                    <label>E-mail Institucional</label>
+                    <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailInstitucional">
+                  </div>
+                  <div class="form-group">
+                    <label>E-mail Pessoal</label>
+                    <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailPessoal">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>CEP <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="00000-000" formControlName="cep"
+                      [class.is-invalid]="form.get('cep')?.invalid && form.get('cep')?.touched"
+                      (input)="applyCepMask($event)"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                  <div class="form-group">
+                    <label>Endereço <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="endereco"
+                      [class.is-invalid]="form.get('endereco')?.invalid && form.get('endereco')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Nro <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="nro"
+                      [class.is-invalid]="form.get('nro')?.invalid && form.get('nro')?.touched">
+                  </div>
+                  <div class="form-group">
+                    <label>Complemento</label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="complemento">
+                  </div>
+                </div>
+
+                <div class="form-row grid-cols-4">
+                  <div class="form-group">
+                    <label>Telefone <span class="req">*</span></label>
+                    <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefone"
+                      [class.is-invalid]="form.get('telefone')?.invalid && form.get('telefone')?.touched"
+                      (input)="applyPhoneMask($event, 'telefone')"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                  <div class="form-group">
+                    <label>Celular</label>
+                    <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="celular"
+                      (input)="applyPhoneMask($event, 'celular')"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Tab Edit: Dados de Pagamento -->
+            <div *ngIf="activeTab === 'BOLETO'">
+              <div class="payment-box">
+                <div class="payment-grid">
+                  <div class="form-group">
+                    <label>Parceria (ID)</label>
+                    <input type="text" class="form-control" placeholder="ID da parceria" formControlName="parceria"
+                      (keydown)="onlyNumbers($event)">
+                  </div>
+                  <div class="form-group">
+                    <label>Origem do Recurso</label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="origemRecurso">
+                  </div>
+                  <div class="form-group">
+                    <label>Referência</label>
+                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="referencia">
+                  </div>
+                  <div class="form-group">
+                    <label>Valor Bruto</label>
+                    <input type="text" class="form-control" placeholder="0,00" formControlName="grossValue">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </form>
+
+        </ng-container>
+        <!-- /MODO EDIT -->
+
+      </ng-container>
+    </div>
+    <!-- /Body -->
+
+    <!-- ── Footer (só aparece no modo edit) ───────────────────────────────── -->
+    <div class="modal-footer" *ngIf="!loading && mode === 'edit'">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onCancelEdit()">
+        Cancelar
+      </button>
+      <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()">
+        Salvar alterações
+      </button>
+    </div>
+
+  </div>
+</div>

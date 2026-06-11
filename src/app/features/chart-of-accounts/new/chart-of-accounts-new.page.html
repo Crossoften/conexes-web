@@ -1,3 +1,4 @@
+<!-- src/app/features/chart-of-accounts/new/chart-of-accounts-new.page.html -->
 <div class="page">
 
   <div class="page-header">
@@ -5,7 +6,7 @@
   </div>
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Campos da Categoria / Conta</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova conta.</p>
@@ -13,14 +14,19 @@
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
+
+        @if (errorMsg()) {
+          <div class="form-error-banner">{{ errorMsg() }}</div>
+        }
+
         <div class="form-grid">
-          
+
           <div class="form-row grid-cols-3">
             <div class="form-group">
-              <label>Tipo da Categoria<span class="req">*</span></label>
+              <label>Tipo da Categoria <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="categoryType" [class.is-invalid]="form.get('categoryType')?.invalid && form.get('categoryType')?.touched">
+                <select class="form-control" formControlName="categoryType"
+                  [class.is-invalid]="form.get('categoryType')?.invalid && form.get('categoryType')?.touched">
                   <option value="">Selecione</option>
                   <option value="SINTETICA">Sintética</option>
                   <option value="ANALITICA">Analítica</option>
@@ -42,11 +48,14 @@
             </div>
 
             <div class="form-group">
-              <label>Centro de custo</label>
+              <label>Centro de Custo</label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="costCenter">
                   <option value="">Selecione</option>
-                  </select>
+                  @for (p of projects; track p.id) {
+                    <option [value]="p.id">{{ p.title }}</option>
+                  }
+                </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
@@ -54,13 +63,17 @@
 
           <div class="form-row grid-cols-2">
             <div class="form-group">
-              <label>Código da Categoria<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="categoryCode" [class.is-invalid]="form.get('categoryCode')?.invalid && form.get('categoryCode')?.touched">
+              <label>Código da Categoria <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="categoryCode"
+                [class.is-invalid]="form.get('categoryCode')?.invalid && form.get('categoryCode')?.touched">
             </div>
 
             <div class="form-group">
-              <label>Título da Categoria<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="categoryTitle" [class.is-invalid]="form.get('categoryTitle')?.invalid && form.get('categoryTitle')?.touched">
+              <label>Título da Categoria <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="categoryTitle"
+                [class.is-invalid]="form.get('categoryTitle')?.invalid && form.get('categoryTitle')?.touched">
             </div>
           </div>
 
@@ -106,15 +119,14 @@
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-            <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <polyline points="3 3 3 8 8 8"/>
           </svg>
           Reiniciar formulário
         </button>
 
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Próximo
+        <button type="submit" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          {{ loading() ? 'Salvando...' : 'Próximo' }}
         </button>
       </div>
     </div>

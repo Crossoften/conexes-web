@@ -3,10 +3,8 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { ApprovalTiersService } from '../approval-tiers.service';
 import { ApprovalTierPayload } from '../approval-tiers.model';
-import { environment } from '../../../../environments/environment';
 
 interface UserItem { id: number; name: string; email?: string; }
 
@@ -21,7 +19,6 @@ export class ApprovalTiersNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
   private svc    = inject(ApprovalTiersService);
-  private http   = inject(HttpClient);
 
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
@@ -29,10 +26,13 @@ export class ApprovalTiersNewPage implements OnInit {
   readonly loadingLists = signal(true);
 
   readonly purchaseRoleOptions = [
-    { label: 'Solicitante',  value: 'Requester' },
-    { label: 'Aprovador',    value: 'Approver'  },
-    { label: 'Gerente',      value: 'Manager'   },
-    { label: 'Diretor',      value: 'Director'  },
+    { label: 'Solicitante',           value: 'Requester'          },
+    { label: 'Comprador',             value: 'Buyer'              },
+    { label: 'Supervisor de Pedidos', value: 'RequestSupervisor'  },
+    { label: 'Supervisor de Compras', value: 'PurchaseSupervisor' },
+    { label: 'Recebedor de NF',       value: 'InvoiceReceiver'    },
+    { label: 'Financeiro',            value: 'Finance'            },
+    { label: 'Gerente',               value: 'Manager'            },
   ];
 
   form: FormGroup = this.fb.group({
@@ -47,8 +47,16 @@ export class ApprovalTiersNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.http.get<UserItem[]>(`${environment.apiUrl}/v1/users`).subscribe({
-      next: items => { this.users.set(items); this.loadingLists.set(false); },
+    this.svc.getUsers().subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
+        this.users.set(list.map((u: any) => ({
+          id:    u.id,
+          name:  u.name && u.surname ? `${u.name} ${u.surname}` : (u.name ?? u.email ?? String(u.id)),
+          email: u.email,
+        })));
+        this.loadingLists.set(false);
+      },
       error: () => this.loadingLists.set(false),
     });
   }

@@ -1,5 +1,6 @@
 // src/app/features/chart-of-accounts/components/chart-of-accounts-detail.modal.scss
-// Estilos idênticos ao modal de stakeholders — mesma linguagem visual
+
+// ── Overlay / Container ───────────────────────
 
 .modal-overlay {
   position: fixed;
@@ -27,6 +28,9 @@
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease-out;
+  transition: max-width 0.3s ease;
+
+  &--lg { max-width: 960px; }
 }
 
 // ── Cabeçalho ─────────────────────────────────
@@ -38,6 +42,19 @@
   justify-content: space-between;
   align-items: center;
   color: #ffffff;
+  flex-shrink: 0;
+  transition: background-color 0.2s, color 0.2s;
+
+  &--edit {
+    background-color: #ffffff;
+    color: var(--text-primary, #111827);
+    border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
+
+    .action-btn--close {
+      color: var(--text-secondary, #6B7280);
+      &:hover { color: var(--text-primary, #111827); }
+    }
+  }
 }
 
 .header-content {
@@ -85,13 +102,12 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: var(--brand-orange, #F97316);
+    background-color: rgba(255, 255, 255, 0.2);
     color: #fff;
-    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
 
     &:hover {
+      background-color: rgba(255, 255, 255, 0.35);
       transform: translateY(-2px);
-      filter: brightness(1.1);
     }
   }
 
@@ -108,11 +124,25 @@
   }
 }
 
+.modal-header--edit {
+  .action-btn--orange {
+    background-color: var(--brand-orange, #F97316);
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+    color: #6366F1;
+
+    &:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+    }
+  }
+}
+
 // ── Corpo ─────────────────────────────────────
 
 .modal-body {
-  padding: 24px 32px 32px 32px;
+  padding: 24px 32px;
   overflow-y: auto;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
@@ -124,6 +154,7 @@
   gap: 24px;
   border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
   margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -143,12 +174,13 @@
   svg { opacity: 0.7; }
 
   &:hover {
-    color: var(--text-primary);
+    color: var(--text-primary, #111827);
     svg { opacity: 1; }
   }
 
+  &.active,
   &--active {
-    color: var(--brand-purple, #6366F1);
+    color: var(--brand-orange, #F97316);
     svg { opacity: 1; }
 
     &::after {
@@ -158,13 +190,13 @@
       left: 0;
       width: 100%;
       height: 2px;
-      background-color: var(--brand-purple, #6366F1);
+      background-color: var(--brand-orange, #F97316);
       border-radius: 2px 2px 0 0;
     }
   }
 }
 
-// ── Info Box ──────────────────────────────────
+// ── Info Box (modo view) ──────────────────────
 
 .info-box {
   background-color: #FAFAFE;
@@ -199,18 +231,270 @@
   font-weight: 500;
 }
 
+// ── Status Badge ──────────────────────────────
+
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12.5px;
   font-weight: 600;
 
-  &--success { background: #D1FAE5; color: #065F46; }
-  &--danger  { background: #FEE2E2; color: #991B1B; }
-  &--neutral { background: #F3F4F6; color: #374151; }
+  &--success {
+    background-color: #ECFDF5;
+    color: #065F46;
+  }
+  &--danger {
+    background-color: #FEF2F2;
+    color: #991B1B;
+  }
+  &--neutral {
+    background-color: #F3F4F6;
+    color: #374151;
+  }
+}
+
+// ── Edit Box (modo edit) ──────────────────────
+
+.edit-box {
+  background-color: #FAFAFE;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 16px;
+  margin-bottom: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &--2    { grid-column: span 2; }
+  &--full { grid-column: 1 / -1; }
+}
+
+.field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #6B7280);
+
+  .required {
+    color: var(--brand-orange, #F97316);
+    margin-left: 2px;
+  }
+}
+
+.input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--text-primary, #111827);
+  background-color: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--text-muted, #9CA3AF); }
+
+  &:focus {
+    border-color: var(--brand-orange, #F97316);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  }
+
+  &.ng-invalid.ng-touched {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .select {
+    appearance: none;
+    width: 100%;
+    height: 36px;
+    padding: 0 32px 0 10px;
+    border: 1px solid var(--surface-border-mid, #E5E7EB);
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: var(--text-primary, #111827);
+    background-color: #fff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      border-color: var(--brand-orange, #F97316);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    }
+
+    &.ng-invalid.ng-touched {
+      border-color: #EF4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  }
+
+  .select-chevron {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    color: var(--text-secondary, #6B7280);
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// ── Checkbox ──────────────────────────────────
+
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  height: 36px;
+  margin-top: 4px;
+}
+
+.checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .checkbox__box {
+      background-color: var(--brand-orange, #6366F1);
+      border-color: var(--brand-orange, #6366F1);
+
+      &::after { display: block; }
+    }
+  }
+
+  &__box {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--surface-border-mid, #E5E7EB);
+    border-radius: 4px;
+    background-color: #fff;
+    transition: all 0.15s;
+    position: relative;
+    flex-shrink: 0;
+
+    &::after {
+      content: '';
+      display: none;
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+  }
+}
+
+.checkbox-label {
+  font-size: 13.5px;
+  color: var(--text-primary, #111827);
+  font-weight: 500;
+}
+
+// ── Rodapé do form (edit) ─────────────────────
+
+.edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 20px;
+  margin-top: 8px;
+  border-top: 1px solid var(--surface-border-mid, #E5E7EB);
+}
+
+.btn-cancel {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: 1.5px solid var(--surface-border-mid, #E5E7EB);
+  color: var(--text-secondary, #6B7280);
+
+  &:hover {
+    border-color: var(--text-secondary, #6B7280);
+    color: var(--text-primary, #111827);
+  }
+}
+
+.btn-save {
+  height: 38px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--brand-orange, #F97316);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+
+  &:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// ── Tab content ───────────────────────────────
+
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Error inline ──────────────────────────────
+
+.error-msg {
+  font-size: 13px;
+  color: #991B1B;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
 }
 
 // ── Animações ─────────────────────────────────

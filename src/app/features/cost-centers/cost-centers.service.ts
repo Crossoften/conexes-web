@@ -22,6 +22,10 @@ export class CostCentersService {
     return this.http.post<CostCenter>(this.base, payload);
   }
 
+  update(id: number, payload: Partial<CostCenterPayload>): Observable<CostCenter> {
+    return this.http.patch<CostCenter>(`${this.base}/${id}`, payload);
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }

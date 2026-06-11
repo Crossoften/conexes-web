@@ -30,18 +30,33 @@
 
       <div class="field" [class.field--error]="isInvalid('document')">
         <label class="field-label">CPF/CNPJ <span class="required">*</span></label>
-        <input class="input" type="text" formControlName="document"
-          [placeholder]="f['personType'].value === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'"
-          (input)="applyDocumentMask($event)"
-          (keydown)="onlyNumbers($event)">
+        <div class="input-wrap" [class.input-wrap--loading]="cnpjLoading()">
+          <input class="input" type="text" formControlName="document"
+            [placeholder]="f['personType'].value === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'"
+            (input)="applyDocumentMask($event)"
+            (keydown)="onlyNumbers($event)"
+            (blur)="onDocumentBlur()">
+          @if (cnpjLoading()) {
+            <span class="input-spinner" aria-label="Consultando CNPJ..."></span>
+          }
+        </div>
         @if (isInvalid('document')) {
           <span class="field-error">Campo obrigatório</span>
+        }
+        @if (cnpjError()) {
+          <span class="field-error">{{ cnpjError() }}</span>
         }
       </div>
 
       <div class="field" [class.field--error]="isInvalid('name')">
         <label class="field-label">Nome do fornecedor/outros <span class="required">*</span></label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="name">
+        <div class="input-wrap" [class.input-wrap--loading]="cnpjLoading()">
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="name"
+            [attr.readonly]="cnpjLoading() ? true : null">
+          @if (cnpjLoading()) {
+            <span class="input-spinner" aria-label="Aguardando consulta CNPJ..."></span>
+          }
+        </div>
         @if (isInvalid('name')) {
           <span class="field-error">Campo obrigatório</span>
         }
@@ -152,10 +167,14 @@
 
   <!-- Sub-abas -->
   <div class="sub-tabs">
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'rateio'" (click)="activeTab.set('rateio')">
+    <button type="button" class="sub-tab"
+      [class.sub-tab--active]="activeTab() === 'rateio'"
+      (click)="activeTab.set('rateio')">
       Dados de rateio
     </button>
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'bancario'" (click)="activeTab.set('bancario')">
+    <button type="button" class="sub-tab"
+      [class.sub-tab--active]="activeTab() === 'bancario'"
+      (click)="activeTab.set('bancario')">
       Dados bancários
     </button>
   </div>

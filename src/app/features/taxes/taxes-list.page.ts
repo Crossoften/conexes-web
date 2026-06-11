@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TaxesStore } from './taxes.store';
-import { Tax, TAX_STATUS_CONFIG } from './taxes.model';
+import { Tax, TaxPayload, TAX_STATUS_CONFIG } from './taxes.model';
+import { TaxDetailModalComponent } from './components/tax-detail.modal';
 
 @Component({
   selector: 'app-taxes-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, TaxDetailModalComponent],
   providers: [TaxesStore],
   templateUrl: './taxes-list.page.html',
   styleUrl: './taxes-list.page.scss',
@@ -47,13 +48,15 @@ export class TaxesListPage implements OnInit {
     return pages;
   });
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
-
   ngOnInit(): void {
     this.store.load();
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
+
+  onTaxSave(payload: TaxPayload): void {
+    this.store.saveTax(payload);
+  }
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 

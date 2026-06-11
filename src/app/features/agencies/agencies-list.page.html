@@ -15,7 +15,7 @@
     <div class="card-section filter-bar">
 
       <div class="search-wrap">
-        <input class="search" type="text" placeholder="Buscar"
+        <input class="search" type="text" placeholder="Buscar por razão social"
           [value]="store.filters().search"
           (input)="onSearch($any($event.target).value)"
           aria-label="Buscar">
@@ -36,7 +36,7 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
-      <button class="btn-outline btn-pill">
+      <button class="btn-outline btn-pill" (click)="onExport()">
         Exportar
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -57,7 +57,7 @@
                 <input type="checkbox" class="checkbox__input"
                   [checked]="store.allPageSelected()"
                   [indeterminate]="store.somePageSelected()"
-                  (change)="store.toggleAllPage(store.pageItems())">
+                  (change)="store.toggleAllPage(store.items())">
                 <span class="checkbox__box"></span>
               </label>
             </th>
@@ -94,7 +94,7 @@
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
-          } @else if (store.pageItems().length === 0) {
+          } @else if (store.items().length === 0) {
             <tr>
               <td class="td--empty" colspan="7">
                 <p class="empty-title">Nenhum registro encontrado</p>
@@ -102,7 +102,7 @@
               </td>
             </tr>
           } @else {
-            @for (item of store.pageItems(); track item.id) {
+            @for (item of store.items(); track item.id) {
               <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
                 <td class="td td--check">
                   <label class="checkbox">
@@ -119,22 +119,21 @@
                 <td class="td">{{ item.email }}</td>
                 <td class="td td--center">
                   <div class="action-icons">
-                    <button class="icon-btn" title="Site/Portal">
-                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    <button class="icon-btn" title="Visualizar" (click)="onView(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                        <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
                       </svg>
                     </button>
-                    <button class="icon-btn" title="Visualizar">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                    <button class="icon-btn" title="Editar" (click)="onEdit(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                        <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                     </button>
-                    <button class="icon-btn" title="Editar">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <!-- DELETE não disponível no Swagger ainda -->
-                    <button class="icon-btn" title="Excluir" disabled>
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item.id)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                        <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -181,3 +180,13 @@
 
   </div>
 </div>
+
+<!-- ── Modal de detalhes / edição ─────────────────────────────────────────── -->
+<app-agency-detail-modal
+  *ngIf="showModal()"
+  [agency]="selectedAgency()"
+  [loading]="modalLoading()"
+  (close)="onCloseModal()"
+  (saved)="onSaved($event)"
+  (delete)="onDelete($event)">
+</app-agency-detail-modal>

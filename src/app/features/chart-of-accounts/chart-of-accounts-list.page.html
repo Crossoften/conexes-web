@@ -162,15 +162,15 @@
                   </span>
                 </td>
 
-                <td class="td td--right">
-                  <div class="action-icons">
-                    <button class="icon-btn" title="Visualizar" (click)="openModal(item)">
+                <td class="td td--center">
+                  <div class="action-icons" style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                    <button class="icon-btn" title="Visualizar" (click)="openViewModal(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
                     </button>
-                    <button class="icon-btn" title="Editar">
+                    <button class="icon-btn" title="Editar" (click)="openEditModal(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button class="icon-btn" title="Excluir" (click)="onDelete(item.id)">
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item.id)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                   </div>
@@ -253,7 +253,9 @@
 @if (isModalOpen) {
   <app-chart-of-accounts-detail-modal
     [account]="selectedAccount"
+    [initialMode]="modalInitialMode"
     (close)="closeModal()"
-    (delete)="onDelete($event)">
+    (delete)="onDelete($event)"
+    (saved)="onSaved()">
   </app-chart-of-accounts-detail-modal>
 }
