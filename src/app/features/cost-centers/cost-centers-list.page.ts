@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CostCentersStore } from './cost-centers.store';
-import { CostCenter, CostCenterStatus, CostCenterType, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
+import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
 import { CostCentersDetailModalComponent } from './components/cost-centers-detail.modal';
+import { CostCentersService } from './cost-centers.service';
 
 @Component({
   selector: 'app-cost-centers-list',
@@ -17,30 +18,25 @@ import { CostCentersDetailModalComponent } from './components/cost-centers-detai
 })
 export class CostCentersListPage implements OnInit {
   readonly store        = inject(CostCentersStore);
+  readonly svc          = inject(CostCentersService);
   readonly statusConfig = COST_CENTER_STATUS_CONFIG;
 
-  // ── Modal ────────────────────────────────────────────────────────────────
-  readonly selectedItem = signal<CostCenter | null>(null);
-  readonly showModal    = signal(false);
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  readonly selectedItem  = signal<CostCenter | null>(null);
+  readonly showModal     = signal(false);
 
-  readonly statusOptions: { label: string; value: CostCenterStatus | '' }[] = [
-    { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'Active'   },
-    { label: 'Inativo',            value: 'Inactive' },
-  ];
+  // ── Export ────────────────────────────────────────────────────────────────
+  readonly exporting = signal(false);
 
-  readonly typeOptions: { label: string; value: CostCenterType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'T',                value: 'T' },
-    { label: 'A',                value: 'A' },
-    { label: 'S',                value: 'S' },
+  readonly typeOptions: { label: string; value: string }[] = [
+    { label: 'Todos os tipos',    value: ''               },
+    { label: 'Centro de Custo',   value: 'centro_de_custo' },
+    { label: 'Projeto',           value: 'Projeto'         },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
 
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
-  );
+  readonly totalPages = computed(() => this.store.totalPages());
 
   readonly pageNumbers = computed((): (number | '...')[] => {
     const total   = this.totalPages();
@@ -59,10 +55,29 @@ export class CostCentersListPage implements OnInit {
     return pages;
   });
 
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.store.load();
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  onExport(): void {
+    this.exporting.set(true);
+    this.svc.exportExcel().subscribe({
+      next: blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = 'projetos-centros-custo.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false),
+    });
   }
 
   // ── Modal handlers ────────────────────────────────────────────────────────
@@ -83,7 +98,6 @@ export class CostCentersListPage implements OnInit {
   }
 
   onModalSaved(updated: CostCenter): void {
-    // Atualiza o item na lista local do store
     this.store.updateItem(updated);
     this.showModal.set(false);
     this.selectedItem.set(null);
@@ -91,9 +105,10 @@ export class CostCentersListPage implements OnInit {
 
   onModalDeleted(id: number): void {
     if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    const item = this.selectedItem();
     this.showModal.set(false);
     this.selectedItem.set(null);
-    this.store.deleteById(id);
+    if (item) this.store.deleteById(id, item.type);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -102,12 +117,12 @@ export class CostCentersListPage implements OnInit {
 
   onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
+    this.searchTimer = setTimeout(() => this.store.setName(value), 400);
   }
 
-  onDelete(id: number): void {
+  onDelete(item: CostCenter): void {
     if (!confirm('Tem certeza que deseja excluir este registro?')) return;
-    this.store.deleteById(id);
+    this.store.deleteById(item.id, item.type);
   }
 
   getSortState(col: keyof CostCenter): 'none' | 'asc' | 'desc' {

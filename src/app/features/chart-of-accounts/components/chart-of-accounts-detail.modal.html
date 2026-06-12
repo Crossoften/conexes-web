@@ -176,7 +176,7 @@
                     <select class="select" formControlName="costCenter">
                       <option value="">Selecione</option>
                       @for (p of projects; track p.id) {
-                        <option [value]="p.id">{{ p.title }}</option>
+                        <option [value]="p.id">{{ p.name }}</option>
                       }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none">

@@ -1,5 +1,5 @@
 // src/app/features/chart-of-accounts/chart-of-accounts-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -91,7 +91,7 @@ export class ChartOfAccountsListPage implements OnInit {
 
   // ── Modal ─────────────────────────────────────────────────────────────────
 
-  selectedAccount: Account | null  = null;
+  selectedAccount: Account | null   = null;
   modalInitialMode: 'view' | 'edit' = 'view';
   isModalOpen  = false;
   modalLoading = false;
@@ -123,10 +123,30 @@ export class ChartOfAccountsListPage implements OnInit {
     this.selectedAccount = null;
   }
 
-  // Chamado quando o modal salva com sucesso — recarrega a lista
   onSaved(): void {
     this.store.load();
     this.closeModal();
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  readonly exporting = signal(false);
+
+  onExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.svc.exportExcel().subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = 'plano-de-contas.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => { this.exporting.set(false); },
+    });
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

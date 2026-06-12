@@ -8,8 +8,8 @@ import { ChartOfAccountsService } from '../chart-of-accounts.service';
 import { environment } from '../../../../environments/environment';
 
 interface ProjectOption {
-  id:    number;
-  title: string;
+  id:   number;
+  name: string;
 }
 
 @Component({
@@ -113,10 +113,15 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
   }
 
   private loadProjects(): void {
-    this.http.get<ProjectOption[]>(`${environment.apiUrl}/v1/projects`).subscribe({
-      next: list => { this.projects = list; },
-      error: ()  => { this.projects = []; },
-    });
+    this.http
+      .get<{ data: (ProjectOption & { _entityType: string })[] }>(
+        `${environment.apiUrl}/v1/projects`,
+        { params: { take: '100' } }
+      )
+      .subscribe({
+        next: res => { this.projects = (res.data ?? []).filter(p => p._entityType === 'cost_center'); },
+        error: ()  => { this.projects = []; },
+      });
   }
 
   // ── Mode switching ────────────────────────────────────────────────────────

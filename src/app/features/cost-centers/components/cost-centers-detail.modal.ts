@@ -96,7 +96,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     this.form.patchValue({
       projectType:         c.type               ?? '',
       projectCode:         c.code               ?? '',
-      projectTitle:        c.title              ?? '',
+      projectTitle:        c.name ?? c.title      ?? '',
       accountingCode:      c.accountingCode      ?? '',
       payingSource:        c.payingSource        ?? '',
       startDate:           c.startDate           ? c.startDate.substring(0, 10) : '',
@@ -180,7 +180,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
 
     const payload: Partial<CostCenterPayload> = {
       code:                 v.projectCode         ?? '',
-      title:                v.projectTitle        ?? '',
+      name:                 v.projectTitle        ?? '',
       type:                 v.projectType         ?? '',
       description:          v.categoryDescription ?? '',
       status:               (v.status as CostCenterStatus) ?? 'Active',
@@ -194,7 +194,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       linkedAccounts:       this.linkedAccounts,
     };
 
-    this.svc.update(this.item.id, payload).subscribe({
+    this.svc.update(this.item.id, this.form.value.projectType ?? '', payload).subscribe({
       next: updated => {
         this.loading.set(false);
         this.mode = 'view';

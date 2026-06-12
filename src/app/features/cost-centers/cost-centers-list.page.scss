@@ -50,7 +50,45 @@
 }
 
 // ── Filtros ───────────────────────────────────
-.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; 
+
+  .btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--surface-border-mid, #E5E7EB);
+  background: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #6B7280);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+ 
+  &:hover {
+    border-color: var(--brand-orange, #F97316);
+    color: var(--brand-orange, #F97316);
+  }
+ 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+ 
+.btn-spinner--sm {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--brand-orange, #F97316);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+ }
 
 .search-wrap {
   position: relative;

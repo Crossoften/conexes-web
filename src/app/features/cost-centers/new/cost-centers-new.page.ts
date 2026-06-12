@@ -118,7 +118,7 @@ export class CostCentersNewPage implements OnInit {
 
     const payload: CostCenterPayload = {
       code:                v.projectCode         ?? '',
-      title:               v.projectTitle        ?? '',
+      name:                v.projectTitle        ?? '',
       type:                v.projectType         ?? '',
       description:         v.categoryDescription ?? '',
       status:              'Active',

@@ -29,4 +29,8 @@ export class ChartOfAccountsService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
+
+  exportExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
+  }
 }

@@ -9,8 +9,8 @@ import { AccountPayload } from '../chart-of-accounts.model';
 import { environment } from '../../../../environments/environment';
 
 interface ProjectOption {
-  id:    number;
-  title: string;
+  id:   number;
+  name: string;
 }
 
 @Component({
@@ -54,10 +54,15 @@ export class ChartOfAccountsNewPage implements OnInit {
   }
 
   private loadProjects(): void {
-    this.http.get<ProjectOption[]>(`${environment.apiUrl}/v1/projects`).subscribe({
-      next: list => { this.projects = list; },
-      error: ()  => { this.projects = []; },
-    });
+    this.http
+      .get<{ data: (ProjectOption & { _entityType: string })[] }>(
+        `${environment.apiUrl}/v1/projects`,
+        { params: { take: '100' } }
+      )
+      .subscribe({
+        next: res => { this.projects = (res.data ?? []).filter(p => p._entityType === 'cost_center'); },
+        error: ()  => { this.projects = []; },
+      });
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
