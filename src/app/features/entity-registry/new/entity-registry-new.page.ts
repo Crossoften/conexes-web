@@ -51,6 +51,12 @@ export class EntityRegistryNewPage {
   });
 
   async onSubmit(): Promise<void> {
+      console.log('🔍 Form valid?', this.form.valid);
+      console.log('🔍 Campos inválidos:', 
+     Object.entries(this.form.controls)
+      .filter(([, c]) => c.invalid)
+      .map(([name]) => name)
+  );
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
