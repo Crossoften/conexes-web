@@ -186,7 +186,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       status:               (v.status as CostCenterStatus) ?? 'Active',
       accountingCode:       v.accountingCode       ?? '',
       payingSource:         (v.payingSource && v.payingSource !== 'undefined') ? String(v.payingSource) : '',
-      startDate:            v.startDate            ?? '',
+      startDate:            v.startDate ? new Date(v.startDate).toISOString() : '',
       categoryDescription:  v.categoryDescription  ?? '',
       restrictInterestFine: !!v.restrictInterest,
       restrictBudget:       !!v.budgetRestriction,

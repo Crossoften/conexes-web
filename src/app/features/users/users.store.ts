@@ -1,27 +1,24 @@
 // src/app/features/users/users.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
-import { User, Permission, USER_STATUS_CONFIG } from './users.model';
+import { User, PermissionProfile } from './users.model';
 import { UsersService } from './users.service';
 
 export type TabType = 'users' | 'permissions';
-
-interface UsersPagination  { page: number; pageSize: number; total: number }
-interface PermsPagination  { page: number; pageSize: number; total: number }
 
 interface State {
   // ── Users
   users:           User[];
   usersLoading:    boolean;
   usersError:      string | null;
-  usersPagination: UsersPagination;
+  usersPagination: { page: number; pageSize: number; total: number };
   usersFilters:    { name: string; role: string; status: string };
 
-  // ── Permissions
-  permissions:     Permission[];
-  permsLoading:    boolean;
-  permsError:      string | null;
-  permsPagination: PermsPagination;
-  permsFilters:    { module: string; userId: string };
+  // ── Permission Profiles
+  profiles:        PermissionProfile[];
+  profilesLoading: boolean;
+  profilesError:   string | null;
+  profilesPagination: { page: number; pageSize: number; total: number };
+  profilesFilters: { name: string };
 
   // ── Shared
   activeTab:   TabType;
@@ -39,11 +36,11 @@ export class UsersStore {
     usersPagination: { page: 1, pageSize: 10, total: 0 },
     usersFilters:    { name: '', role: '', status: '' },
 
-    permissions:     [],
-    permsLoading:    false,
-    permsError:      null,
-    permsPagination: { page: 1, pageSize: 10, total: 0 },
-    permsFilters:    { module: '', userId: '' },
+    profiles:           [],
+    profilesLoading:    false,
+    profilesError:      null,
+    profilesPagination: { page: 1, pageSize: 10, total: 0 },
+    profilesFilters:    { name: '' },
 
     activeTab:   'users',
     selectedIds: new Set(),
@@ -57,10 +54,9 @@ export class UsersStore {
   readonly usersPagination = computed(() => this.state().usersPagination);
   readonly usersFilters    = computed(() => this.state().usersFilters);
 
-  // Client-side status filter (status não é param do GET /v1/users)
   readonly pageItems = computed(() => {
+    const f = this.state().usersFilters;
     let items = this.state().users;
-    const f   = this.state().usersFilters;
     if (f.status) items = items.filter(u => u.status === f.status);
     return items;
   });
@@ -69,16 +65,16 @@ export class UsersStore {
     Math.max(1, Math.ceil(this.state().usersPagination.total / this.state().usersPagination.pageSize))
   );
 
-  // ── Selectors — Permissions ───────────────────────────────────────────────
+  // ── Selectors — Profiles ──────────────────────────────────────────────────
 
-  readonly permissions     = computed(() => this.state().permissions);
-  readonly permsLoading    = computed(() => this.state().permsLoading);
-  readonly permsError      = computed(() => this.state().permsError);
-  readonly permsPagination = computed(() => this.state().permsPagination);
-  readonly permsFilters    = computed(() => this.state().permsFilters);
+  readonly profiles           = computed(() => this.state().profiles);
+  readonly profilesLoading    = computed(() => this.state().profilesLoading);
+  readonly profilesError      = computed(() => this.state().profilesError);
+  readonly profilesPagination = computed(() => this.state().profilesPagination);
+  readonly profilesFilters    = computed(() => this.state().profilesFilters);
 
-  readonly permsTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.state().permsPagination.total / this.state().permsPagination.pageSize))
+  readonly profilesTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.state().profilesPagination.total / this.state().profilesPagination.pageSize))
   );
 
   // ── Selectors — Shared ────────────────────────────────────────────────────
@@ -108,7 +104,7 @@ export class UsersStore {
     this.svc.getUsers({ skip, take: pageSize, name: name || undefined, role: role || undefined }).subscribe({
       next: res => this.state.update(s => ({
         ...s,
-        users:           res.data ?? (res as any),
+        users:           res.data  ?? (res as any),
         usersLoading:    false,
         usersPagination: { ...s.usersPagination, total: res.total ?? (res as any)?.length ?? 0 },
       })),
@@ -122,13 +118,11 @@ export class UsersStore {
 
   deleteUser(id: number): void {
     this.svc.deleteUser(id).subscribe({
-      next: () => {
-        this.state.update(s => ({
-          ...s,
-          users:       s.users.filter(u => u.id !== id),
-          selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
-        }));
-      },
+      next: () => this.state.update(s => ({
+        ...s,
+        users:       s.users.filter(u => u.id !== id),
+        selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
+      })),
       error: err => this.state.update(s => ({
         ...s,
         usersError: err?.error?.message ?? 'Erro ao excluir usuário.',
@@ -136,60 +130,54 @@ export class UsersStore {
     });
   }
 
-  // ── Actions — Permissions ─────────────────────────────────────────────────
+  // ── Actions — Profiles ────────────────────────────────────────────────────
 
-  loadPermissions(): void {
-    const { page, pageSize } = this.state().permsPagination;
-    const { module, userId } = this.state().permsFilters;
+  loadProfiles(): void {
+    const { page, pageSize } = this.state().profilesPagination;
+    const { name }           = this.state().profilesFilters;
     const skip = (page - 1) * pageSize;
 
-    this.state.update(s => ({ ...s, permsLoading: true, permsError: null }));
+    this.state.update(s => ({ ...s, profilesLoading: true, profilesError: null }));
 
-    this.svc.getPermissions({
-      skip,
-      take:   pageSize,
-      module: module || undefined,
-      userId: userId ? +userId : undefined,
-    }).subscribe({
+    this.svc.getProfiles({ skip, take: pageSize, name: name || undefined }).subscribe({
       next: res => this.state.update(s => ({
         ...s,
-        permissions:     res.data ?? (res as any),
-        permsLoading:    false,
-        permsPagination: { ...s.permsPagination, total: res.total ?? (res as any)?.length ?? 0 },
+        profiles:           res.data ?? (res as any),
+        profilesLoading:    false,
+        profilesPagination: { ...s.profilesPagination, total: res.total ?? (res as any)?.length ?? 0 },
       })),
       error: err => this.state.update(s => ({
         ...s,
-        permsLoading: false,
-        permsError:   err?.error?.message ?? 'Erro ao carregar permissões.',
+        profilesLoading: false,
+        profilesError:   err?.error?.message ?? 'Erro ao carregar perfis de permissão.',
       })),
     });
   }
 
-  deletePermission(id: number): void {
-    this.svc.deletePermission(id).subscribe({
-      next: () => {
-        this.state.update(s => ({
-          ...s,
-          permissions: s.permissions.filter(p => p.id !== id),
-          selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
-        }));
-      },
+  deleteProfile(id: number): void {
+    this.svc.deleteProfile(id).subscribe({
+      next: () => this.state.update(s => ({
+        ...s,
+        profiles:    s.profiles.filter(p => p.id !== id),
+        selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
+      })),
       error: err => this.state.update(s => ({
         ...s,
-        permsError: err?.error?.message ?? 'Erro ao excluir permissão.',
+        profilesError: err?.error?.message ?? 'Erro ao excluir perfil.',
       })),
     });
   }
 
-  // ── Actions — Tab / Filters ───────────────────────────────────────────────
+  // ── Actions — Tab ─────────────────────────────────────────────────────────
 
   setTab(tab: TabType): void {
     this.state.update(s => ({ ...s, activeTab: tab, selectedIds: new Set() }));
     if (tab === 'users')       this.loadUsers();
-    if (tab === 'permissions') this.loadPermissions();
+    if (tab === 'permissions') this.loadProfiles();
   }
 
-  // Users filters
+  // ── Actions — Users filters ───────────────────────────────────────────────
+
   setUserName(name: string): void {
     this.state.update(s => ({
       ...s,
@@ -209,32 +197,21 @@ export class UsersStore {
   }
 
   setUserStatus(status: string): void {
-    this.state.update(s => ({
-      ...s,
-      usersFilters: { ...s.usersFilters, status },
-    }));
+    this.state.update(s => ({ ...s, usersFilters: { ...s.usersFilters, status } }));
   }
 
-  // Permissions filters
-  setPermModule(module: string): void {
+  // ── Actions — Profiles filters ────────────────────────────────────────────
+
+  setProfileName(name: string): void {
     this.state.update(s => ({
       ...s,
-      permsFilters:    { ...s.permsFilters, module },
-      permsPagination: { ...s.permsPagination, page: 1 },
+      profilesFilters:    { name },
+      profilesPagination: { ...s.profilesPagination, page: 1 },
     }));
-    this.loadPermissions();
+    this.loadProfiles();
   }
 
-  setPermUserId(userId: string): void {
-    this.state.update(s => ({
-      ...s,
-      permsFilters:    { ...s.permsFilters, userId },
-      permsPagination: { ...s.permsPagination, page: 1 },
-    }));
-    this.loadPermissions();
-  }
-
-  // ── Actions — Pagination ──────────────────────────────────────────────────
+  // ── Actions — Pagination users ────────────────────────────────────────────
 
   setUsersPage(page: number): void {
     this.state.update(s => ({ ...s, usersPagination: { ...s.usersPagination, page } }));
@@ -246,14 +223,16 @@ export class UsersStore {
     this.loadUsers();
   }
 
-  setPermsPage(page: number): void {
-    this.state.update(s => ({ ...s, permsPagination: { ...s.permsPagination, page } }));
-    this.loadPermissions();
+  // ── Actions — Pagination profiles ─────────────────────────────────────────
+
+  setProfilesPage(page: number): void {
+    this.state.update(s => ({ ...s, profilesPagination: { ...s.profilesPagination, page } }));
+    this.loadProfiles();
   }
 
-  setPermsPageSize(pageSize: number): void {
-    this.state.update(s => ({ ...s, permsPagination: { ...s.permsPagination, pageSize, page: 1 } }));
-    this.loadPermissions();
+  setProfilesPageSize(pageSize: number): void {
+    this.state.update(s => ({ ...s, profilesPagination: { ...s.profilesPagination, pageSize, page: 1 } }));
+    this.loadProfiles();
   }
 
   // ── Actions — Selection ───────────────────────────────────────────────────
@@ -277,9 +256,8 @@ export class UsersStore {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  /** Recarrega a aba ativa — útil após salvar no modal */
   reload(): void {
     if (this.state().activeTab === 'users') this.loadUsers();
-    else                                    this.loadPermissions();
+    else                                    this.loadProfiles();
   }
 }

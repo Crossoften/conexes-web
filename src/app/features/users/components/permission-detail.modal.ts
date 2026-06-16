@@ -2,7 +2,7 @@
 import { Component, input, output, inject, effect } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Permission, PermissionUpdatePayload } from '../users.model';
+import { PermissionProfile, PermissionProfileUpdatePayload, ModulePermission, DEFAULT_MODULES } from '../users.model';
 
 @Component({
   selector: 'app-permission-detail-modal',
@@ -12,48 +12,51 @@ import { Permission, PermissionUpdatePayload } from '../users.model';
   styleUrl: './permission-detail.modal.scss',
 })
 export class PermissionDetailModalComponent {
-  readonly permission = input<Permission | null>(null);
-  readonly close      = output<void>();
-  readonly delete     = output<number>();
-  readonly saved      = output<{ id: number; payload: Partial<PermissionUpdatePayload> }>();
+  readonly profile = input<PermissionProfile | null>(null);
+  readonly close   = output<void>();
+  readonly delete  = output<number>();
+  readonly saved   = output<{ id: number; payload: Partial<PermissionProfileUpdatePayload> }>();
 
   private readonly fb = inject(NonNullableFormBuilder);
 
   mode: 'view' | 'edit' = 'view';
+  activeTab: 'DADOS' | 'MODULOS' = 'DADOS';
+
+  modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
 
   readonly form = this.fb.group({
-    module:      ['', Validators.required],
-    subMenu:     ['', Validators.required],
-    canView:     [false],
-    canCreate:   [false],
-    canEdit:     [false],
-    canDelete:   [false],
-    isUnlimited: [false],
+    name:        ['', Validators.required],
+    description: [''],
   });
 
   constructor() {
     effect(() => {
-      const p = this.permission();
+      const p = this.profile();
       if (p) this.patchForm(p);
     });
   }
 
-  private patchForm(p: Permission): void {
+  private patchForm(p: PermissionProfile): void {
     this.form.patchValue({
-      module:      p.module,
-      subMenu:     p.subMenu,
-      canView:     p.canView,
-      canCreate:   p.canCreate,
-      canEdit:     p.canEdit,
-      canDelete:   p.canDelete,
-      isUnlimited: p.isUnlimited,
+      name:        p.name        ?? '',
+      description: p.description ?? '',
     });
+
+    if (p.permissions?.length) {
+      this.modules = DEFAULT_MODULES.map(def => {
+        const found = p.permissions.find(x => x.module === def.module);
+        return found ? { ...found } : { ...def };
+      });
+    } else {
+      this.modules = DEFAULT_MODULES.map(m => ({ ...m }));
+    }
   }
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  setTab(tab: 'DADOS' | 'MODULOS'): void { this.activeTab = tab; }
 
   onClose(): void {
-    this.mode = 'view';
+    this.mode      = 'view';
+    this.activeTab = 'DADOS';
     this.close.emit();
   }
 
@@ -61,13 +64,17 @@ export class PermissionDetailModalComponent {
 
   onCancelEdit(): void {
     this.mode = 'view';
-    const p = this.permission();
+    const p = this.profile();
     if (p) this.patchForm(p);
   }
 
   onDelete(): void {
-    const p = this.permission();
+    const p = this.profile();
     if (p) this.delete.emit(p.id);
+  }
+
+  togglePermission(index: number, field: keyof Pick<ModulePermission, 'canView' | 'canCreate' | 'canEdit' | 'canDelete' | 'isUnlimited'>): void {
+    this.modules[index] = { ...this.modules[index], [field]: !this.modules[index][field] };
   }
 
   onSubmit(): void {
@@ -75,21 +82,18 @@ export class PermissionDetailModalComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const p = this.permission();
+    const p = this.profile();
     if (!p) return;
 
     const v = this.form.getRawValue();
 
-    const payload: Partial<PermissionUpdatePayload> = {
-      module:      v.module,
-      subMenu:     v.subMenu,
-      canView:     v.canView,
-      canCreate:   v.canCreate,
-      canEdit:     v.canEdit,
-      canDelete:   v.canDelete,
-      isUnlimited: v.isUnlimited,
-    };
-
-    this.saved.emit({ id: p.id, payload });
+    this.saved.emit({
+      id: p.id,
+      payload: {
+        name:        v.name,
+        description: v.description || undefined,
+        permissions: this.modules,
+      },
+    });
   }
 }

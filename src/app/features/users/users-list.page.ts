@@ -4,7 +4,7 @@ import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { UsersStore } from './users.store';
 import { UsersService } from './users.service';
-import { User, Permission, USER_STATUS_CONFIG, UserUpdatePayload, PermissionUpdatePayload } from './users.model';
+import { User, PermissionProfile, USER_STATUS_CONFIG, UserUpdatePayload, PermissionProfileUpdatePayload } from './users.model';
 import { UserDetailModalComponent } from './components/user-detail.modal';
 import { PermissionDetailModalComponent } from './components/permission-detail.modal';
 
@@ -21,56 +21,43 @@ export class UsersListPage implements OnInit {
   readonly svc          = inject(UsersService);
   readonly statusConfig = USER_STATUS_CONFIG;
 
-  // ── Modal state ───────────────────────────────────────────────────────────
-
-  readonly selectedUser       = signal<User | null>(null);
-  readonly selectedPermission = signal<Permission | null>(null);
-  readonly toast              = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  // ── Filter options ────────────────────────────────────────────────────────
+  readonly selectedUser    = signal<User | null>(null);
+  readonly selectedProfile = signal<PermissionProfile | null>(null);
+  readonly toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   readonly statusOptions = [
     { label: 'Todos os status', value: ''         },
     { label: 'Ativo',           value: 'Active'   },
     { label: 'Inativo',         value: 'Inactive' },
+    { label: 'Pendente',        value: 'Pending'  },
   ];
 
   readonly roleOptions = [
-    { label: 'Todos os perfis', value: ''         },
-    { label: 'Master',          value: 'Master'   },
-    { label: 'Admin',           value: 'Admin'    },
-    { label: 'Gerente',         value: 'Manager'  },
-    { label: 'Operador',        value: 'Operator' },
-    { label: 'Viewer',          value: 'Viewer'   },
-  ];
+  { label: 'Todos os perfis',     value: ''                    },
+  { label: 'Master',              value: 'Master'              },
+  { label: 'Admin',               value: 'Admin'               },
+  { label: 'Backoffice',          value: 'Backoffice'          },
+  { label: 'Gestor de Entidades', value: 'EntityManager'       },
+  { label: 'Gestor de Compras',   value: 'ProcurementManager'  },
+  { label: 'Financeiro',          value: 'Finance'             },
+  { label: 'Operacional',         value: 'Operational'         },
+];
 
   readonly pageSizeOptions = [10, 25, 50];
 
-  // ── Pagination helpers ────────────────────────────────────────────────────
-
   readonly usersTotalPages = computed(() => this.store.usersTotalPages());
+  readonly usersPageNumbers = computed((): (number | '...')[] =>
+    this.buildPageNumbers(this.usersTotalPages(), this.store.usersPagination().page)
+  );
 
-  readonly usersPageNumbers = computed((): (number | '...')[] => {
-    const total   = this.usersTotalPages();
-    const current = this.store.usersPagination().page;
-    return this.buildPageNumbers(total, current);
-  });
-
-  readonly permsTotalPages = computed(() => this.store.permsTotalPages());
-
-  readonly permsPageNumbers = computed((): (number | '...')[] => {
-    const total   = this.permsTotalPages();
-    const current = this.store.permsPagination().page;
-    return this.buildPageNumbers(total, current);
-  });
-
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  readonly profilesTotalPages = computed(() => this.store.profilesTotalPages());
+  readonly profilesPageNumbers = computed((): (number | '...')[] =>
+    this.buildPageNumbers(this.profilesTotalPages(), this.store.profilesPagination().page)
+  );
 
   ngOnInit(): void {
     this.store.loadUsers();
   }
-
-  // ── Search debounce ───────────────────────────────────────────────────────
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -79,20 +66,15 @@ export class UsersListPage implements OnInit {
     this.searchTimer = setTimeout(() => this.store.setUserName(value), 400);
   }
 
-  onPermSearch(value: string): void {
+  onProfileSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.store.setPermModule(value), 400);
+    this.searchTimer = setTimeout(() => this.store.setProfileName(value), 400);
   }
 
   // ── Modal — User ──────────────────────────────────────────────────────────
 
-  openUser(user: User): void {
-    this.selectedUser.set(user);
-  }
-
-  closeUserModal(): void {
-    this.selectedUser.set(null);
-  }
+  openUser(user: User): void { this.selectedUser.set(user); }
+  closeUserModal(): void     { this.selectedUser.set(null); }
 
   onUserSaved(event: { id: number; payload: Partial<UserUpdatePayload> }): void {
     this.svc.updateUser(event.id, event.payload).subscribe({
@@ -115,35 +97,30 @@ export class UsersListPage implements OnInit {
     this.showToast('Usuário excluído.', 'success');
   }
 
-  // ── Modal — Permission ────────────────────────────────────────────────────
+  // ── Modal — Profile ───────────────────────────────────────────────────────
 
-  openPermission(p: Permission): void {
-    this.selectedPermission.set(p);
-  }
+  openProfile(p: PermissionProfile): void { this.selectedProfile.set(p); }
+  closeProfileModal(): void               { this.selectedProfile.set(null); }
 
-  closePermModal(): void {
-    this.selectedPermission.set(null);
-  }
-
-  onPermSaved(event: { id: number; payload: Partial<PermissionUpdatePayload> }): void {
-    this.svc.updatePermission(event.id, event.payload).subscribe({
+  onProfileSaved(event: { id: number; payload: Partial<PermissionProfileUpdatePayload> }): void {
+    this.svc.updateProfile(event.id, event.payload).subscribe({
       next: () => {
-        this.closePermModal();
+        this.closeProfileModal();
         this.store.reload();
-        this.showToast('Permissão atualizada com sucesso.', 'success');
+        this.showToast('Perfil atualizado com sucesso.', 'success');
       },
       error: err => {
-        const msg = err?.error?.message ?? 'Erro ao atualizar permissão.';
+        const msg = err?.error?.message ?? 'Erro ao atualizar perfil.';
         this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
       },
     });
   }
 
-  onPermDeleted(id: number): void {
-    if (!confirm('Deseja excluir esta permissão?')) return;
-    this.store.deletePermission(id);
-    this.closePermModal();
-    this.showToast('Permissão excluída.', 'success');
+  onProfileDeleted(id: number): void {
+    if (!confirm('Deseja excluir este perfil de permissão?')) return;
+    this.store.deleteProfile(id);
+    this.closeProfileModal();
+    this.showToast('Perfil excluído.', 'success');
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
@@ -159,12 +136,8 @@ export class UsersListPage implements OnInit {
     if (typeof p === 'number') this.store.setUsersPage(p);
   }
 
-  goToPermsPage(p: number | '...'): void {
-    if (typeof p === 'number') this.store.setPermsPage(p);
-  }
-
-  getSortState(_col: keyof User): 'none' | 'asc' | 'desc' {
-    return 'none';
+  goToProfilesPage(p: number | '...'): void {
+    if (typeof p === 'number') this.store.setProfilesPage(p);
   }
 
   private buildPageNumbers(total: number, current: number): (number | '...')[] {

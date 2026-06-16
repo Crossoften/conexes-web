@@ -1,26 +1,19 @@
 // src/app/features/users/users.service.ts
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   User, UserPayload, UserUpdatePayload, UserFilters,
-  Permission, PermissionPayload, PermissionUpdatePayload, PermissionFilters,
+  PermissionProfile, PermissionProfilePayload, PermissionProfileUpdatePayload, PermissionProfileFilters,
   PaginatedResponse,
 } from './users.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
-  private http = inject(HttpClient);
-  private baseUsers       = `${environment.apiUrl}/v1/users`;
-  private basePermissions = `${environment.apiUrl}/v1/permissions`;
-
-  // ── Draft (step 1 → step 2) ───────────────────────────────────────────────
-
-  readonly draftUserData = signal<Partial<UserPayload> | null>(null);
-
-  saveDraft(data: Partial<UserPayload>): void { this.draftUserData.set(data); }
-  clearDraft(): void { this.draftUserData.set(null); }
+  private http         = inject(HttpClient);
+  private baseUsers    = `${environment.apiUrl}/v1/users`;
+  private baseProfiles = `${environment.apiUrl}/v1/permission-profiles`;
 
   // ── Users ─────────────────────────────────────────────────────────────────
 
@@ -49,30 +42,29 @@ export class UsersService {
     return this.http.delete<void>(`${this.baseUsers}/${id}`);
   }
 
-  // ── Permissions ───────────────────────────────────────────────────────────
+  // ── Permission Profiles ───────────────────────────────────────────────────
 
-  getPermissions(filters?: PermissionFilters): Observable<PaginatedResponse<Permission>> {
+  getProfiles(filters?: PermissionProfileFilters): Observable<PaginatedResponse<PermissionProfile>> {
     let params = new HttpParams();
-    if (filters?.skip   != null) params = params.set('skip',   filters.skip);
-    if (filters?.take   != null) params = params.set('take',   filters.take);
-    if (filters?.module)         params = params.set('module', filters.module);
-    if (filters?.userId != null) params = params.set('userId', filters.userId);
-    return this.http.get<PaginatedResponse<Permission>>(this.basePermissions, { params });
+    if (filters?.skip != null) params = params.set('skip', filters.skip);
+    if (filters?.take != null) params = params.set('take', filters.take);
+    if (filters?.name)         params = params.set('name', filters.name);
+    return this.http.get<PaginatedResponse<PermissionProfile>>(this.baseProfiles, { params });
   }
 
-  getPermissionById(id: number): Observable<Permission> {
-    return this.http.get<Permission>(`${this.basePermissions}/${id}`);
+  getProfileById(id: number): Observable<PermissionProfile> {
+    return this.http.get<PermissionProfile>(`${this.baseProfiles}/${id}`);
   }
 
-  createPermission(payload: PermissionPayload): Observable<Permission> {
-    return this.http.post<Permission>(this.basePermissions, payload);
+  createProfile(payload: PermissionProfilePayload): Observable<PermissionProfile> {
+    return this.http.post<PermissionProfile>(this.baseProfiles, payload);
   }
 
-  updatePermission(id: number, payload: PermissionUpdatePayload): Observable<Permission> {
-    return this.http.patch<Permission>(`${this.basePermissions}/${id}`, payload);
+  updateProfile(id: number, payload: PermissionProfileUpdatePayload): Observable<PermissionProfile> {
+    return this.http.patch<PermissionProfile>(`${this.baseProfiles}/${id}`, payload);
   }
 
-  deletePermission(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.basePermissions}/${id}`);
+  deleteProfile(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseProfiles}/${id}`);
   }
 }

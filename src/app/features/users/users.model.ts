@@ -1,7 +1,7 @@
 // src/app/features/users/users.model.ts
 
-export type UserStatus = 'Active' | 'Inactive';
-export type UserRole   = 'Master' | 'Admin' | 'Manager' | 'Operator' | 'Viewer';
+export type UserStatus = 'Active' | 'Inactive' | 'Pending';
+export type UserRole = 'Master' | 'Admin' | 'Backoffice' | 'EntityManager' | 'ProcurementManager' | 'Finance' | 'Operational';
 
 // ── Paginação ─────────────────────────────────────────────────────────────────
 
@@ -12,7 +12,7 @@ export interface PaginatedResponse<T> {
   take:  number;
 }
 
-// ── Permissões de módulo ──────────────────────────────────────────────────────
+// ── Permissão de módulo (usada em user e em profile) ──────────────────────────
 
 export interface ModulePermission {
   module:      string;
@@ -24,63 +24,53 @@ export interface ModulePermission {
   isUnlimited: boolean;
 }
 
-// ── Permission (entidade standalone /v1/permissions) ──────────────────────────
+// ── Permission Profile (/v1/permission-profiles) ──────────────────────────────
 
-export interface Permission {
+export interface PermissionProfile {
   id:          number;
-  userId:      number;
-  module:      string;
-  subMenu:     string;
-  canView:     boolean;
-  canCreate:   boolean;
-  canEdit:     boolean;
-  canDelete:   boolean;
-  isUnlimited: boolean;
+  name:        string;
+  description: string;
+  permissions: ModulePermission[];
   createdAt?:  string;
   updatedAt?:  string;
 }
 
-export interface PermissionPayload {
-  userId:      number;
-  module:      string;
-  subMenu:     string;
-  canView:     boolean;
-  canCreate:   boolean;
-  canEdit:     boolean;
-  canDelete:   boolean;
-  isUnlimited: boolean;
+export interface PermissionProfilePayload {
+  name:        string;
+  description: string;
+  permissions: ModulePermission[];
 }
 
-export type PermissionUpdatePayload = Partial<Omit<PermissionPayload, 'userId'>>;
-
-// ── Filtros de permissions ────────────────────────────────────────────────────
-
-export interface PermissionFilters {
-  skip?:   number;
-  take?:   number;
-  module?: string;
-  userId?: number;
+export interface PermissionProfileUpdatePayload {
+  name?:        string;
+  description?: string;
+  permissions?: ModulePermission[];
 }
 
-// ── User (resposta da API) ────────────────────────────────────────────────────
+export interface PermissionProfileFilters {
+  skip?:  number;
+  take?:  number;
+  name?:  string;
+}
+
+// ── User (/v1/users) ──────────────────────────────────────────────────────────
 
 export interface User {
-  id:                number;
-  name:              string;
-  surname:           string;
-  email:             string;
-  document:          string;
-  jobTitle:          string;
-  area:              string;
-  phone:             string;
-  role:              UserRole | string;
-  status:            UserStatus;
-  modulePermissions: ModulePermission[];
-  createdAt?:        string;
-  updatedAt?:        string;
+  id:                  number;
+  name:                string;
+  surname:             string;
+  email:               string;
+  document:            string;
+  jobTitle:            string;
+  area:                string;
+  phone:               string;
+  role:                UserRole | string;
+  status:              UserStatus;
+  permissionProfileId?: number;
+  modulePermissions:   ModulePermission[];
+  createdAt?:          string;
+  updatedAt?:          string;
 }
-
-// ── Filtros de users ──────────────────────────────────────────────────────────
 
 export interface UserFilters {
   skip?:  number;
@@ -89,49 +79,52 @@ export interface UserFilters {
   name?:  string;
 }
 
-// ── Payloads ──────────────────────────────────────────────────────────────────
-
 export interface UserPayload {
-  name:              string;
-  surname:           string;
-  email:             string;
-  document:          string;
-  jobTitle:          string;
-  area:              string;
-  phone:             string;
-  role:              string;
-  status:            UserStatus;
-  password:          string;
-  modulePermissions: ModulePermission[];
+  name:                 string;
+  surname:              string;
+  email:                string;
+  document:             string;
+  jobTitle:             string;
+  area:                 string;
+  phone:                string;
+  role:                 string;
+  status:               UserStatus;
+  password:             string;
+  permissionProfileId?: number;
+  modulePermissions?:   ModulePermission[];
 }
 
 export interface UserUpdatePayload {
-  name?:              string;
-  surname?:           string;
-  email?:             string;
-  document?:          string;
-  jobTitle?:          string;
-  area?:              string;
-  phone?:             string;
-  role?:              string;
-  status?:            UserStatus;
-  password?:          string;
-  modulePermissions?: ModulePermission[];
+  name?:                string;
+  surname?:             string;
+  email?:               string;
+  document?:            string;
+  jobTitle?:            string;
+  area?:                string;
+  phone?:               string;
+  role?:                string;
+  status?:              UserStatus;
+  password?:            string;
+  permissionProfileId?: number;
+  modulePermissions?:   ModulePermission[];
 }
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────
 
 export const USER_STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
-  Active:   { label: 'Ativo',   variant: 'success' },
-  Inactive: { label: 'Inativo', variant: 'danger'  },
+  Active:  { label: 'Ativo',    variant: 'success' },
+  Inactive:{ label: 'Inativo',  variant: 'danger'  },
+  Pending: { label: 'Pendente', variant: 'neutral'  },
 };
 
 export const USER_ROLE_LABELS: Record<string, string> = {
-  Master:   'Master',
-  Admin:    'Admin',
-  Manager:  'Gerente',
-  Operator: 'Operador',
-  Viewer:   'Viewer',
+  Master:             'Master',
+  Admin:              'Admin',
+  Backoffice:         'Backoffice',
+  EntityManager:      'Gestor de Entidades',
+  ProcurementManager: 'Gestor de Compras',
+  Finance:            'Financeiro',
+  Operational:        'Operacional',
 };
 
 // ── Módulos padrão ────────────────────────────────────────────────────────────
