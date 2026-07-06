@@ -4,6 +4,17 @@
   <!-- Título -->
   <h1 class="page-title">Dashboard</h1>
 
+  @if (error()) {
+    <div class="dashboard-alert dashboard-alert--error">
+      {{ error() }}
+      <button type="button" class="dashboard-alert__retry" (click)="load()">Tentar novamente</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="dashboard-loading">Carregando dados do dashboard…</p>
+  }
+
   <!-- Métricas -->
   <div class="metrics-grid">
 
@@ -11,7 +22,7 @@
     <div class="metric-card">
       <div class="metric-card__body">
         <span class="metric-card__label">Total de requisições</span>
-        <span class="metric-card__value">{{ metrics[0].value }}</span>
+        <span class="metric-card__value">{{ metrics()[0].value }}</span>
       </div>
       <div class="metric-card__icon metric-card__icon--purple">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -26,7 +37,7 @@
     <div class="metric-card">
       <div class="metric-card__body">
         <span class="metric-card__label">Pendentes</span>
-        <span class="metric-card__value">{{ metrics[1].value }}</span>
+        <span class="metric-card__value">{{ metrics()[1].value }}</span>
       </div>
       <div class="metric-card__icon metric-card__icon--orange">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -41,7 +52,7 @@
     <div class="metric-card">
       <div class="metric-card__body">
         <span class="metric-card__label">Em andamento</span>
-        <span class="metric-card__value">{{ metrics[2].value }}</span>
+        <span class="metric-card__value">{{ metrics()[2].value }}</span>
       </div>
       <div class="metric-card__icon metric-card__icon--blue">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -56,7 +67,7 @@
     <div class="metric-card">
       <div class="metric-card__body">
         <span class="metric-card__label">Valor estimado</span>
-        <span class="metric-card__value metric-card__value--lg">{{ metrics[3].value }}</span>
+        <span class="metric-card__value metric-card__value--lg">{{ metrics()[3].value }}</span>
       </div>
       <div class="metric-card__icon metric-card__icon--green">
         <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -80,7 +91,7 @@
       </div>
 
       <div class="req-list">
-        @for (req of requisitions; track req.id) {
+        @for (req of requisitions(); track req.id) {
           <div class="req-card">
             <div class="req-card__top">
               <span class="req-card__code">{{ req.code }}</span>
@@ -99,6 +110,10 @@
               <span class="req-card__stage">{{ req.stage }}</span>
             </div>
           </div>
+        } @empty {
+          @if (!loading()) {
+            <p class="panel__empty">Nenhuma requisição recente.</p>
+          }
         }
       </div>
     </div>
@@ -110,7 +125,7 @@
       </div>
 
       <div class="distribution-list">
-        @for (item of distribution; track item.status) {
+        @for (item of distribution(); track item.status) {
           <div class="dist-item">
             <span class="dist-item__label">{{ item.label }}</span>
             <div class="dist-item__bar-wrap">
@@ -121,12 +136,16 @@
             </div>
             <span class="dist-item__count">{{ item.count }}</span>
           </div>
+        } @empty {
+          @if (!loading()) {
+            <p class="panel__empty">Sem dados de distribuição.</p>
+          }
         }
       </div>
 
       <!-- Card de pendências -->
       <div class="pending-card">
-        <p class="pending-card__count">{{ pendingCount }} requisições pendentes</p>
+        <p class="pending-card__count">{{ pendingCount() }} requisições pendentes</p>
         <p class="pending-card__desc">Aguardando aprovação ou análise</p>
       </div>
     </div>

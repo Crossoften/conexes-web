@@ -1,18 +1,11 @@
 // src/app/features/purchasing-dashboard/purchasing-dashboard.model.ts
 
-export type RequisitionStatus =
-  | 'DRAFT'
-  | 'APPROVAL'
-  | 'QUOTATION'
-  | 'ORDERS'
-  | 'COMPLETED'
-  | 'REJECTED'
-  | 'PENDING_ANALYSIS';
+import { PurchaseRequestStatus } from '../purchases/purchases.model';
 
 export interface Requisition {
   id:     string;
   code:   string;
-  status: RequisitionStatus;
+  status: PurchaseRequestStatus;
   title:  string;
   value:  number;
   author: string;
@@ -21,7 +14,7 @@ export interface Requisition {
 }
 
 export interface StatusDistribution {
-  status: RequisitionStatus;
+  status: PurchaseRequestStatus;
   label:  string;
   count:  number;
   color:  string;
@@ -34,22 +27,24 @@ export interface DashboardMetric {
   icon:  'chart' | 'clock-orange' | 'clock-blue' | 'dollar';
 }
 
-export const REQUISITION_STATUS_LABELS: Record<RequisitionStatus, string> = {
-  DRAFT:           'Rascunho',
-  APPROVAL:        'Aprovação',
-  QUOTATION:       'Cotação',
-  ORDERS:          'Pedidos',
-  COMPLETED:       'Concluído',
-  REJECTED:        'Rejeitado',
-  PENDING_ANALYSIS:'Aguardando Análise',
+export const REQUISITION_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
+  Draft:             'Rascunho',
+  AwaitingApproval:  'Aguardando aprovação',
+  Quotation:         'Cotação',
+  QuotationApproval: 'Cotação em aprovação',
+  Order:             'Pedido',
+  Completed:         'Concluído',
+  Cancelled:         'Cancelado',
+  Rejected:          'Rejeitado',
 };
 
-export const REQUISITION_STATUS_COLORS: Record<RequisitionStatus, string> = {
-  DRAFT:            '#F97316',
-  APPROVAL:         '#3B82F6',
-  QUOTATION:        '#EAB308',
-  ORDERS:           '#8B5CF6',
-  COMPLETED:        '#22C55E',
-  REJECTED:         '#EF4444',
-  PENDING_ANALYSIS: '#F97316',
+export const REQUISITION_STATUS_COLORS: Record<PurchaseRequestStatus, string> = {
+  Draft:             '#F97316',
+  AwaitingApproval:  '#3B82F6',
+  Quotation:         '#EAB308',
+  QuotationApproval: '#6366F1',
+  Order:             '#8B5CF6',
+  Completed:         '#22C55E',
+  Cancelled:         '#6B7280',
+  Rejected:          '#EF4444',
 };
