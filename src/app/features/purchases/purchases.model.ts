@@ -45,47 +45,84 @@ export const PURCHASE_REQUEST_STATUS_CONFIG: Record<PurchaseRequestStatus, Purch
 // ── Relações (formato exato a confirmar no teste real) ────────────────────────
 
 export interface PurchaseRef {
-  id: number;
+  id?: number;
   name: string;
+  email?: string | null;
+  area?: string | null;
 }
 
 // ── Item da requisição ────────────────────────────────────────────────────────
 
 export interface PurchaseRequestItem {
   id?: number;
-  productId?: number;
-  serviceId?: number;
+  purchaseRequestId?: number;
+  productId?: number | null;
+  serviceId?: number | null;
   name: string;
-  description?: string;
+  description?: string | null;
   quantity: number;
   unit: string;
-  group?: string;
-  referenceLink?: string;
-  estimatedUnitValue?: number;
+  group?: string | null;
+  referenceLink?: string | null;
+  estimatedUnitValue?: number | null;
+  finalUnitValue?: number | null;
+  product?: PurchaseRef | null;
 }
 
 // ── Requisição de compra (resposta inferida) ──────────────────────────────────
 
 export interface PurchaseRequest {
   id: number;
-  referenceNumber?: string;
+  referenceNumber?: string | null;
   title: string;
-  area?: string;
-  orderType?: string;
+  area?: string | null;
+  orderType?: string | null;
   status: PurchaseRequestStatus;
-  stage?: number;
-  requestDate?: string;
-  expectedDeliveryDate?: string;
-  estimatedValue?: number;
-  description?: string;
+  currentStage?: number;
+  requestDate?: string | null;
+  expectedDeliveryDate?: string | null;
+  estimatedValue?: number | null;
+  description?: string | null;
+  justification?: string | null;
+  contractorObligations?: string | null;
+  contractedObligations?: string | null;
+  commercialConditions?: string | null;
+  uniqueSupplier?: boolean;
+  exclusiveSupplier?: boolean;
+  withoutSubsidy?: boolean;
+  supplierCount?: number | null;
+  payingSource?: string | null;
+  activity?: string | null;
+  cancelReason?: string | null;
+  cancelledAt?: string | null;
+  requesterId?: number | null;
+  buyerId?: number | null;
+  projectId?: number | null;
+  costCenterId?: number | null;
+  accountPlanId?: number | null;
+  partnershipId?: number | null;
+  deliveryLocationId?: number | null;
+  contractId?: number | null;
   requester?: PurchaseRef | null;
   buyer?: PurchaseRef | null;
   project?: PurchaseRef | null;
   costCenter?: PurchaseRef | null;
-  group?: string;
+  accountPlan?: PurchaseRef | null;
+  partnership?: PurchaseRef | null;
+  deliveryLocation?: PurchaseDeliveryLocation | null;
+  contract?: PurchaseRef | null;
   items?: PurchaseRequestItem[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface PurchaseDeliveryLocation {
+  id?: number;
+  name: string;
+  responsible?: string | null;
+  zipCode?: string | null;
+  address?: string | null;
+  number?: string | null;
 }
 
 // ── Cotação (resposta inferida) ───────────────────────────────────────────────
@@ -242,15 +279,93 @@ export interface AttachFilePayload {
   fileKey: string;
 }
 
-// ── Dashboard (resposta inferida — a confirmar no teste real) ─────────────────
+// ── Ações de Gerenciamento (Swagger v2) ───────────────────────────────────────
+
+export interface ApproverLevel {
+  level: number;  // 1 a 4
+  userId: number;
+}
+
+export interface SetApproversPayload {
+  approvers: ApproverLevel[];
+  reason?: string;
+}
+
+export interface ChangeBuyerPayload {
+  buyerId: number;
+  reason?: string;
+}
+
+export interface MoveStagePayload {
+  stage: number;
+  reason?: string;
+}
+
+export interface ReasonPayload {
+  reason?: string;
+}
+
+/** Item do log de ações de uma requisição (formato a confirmar no teste). */
+export interface PurchaseRequestActionLog {
+  id: number;
+  action?: string;
+  description?: string;
+  user?: PurchaseRef | null;
+  createdAt?: string;
+}
+
+/** Ações que abrem modal com formulário. */
+export type PurchaseActionKind = 'cancel' | 'reject' | 'restart' | 'move' | 'buyer' | 'approvers';
+
+/** Resultado emitido pelo modal de ação (payload já montado por tipo). */
+export interface PurchaseActionResult {
+  kind: PurchaseActionKind;
+  reason?: string;
+  stage?: number;
+  buyerId?: number;
+  approvers?: ApproverLevel[];
+}
+
+// ── Dashboard (formato real da API) ───────────────────────────────────────────
+
+export interface PurchaseDashboardCounters {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  rejected: number;
+  cancelled: number;
+  estimatedValue: number;
+}
+
+export interface PurchaseDashboardDistribution {
+  draft: number;
+  awaitingApproval: number;
+  quotation: number;
+  quotationApproval: number;
+  order: number;
+  completed: number;
+  rejected: number;
+  cancelled: number;
+}
+
+export interface DashboardRecentRequest {
+  id: number;
+  title: string;
+  description: string | null;
+  requester: string;
+  date: string;
+  elapsedDays: number;
+  stage: number;
+  status: PurchaseRequestStatus;
+}
 
 export interface PurchaseDashboardResponse {
-  totalRequests?: number;
-  pendingCount?: number;
-  inProgressCount?: number;
-  estimatedValue?: number;
-  recentRequests?: PurchaseRequest[];
-  statusDistribution?: { status: PurchaseRequestStatus; count: number }[];
+  counters: PurchaseDashboardCounters;
+  hasPending: boolean;
+  pendingCount: number;
+  recentRequests: DashboardRecentRequest[];
+  distribution: PurchaseDashboardDistribution;
 }
 
 // ── Reexport util de paginação ────────────────────────────────────────────────

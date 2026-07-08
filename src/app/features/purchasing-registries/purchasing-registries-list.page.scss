@@ -110,3 +110,15 @@
 .pagination__nav { display: flex; align-items: center; gap: 4px; }
 .pag-btn { min-width: 34px; height: 34px; padding: 0 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--surface-border-mid); background: var(--surface-primary); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition); &:hover:not(:disabled):not(.pag-btn--active) { border-color: var(--brand-purple-mid); color: var(--brand-purple); background: var(--brand-purple-light); } &--active { background: var(--brand-purple); border-color: var(--brand-purple); color: #fff; pointer-events: none; } &:disabled { opacity: .4; cursor: not-allowed; } }
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
+// ── Variantes de status faltantes + estados ──
+.status-badge--warning { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
+.status-badge--danger  { background: #FEE2E2; color: #DC2626; border-color: #FECACA; }
+
+.registry-state {
+  padding: 16px 24px; font-size: 13.5px; color: var(--text-muted, #6B7280);
+  &--error { color: #DC2626; }
+}
+.link-retry {
+  margin-left: 8px; background: none; border: none; color: var(--brand-purple, #6366F1);
+  font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline;
+}

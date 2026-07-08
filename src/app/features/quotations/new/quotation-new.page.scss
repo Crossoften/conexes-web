@@ -245,3 +245,9 @@
     &:active { transform: translateY(0); }
   }
 }
+// ── Alerta de erro / dropzone desabilitado ────
+.form-alert {
+  border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px;
+  &--error { background: #FEF2F2; border: 1.5px solid #FECACA; color: #B91C1C; }
+}
+.dropzone--disabled { opacity: .6; cursor: not-allowed; }

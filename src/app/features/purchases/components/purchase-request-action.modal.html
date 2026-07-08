@@ -1,0 +1,94 @@
+<!-- src/app/features/purchases/components/purchase-request-action.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="24" height="24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ config.title }}</h2>
+          <p>{{ config.subtitle }}</p>
+        </div>
+      </div>
+      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- ── Corpo ──────────────────────────────────────────────────────────── -->
+    <form class="modal-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <p class="warning-text">{{ config.warning }}</p>
+
+      <!-- Dados gerais (read-only) -->
+      <h3 class="section-title">Dados gerais</h3>
+      <div class="info-box">
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">Solicitante</span><span class="info-value">{{ fmtText(request?.requester?.name) }}</span></div>
+          <div class="info-item"><span class="info-label">Área do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.area ?? request?.area) }}</span></div>
+          <div class="info-item"><span class="info-label">E-mail do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.email) }}</span></div>
+          <div class="info-item"><span class="info-label">Nro Referência</span><span class="info-value">{{ fmtText(request?.referenceNumber) }}</span></div>
+          <div class="info-item"><span class="info-label">Demandante</span><span class="info-value">N/A</span></div>
+          <div class="info-item"><span class="info-label">Projeto/Centro de Custo</span><span class="info-value">{{ fmtText(request?.project?.name ?? request?.costCenter?.name) }}</span></div>
+        </div>
+      </div>
+
+      <!-- Campos específicos da ação -->
+      @if (config.hasBuyer) {
+        <h3 class="section-title">Alçadas de aprovação</h3>
+        <div class="field">
+          <label class="field-label">Novo comprador<span class="req">*</span></label>
+          <select class="field-input" formControlName="buyerId">
+            <option value="">Selecione</option>
+            @for (u of users; track u.id) { <option [value]="u.id">{{ u.name }}</option> }
+          </select>
+        </div>
+      }
+
+      @if (config.hasApprovers) {
+        <h3 class="section-title">Alçadas de aprovação</h3>
+        <div class="approver-grid">
+          @for (lvl of [1,2,3,4]; track lvl) {
+            <div class="field">
+              <label class="field-label">Aprovador Nível {{ lvl }}<span class="req" [class.hidden]="lvl !== 1">*</span></label>
+              <select class="field-input" [formControlName]="'approver' + lvl">
+                <option value="">Selecione</option>
+                @for (u of users; track u.id) { <option [value]="u.id">{{ u.name }}</option> }
+              </select>
+            </div>
+          }
+        </div>
+      }
+
+      @if (config.hasStage) {
+        <div class="field">
+          <label class="field-label">Etapas<span class="req">*</span></label>
+          <select class="field-input" formControlName="stage">
+            <option value="">Selecione</option>
+            @for (s of stageOptions; track s) { <option [value]="s">Etapa {{ s }}</option> }
+          </select>
+        </div>
+      }
+
+      <div class="field">
+        <label class="field-label">
+          {{ config.reasonLabel }}@if (config.reasonRequired) {<span class="req">*</span>}
+        </label>
+        <input class="field-input" type="text" formControlName="reason" placeholder="Digite aqui...">
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn--ghost" (click)="onClose()" [disabled]="submitting">Voltar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="submitting">
+          {{ submitting ? 'Enviando…' : 'Confirmar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

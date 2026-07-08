@@ -1,62 +1,62 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Cadastro de produtos e serviços</h1>
+    <h1 class="page-title">{{ isEdit() ? 'Editar produto/serviço' : 'Cadastro de produtos e serviços' }}</h1>
   </div>
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Dados Gerais – Produtos</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
     </div>
 
     <div class="card-body">
+
+      @if (errorMsg()) {
+        <div class="form-alert form-alert--error">{{ errorMsg() }}</div>
+      }
+
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
         <div class="form-grid">
-          
+
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>Nome do produto<span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="productName" [class.is-invalid]="form.get('productName')?.invalid && form.get('productName')?.touched">
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
             </div>
-            
+
             <div class="form-group">
-              <label>Fabricante<span class="req">*</span></label>
+              <label>Tipo<span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="manufacturer" [class.is-invalid]="form.get('manufacturer')?.invalid && form.get('manufacturer')?.touched">
-                  <option value="">Selecione</option>
+                <select class="form-control" formControlName="type">
+                  <option value="Product">Produto</option>
+                  <option value="Service">Serviço</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
 
             <div class="form-group">
-              <label>Grupo<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="group" [class.is-invalid]="form.get('group')?.invalid && form.get('group')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Fabricante</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="manufacturer">
             </div>
 
             <div class="form-group">
-              <label>Tipo Medida<span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="measureType" [class.is-invalid]="form.get('measureType')?.invalid && form.get('measureType')?.touched">
-                  <option value="">Selecione</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
+              <label>Grupo</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="group">
             </div>
           </div>
 
           <div class="form-row grid-cols-4">
-            <div class="form-group col-span-2">
+            <div class="form-group">
+              <label>Tipo Medida</label>
+              <input type="text" class="form-control" placeholder="Ex: UN, KG, L" formControlName="measure">
+            </div>
+
+            <div class="form-group">
               <label>Valor custo base</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="baseCost">
+              <input type="number" step="0.01" class="form-control" placeholder="0,00" formControlName="costBase">
             </div>
 
             <div class="form-group">
@@ -65,10 +65,25 @@
             </div>
 
             <div class="form-group">
-              <label>Selecionar Conta Padrão</label>
+              <label>Conta Padrão</label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="defaultAccount">
+                <select class="form-control" formControlName="accountPlanId">
                   <option value="">Selecione</option>
+                  @for (a of accountPlans(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>Status</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="status">
+                  <option value="Active">Ativo</option>
+                  <option value="Pending">Pendente</option>
+                  <option value="Inactive">Inativo</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -83,28 +98,15 @@
           </div>
 
         </div>
-
       </form>
     </div>
 
     <div class="card-footer">
-      <button class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">
-        Voltar
-      </button>
+      <button type="button" class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">Voltar</button>
 
       <div class="footer-actions-right">
-        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-            <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
-          </svg>
-          Reiniciar formulário
-        </button>
-
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
-        </button>
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()" [disabled]="saving()">Reiniciar formulário</button>
+        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
       </div>
     </div>
 

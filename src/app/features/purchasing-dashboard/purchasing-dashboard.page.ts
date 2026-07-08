@@ -3,7 +3,12 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PurchasesService } from '../purchases/purchases.service';
-import { PurchaseDashboardResponse, PurchaseRequest } from '../purchases/purchases.model';
+import {
+  PurchaseDashboardResponse,
+  PurchaseDashboardDistribution,
+  DashboardRecentRequest,
+  PurchaseRequestStatus,
+} from '../purchases/purchases.model';
 import {
   DashboardMetric,
   Requisition,
@@ -75,46 +80,64 @@ export class PurchasingDashboardPage {
   // ── Mapeamento da resposta ──────────────────────────────────────────────────
 
   private applyResponse(res: PurchaseDashboardResponse): void {
-    const total      = res.totalRequests ?? 0;
-    const pending    = res.pendingCount ?? 0;
-    const inProgress = res.inProgressCount ?? 0;
-    const estimated  = res.estimatedValue ?? 0;
+    const c       = res.counters;
+    const pending = res.pendingCount ?? c?.pending ?? 0;
 
     this.metrics.set([
-      { label: 'Total de requisições', value: total,                        icon: 'chart'        },
-      { label: 'Pendentes',            value: pending,                      icon: 'clock-orange' },
-      { label: 'Em andamento',         value: inProgress,                   icon: 'clock-blue'   },
-      { label: 'Valor estimado',       value: this.formatCurrency(estimated), icon: 'dollar'     },
+      { label: 'Total de requisições', value: c?.total ?? 0,                              icon: 'chart'        },
+      { label: 'Pendentes',            value: pending,                                    icon: 'clock-orange' },
+      { label: 'Em andamento',         value: c?.inProgress ?? 0,                         icon: 'clock-blue'   },
+      { label: 'Valor estimado',       value: this.formatCurrency(c?.estimatedValue ?? 0), icon: 'dollar'      },
     ]);
 
     this.pendingCount.set(pending);
-
     this.requisitions.set((res.recentRequests ?? []).map(r => this.toRequisition(r)));
-
-    const distTotal = (res.statusDistribution ?? []).reduce((sum, d) => sum + (d.count ?? 0), 0);
-    this.distribution.set((res.statusDistribution ?? []).map(d => ({
-      status: d.status,
-      label:  REQUISITION_STATUS_LABELS[d.status] ?? d.status,
-      count:  d.count ?? 0,
-      color:  REQUISITION_STATUS_COLORS[d.status] ?? '#6B7280',
-      total:  distTotal,
-    })));
+    this.distribution.set(this.buildDistribution(res.distribution));
   }
 
-  private toRequisition(r: PurchaseRequest): Requisition {
+  private buildDistribution(dist?: PurchaseDashboardDistribution): StatusDistribution[] {
+    if (!dist) return [];
+    const entries: { status: PurchaseRequestStatus; count: number }[] = [
+      { status: 'Draft',             count: dist.draft ?? 0 },
+      { status: 'AwaitingApproval',  count: dist.awaitingApproval ?? 0 },
+      { status: 'Quotation',         count: dist.quotation ?? 0 },
+      { status: 'QuotationApproval', count: dist.quotationApproval ?? 0 },
+      { status: 'Order',             count: dist.order ?? 0 },
+      { status: 'Completed',         count: dist.completed ?? 0 },
+      { status: 'Rejected',          count: dist.rejected ?? 0 },
+      { status: 'Cancelled',         count: dist.cancelled ?? 0 },
+    ];
+    const total = entries.reduce((sum, e) => sum + e.count, 0);
+    return entries.map(e => ({
+      status: e.status,
+      label:  REQUISITION_STATUS_LABELS[e.status],
+      count:  e.count,
+      color:  REQUISITION_STATUS_COLORS[e.status],
+      total,
+    }));
+  }
+
+  private toRequisition(r: DashboardRecentRequest): Requisition {
     return {
-      id:     String(r.id),
-      code:   r.referenceNumber ?? `REQ-${r.id}`,
-      status: r.status,
-      title:  r.title,
-      value:  r.estimatedValue ?? 0,
-      author: r.requester?.name ?? '—',
-      date:   this.formatDate(r.requestDate),
-      stage:  r.stage != null ? `Etapa ${r.stage}` : '',
+      id:           String(r.id),
+      code:         `#${r.id}`,
+      status:       r.status,
+      title:        r.title,
+      elapsedLabel: this.elapsedLabel(r.elapsedDays),
+      author:       r.requester ?? '—',
+      date:         this.formatDate(r.date),
+      stage:        r.stage != null ? `Etapa ${r.stage}` : '',
     };
   }
 
-  private formatDate(iso?: string): string {
+  private elapsedLabel(days?: number): string {
+    if (days == null) return '';
+    if (days <= 0)    return 'hoje';
+    if (days === 1)   return 'há 1 dia';
+    return `há ${days} dias`;
+  }
+
+  private formatDate(iso?: string | null): string {
     if (!iso) return '—';
     const date = new Date(iso);
     return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');

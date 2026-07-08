@@ -1,0 +1,63 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">{{ isEdit() ? 'Editar local de entrega' : 'Novo local de entrega' }}</h1>
+  </div>
+
+  <div class="card">
+
+    <div class="card-header">
+      <h2 class="card-title">Dados do Local</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias.</p>
+    </div>
+
+    <div class="card-body">
+
+      @if (errorMsg()) {
+        <div class="form-alert form-alert--error">{{ errorMsg() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Nome<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
+            </div>
+            <div class="form-group">
+              <label>Responsável</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="responsible">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-4">
+            <div class="form-group">
+              <label>CEP</label>
+              <input type="text" class="form-control" placeholder="00000-000" formControlName="zipCode">
+            </div>
+            <div class="form-group col-span-2">
+              <label>Endereço</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="address">
+            </div>
+            <div class="form-group">
+              <label>Número</label>
+              <input type="text" class="form-control" placeholder="Nº" formControlName="number">
+            </div>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <div class="card-footer">
+      <button type="button" class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">Voltar</button>
+
+      <div class="footer-actions-right">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()" [disabled]="saving()">Reiniciar formulário</button>
+        <button type="button" class="btn-solid btn-solid--orange" (click)="onSubmit()" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </div>
+
+  </div>
+</div>

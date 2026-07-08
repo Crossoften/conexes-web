@@ -2,12 +2,14 @@
 
   <div class="page-header">
     <h1 class="page-title">Cadastro de produtos e serviços</h1>
-    <button class="btn-novo" routerLink="new">
-      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
-        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      {{ store.activeTab() === 'PRODUCTS' ? 'Novo produto' : 'Novo' }}
-    </button>
+    @if (newRoute()) {
+      <button class="btn-novo" (click)="goNew()">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        {{ store.activeTab() === 'PRODUCTS' ? 'Novo produto' : 'Novo local' }}
+      </button>
+    }
   </div>
 
   <div class="card">
@@ -59,9 +61,17 @@
       </button>
     </div>
 
+    @if (store.loading()) {
+      <p class="registry-state">Carregando cadastros…</p>
+    } @else if (store.error()) {
+      <p class="registry-state registry-state--error">{{ store.error() }} <button type="button" class="link-retry" (click)="store.load()">Tentar novamente</button></p>
+    } @else if (store.filteredTotal() === 0) {
+      <p class="registry-state">Nenhum registro encontrado.</p>
+    }
+
     <div class="table-wrap">
       <table class="table">
-        
+
         <thead>
           @switch (store.activeTab()) {
             @case ('PRODUCTS') {
@@ -83,7 +93,13 @@
                 <th class="th th--sortable" (click)="store.setSort('legalName')">RAZÃO SOCIAL <span class="sort-icon" [ngClass]="'sort--' + getSortState('legalName')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('contact')">CONTATO <span class="sort-icon" [ngClass]="'sort--' + getSortState('contact')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('email')">E-MAIL <span class="sort-icon" [ngClass]="'sort--' + getSortState('email')"></span></th>
-                <th class="th th--center">Ações</th>
+              </tr>
+            }
+            @case ('COST_CENTERS') {
+              <tr>
+                <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+                <th class="th th--sortable" (click)="store.setSort('name')">NOME <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('address')">DESCRIÇÃO <span class="sort-icon" [ngClass]="'sort--' + getSortState('address')"></span></th>
               </tr>
             }
             @default {
@@ -96,7 +112,7 @@
             }
           }
         </thead>
-        
+
         <tbody>
           @switch (store.activeTab()) {
             @case ('PRODUCTS') {
@@ -109,16 +125,12 @@
                   <td class="td">{{ item.group }}</td>
                   <td class="td">{{ item.description }}</td>
                   <td class="td">
-                    <span class="status-badge status-badge--success">
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      Ativo
-                    </span>
+                    <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">{{ statusConfig[item.status].label }}</span>
                   </td>
                   <td class="td td--center">
                     <div class="action-icons">
-                      <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                      <button class="icon-btn" title="Editar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                      <button class="icon-btn" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="icon-btn" title="Editar" (click)="editProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="icon-btn" title="Excluir" (click)="removeProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                   </td>
                 </tr>
@@ -126,33 +138,34 @@
             }
             @case ('SUPPLIERS') {
               @for (item of store.pageSuppliers(); track item.id) {
-                <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+                <tr class="tr">
                   <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
                   <td class="td td--mono">{{ item.cnpj }}</td>
                   <td class="td">{{ item.legalName }}</td>
                   <td class="td">{{ item.contact }}</td>
                   <td class="td">{{ item.email }}</td>
-                  <td class="td td--center">
-                    <div class="action-icons">
-                      <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                      <button class="icon-btn" title="Editar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                      <button class="icon-btn" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    </div>
-                  </td>
+                </tr>
+              }
+            }
+            @case ('COST_CENTERS') {
+              @for (item of store.pageCostCenters(); track item.id) {
+                <tr class="tr">
+                  <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+                  <td class="td td--mono">{{ item.name }}</td>
+                  <td class="td">{{ item.address }}</td>
                 </tr>
               }
             }
             @default {
-              @for (item of store.pageCostCenters(); track item.id) {
+              @for (item of store.pageLocations(); track item.id) {
                 <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
                   <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
                   <td class="td td--mono">{{ item.name }}</td>
                   <td class="td">{{ item.address }}</td>
                   <td class="td td--center">
                     <div class="action-icons">
-                      <button class="icon-btn icon-btn-purple" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                      <button class="icon-btn icon-btn-purple" title="Editar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                      <button class="icon-btn icon-btn-purple" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="icon-btn" title="Editar" (click)="editLocation(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="icon-btn" title="Excluir" (click)="removeLocation(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                   </td>
                 </tr>

@@ -171,6 +171,18 @@
   font-size: 12.5px; font-weight: 600; border: 1.5px solid transparent; white-space: nowrap;
   &--success { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
   &--danger  { background: #FEE2E2; color: #DC2626; border-color: #FECACA; }
+  &--warning { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
+  &--neutral { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
+}
+
+// ── Estados de linha (loading / erro / vazio) ──
+.td--state {
+  text-align: center; padding: 28px 16px; color: var(--text-muted); font-size: 13.5px;
+}
+.td--error { color: #DC2626; }
+.link-retry {
+  margin-left: 10px; background: none; border: none; color: var(--brand-purple);
+  font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline;
 }
 
 // ── Paginação ─────────────────────────────────
@@ -188,3 +200,17 @@
   &:disabled { opacity: .4; cursor: not-allowed; }
 }
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
+// ── Menu de opções da linha ───────────────────
+.menu-wrap { position: relative; display: inline-flex; }
+.row-menu {
+  position: fixed; z-index: 1200;
+  min-width: 210px; background: #fff; border: 1px solid var(--surface-border, #EEF0F5);
+  border-radius: 12px; box-shadow: 0 12px 24px -6px rgba(0,0,0,.14); padding: 6px;
+  display: flex; flex-direction: column;
+  button {
+    text-align: left; background: transparent; border: none; cursor: pointer;
+    padding: 9px 12px; border-radius: 8px; font-size: 13.5px; font-family: var(--font-body);
+    color: var(--text-secondary, #4B5563); transition: all .15s;
+    &:hover { background: var(--brand-purple-light, #F5F3FF); color: var(--brand-purple, #6366F1); }
+  }
+}

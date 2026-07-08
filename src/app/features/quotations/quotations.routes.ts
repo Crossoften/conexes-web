@@ -54,5 +54,6 @@ export const quotationsRoutes: Routes = [
       },
     ],
   },
-  { path: 'new', component: QuotationNewPage }
+  { path: 'new', component: QuotationNewPage },
+  { path: 'edit/:id', component: QuotationNewPage }
 ];

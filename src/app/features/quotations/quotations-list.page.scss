@@ -283,3 +283,12 @@
   min-width: 34px; height: 34px;
   color: var(--text-muted); font-size: 13px;
 }
+
+// ── Variações de ícone de ação (aprovar/reprovar) ──
+.icon-btn--ok:hover     { background: #DCFCE7; color: #15803D; }
+.icon-btn--danger:hover { background: #FEE2E2; color: #DC2626; }
+
+.link-retry {
+  margin-top: 8px; background: none; border: none; color: var(--brand-purple);
+  font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline;
+}

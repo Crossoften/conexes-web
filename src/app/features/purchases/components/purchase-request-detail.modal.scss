@@ -1,0 +1,101 @@
+// src/app/features/purchases/components/purchase-request-detail.modal.scss
+
+// ── Overlay / Container ───────────────────────
+.modal-overlay {
+  position: fixed; inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  animation: fadeIn .2s ease-out;
+}
+
+.modal-container {
+  background-color: #fff;
+  border-radius: 16px;
+  width: 90%; max-width: 860px; max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+  display: flex; flex-direction: column;
+  animation: slideUp .3s ease-out;
+}
+
+// ── Cabeçalho ─────────────────────────────────
+.modal-header {
+  background-color: var(--brand-purple, #6366F1);
+  padding: 22px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: #fff; flex-shrink: 0;
+}
+.header-content { display: flex; align-items: center; gap: 16px; }
+.header-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.header-text {
+  h2 { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin: 0 0 4px; }
+  p  { font-size: 13.5px; margin: 0; opacity: .9; }
+}
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.action-btn {
+  display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all .2s;
+  &--orange {
+    width: 36px; height: 36px; border-radius: 50%;
+    background-color: var(--brand-orange, #F97316); color: #fff;
+    box-shadow: 0 2px 4px rgba(249,115,22,.3);
+    &:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  }
+  &--close { background: transparent; color: #fff; opacity: .7; padding: 8px;
+    &:hover { opacity: 1; transform: scale(1.1); } }
+}
+
+// ── Corpo / Abas ──────────────────────────────
+.modal-body { padding: 22px 28px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
+
+.modal-tabs {
+  display: flex; gap: 24px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
+  margin-bottom: 22px; flex-shrink: 0;
+}
+.tab-btn {
+  background: transparent; border: none; padding: 0 0 12px; cursor: pointer; position: relative;
+  font-size: 14px; font-weight: 600; color: var(--text-secondary, #6B7280); transition: color .2s;
+  &:hover { color: var(--text-primary, #111827); }
+  &.active {
+    color: var(--brand-purple, #6366F1);
+    &::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px;
+      background-color: var(--brand-purple, #6366F1); border-radius: 2px 2px 0 0; }
+  }
+}
+
+.section-title { font-size: 15px; font-weight: 700; color: var(--text-primary, #111827); margin: 4px 0 12px; }
+
+// ── Info Box ──────────────────────────────────
+.info-box { background-color: #FAFAFE; border-radius: 12px; padding: 22px; margin-bottom: 22px; }
+.info-grid { display: grid; grid-template-columns: 1fr; gap: 18px 24px;
+  &--3 { grid-template-columns: repeat(3, 1fr); } }
+.info-item { display: flex; flex-direction: column; gap: 4px; }
+.info-label { font-size: 13px; color: var(--text-secondary, #6B7280); font-weight: 500; }
+.info-value { font-size: 14.5px; color: var(--text-primary, #111827); font-weight: 500; word-break: break-word; }
+
+// ── Tabela de itens ───────────────────────────
+.items-wrap { overflow-x: auto; border: 1px solid var(--surface-border, #EEF0F5); border-radius: 12px; }
+.items-table {
+  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  th, td { padding: 12px 16px; text-align: left; white-space: nowrap; }
+  th { background: #FAFAFE; color: var(--text-secondary, #6B7280); font-weight: 600; }
+  tbody tr { border-top: 1px solid var(--surface-border, #EEF0F5); }
+  td { color: var(--text-primary, #111827); }
+  .right { text-align: right; }
+  .empty { text-align: center; color: var(--text-muted, #9CA3AF); padding: 22px; }
+}
+
+.modal-loading { font-size: 14px; color: var(--text-muted, #6B7280); padding: 24px 0; text-align: center; }
+
+@media (max-width: 640px) {
+  .info-grid--3 { grid-template-columns: 1fr; }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }

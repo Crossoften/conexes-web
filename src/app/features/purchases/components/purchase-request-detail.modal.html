@@ -1,0 +1,139 @@
+<!-- src/app/features/purchases/components/purchase-request-detail.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="26" height="26" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>{{ code }}</h2>
+          <p>Acompanhe todas as informações cadastradas para a requisição.</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Tabs ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="tab-btn" [class.active]="activeTab === 'DADOS'" (click)="setTab('DADOS')">Dados da requisição</button>
+        <button class="tab-btn" [class.active]="activeTab === 'FONTE'" (click)="setTab('FONTE')">Fonte, fornecedor e contrato</button>
+        <button class="tab-btn" [class.active]="activeTab === 'ITENS'" (click)="setTab('ITENS')">Itens e serviços</button>
+        <button class="tab-btn" [class.active]="activeTab === 'LOCAL'" (click)="setTab('LOCAL')">Local de entrega</button>
+      </div>
+
+      @if (loading) {
+        <p class="modal-loading">Carregando detalhes…</p>
+      } @else if (request) {
+        <div class="tab-content">
+
+          <!-- ══ DADOS DA REQUISIÇÃO ═══════════════════════════════════════ -->
+          @if (activeTab === 'DADOS') {
+            <h3 class="section-title">Dados do Requisitante</h3>
+            <div class="info-box">
+              <div class="info-grid info-grid--3">
+                <div class="info-item"><span class="info-label">Solicitante</span><span class="info-value">{{ fmtText(request.requester?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Área do solicitante</span><span class="info-value">{{ fmtText(request.requester?.area ?? request.area) }}</span></div>
+                <div class="info-item"><span class="info-label">E-mail do solicitante</span><span class="info-value">{{ fmtText(request.requester?.email) }}</span></div>
+                <div class="info-item"><span class="info-label">Tipo do pedido</span><span class="info-value">{{ fmtText(request.orderType) }}</span></div>
+                <div class="info-item"><span class="info-label">Data do pedido</span><span class="info-value">{{ fmtDate(request.requestDate) }}</span></div>
+                <div class="info-item"><span class="info-label">Valor global estimado</span><span class="info-value">{{ fmtCurrency(request.estimatedValue) }}</span></div>
+              </div>
+            </div>
+
+            <h3 class="section-title">Descrição e Justificativa</h3>
+            <div class="info-box">
+              <div class="info-grid">
+                <div class="info-item"><span class="info-label">Descrição</span><span class="info-value">{{ fmtText(request.description) }}</span></div>
+                <div class="info-item"><span class="info-label">Justificativa</span><span class="info-value">{{ fmtText(request.justification) }}</span></div>
+              </div>
+            </div>
+          }
+
+          <!-- ══ FONTE, FORNECEDOR E CONTRATO ══════════════════════════════ -->
+          @if (activeTab === 'FONTE') {
+            <h3 class="section-title">Fonte e alocação</h3>
+            <div class="info-box">
+              <div class="info-grid info-grid--3">
+                <div class="info-item"><span class="info-label">Fonte pagadora</span><span class="info-value">{{ fmtText(request.payingSource) }}</span></div>
+                <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request.project?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Centro de custo</span><span class="info-value">{{ fmtText(request.costCenter?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Categoria (plano de contas)</span><span class="info-value">{{ fmtText(request.accountPlan?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Atividade</span><span class="info-value">{{ fmtText(request.activity) }}</span></div>
+              </div>
+            </div>
+
+            <h3 class="section-title">Fornecedor e contrato</h3>
+            <div class="info-box">
+              <div class="info-grid info-grid--3">
+                <div class="info-item"><span class="info-label">Fornecedor único</span><span class="info-value">{{ fmtBool(request.uniqueSupplier) }}</span></div>
+                <div class="info-item"><span class="info-label">Qtd. de fornecedores</span><span class="info-value">{{ request.supplierCount ?? 'N/A' }}</span></div>
+                <div class="info-item"><span class="info-label">Contrato</span><span class="info-value">{{ fmtText(request.contract?.name) }}</span></div>
+              </div>
+            </div>
+          }
+
+          <!-- ══ ITENS E SERVIÇOS ══════════════════════════════════════════ -->
+          @if (activeTab === 'ITENS') {
+            <h3 class="section-title">Itens e serviços</h3>
+            <div class="items-wrap">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Item</th><th>Qtd.</th><th>Unidade</th><th>Grupo</th>
+                    <th class="right">Valor unit. estimado</th><th class="right">Valor unit. final</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of request.items ?? []; track item.id) {
+                    <tr>
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ fmtText(item.unit) }}</td>
+                      <td>{{ fmtText(item.group) }}</td>
+                      <td class="right">{{ fmtCurrency(item.estimatedUnitValue) }}</td>
+                      <td class="right">{{ item.finalUnitValue != null ? fmtCurrency(item.finalUnitValue) : 'N/A' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td class="empty" colspan="6">Nenhum item cadastrado.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- ══ LOCAL DE ENTREGA ══════════════════════════════════════════ -->
+          @if (activeTab === 'LOCAL') {
+            <h3 class="section-title">Local de entrega</h3>
+            <div class="info-box">
+              <div class="info-grid info-grid--3">
+                <div class="info-item"><span class="info-label">Nome</span><span class="info-value">{{ fmtText(request.deliveryLocation?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Responsável</span><span class="info-value">{{ fmtText(request.deliveryLocation?.responsible) }}</span></div>
+                <div class="info-item"><span class="info-label">CEP</span><span class="info-value">{{ fmtText(request.deliveryLocation?.zipCode) }}</span></div>
+                <div class="info-item"><span class="info-label">Endereço</span><span class="info-value">{{ fmtText(request.deliveryLocation?.address) }}</span></div>
+                <div class="info-item"><span class="info-label">Número</span><span class="info-value">{{ fmtText(request.deliveryLocation?.number) }}</span></div>
+              </div>
+            </div>
+          }
+
+        </div>
+      } @else {
+        <p class="modal-loading">Requisição não encontrada.</p>
+      }
+    </div>
+  </div>
+</div>

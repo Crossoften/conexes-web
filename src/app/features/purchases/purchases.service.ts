@@ -10,6 +10,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Page,
+  PurchaseRef,
   PurchaseRequest,
   PurchaseRequestListParams,
   PurchaseHistoryParams,
@@ -24,11 +25,27 @@ import {
   CreateContractPayload,
   UpdateContractPayload,
   AttachFilePayload,
+  SetApproversPayload,
+  ChangeBuyerPayload,
+  PurchaseRequestActionLog,
 } from './purchases.model';
 
-/** Normaliza uma resposta de listagem que pode vir como { data, total } ou array puro. */
-function toPage<T>(res: Page<T> | T[]): Page<T> {
-  return Array.isArray(res) ? { data: res, total: res.length } : res;
+/**
+ * Envelope de listagem aceito da API. O backend de compras responde
+ * { data, count, pages }; outros módulos usam { data, total } ou array puro.
+ */
+interface RawListEnvelope<T> {
+  data?: T[];
+  total?: number;
+  count?: number;
+  pages?: number;
+}
+
+/** Normaliza qualquer um dos formatos de listagem para { data, total }. */
+function toPage<T>(res: RawListEnvelope<T> | T[]): Page<T> {
+  if (Array.isArray(res)) return { data: res, total: res.length };
+  const data = res.data ?? [];
+  return { data, total: res.total ?? res.count ?? data.length };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,13 +65,13 @@ export class PurchasesService {
     if (params.skip != null)       httpParams = httpParams.set('skip', String(params.skip));
     if (params.take != null)       httpParams = httpParams.set('take', String(params.take));
     return this.http
-      .get<Page<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests`, { params: httpParams })
+      .get<RawListEnvelope<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests`, { params: httpParams })
       .pipe(map(toPage));
   }
 
   getRequestsByStage(stage: number): Observable<Page<PurchaseRequest>> {
     return this.http
-      .get<Page<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests/stage/${stage}`)
+      .get<RawListEnvelope<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests/stage/${stage}`)
       .pipe(map(toPage));
   }
 
@@ -64,7 +81,7 @@ export class PurchasesService {
     if (params.skip != null)        httpParams = httpParams.set('skip', String(params.skip));
     if (params.take != null)        httpParams = httpParams.set('take', String(params.take));
     return this.http
-      .get<Page<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests/history`, { params: httpParams })
+      .get<RawListEnvelope<PurchaseRequest> | PurchaseRequest[]>(`${this.base}/requests/history`, { params: httpParams })
       .pipe(map(toPage));
   }
 
@@ -102,12 +119,59 @@ export class PurchasesService {
     return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/cancel`, { reason });
   }
 
-  restartRequest(id: number): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/restart`, {});
+  restartRequest(id: number, reason?: string): Observable<PurchaseRequest> {
+    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/restart`, { reason });
   }
 
-  moveRequest(id: number, stage: number): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/move`, { stage });
+  moveRequest(id: number, stage: number, reason?: string): Observable<PurchaseRequest> {
+    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/move`, { stage, reason });
+  }
+
+  changeBuyer(id: number, payload: ChangeBuyerPayload): Observable<PurchaseRequest> {
+    return this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/buyer`, payload);
+  }
+
+  setApprovers(id: number, payload: SetApproversPayload): Observable<PurchaseRequest> {
+    return this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/approvers`, payload);
+  }
+
+  getRequestActionHistory(id: number): Observable<PurchaseRequestActionLog[]> {
+    return this.http.get<PurchaseRequestActionLog[]>(`${this.base}/requests/${id}/history`);
+  }
+
+  /** Lookup de usuários (para selects de comprador / aprovadores). */
+  getUsersLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/users', 'name');
+  }
+
+  getProjectsLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/projects', 'name');
+  }
+
+  getAccountPlansLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/account-plan', 'title');
+  }
+
+  getProductsServicesLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/products-services', 'name');
+  }
+
+  getDeliveryLocationsLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/delivery-locations', 'name');
+  }
+
+  /** Lookup genérico: mapeia qualquer listagem para { id, name } (rótulo por nameKey). */
+  private lookup(path: string, nameKey: 'name' | 'title'): Observable<PurchaseRef[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}${path}`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows.map(r => ({
+          id:   Number(r['id']),
+          name: String(r[nameKey] ?? r['name'] ?? r['title'] ?? r['id']),
+        }));
+      }));
   }
 
   copyRequest(id: number): Observable<PurchaseRequest> {
@@ -170,7 +234,7 @@ export class PurchasesService {
     if (params.skip != null) httpParams = httpParams.set('skip', String(params.skip));
     if (params.take != null) httpParams = httpParams.set('take', String(params.take));
     return this.http
-      .get<Page<PurchaseContract> | PurchaseContract[]>(`${this.base}/contracts`, { params: httpParams })
+      .get<RawListEnvelope<PurchaseContract> | PurchaseContract[]>(`${this.base}/contracts`, { params: httpParams })
       .pipe(map(toPage));
   }
 

@@ -3,14 +3,14 @@
 import { PurchaseRequestStatus } from '../purchases/purchases.model';
 
 export interface Requisition {
-  id:     string;
-  code:   string;
-  status: PurchaseRequestStatus;
-  title:  string;
-  value:  number;
-  author: string;
-  date:   string;
-  stage:  string;
+  id:           string;
+  code:         string;
+  status:       PurchaseRequestStatus;
+  title:        string;
+  elapsedLabel: string;
+  author:       string;
+  date:         string;
+  stage:        string;
 }
 
 export interface StatusDistribution {

@@ -1,69 +1,93 @@
 // src/app/features/purchasing-registries/purchasing-registries.store.ts
-import { Injectable, computed, signal } from '@angular/core';
-import { Product, Supplier, CostCenter, DeliveryLocation, RegistryTab, RegistryStatus } from './purchasing-registries.model';
-import { PRODUCTS_MOCK, SUPPLIERS_MOCK, COST_CENTERS_MOCK, LOCATIONS_MOCK } from './purchasing-registries.mock';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+  Product, Supplier, CostCenter, DeliveryLocation,
+  RegistryTab, RegistryStatus,
+  ApiProductService, ApiStakeholder, ApiProject, ApiDeliveryLocation,
+} from './purchasing-registries.model';
+import { PurchasingRegistriesService } from './purchasing-registries.service';
 
 interface State {
-  products: Product[];
-  suppliers: Supplier[];
+  products:    Product[];
+  suppliers:   Supplier[];
   costCenters: CostCenter[];
-  locations: DeliveryLocation[];
-  loading: boolean;
-  activeTab: RegistryTab;
-  filters: { search: string; status: RegistryStatus | ''; type: string };
-  sort: { column: string; direction: 'asc' | 'desc' | '' };
-  pagination: { page: number; pageSize: number };
+  locations:   DeliveryLocation[];
+  loading:     boolean;
+  error:       string | null;
+  activeTab:   RegistryTab;
+  filters:     { search: string; status: RegistryStatus | '' };
+  sort:        { column: string; direction: 'asc' | 'desc' | '' };
+  pagination:  { page: number; pageSize: number };
   selectedIds: Set<string>;
+}
+
+// ── Mapeamentos API -> view ───────────────────────────────────────────────────
+function toProduct(a: ApiProductService): Product {
+  return {
+    id: String(a.id), apiId: a.id,
+    code: a.code ?? '—', productName: a.name,
+    measureType: a.measure ?? '—', group: a.group ?? '—',
+    description: a.description ?? '—', status: a.status ?? 'Active',
+  };
+}
+function toSupplier(a: ApiStakeholder): Supplier {
+  return { id: String(a.id), apiId: a.id, cnpj: a.document ?? '—', legalName: a.name, contact: a.phone ?? '—', email: a.email ?? '—' };
+}
+function toCostCenter(a: ApiProject): CostCenter {
+  return { id: String(a.id), apiId: a.id, name: a.name, address: a.description ?? '—' };
+}
+function toLocation(a: ApiDeliveryLocation): DeliveryLocation {
+  const addr = [a.address, a.number].filter(Boolean).join(', ');
+  return { id: String(a.id), apiId: a.id, name: a.name, address: addr || '—' };
 }
 
 @Injectable()
 export class PurchasingRegistriesStore {
+  private svc = inject(PurchasingRegistriesService);
+
   private readonly state = signal<State>({
-    products: PRODUCTS_MOCK,
-    suppliers: SUPPLIERS_MOCK,
-    costCenters: COST_CENTERS_MOCK,
-    locations: LOCATIONS_MOCK,
-    loading: false,
+    products: [], suppliers: [], costCenters: [], locations: [],
+    loading: false, error: null,
     activeTab: 'PRODUCTS',
-    filters: { search: '', status: '', type: '' },
+    filters: { search: '', status: '' },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
   });
 
-  readonly activeTab = computed(() => this.state().activeTab);
-  readonly filters = computed(() => this.state().filters);
-  readonly sort = computed(() => this.state().sort);
-  readonly pagination = computed(() => this.state().pagination);
+  readonly activeTab   = computed(() => this.state().activeTab);
+  readonly loading     = computed(() => this.state().loading);
+  readonly error       = computed(() => this.state().error);
+  readonly filters     = computed(() => this.state().filters);
+  readonly sort        = computed(() => this.state().sort);
+  readonly pagination  = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
 
-  readonly currentListItems = computed(() => {
-    const tab = this.activeTab();
-    if (tab === 'PRODUCTS') return this.state().products;
-    if (tab === 'SUPPLIERS') return this.state().suppliers;
-    if (tab === 'COST_CENTERS') return this.state().costCenters;
-    return this.state().locations;
+  readonly currentListItems = computed<(Product | Supplier | CostCenter | DeliveryLocation)[]>(() => {
+    switch (this.activeTab()) {
+      case 'PRODUCTS':     return this.state().products;
+      case 'SUPPLIERS':    return this.state().suppliers;
+      case 'COST_CENTERS': return this.state().costCenters;
+      default:             return this.state().locations;
+    }
   });
 
   readonly filteredListItems = computed(() => {
-    let result = this.currentListItems() as any[];
     const tab = this.activeTab();
-    const f = this.filters();
-    
-    if (f.search) {
-      const term = f.search.toLowerCase();
+    const { search, status } = this.filters();
+    let result = this.currentListItems();
+
+    if (search) {
+      const t = search.toLowerCase();
       result = result.filter(item => {
-        if (tab === 'PRODUCTS') return item.productName.toLowerCase().includes(term) || item.code.includes(term);
-        if (tab === 'SUPPLIERS') return item.legalName.toLowerCase().includes(term) || item.cnpj.includes(term);
-        return item.name.toLowerCase().includes(term) || item.address.toLowerCase().includes(term);
+        if (tab === 'PRODUCTS')  { const p = item as Product;  return p.productName.toLowerCase().includes(t) || p.code.toLowerCase().includes(t); }
+        if (tab === 'SUPPLIERS') { const s = item as Supplier; return s.legalName.toLowerCase().includes(t) || s.cnpj.toLowerCase().includes(t); }
+        const n = item as CostCenter | DeliveryLocation; return n.name.toLowerCase().includes(t) || n.address.toLowerCase().includes(t);
       });
     }
-    
-    // Status filter only applies to products in this mock setup
-    if (f.status && tab === 'PRODUCTS') {
-      result = result.filter(item => item.status === f.status);
+    if (status && tab === 'PRODUCTS') {
+      result = result.filter(item => (item as Product).status === status);
     }
-    
     return result;
   });
 
@@ -75,30 +99,55 @@ export class PurchasingRegistriesStore {
     return this.filteredListItems().slice(start, start + pageSize);
   });
 
-  // Tipagens específicas para o HTML (evita erros no strict mode)
-  readonly pageProducts = computed(() => this.activeTab() === 'PRODUCTS' ? this.pageItems() as Product[] : []);
-  readonly pageSuppliers = computed(() => this.activeTab() === 'SUPPLIERS' ? this.pageItems() as Supplier[] : []);
-  readonly pageCostCenters = computed(() => this.activeTab() === 'COST_CENTERS' ? this.pageItems() as CostCenter[] : []);
-  readonly pageLocations = computed(() => this.activeTab() === 'LOCATIONS' ? this.pageItems() as DeliveryLocation[] : []);
+  readonly pageProducts    = computed(() => this.activeTab() === 'PRODUCTS'     ? this.pageItems() as Product[]          : []);
+  readonly pageSuppliers   = computed(() => this.activeTab() === 'SUPPLIERS'    ? this.pageItems() as Supplier[]         : []);
+  readonly pageCostCenters = computed(() => this.activeTab() === 'COST_CENTERS' ? this.pageItems() as CostCenter[]       : []);
+  readonly pageLocations   = computed(() => this.activeTab() === 'LOCATIONS'    ? this.pageItems() as DeliveryLocation[] : []);
 
   readonly allPageSelected = computed(() => {
     const items = this.pageItems();
-    return items.length > 0 && items.every((item: any) => this.selectedIds().has(item.id));
+    return items.length > 0 && items.every(item => this.selectedIds().has(item.id));
   });
-
   readonly somePageSelected = computed(() => {
     const items = this.pageItems();
-    return items.some((item: any) => this.selectedIds().has(item.id)) && !this.allPageSelected();
+    return items.some(item => this.selectedIds().has(item.id)) && !this.allPageSelected();
   });
 
-  // Updaters
-  setTab(tab: RegistryTab) {
-    this.state.update(s => ({ ...s, activeTab: tab, selectedIds: new Set(), filters: { search: '', status: '', type: '' }, pagination: { ...s.pagination, page: 1 } }));
+  // ── Load por aba ────────────────────────────────────────────────────────────
+  load(): void {
+    const tab = this.activeTab();
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    const fail = (err: { error?: { message?: string } }) =>
+      this.state.update(s => ({ ...s, loading: false, error: err?.error?.message ?? 'Erro ao carregar os cadastros.' }));
+
+    switch (tab) {
+      case 'PRODUCTS':
+        this.svc.listProducts({ take: 500 }).subscribe({
+          next: res => this.state.update(s => ({ ...s, products: res.data.map(toProduct), loading: false })), error: fail });
+        break;
+      case 'SUPPLIERS':
+        this.svc.listSuppliers({ take: 500 }).subscribe({
+          next: res => this.state.update(s => ({ ...s, suppliers: res.data.map(toSupplier), loading: false })), error: fail });
+        break;
+      case 'COST_CENTERS':
+        this.svc.listCostCenters({ take: 500 }).subscribe({
+          next: res => this.state.update(s => ({ ...s, costCenters: res.data.map(toCostCenter), loading: false })), error: fail });
+        break;
+      default:
+        this.svc.listLocations({ take: 500 }).subscribe({
+          next: res => this.state.update(s => ({ ...s, locations: res.data.map(toLocation), loading: false })), error: fail });
+    }
+  }
+
+  // ── Updaters ────────────────────────────────────────────────────────────────
+  setTab(tab: RegistryTab): void {
+    this.state.update(s => ({ ...s, activeTab: tab, selectedIds: new Set(), filters: { search: '', status: '' }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   setSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } })); }
   setStatus(status: RegistryStatus | '') { this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } })); }
-  
+
   setSort(column: string) {
     this.state.update(s => {
       const direction = s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
@@ -111,18 +160,26 @@ export class PurchasingRegistriesStore {
 
   toggleRow(id: string) {
     this.state.update(s => {
-      const newSet = new Set(s.selectedIds);
-      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
-      return { ...s, selectedIds: newSet };
+      const next = new Set(s.selectedIds);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return { ...s, selectedIds: next };
     });
   }
 
-  toggleAllPage(items: any[]) {
+  toggleAllPage(items: { id: string }[]) {
     this.state.update(s => {
-      const newSet = new Set(s.selectedIds);
-      const allSelected = items.every(item => newSet.has(item.id));
-      items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
-      return { ...s, selectedIds: newSet };
+      const next = new Set(s.selectedIds);
+      const all = items.every(i => next.has(i.id));
+      items.forEach(i => all ? next.delete(i.id) : next.add(i.id));
+      return { ...s, selectedIds: next };
     });
+  }
+
+  // ── Exclusão (Produtos e Locais) ────────────────────────────────────────────
+  removeProduct(apiId: number) {
+    this.svc.deleteProduct(apiId).subscribe({ next: () => this.load(), error: () => {} });
+  }
+  removeLocation(apiId: number) {
+    this.svc.deleteLocation(apiId).subscribe({ next: () => this.load(), error: () => {} });
   }
 }

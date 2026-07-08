@@ -198,7 +198,7 @@
 
 .dist-item {
   display: grid;
-  grid-template-columns: 90px 1fr 24px;
+  grid-template-columns: 150px 1fr 24px;
   align-items: center;
   gap: 12px;
 }
@@ -208,6 +208,8 @@
   color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dist-item__bar-wrap {

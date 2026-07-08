@@ -3,24 +3,44 @@ import { Component, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { PurchasingRegistriesStore } from './purchasing-registries.store';
-import { RegistryStatus } from './purchasing-registries.model';
-import { RouterLink } from "@angular/router";
+import { RegistryStatus, REGISTRY_STATUS_CONFIG, Product, DeliveryLocation } from './purchasing-registries.model';
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-purchasing-registries-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass],
   providers: [PurchasingRegistriesStore],
   templateUrl: './purchasing-registries-list.page.html',
   styleUrl: './purchasing-registries-list.page.scss',
 })
 export class PurchasingRegistriesListPage {
   readonly store = inject(PurchasingRegistriesStore);
+  private  router = inject(Router);
+  readonly statusConfig = REGISTRY_STATUS_CONFIG;
+
+  constructor() {
+    this.store.load();
+  }
+
+  /** Rota do botão "Novo" conforme a aba (só Produtos e Locais têm cadastro aqui). */
+  newRoute(): string[] | null {
+    const tab = this.store.activeTab();
+    if (tab === 'PRODUCTS')  return ['/purchasing-registries/new'];
+    if (tab === 'LOCATIONS') return ['/purchasing-registries/locations/new'];
+    return null;
+  }
+
+  goNew() {
+    const r = this.newRoute();
+    if (r) this.router.navigate(r);
+  }
 
   readonly statusOptions: { label: string; value: RegistryStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
-    { label: 'Ativo', value: 'ACTIVE' },
-    { label: 'Inativo', value: 'INACTIVE' },
+    { label: 'Ativo',    value: 'Active' },
+    { label: 'Pendente', value: 'Pending' },
+    { label: 'Inativo',  value: 'Inactive' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
@@ -60,4 +80,10 @@ export class PurchasingRegistriesListPage {
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  removeProduct(item: Product)      { this.store.removeProduct(item.apiId); }
+  removeLocation(item: DeliveryLocation) { this.store.removeLocation(item.apiId); }
+
+  editProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId]); }
+  editLocation(item: DeliveryLocation) { this.router.navigate(['/purchasing-registries/locations/edit', item.apiId]); }
 }
