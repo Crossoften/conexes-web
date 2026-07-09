@@ -33,10 +33,16 @@ export class QuotationsListPage {
   // ── Ações disponíveis por etapa × papel de compras ─────────────────────────
   // Aprovar/Reprovar: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
   // = Supervisor de Compras. Gestor sempre pode. (Backend valida a alçada por valor.)
-  readonly canApprove = computed(() =>
-    (this.routeStage === 1 && (this.perms.isRequestSupervisor()  || this.perms.isManager())) ||
-    (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager())),
-  );
+  // Se o /my-self ainda não trouxe purchaseRoles, cai no fallback por role global.
+  readonly canApprove = computed(() => {
+    const onApprovalStage = this.routeStage === 1 || this.routeStage === 3;
+    if (!onApprovalStage) return false;
+    if (this.perms.hasNoPurchaseRoleInfo()) return this.perms.canApproveByGlobalRole();
+    return (
+      (this.routeStage === 1 && (this.perms.isRequestSupervisor()  || this.perms.isManager())) ||
+      (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager()))
+    );
+  });
   readonly canReject = this.canApprove;
 
   // Cancelar: ação administrativa exclusiva do Gestor (nas etapas onde já aparecia).

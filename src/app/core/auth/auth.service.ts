@@ -109,6 +109,38 @@ export class AuthService {
     localStorage.setItem(STORAGE_USER, JSON.stringify(user));
   }
 
+  // ── Refresh do perfil (recarrega /my-self para sessões já abertas) ──────────
+
+  /**
+   * Reobtém /my-self e atualiza o usuário armazenado — usado no bootstrap para que
+   * sessões abertas antes de novos campos (ex.: purchaseRoles) os recebam sem relogar.
+   * Silencioso: em caso de erro, mantém o usuário do storage.
+   */
+  async refreshProfile(): Promise<void> {
+    if (!this.isAuthenticated()) return;
+    try {
+      const me = await firstValueFrom(
+        this.http.get<MySelfResponse>(`${environment.apiUrl}/v1/my-self`)
+      );
+      const current = this._user();
+      const user: AuthUser = {
+        id:            String(me.id),
+        name:          me.name,
+        email:         me.email,
+        phone:         me.phone,
+        code:          me.code,
+        role:          me.role,
+        status:        me.status,
+        avatar:        current?.avatar ?? null,
+        purchaseRoles: me.purchaseRoles ?? [],
+      };
+      this._user.set(user);
+      localStorage.setItem(STORAGE_USER, JSON.stringify(user));
+    } catch {
+      // mantém o usuário atual do storage
+    }
+  }
+
   // ── Logout ────────────────────────────────────────────────────────────────
 
   logout(): void {
