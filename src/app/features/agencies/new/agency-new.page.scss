@@ -1,6 +1,48 @@
 // src/app/features/agencies/new/agency-new.page.scss
 :host { display: block; }
 
+// ── Servidores / Equipe ───────────────────────────────────────────────────────
+.staff-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.staff-card {
+  border: 1px solid var(--surface-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.staff-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.staff-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+}
+.staff-card__remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted, #9ca3af);
+  &:hover { color: #dc2626; }
+}
+.staff-empty {
+  font-size: 13px;
+  color: var(--text-muted, #9ca3af);
+  padding: 8px 0;
+}
+
 // ── Tipografia e Cabeçalho ────────────────────
 .page-title {
   font-family: var(--font-display);
