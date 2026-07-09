@@ -12,6 +12,13 @@ import { PurchaseRole } from './purchases.model';
 /** Roles globais que atuam como Gestor de compras mesmo sem alçada `Manager`. */
 const GLOBAL_MANAGER_ROLES = ['Master', 'Admin', 'ProcurementManager'];
 
+/**
+ * Fallback de aprovação por role global — usado quando o /my-self ainda não
+ * retorna `purchaseRoles`. Backoffice cobre os Supervisores de Requisição/Compras;
+ * Operational (requisitante/comprador) fica de fora, preservando o gate esperado.
+ */
+const GLOBAL_APPROVER_ROLES = [...GLOBAL_MANAGER_ROLES, 'Backoffice'];
+
 @Injectable({ providedIn: 'root' })
 export class PurchasePermissionsService {
   private auth = inject(AuthService);
@@ -37,4 +44,10 @@ export class PurchasePermissionsService {
   readonly isPurchaseSupervisor = computed(() => this.purchaseRoles().includes('PurchaseSupervisor'));
   readonly isBuyer              = computed(() => this.purchaseRoles().includes('Buyer'));
   readonly isRequester          = computed(() => this.purchaseRoles().includes('Requester'));
+
+  /** True quando não há informação de papéis de compras (usa-se o fallback global). */
+  readonly hasNoPurchaseRoleInfo = computed(() => this.purchaseRoles().length === 0);
+
+  /** Fallback: pode aprovar por role global quando os purchaseRoles estão ausentes. */
+  readonly canApproveByGlobalRole = computed(() => GLOBAL_APPROVER_ROLES.includes(this.globalRole()));
 }
