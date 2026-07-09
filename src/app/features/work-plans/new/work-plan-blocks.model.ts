@@ -13,7 +13,12 @@ export type BlockType =
   | 'plan-data'
   | 'goals'
   | 'app-detailed'
-  | 'disbursement';
+  | 'app-summary'
+  | 'disbursement'
+  | 'team'
+  | 'monitoring'
+  | 'free-text'
+  | 'free-table';
 
 export interface BlockDef {
   type:        BlockType;
@@ -53,8 +58,23 @@ export const BLOCK_GROUPS: BlockGroup[] = [
   {
     label: 'Financeiro',
     blocks: [
-      { type: 'app-detailed', title: 'Plano de Aplicação Detalhado', description: 'Itens de despesa detalhados…',     unique: true },
-      { type: 'disbursement', title: 'Cronograma de Desembolso',     description: 'Parcelas de desembolso…',          unique: true },
+      { type: 'app-detailed', title: 'Plano de Aplicação Detalhado', description: 'Itens de despesa detalhados…',       unique: true },
+      { type: 'app-summary',  title: 'Plano de Aplicação – Resumo',  description: 'Resumo financeiro (calculado)…',      unique: true },
+      { type: 'disbursement', title: 'Cronograma de Desembolso',     description: 'Parcelas de desembolso…',            unique: true },
+    ],
+  },
+  {
+    label: 'Equipe e Monitoramento',
+    blocks: [
+      { type: 'team',       title: 'Equipe de Trabalho',       description: 'Membros da equipe de execução…', unique: true },
+      { type: 'monitoring', title: 'Monitoramento e Avaliação', description: 'Ações de monitoramento…',        unique: true },
+    ],
+  },
+  {
+    label: 'Blocos Livres',
+    blocks: [
+      { type: 'free-text',  title: 'Texto Livre',  description: 'Bloco de texto livre…',       unique: false },
+      { type: 'free-table', title: 'Tabela Livre', description: 'Tabela personalizável…',       unique: false },
     ],
   },
 ];

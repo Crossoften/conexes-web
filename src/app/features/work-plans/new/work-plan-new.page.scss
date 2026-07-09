@@ -293,3 +293,70 @@ textarea.form-control { resize: vertical; }
   font-size: 12px;
   padding: 7px 14px;
 }
+
+.wp-team-grid { grid-template-columns: 1fr 1fr 1fr 28px; }
+.wp-mon-grid  { grid-template-columns: repeat(5, minmax(120px, 1fr)) 28px; min-width: 720px; }
+
+// ── Resumo financeiro (read-only) ─────────────────────────────────────────────
+
+.wp-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.wp-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--surface-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--surface-muted, #f9fafb);
+
+  span { font-size: 11px; color: var(--text-muted, #6b7280); }
+  strong { font-size: 15px; color: var(--text-primary, #111827); }
+}
+.wp-hint { font-size: 11px; color: var(--text-muted, #9ca3af); margin: 4px 0 0; }
+
+// ── Tabela Livre ──────────────────────────────────────────────────────────────
+
+.wp-freetable__cols {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--surface-muted, #f9fafb);
+  border-bottom: 1px solid var(--surface-border, #e5e7eb);
+}
+.wp-freetable__col {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  align-items: center;
+  .form-control { flex: 1; font-size: 12px; padding: 6px 8px; font-weight: 600; }
+}
+.wp-freetable__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  & + & { border-top: 1px solid var(--surface-border, #f1f5f9); }
+}
+.wp-freetable__cells {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  .form-control { flex: 1; font-size: 12px; padding: 7px 9px; }
+}
+.wp-col-add {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--surface-border, #cbd5e1);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-muted, #6b7280);
+  &:hover { border-color: #f97316; color: #f97316; }
+}

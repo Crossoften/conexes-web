@@ -7,9 +7,10 @@
 
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { WorkPlansService } from '../work-plans.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { formatBRL } from '../../../shared/utils/format';
 import {
   WorkPlanRef,
   WorkPlanGoalPayload,
@@ -36,6 +37,8 @@ interface AppItemRow {
   expenseType: string; unit: string; quantity: string; unitValue: string; totalValue: string;
 }
 interface InstallmentRow { installment: string | number; dueDate: string; value: string; linkedGoal: string; }
+interface MemberRow { name: string; role: string; miniCv: string; }
+interface ActionRow { goalOrAction: string; requiredInfo: string; collectionProcedure: string; collectionDate: string; responsible: string; }
 
 /** Remove chaves com valor vazio/undefined de um objeto. */
 function pruneEmpty<T extends Record<string, unknown>>(obj: T): T {
@@ -217,6 +220,20 @@ export class WorkPlanNewPage implements OnInit {
         return this.fb.group({
           installments: this.fb.array([this.newInstallment(1)]),
         });
+      case 'app-summary':
+        return this.fb.group({}); // read-only, calculado dos outros blocos
+      case 'team':
+        return this.fb.group({ members: this.fb.array([this.newMember()]) });
+      case 'monitoring':
+        return this.fb.group({ actions: this.fb.array([this.newAction()]) });
+      case 'free-text':
+        return this.fb.group({ title: ['', Validators.required], content: [''] });
+      case 'free-table':
+        return this.fb.group({
+          title:   ['', Validators.required],
+          columns: this.fb.array([this.newColumn('Coluna 1'), this.newColumn('Coluna 2')]),
+          rows:    this.fb.array([this.newFreeRow(2)]),
+        });
     }
   }
 
@@ -264,7 +281,75 @@ export class WorkPlanNewPage implements OnInit {
     arr.controls.forEach((c, idx) => c.get('installment')?.setValue(idx + 1));
   }
 
+  // Equipe / Monitoramento
+  private newMember(): FormGroup { return this.fb.group({ name: [''], role: [''], miniCv: [''] }); }
+  private newAction(): FormGroup {
+    return this.fb.group({ goalOrAction: [''], requiredInfo: [''], collectionProcedure: [''], collectionDate: [''], responsible: [''] });
+  }
+  members(uid: number): FormArray { return this.formOf(uid).get('members') as FormArray; }
+  actions(uid: number): FormArray { return this.formOf(uid).get('actions') as FormArray; }
+  addMember(uid: number): void { this.members(uid).push(this.newMember()); }
+  removeMember(uid: number, i: number): void { this.members(uid).removeAt(i); }
+  addAction(uid: number): void { this.actions(uid).push(this.newAction()); }
+  removeAction(uid: number, i: number): void { this.actions(uid).removeAt(i); }
+
+  // Tabela Livre (colunas + linhas dinâmicas)
+  private newColumn(name: string): FormGroup { return this.fb.group({ name: [name] }); }
+  private newFreeRow(cols: number): FormGroup {
+    return this.fb.group({ cells: this.fb.array(Array.from({ length: cols }, () => this.fb.control(''))) });
+  }
+  freeColumns(uid: number): FormArray { return this.formOf(uid).get('columns') as FormArray; }
+  freeRows(uid: number): FormArray { return this.formOf(uid).get('rows') as FormArray; }
+  rowCells(row: AbstractControl): FormArray { return row.get('cells') as FormArray; }
+
+  addColumn(uid: number): void {
+    this.freeColumns(uid).push(this.newColumn(`Coluna ${this.freeColumns(uid).length + 1}`));
+    this.freeRows(uid).controls.forEach(r => (r.get('cells') as FormArray).push(this.fb.control('')));
+  }
+  removeColumn(uid: number, i: number): void {
+    this.freeColumns(uid).removeAt(i);
+    this.freeRows(uid).controls.forEach(r => (r.get('cells') as FormArray).removeAt(i));
+  }
+  addFreeRow(uid: number): void { this.freeRows(uid).push(this.newFreeRow(this.freeColumns(uid).length)); }
+  removeFreeRow(uid: number, i: number): void { this.freeRows(uid).removeAt(i); }
+
+  // Resumo financeiro (calculado dos blocos Dados do Plano + Aplicação Detalhado)
+  private formByType(type: BlockType): FormGroup | null {
+    const b = this.blocks().find(x => x.type === type);
+    return b ? (this.forms.get(b.uid) ?? null) : null;
+  }
+  private planField(field: string): number {
+    const f = this.formByType('plan-data');
+    return f ? (toNumber(f.get(field)?.value) ?? 0) : 0;
+  }
+  summaryRepass(): number   { return this.planField('repassValue'); }
+  summaryMandatory(): number { return this.planField('mandatoryCounterpart'); }
+  summaryGlobal(): number   { return this.planField('globalValue'); }
+  summaryItemsTotal(): number {
+    const f = this.formByType('app-detailed');
+    if (!f) return 0;
+    const items = (f.get('items') as FormArray).getRawValue() as AppItemRow[];
+    return items.reduce((sum, r) => sum + (toNumber(r.totalValue) ?? 0), 0);
+  }
+  fmt(v: number): string { return formatBRL(v); }
+
   // ── Submit ────────────────────────────────────────────────────────────────────
+
+  /** Ordem/composição dos blocos + conteúdo dos blocos livres (persistido em `layout`). */
+  private buildLayout(): unknown[] {
+    return this.blocks().map(b => {
+      const f = this.forms.get(b.uid)!;
+      if (b.type === 'free-text') {
+        return { type: b.type, title: f.get('title')?.value ?? '', content: f.get('content')?.value ?? '' };
+      }
+      if (b.type === 'free-table') {
+        const columns = (f.get('columns') as FormArray).getRawValue().map((c: { name: string }) => c.name);
+        const rows = (f.get('rows') as FormArray).getRawValue().map((r: { cells: string[] }) => r.cells);
+        return { type: b.type, title: f.get('title')?.value ?? '', columns, rows };
+      }
+      return { type: b.type };
+    });
+  }
 
   private allValid(): boolean {
     if (this.headerForm.invalid) return false;
@@ -360,8 +445,22 @@ export class WorkPlanNewPage implements OnInit {
           if (rows.length) payload.reimbursements = rows;
           break;
         }
+        case 'team': {
+          const members = (v.members as MemberRow[]).filter(m => m.name || m.role || m.miniCv);
+          if (members.length) payload.teamWorkContent = JSON.stringify(members);
+          break;
+        }
+        case 'monitoring': {
+          const actions = (v.actions as ActionRow[])
+            .filter(a => a.goalOrAction || a.requiredInfo || a.collectionProcedure || a.collectionDate || a.responsible);
+          if (actions.length) payload.monitoringContent = JSON.stringify(actions);
+          break;
+        }
+        // app-summary é calculado; free-text/free-table ficam no layout.
       }
     }
+
+    payload.layout = this.buildLayout();
 
     this.loading.set(true);
     this.svc.create(payload).subscribe({
