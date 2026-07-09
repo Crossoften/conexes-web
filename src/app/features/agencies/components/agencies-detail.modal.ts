@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angu
 import { NgClass, NgIf } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Agency, AgencyUpdatePayload, AGENCY_STATUS_CONFIG } from '../agencies.model';
+import { onlyDigits } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-agency-detail-modal',
@@ -130,16 +131,16 @@ export class AgencyDetailModalComponent implements OnChanges {
     const raw = this.form.value;
 
     const payload: AgencyUpdatePayload = {
-      cnpj:          raw.cnpj          || undefined,
+      cnpj:          onlyDigits(raw.cnpj)  || undefined,
       legalName:     raw.legalName     || undefined,
       tradeName:     raw.tradeName     || undefined,
       emancipation:  raw.emancipation  || undefined,
-      zipCode:       raw.zipCode       || undefined,
+      zipCode:       onlyDigits(raw.zipCode) || undefined,
       address:       raw.address       || undefined,
       number:        raw.number        || undefined,
       complement:    raw.complement    || undefined,
       managingOrgan: raw.managingOrgan || undefined,
-      phone:         raw.phone         || undefined,
+      phone:         onlyDigits(raw.phone) || undefined,
       email:         raw.email         || undefined,
     };
 

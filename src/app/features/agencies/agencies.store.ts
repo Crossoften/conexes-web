@@ -2,6 +2,7 @@
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { Agency, AgencyUpdatePayload } from './agencies.model';
 import { AgenciesService } from './agencies.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items:       Agency[];
@@ -16,7 +17,8 @@ interface State {
 
 @Injectable()
 export class AgenciesStore {
-  private svc = inject(AgenciesService);
+  private svc    = inject(AgenciesService);
+  private notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items:       [],
@@ -54,26 +56,27 @@ export class AgenciesStore {
 
   load(): void {
     const { page, pageSize } = this.state().pagination;
-    const { search } = this.state().filters;
+    const { search, status } = this.state().filters;
 
     this.state.update(s => ({ ...s, loading: true, error: null }));
 
     this.svc.getAll({
       legalName: search || undefined,
+      status:    status || undefined,
       skip:      (page - 1) * pageSize,
       take:      pageSize,
     }).subscribe({
-      next: res => this.state.update(s => ({
+      next: page => this.state.update(s => ({
         ...s,
-        items:   res.data ?? (res as any),
-        total:   res.total ?? (res as any)?.length ?? 0,
+        items:   page.data,
+        total:   page.total,
         loading: false,
       })),
-      error: err => this.state.update(s => ({
-        ...s,
-        loading: false,
-        error:   err?.error?.message ?? 'Erro ao carregar órgãos.',
-      })),
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao carregar órgãos.';
+        this.state.update(s => ({ ...s, loading: false, error: msg }));
+        this.notify.error(Array.isArray(msg) ? msg.join(', ') : msg);
+      },
     });
   }
 
@@ -143,11 +146,14 @@ export class AgenciesStore {
     this.svc.update(id, payload).subscribe({
       next: () => {
         this.load();
+        this.notify.success('Órgão atualizado com sucesso.');
         onSuccess?.();
       },
       error: err => {
-        const msg = err?.error?.message ?? 'Erro ao atualizar órgão.';
-        onError?.(Array.isArray(msg) ? msg.join(', ') : msg);
+        const raw = err?.error?.message ?? 'Erro ao atualizar órgão.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
       },
     });
   }
@@ -158,11 +164,14 @@ export class AgenciesStore {
     this.svc.delete(id).subscribe({
       next: () => {
         this.load();
+        this.notify.success('Órgão excluído com sucesso.');
         onSuccess?.();
       },
       error: err => {
-        const msg = err?.error?.message ?? 'Erro ao excluir órgão.';
-        onError?.(Array.isArray(msg) ? msg.join(', ') : msg);
+        const raw = err?.error?.message ?? 'Erro ao excluir órgão.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
       },
     });
   }
@@ -179,7 +188,10 @@ export class AgenciesStore {
         link.click();
         URL.revokeObjectURL(url);
       },
-      error: () => {},
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao exportar planilha.';
+        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+      },
     });
   }
 }
