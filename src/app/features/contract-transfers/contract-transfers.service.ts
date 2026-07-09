@@ -8,6 +8,7 @@ import { RawListEnvelope, toPage } from '../../shared/utils/to-page';
 import {
   Partnership,
   PartnershipListItem,
+  PartnershipDetail,
   PartnershipPayload,
   PartnershipUpdatePayload,
   PartnershipRef,
@@ -36,8 +37,8 @@ export class ContractTransfersService {
       .pipe(map(toPage));
   }
 
-  getById(id: number): Observable<Partnership> {
-    return this.http.get<Partnership>(`${this.base}/${id}`);
+  getById(id: number): Observable<PartnershipDetail> {
+    return this.http.get<PartnershipDetail>(`${this.base}/${id}`);
   }
 
   create(payload: PartnershipPayload): Observable<Partnership> {

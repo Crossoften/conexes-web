@@ -11,5 +11,9 @@ export const contractTransfersRoutes: Routes = [
   {
     path: 'new',
     component: ContractTransferNewPage
+  },
+  {
+    path: ':id/edit',
+    component: ContractTransferNewPage
   }
 ];
