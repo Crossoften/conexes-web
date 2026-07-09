@@ -1,38 +1,31 @@
 // src/app/features/work-plans/work-plans.page.ts
-import { Component, inject, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { Router } from '@angular/router';
 import { WorkPlansStore } from './work-plans.store';
-import { PROPOSAL_STATUS_CONFIG, PLAN_STATUS_CONFIG, ProposalStatus, PlanStatus } from './work-plans.model';
+import { WORK_PLAN_STATUS_CONFIG } from './work-plans.model';
 
 @Component({
   selector: 'app-work-plans',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [NgClass],
   providers: [WorkPlansStore],
   templateUrl: './work-plans.page.html',
   styleUrl: './work-plans.page.scss',
 })
-export class WorkPlansPage {
+export class WorkPlansPage implements OnInit {
   readonly store = inject(WorkPlansStore);
-  readonly router = inject(Router);
-  
-  readonly proposalStatusConfig = PROPOSAL_STATUS_CONFIG;
-  readonly planStatusConfig = PLAN_STATUS_CONFIG;
+
+  readonly statusConfig = WORK_PLAN_STATUS_CONFIG;
 
   readonly pageSizeOptions = [10, 25, 50];
 
   readonly statusOptions = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Aguardando análise', value: 'ANALYSIS' },
-    { label: 'Rascunho', value: 'DRAFT' },
-    { label: 'Ativo', value: 'ACTIVE' },
-  ];
-
-  readonly instrumentOptions = [
-    { label: 'Selecione o instrumento', value: '' },
-    { label: 'Termo de Colaboração (TC)', value: 'TC' },
+    { label: 'Selecione o status',   value: ''                 },
+    { label: 'Rascunho',             value: 'Draft'            },
+    { label: 'Aguardando análise',   value: 'AwaitingApproval' },
+    { label: 'Ativo',                value: 'Active'           },
+    { label: 'Concluído',            value: 'Completed'        },
+    { label: 'Cancelado',            value: 'Cancelled'        },
   ];
 
   readonly totalPages = computed(() =>
@@ -56,9 +49,13 @@ export class WorkPlansPage {
     return pages;
   });
 
+  ngOnInit(): void {
+    this.store.loadDashboard();
+  }
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  onSearch(value: string) {
+  onSearch(value: string): void {
     if (this.searchTimer) clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
   }
@@ -69,16 +66,7 @@ export class WorkPlansPage {
     return direction;
   }
 
-  goToPage(p: number | '...') {
+  goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
-  }
-
-  // Type Guards para o HTML saber qual objeto renderizar na badge
-  isProposal(item: any): item is { status: ProposalStatus } {
-    return this.store.activeTab() === 'proposals';
-  }
-
-  isPlan(item: any): item is { status: PlanStatus } {
-    return this.store.activeTab() === 'active-plans';
   }
 }
