@@ -1,12 +1,13 @@
 // src/app/features/agencies/new/agency-new.page.ts
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AgenciesService } from '../agencies.service';
-import { AgencyPayload } from '../agencies.model';
+import { AgencyPayload, AgencyStaff } from '../agencies.model';
 import { onlyDigits } from '../../../shared/utils/format';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { UploadService } from '../../../shared/services/upload.service';
 
 @Component({
   selector: 'app-agency-new',
@@ -20,9 +21,13 @@ export class AgencyNewPage {
   private router = inject(Router);
   private svc    = inject(AgenciesService);
   private notify = inject(NotificationService);
+  private upload = inject(UploadService);
 
-  readonly loading  = signal(false);
-  readonly errorMsg = signal<string | null>(null);
+  readonly loading       = signal(false);
+  readonly errorMsg      = signal<string | null>(null);
+  readonly logoUrl       = signal<string>('');
+  readonly logoName      = signal<string>('');
+  readonly logoUploading = signal(false);
 
   form: FormGroup = this.fb.group({
     cnpj:           ['', Validators.required],
@@ -36,7 +41,57 @@ export class AgencyNewPage {
     orgaoGestor:    ['', Validators.required],
     telefoneCelular:[''],
     email:          ['', Validators.email],
+    staff:          this.fb.array([]),
   });
+
+  // ── Equipe / Servidores (staff) ─────────────────────────────────────────────
+
+  get staff(): FormArray {
+    return this.form.get('staff') as FormArray;
+  }
+
+  private newStaff(): FormGroup {
+    return this.fb.group({
+      serverType:         [''],
+      jobTitle:           [''],
+      name:               ['', Validators.required],
+      appointmentAct:     [''],
+      birthDate:          [''],
+      rg:                 [''],
+      cpf:                [''],
+      phone:              [''],
+      zipCode:            [''],
+      address:            [''],
+      number:             [''],
+      complement:         [''],
+      institutionalEmail: [''],
+      personalEmail:      [''],
+    });
+  }
+
+  addStaff(): void { this.staff.push(this.newStaff()); }
+  removeStaff(i: number): void { this.staff.removeAt(i); }
+
+  // ── Upload de logo ──────────────────────────────────────────────────────────
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.logoUploading.set(true);
+    this.upload.uploadOneFile(file).subscribe({
+      next: res => {
+        this.logoUploading.set(false);
+        this.logoUrl.set(res.fileUrl);
+        this.logoName.set(file.name);
+        this.notify.success('Logotipo enviado.');
+      },
+      error: () => {
+        this.logoUploading.set(false);
+        this.notify.error('Erro ao enviar o logotipo.');
+      },
+    });
+  }
 
   // ── Máscaras ──────────────────────────────────────────────────────────────
 
@@ -91,6 +146,16 @@ export class AgencyNewPage {
 
     const v = this.form.value;
 
+    const staff: AgencyStaff[] = this.staff.controls.map(ctrl => {
+      const s = ctrl.value;
+      return {
+        ...s,
+        cpf:     onlyDigits(s.cpf),
+        phone:   onlyDigits(s.phone),
+        zipCode: onlyDigits(s.zipCode),
+      } as AgencyStaff;
+    });
+
     const payload: AgencyPayload = {
       cnpj:          onlyDigits(v.cnpj),
       legalName:     v.razaoSocial   ?? '',
@@ -103,8 +168,8 @@ export class AgencyNewPage {
       managingOrgan: v.orgaoGestor   ?? '',
       phone:         onlyDigits(v.telefoneCelular),
       email:         v.email         ?? '',
-      logo:          '',
-      staff:         [],
+      logo:          this.logoUrl(),
+      staff,
     };
 
     this.svc.create(payload).subscribe({
