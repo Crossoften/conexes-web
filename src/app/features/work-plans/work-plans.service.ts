@@ -10,6 +10,8 @@ import {
   WorkPlanDashboard,
   WorkPlanMetric,
   WorkPlanSummaryItem,
+  WorkPlanRef,
+  CreateWorkPlanPayload,
 } from './work-plans.model';
 
 export interface WorkPlanListParams {
@@ -39,6 +41,25 @@ export class WorkPlansService {
 
   getById(id: number): Observable<unknown> {
     return this.http.get(`${this.base}/${id}`);
+  }
+
+  create(payload: CreateWorkPlanPayload): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(this.base, payload);
+  }
+
+  /** Órgãos concessionários → grantorId (select do bloco cabeçalho). */
+  getGrantorsLookup(): Observable<WorkPlanRef[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/grantors`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows.map(r => ({
+          id:        Number(r['id']),
+          legalName: (r['legalName'] as string) ?? undefined,
+          tradeName: (r['tradeName'] as string) ?? undefined,
+        }));
+      }));
   }
 
   delete(id: number): Observable<void> {
