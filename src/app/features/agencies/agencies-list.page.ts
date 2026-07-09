@@ -27,6 +27,7 @@ export class AgenciesListPage implements OnInit {
   readonly statusOptions = [
     { label: 'Selecione o status', value: ''         },
     { label: 'Ativo',              value: 'Active'   },
+    { label: 'Pendente',           value: 'Pending'  },
     { label: 'Inativo',            value: 'Inactive' },
   ];
 
@@ -115,6 +116,10 @@ export class AgenciesListPage implements OnInit {
   }
 
   onDelete(id: number): void {
+    const confirmed = window.confirm(
+      'Deseja realmente excluir este órgão? Esta ação não pode ser desfeita.'
+    );
+    if (!confirmed) return;
     this.store.delete(id,
       () => this.onCloseModal(),
     );

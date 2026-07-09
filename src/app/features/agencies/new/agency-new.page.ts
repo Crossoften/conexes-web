@@ -5,6 +5,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { AgenciesService } from '../agencies.service';
 import { AgencyPayload } from '../agencies.model';
+import { onlyDigits } from '../../../shared/utils/format';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 @Component({
   selector: 'app-agency-new',
@@ -17,6 +19,7 @@ export class AgencyNewPage {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
   private svc    = inject(AgenciesService);
+  private notify = inject(NotificationService);
 
   readonly loading  = signal(false);
   readonly errorMsg = signal<string | null>(null);
@@ -89,16 +92,16 @@ export class AgencyNewPage {
     const v = this.form.value;
 
     const payload: AgencyPayload = {
-      cnpj:          v.cnpj          ?? '',
+      cnpj:          onlyDigits(v.cnpj),
       legalName:     v.razaoSocial   ?? '',
       tradeName:     v.nomeFantasia  ?? '',
       emancipation:  v.emancipacao ? new Date(v.emancipacao).toISOString() : null,
-      zipCode:       v.cep           ?? '',
+      zipCode:       onlyDigits(v.cep),
       address:       v.endereco      ?? '',
       number:        v.nro           ?? '',
       complement:    v.complemento   ?? '',
       managingOrgan: v.orgaoGestor   ?? '',
-      phone:         v.telefoneCelular ?? '',
+      phone:         onlyDigits(v.telefoneCelular),
       email:         v.email         ?? '',
       logo:          '',
       staff:         [],
@@ -107,12 +110,15 @@ export class AgencyNewPage {
     this.svc.create(payload).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Órgão cadastrado com sucesso.');
         this.router.navigate(['/agencies']);
       },
       error: err => {
         this.loading.set(false);
-        const msg = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
-        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+        const raw = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.errorMsg.set(msg);
+        this.notify.error(msg);
       },
     });
   }

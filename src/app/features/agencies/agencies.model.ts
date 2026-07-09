@@ -1,7 +1,6 @@
 // src/app/features/agencies/agencies.model.ts
 
-export type AgencyStatus = 'Active' | 'Inactive';
-export type AgencyType   = 'PUBLIC' | 'PRIVATE';
+export type AgencyStatus = 'Active' | 'Pending' | 'Inactive';
 
 // ── Sub-modelos ───────────────────────────────────────────────────────────────
 
@@ -59,6 +58,7 @@ export interface AgencyPayload {
   phone:         string;
   email:         string;
   logo:          string;
+  status?:       AgencyStatus;
   staff:         AgencyStaff[];
 }
 
@@ -74,6 +74,7 @@ export interface StatusConfig {
 }
 
 export const AGENCY_STATUS_CONFIG: Record<string, StatusConfig> = {
-  Active:   { label: 'Ativo',   variant: 'success' },
-  Inactive: { label: 'Inativo', variant: 'danger'  },
+  Active:   { label: 'Ativo',    variant: 'success' },
+  Pending:  { label: 'Pendente', variant: 'neutral' },
+  Inactive: { label: 'Inativo',  variant: 'danger'  },
 };
