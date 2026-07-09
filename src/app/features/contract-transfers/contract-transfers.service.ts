@@ -7,6 +7,7 @@ import { Page } from '../../shared/models/list-page.model';
 import { RawListEnvelope, toPage } from '../../shared/utils/to-page';
 import {
   Partnership,
+  PartnershipListItem,
   PartnershipPayload,
   PartnershipUpdatePayload,
   PartnershipRef,
@@ -24,14 +25,14 @@ export class ContractTransfersService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/v1/partnerships`;
 
-  getAll(params: PartnershipListParams = {}): Observable<Page<Partnership>> {
+  getAll(params: PartnershipListParams = {}): Observable<Page<PartnershipListItem>> {
     let httpParams = new HttpParams();
     if (params.title)     httpParams = httpParams.set('title', params.title);
     if (params.status)    httpParams = httpParams.set('status', params.status);
     if (params.skip != null) httpParams = httpParams.set('skip', String(params.skip));
     if (params.take != null) httpParams = httpParams.set('take', String(params.take));
     return this.http
-      .get<RawListEnvelope<Partnership> | Partnership[]>(this.base, { params: httpParams })
+      .get<RawListEnvelope<PartnershipListItem> | PartnershipListItem[]>(this.base, { params: httpParams })
       .pipe(map(toPage));
   }
 

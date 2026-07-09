@@ -12,7 +12,22 @@ export interface PartnershipRef {
   name?:      string;
 }
 
-// ── Entidade (resposta da API) ────────────────────────────────────────────────
+// ── Item da listagem (GET /v1/partnerships → já vem achatado) ─────────────────
+// O backend responde a lista com os campos prontos da tabela; não traz
+// receivedValue/saldo (esses ficam no detalhe/cálculo).
+
+export interface PartnershipListItem {
+  id:            number;
+  client:        string | null;
+  contractName:  string | null;
+  contractCode:  string | null;
+  description:   string | null;
+  approvedValue: number | null;
+  grantor:       string | null;
+  status:        PartnershipStatus;
+}
+
+// ── Entidade (detalhe — GET /v1/partnerships/{id}) ────────────────────────────
 
 export interface Partnership {
   id:             number;
