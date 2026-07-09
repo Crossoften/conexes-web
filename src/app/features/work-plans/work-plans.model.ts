@@ -71,3 +71,116 @@ export const WORK_PLAN_STATUS_CONFIG: Record<string, StatusConfig> = {
   Completed:        { label: 'Concluído',          variant: 'success' },
   Cancelled:        { label: 'Cancelado',          variant: 'neutral' },
 };
+
+// ── Lookup ────────────────────────────────────────────────────────────────────
+
+export interface WorkPlanRef {
+  id:         number;
+  legalName?: string;
+  tradeName?: string;
+  name?:      string;
+}
+
+// ── Sub-payloads (CreateWorkPlanDto) ──────────────────────────────────────────
+
+export interface OSCCelebrantePayload {
+  name:            string;
+  cnpj:            string;
+  zipCode?:        string;
+  address?:        string;
+  number?:         string;
+  complement?:     string;
+  actionLocations?: string;
+  site?:           string;
+  repName?:        string;
+  repJobTitle?:    string;
+  repRg?:          string;
+  repExpOrgan?:    string;
+  repCpf?:         string;
+}
+
+export interface OSCExecutadaPayload {
+  name:         string;
+  cnpj:         string;
+  zipCode?:     string;
+  address?:     string;
+  number?:      string;
+  complement?:  string;
+  repName?:     string;
+  repJobTitle?: string;
+  repRg?:       string;
+  repExpOrgan?: string;
+  repCpf?:      string;
+}
+
+export interface WorkPlanResponsiblePayload {
+  name:      string;
+  function?: string;
+  rg?:       string;
+  expOrgan?: string;
+  cpf?:      string;
+  phone?:    string;
+  email?:    string;
+}
+
+export interface WorkPlanGoalPayload {
+  expectedResult?:    string;
+  indicator?:         string;
+  verificationMeans?: string;
+  quantitativeMeta?:  number;
+  networkAction?:     boolean;
+  executionSteps?:    string;
+  logoUrl?:           string;
+}
+
+export interface ApplicationPlanPayload {
+  linkedGoalId?: number;
+  linkedStepId?: number;
+  expenseItem:   string;
+  inKindPayment?: boolean;
+  expenseType:   string;
+  unit:          string;
+  quantity:      number;
+  unitValue:     number;
+  totalValue:    number;
+}
+
+export interface ReimbursementPayload {
+  installment:   number;
+  monthYear:     string;
+  value:         number;
+  linkedGoalId?: number;
+}
+
+export interface CreateWorkPlanPayload {
+  title:                 string;
+  instrumentType?:       string;
+  programNumber?:        string;
+  status?:               WorkPlanStatus;
+  proposalNumber?:       string;
+  object?:               string;
+  specificObjects?:      string;
+  executionLocation?:    string;
+  realityDescription?:   string;
+  partnershipObject?:    string;
+  targetAudience?:       string;
+  activityDescription?:  string;
+  startDate?:            string;
+  endDate?:              string;
+  repassValue?:          number;
+  mandatoryCounterpart?: number;
+  voluntaryCounterpart?: number;
+  globalValue?:          number;
+  adminExpensesValue?:   number;
+  teamWorkContent?:      string;
+  monitoringContent?:    string;
+  layout?:               unknown;
+  grantorId:             number;
+  projectId?:            number;
+  celebrante?:           OSCCelebrantePayload;
+  executada?:            OSCExecutadaPayload;
+  responsible?:          WorkPlanResponsiblePayload;
+  goals?:                WorkPlanGoalPayload[];
+  applicationPlans?:     ApplicationPlanPayload[];
+  reimbursements?:       ReimbursementPayload[];
+}

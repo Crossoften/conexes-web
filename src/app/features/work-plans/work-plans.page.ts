@@ -1,13 +1,14 @@
 // src/app/features/work-plans/work-plans.page.ts
 import { Component, inject, computed, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { WorkPlansStore } from './work-plans.store';
 import { WORK_PLAN_STATUS_CONFIG } from './work-plans.model';
 
 @Component({
   selector: 'app-work-plans',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, RouterLink],
   providers: [WorkPlansStore],
   templateUrl: './work-plans.page.html',
   styleUrl: './work-plans.page.scss',
