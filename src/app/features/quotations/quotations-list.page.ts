@@ -50,6 +50,9 @@ export class QuotationsListPage {
     (this.routeStage === 0 || this.routeStage === 2) && this.perms.isManager(),
   );
 
+  // Enviar para aprovação (Etapa 1 → 2): disponível a todos os perfis na Etapa 1.
+  readonly canSubmit = this.routeStage === 0;
+
   // Consultar/Duplicar/Excel disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
   readonly canExcel  = this.routeStage === 0 || this.routeStage === 2;
@@ -115,6 +118,7 @@ export class QuotationsListPage {
   // ── Handlers de ação ────────────────────────────────────────────────────────
   view(item: Quotation)    { this.store.openDetail(item.apiId); }
   edit(item: Quotation)    { this.router.navigate(['/quotations/edit', item.apiId]); }
+  submit(item: Quotation)  { this.store.submit(item.apiId); }
   approve(item: Quotation) { this.store.approve(item.apiId); }
   reject(item: Quotation)  { this.store.openAction('reject', item.apiId); }
   cancel(item: Quotation)  { this.store.openAction('cancel', item.apiId); }
