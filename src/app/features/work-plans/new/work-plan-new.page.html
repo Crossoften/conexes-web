@@ -1,0 +1,195 @@
+<div class="wp-builder">
+
+  <div class="wp-builder__topbar">
+    <div class="wp-builder__breadcrumb">
+      <span class="crumb">Concessores</span>
+      <span class="crumb crumb--active">/ Plano de Trabalho</span>
+    </div>
+    <div class="wp-builder__actions">
+      <button type="button" class="btn-outline btn-pill" disabled title="Em breve">Pré-visualizar</button>
+      <button type="button" class="btn-outline btn-pill" disabled title="Em breve">Exportar PDF</button>
+      <button type="button" class="btn-solid" [disabled]="loading()" (click)="save()">Salvar</button>
+    </div>
+  </div>
+
+  <h1 class="wp-builder__title">Novo plano de trabalho</h1>
+
+  <div class="wp-builder__body">
+
+    <!-- ── Paleta / índice ─────────────────────────────────────────────────── -->
+    <aside class="wp-palette">
+      @for (group of groups; track group.label) {
+        <div class="wp-palette__group">
+          <h3 class="wp-palette__group-title">{{ group.label }}</h3>
+          @for (def of group.blocks; track def.type) {
+            <button
+              type="button"
+              class="wp-palette__item"
+              [disabled]="def.unique && isUsed(def.type)"
+              (click)="addBlock(def)">
+              <div class="wp-palette__item-body">
+                <span class="wp-palette__item-title">{{ def.title }}</span>
+                <span class="wp-palette__item-desc">{{ def.description }}</span>
+              </div>
+              @if (def.unique) { <span class="wp-badge">Único</span> }
+            </button>
+          }
+        </div>
+      }
+    </aside>
+
+    <!-- ── Canvas ──────────────────────────────────────────────────────────── -->
+    <section class="wp-canvas">
+
+      <!-- Bloco-cabeçalho fixo -->
+      <div class="wp-block wp-block--fixed" [formGroup]="headerForm">
+        <div class="form-group">
+          <label>Título do plano<span class="req">*</span></label>
+          <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title"
+            [class.is-invalid]="headerForm.get('title')?.invalid && headerForm.get('title')?.touched">
+        </div>
+        <div class="wp-row-2">
+          <div class="form-group">
+            <label>Instituição / Órgão<span class="req">*</span></label>
+            <div class="select-wrap">
+              <select class="form-control" formControlName="grantorId"
+                [class.is-invalid]="headerForm.get('grantorId')?.invalid && headerForm.get('grantorId')?.touched">
+                <option value="">Selecione</option>
+                @for (g of grantors(); track g.id) { <option [value]="g.id">{{ refLabel(g) }}</option> }
+              </select>
+              <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Instrumento</label>
+            <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="instrumentType">
+          </div>
+        </div>
+      </div>
+
+      @if (blocks().length === 0) {
+        <div class="wp-empty">Clique nos blocos ao lado para montar o plano.</div>
+      }
+
+      @for (block of blocks(); track block.uid; let i = $index) {
+        <div class="wp-block"
+          (dragover)="$event.preventDefault()"
+          (drop)="onDrop(i)"
+          [formGroup]="formOf(block.uid)">
+
+          <div class="wp-block__header">
+            <span class="wp-block__handle" draggable="true" (dragstart)="onDragStart(i)" title="Arrastar para reordenar">⠿</span>
+            <span class="wp-block__title">{{ titleOf(block.type) }}</span>
+            <button type="button" class="wp-block__remove" (click)="removeBlock(block.uid)" aria-label="Remover bloco">×</button>
+          </div>
+
+          <div class="wp-block__body">
+
+            @switch (block.type) {
+
+              @case ('program') {
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nro do programa</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="programNumber"></div>
+                  <div class="form-group"><label>Tipo de instrumento</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="instrumentType"></div>
+                </div>
+              }
+
+              @case ('celebrante') {
+                <p class="wp-note">O sistema pode trazer dados pré-preenchidos conforme o cadastro da entidade.</p>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nome<span class="req">*</span></label><input type="text" class="form-control" formControlName="name"></div>
+                  <div class="form-group"><label>CNPJ<span class="req">*</span></label><input type="text" class="form-control" formControlName="cnpj"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>CEP</label><input type="text" class="form-control" formControlName="zipCode"></div>
+                  <div class="form-group"><label>Endereço</label><input type="text" class="form-control" placeholder="Rua/Cidade/Estado" formControlName="address"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nro</label><input type="text" class="form-control" formControlName="number"></div>
+                  <div class="form-group"><label>Complemento</label><input type="text" class="form-control" formControlName="complement"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Locais de atuação</label><input type="text" class="form-control" formControlName="actionLocations"></div>
+                  <div class="form-group"><label>Site</label><input type="text" class="form-control" formControlName="site"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nome representante</label><input type="text" class="form-control" formControlName="repName"></div>
+                  <div class="form-group"><label>Cargo</label><input type="text" class="form-control" formControlName="repJobTitle"></div>
+                </div>
+                <div class="wp-row-3">
+                  <div class="form-group"><label>RG</label><input type="text" class="form-control" formControlName="repRg"></div>
+                  <div class="form-group"><label>Órgão expedidor</label><input type="text" class="form-control" formControlName="repExpOrgan"></div>
+                  <div class="form-group"><label>CPF</label><input type="text" class="form-control" formControlName="repCpf"></div>
+                </div>
+              }
+
+              @case ('executada') {
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nome da OSC<span class="req">*</span></label><input type="text" class="form-control" formControlName="name"></div>
+                  <div class="form-group"><label>CNPJ<span class="req">*</span></label><input type="text" class="form-control" formControlName="cnpj"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>CEP</label><input type="text" class="form-control" formControlName="zipCode"></div>
+                  <div class="form-group"><label>Endereço</label><input type="text" class="form-control" placeholder="Rua/Cidade/Estado" formControlName="address"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nro</label><input type="text" class="form-control" formControlName="number"></div>
+                  <div class="form-group"><label>Complemento</label><input type="text" class="form-control" formControlName="complement"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nome representante</label><input type="text" class="form-control" formControlName="repName"></div>
+                  <div class="form-group"><label>Cargo</label><input type="text" class="form-control" formControlName="repJobTitle"></div>
+                </div>
+                <div class="wp-row-3">
+                  <div class="form-group"><label>RG</label><input type="text" class="form-control" formControlName="repRg"></div>
+                  <div class="form-group"><label>Órgão expedidor</label><input type="text" class="form-control" formControlName="repExpOrgan"></div>
+                  <div class="form-group"><label>CPF</label><input type="text" class="form-control" formControlName="repCpf"></div>
+                </div>
+              }
+
+              @case ('responsible') {
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Responsável<span class="req">*</span></label><input type="text" class="form-control" formControlName="name"></div>
+                  <div class="form-group"><label>Função na parceria</label><input type="text" class="form-control" formControlName="function"></div>
+                </div>
+                <div class="wp-row-3">
+                  <div class="form-group"><label>RG</label><input type="text" class="form-control" formControlName="rg"></div>
+                  <div class="form-group"><label>Órgão expedidor</label><input type="text" class="form-control" formControlName="expOrgan"></div>
+                  <div class="form-group"><label>CPF</label><input type="text" class="form-control" formControlName="cpf"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Telefone</label><input type="text" class="form-control" formControlName="phone"></div>
+                  <div class="form-group"><label>Email</label><input type="text" class="form-control" formControlName="email"></div>
+                </div>
+              }
+
+              @case ('plan-data') {
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Nro da proposta</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="proposalNumber"></div>
+                  <div class="form-group"><label>Objeto</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="object"></div>
+                </div>
+                <div class="form-group"><label>Objetivos Específicos</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="specificObjects"></textarea></div>
+                <div class="form-group"><label>Local de Execução</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="executionLocation"></textarea></div>
+                <div class="form-group"><label>Descrição da Realidade Objeto da Parceria</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="realityDescription"></textarea></div>
+                <div class="form-group"><label>Público-alvo</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="targetAudience"></textarea></div>
+                <div class="form-group"><label>Descrição da Atividade/Projeto</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="activityDescription"></textarea></div>
+                <div class="wp-row-3">
+                  <div class="form-group"><label>Data de Início</label><input type="date" class="form-control" formControlName="startDate"></div>
+                  <div class="form-group"><label>Data de Término</label><input type="date" class="form-control" formControlName="endDate"></div>
+                  <div class="form-group"><label>Valor de Repasse</label><input type="text" class="form-control" placeholder="R$ 0,00" formControlName="repassValue"></div>
+                </div>
+                <div class="wp-row-2">
+                  <div class="form-group"><label>Contrapartida</label><input type="text" class="form-control" placeholder="R$ 0,00" formControlName="mandatoryCounterpart"></div>
+                  <div class="form-group"><label>Valor Global</label><input type="text" class="form-control" placeholder="R$ 0,00" formControlName="globalValue"></div>
+                </div>
+              }
+
+            }
+
+          </div>
+        </div>
+      }
+
+    </section>
+  </div>
+</div>
