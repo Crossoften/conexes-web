@@ -59,35 +59,37 @@ export class WorkPlansService {
    * real for confirmado.
    */
   private toDashboard(raw: RawDashboard): WorkPlanDashboard {
-    const num = (...keys: string[]): string => {
-      for (const k of keys) {
-        const v = raw[k];
-        if (typeof v === 'number') return String(v);
-        if (typeof v === 'string' && v.trim() !== '') return v;
-      }
+    const stats = (raw['stats'] as Record<string, unknown> | undefined) ?? {};
+    const num = (key: string): string => {
+      const v = stats[key];
+      if (typeof v === 'number') return String(v);
+      if (typeof v === 'string' && v.trim() !== '') return v;
       return '0';
     };
 
     const metrics: WorkPlanMetric[] = [
-      { id: '1', label: 'Produtos em elaboração', value: num('inElaboration', 'draft', 'elaboration', 'drafts'), icon: 'cube',  color: 'purple' },
-      { id: '2', label: 'Aguardando aprovação',   value: num('awaitingApproval', 'awaiting', 'pending'),          icon: 'clock', color: 'blue'   },
-      { id: '3', label: 'Planos ativos',          value: num('activePlans', 'active', 'activeCount'),             icon: 'check', color: 'green'  },
-      { id: '4', label: 'Totais de propostas',    value: num('totalProposals', 'proposals', 'total'),            icon: 'trend', color: 'purple' },
+      { id: '1', label: 'Produtos em elaboração', value: num('inDevelopment'),    icon: 'cube',  color: 'purple' },
+      { id: '2', label: 'Aguardando aprovação',   value: num('awaitingApproval'), icon: 'clock', color: 'blue'   },
+      { id: '3', label: 'Planos ativos',          value: num('active'),           icon: 'check', color: 'green'  },
+      { id: '4', label: 'Totais de propostas',    value: num('totalProposals'),   icon: 'trend', color: 'purple' },
     ];
 
     return {
       metrics,
-      recentProposals: this.toSummary(raw['recentProposals'] ?? raw['proposals']),
-      recentPlans:     this.toSummary(raw['recentPlans'] ?? raw['activePlans'] ?? raw['plans']),
+      recentProposals: this.toSummary(raw['recentProposals']),
+      recentPlans:     this.toSummary(raw['activePlans'] ?? raw['recentPlans']),
     };
   }
 
   private toSummary(value: unknown): WorkPlanSummaryItem[] {
     if (!Array.isArray(value)) return [];
-    return value.map(r => ({
-      id:     Number((r as Record<string, unknown>)['id']),
-      title:  String((r as Record<string, unknown>)['title'] ?? '—'),
-      status: ((r as Record<string, unknown>)['status'] as WorkPlanSummaryItem['status']) ?? 'Draft',
-    }));
+    return value.map((r, i) => {
+      const row = r as Record<string, unknown>;
+      return {
+        id:     typeof row['id'] === 'number' ? (row['id'] as number) : i,
+        title:  String(row['title'] ?? '—'),
+        status: (row['status'] as WorkPlanSummaryItem['status']) ?? 'Draft',
+      };
+    });
   }
 }
