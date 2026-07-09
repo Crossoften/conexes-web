@@ -35,15 +35,13 @@ export interface WorkPlanDashboard {
 // ── Item da listagem (GET /v1/work-plans) ─────────────────────────────────────
 
 export interface WorkPlanListItem {
-  id:            number;
-  title:         string | null;
-  agency:        string | null;
-  startDate:     string | null;
-  transferValue: number | string | null;
-  team:          string | null;
-  receivedValue: number | string | null;
-  type:          string | null;
-  status:        WorkPlanStatus;
+  id:              number;
+  title:           string | null;
+  instrumentType:  string | null;
+  status:          WorkPlanStatus;
+  startDate:       string | null;
+  repassValue:     number | null;
+  grantor?:        { legalName?: string; tradeName?: string } | null;
 }
 
 /** ViewModel de linha da tabela (valores já formatados). */
