@@ -7,7 +7,7 @@
   <div class="card">
     
     <div class="card-header">
-      <h2 class="card-title">{{ partnershipId() ? 'Editar parceria' : 'Nova parceria' }}</h2>
+      <h2 class="card-title">{{ viewMode() ? 'Visualizar parceria' : (partnershipId() ? 'Editar parceria' : 'Nova parceria') }}</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
     </div>
 
@@ -62,7 +62,13 @@
             <div class="form-row grid-cols-4">
               <div class="form-group">
                 <label>Tipo de Contratualização</label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tipoContratualizacao">
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="tipoContratualizacao">
+                    <option value="">Selecione</option>
+                    @for (opt of contractingTypeOptions; track opt) { <option [value]="opt">{{ opt }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
               <div class="form-group">
                 <label>Gestor da Parceria</label>
@@ -70,6 +76,19 @@
               </div>
               <div class="form-group"><label>Data início</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataInicio"></div>
               <div class="form-group"><label>Data término</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataTermino"></div>
+            </div>
+
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Tipo de Validação do Lançamento de Despesas<span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="validationType" [class.is-invalid]="form.get('validationType')?.invalid && form.get('validationType')?.touched">
+                    <option value="">Selecione</option>
+                    @for (opt of validationOptions; track opt) { <option [value]="opt">{{ opt }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
             </div>
 
             <div class="form-row grid-cols-4">
@@ -98,9 +117,15 @@
             </div>
 
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Fonte de recursos Municipal</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="fonteRecursoMunicipal"></div>
-              <div class="form-group"><label>Fonte de recursos Estadual</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="fonteRecursoEstadual"></div>
-              <div class="form-group"><label>Fonte de recursos Federal</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="fonteRecursoFederal"></div>
+              <div class="form-group"><label>Fonte de recursos Municipal</label>
+                <div class="select-wrap"><select class="form-control" formControlName="fonteRecursoMunicipal"><option value="">Selecione</option>@for (opt of sourceOptions; track opt) { <option [value]="opt">{{ opt }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="form-group"><label>Fonte de recursos Estadual</label>
+                <div class="select-wrap"><select class="form-control" formControlName="fonteRecursoEstadual"><option value="">Selecione</option>@for (opt of sourceOptions; track opt) { <option [value]="opt">{{ opt }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="form-group"><label>Fonte de recursos Federal</label>
+                <div class="select-wrap"><select class="form-control" formControlName="fonteRecursoFederal"><option value="">Selecione</option>@for (opt of sourceOptions; track opt) { <option [value]="opt">{{ opt }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
             </div>
 
             <div class="form-row grid-cols-3">
@@ -160,7 +185,7 @@
                       <label>Valor</label>
                       <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
                     </div>
-                    <button type="button" class="icon-btn icon-btn--danger" title="Remover parcela" (click)="removePayable($index)" [disabled]="payables.length === 1">
+                    <button type="button" class="icon-btn icon-btn--danger" title="Remover parcela" (click)="removePayable($index)" [disabled]="payables.length === 1" [hidden]="viewMode()">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                   </div>
@@ -168,9 +193,11 @@
               }
             </div>
 
-            <div class="form-row grid-cols-1 mt-2">
-              <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar parcela</button>
-            </div>
+            @if (!viewMode()) {
+              <div class="form-row grid-cols-1 mt-2">
+                <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar parcela</button>
+              </div>
+            }
           </div>
         }
 
@@ -192,7 +219,7 @@
         Voltar
       </button>
 
-      <div class="footer-actions-right">
+      <div class="footer-actions-right" [hidden]="viewMode()">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>

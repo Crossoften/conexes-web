@@ -15,5 +15,10 @@ export const contractTransfersRoutes: Routes = [
   {
     path: ':id/edit',
     component: ContractTransferNewPage
+  },
+  {
+    path: ':id/view',
+    component: ContractTransferNewPage,
+    data: { view: true }
   }
 ];
