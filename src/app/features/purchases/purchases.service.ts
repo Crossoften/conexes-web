@@ -8,6 +8,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { RawListEnvelope, toPage } from '../../shared/utils/to-page';
 import {
   Page,
   PurchaseRef,
@@ -29,24 +30,6 @@ import {
   ChangeBuyerPayload,
   PurchaseRequestActionLog,
 } from './purchases.model';
-
-/**
- * Envelope de listagem aceito da API. O backend de compras responde
- * { data, count, pages }; outros módulos usam { data, total } ou array puro.
- */
-interface RawListEnvelope<T> {
-  data?: T[];
-  total?: number;
-  count?: number;
-  pages?: number;
-}
-
-/** Normaliza qualquer um dos formatos de listagem para { data, total }. */
-function toPage<T>(res: RawListEnvelope<T> | T[]): Page<T> {
-  if (Array.isArray(res)) return { data: res, total: res.length };
-  const data = res.data ?? [];
-  return { data, total: res.total ?? res.count ?? data.length };
-}
 
 @Injectable({ providedIn: 'root' })
 export class PurchasesService {
