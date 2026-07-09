@@ -10,5 +10,9 @@ export const workPlansRoutes: Routes = [
   {
     path: 'new',
     component: WorkPlanNewPage
+  },
+  {
+    path: ':id/edit',
+    component: WorkPlanNewPage
   }
 ];
