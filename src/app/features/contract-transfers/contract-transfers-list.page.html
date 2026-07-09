@@ -25,14 +25,7 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
-      <div class="select-wrap">
-        <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
-          @for (opt of typeOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-
-      <button class="btn-outline btn-pill">
+      <button class="btn-outline btn-pill" (click)="store.exportExcel()">
         Exportar
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -61,6 +54,21 @@
           </tr>
         </thead>
         <tbody>
+          @if (store.loading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr class="tr--skeleton"><td colspan="11"><div class="skeleton"></div></td></tr>
+            }
+          } @else if (store.error()) {
+            <tr><td class="td--empty" colspan="11">
+              <p class="empty-title">Erro ao carregar dados</p>
+              <span class="empty-desc">{{ store.error() }}</span>
+            </td></tr>
+          } @else if (store.pageItems().length === 0) {
+            <tr><td class="td--empty" colspan="11">
+              <p class="empty-title">Nenhum registro encontrado</p>
+              <span class="empty-desc">Tente ajustar os filtros aplicados</span>
+            </td></tr>
+          } @else {
           @for (item of store.pageItems(); track item.id) {
             <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)" [class.tr--expanded]="store.expandedIds().has(item.id)">
               <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
@@ -103,6 +111,7 @@
                 </td>
               </tr>
             }
+          }
           }
         </tbody>
       </table>

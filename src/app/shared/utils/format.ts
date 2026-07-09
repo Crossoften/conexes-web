@@ -7,3 +7,9 @@
 export function onlyDigits(value: string | null | undefined): string {
   return (value ?? '').replace(/\D/g, '');
 }
+
+/** Formata um número como moeda BRL. `null`/`undefined` → travessão. */
+export function formatBRL(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
