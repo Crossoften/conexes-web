@@ -184,6 +184,74 @@
                 </div>
               }
 
+              @case ('goals') {
+                <div class="form-group"><label>Resultado esperado</label><textarea class="form-control" rows="2" placeholder="Digite aqui..." formControlName="expectedResult"></textarea></div>
+                <div class="wp-row-3">
+                  <div class="form-group"><label>Indicador</label><input type="text" class="form-control" formControlName="indicator"></div>
+                  <div class="form-group"><label>Meios de Verificação</label><input type="text" class="form-control" formControlName="verificationMeans"></div>
+                  <div class="form-group"><label>Meta Quantitativa</label><input type="text" class="form-control" placeholder="0" formControlName="quantitativeMeta"></div>
+                </div>
+                <div class="form-group wp-narrow">
+                  <label>A meta terá atuação em rede?</label>
+                  <div class="select-wrap"><select class="form-control" formControlName="networkAction"><option value="Nao">Não</option><option value="Sim">Sim</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                </div>
+
+                <label class="wp-table-label">Etapas de Execução</label>
+                <div class="wp-table" formArrayName="executionSteps">
+                  <div class="wp-table__head wp-steps-grid"><span>Etapa</span><span>Local</span><span>Período</span><span>Data de Início</span><span>Data de Término</span><span></span></div>
+                  @for (row of steps(block.uid).controls; track $index) {
+                    <div class="wp-table__row wp-steps-grid" [formGroupName]="$index">
+                      <input type="text" class="form-control" formControlName="step">
+                      <input type="text" class="form-control" formControlName="place">
+                      <input type="text" class="form-control" formControlName="period">
+                      <input type="date" class="form-control" formControlName="startDate">
+                      <input type="date" class="form-control" formControlName="endDate">
+                      <button type="button" class="wp-row-remove" (click)="removeStep(block.uid, $index)" [disabled]="steps(block.uid).length === 1" aria-label="Remover">×</button>
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addStep(block.uid)">+ Adicionar Linha</button>
+              }
+
+              @case ('app-detailed') {
+                <label class="wp-table-label">Itens de despesa</label>
+                <div class="wp-table wp-table--scroll" formArrayName="items">
+                  <div class="wp-table__head wp-app-grid"><span>Meta Vinc.</span><span>Etapa Vinc.</span><span>Item de Despesa</span><span>Pgto Espécie</span><span>Tipo de Despesa</span><span>Unidade</span><span>Qtd</span><span>Vlr Unitário</span><span>Vlr Total</span><span></span></div>
+                  @for (row of appItems(block.uid).controls; track $index) {
+                    <div class="wp-table__row wp-app-grid" [formGroupName]="$index">
+                      <input type="text" class="form-control" formControlName="linkedGoal">
+                      <input type="text" class="form-control" formControlName="linkedStep">
+                      <input type="text" class="form-control" formControlName="expenseItem">
+                      <div class="select-wrap"><select class="form-control" formControlName="inKindPayment"><option value="Nao">Não</option><option value="Sim">Sim</option></select></div>
+                      <input type="text" class="form-control" formControlName="expenseType">
+                      <input type="text" class="form-control" formControlName="unit">
+                      <input type="text" class="form-control" formControlName="quantity">
+                      <input type="text" class="form-control" formControlName="unitValue">
+                      <input type="text" class="form-control" formControlName="totalValue">
+                      <button type="button" class="wp-row-remove" (click)="removeAppItem(block.uid, $index)" [disabled]="appItems(block.uid).length === 1" aria-label="Remover">×</button>
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addAppItem(block.uid)">+ Adicionar Linha</button>
+              }
+
+              @case ('disbursement') {
+                <label class="wp-table-label">Parcelas</label>
+                <div class="wp-table" formArrayName="installments">
+                  <div class="wp-table__head wp-disb-grid"><span>Parcela</span><span>Data</span><span>Valor</span><span>Meta Vinculada</span><span></span></div>
+                  @for (row of installments(block.uid).controls; track $index) {
+                    <div class="wp-table__row wp-disb-grid" [formGroupName]="$index">
+                      <input type="text" class="form-control" formControlName="installment" readonly>
+                      <input type="date" class="form-control" formControlName="dueDate">
+                      <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
+                      <input type="text" class="form-control" formControlName="linkedGoal">
+                      <button type="button" class="wp-row-remove" (click)="removeInstallment(block.uid, $index)" [disabled]="installments(block.uid).length === 1" aria-label="Remover">×</button>
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addInstallment(block.uid)">+ Adicionar Linha</button>
+              }
+
             }
 
           </div>

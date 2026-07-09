@@ -234,3 +234,62 @@ textarea.form-control { resize: vertical; }
 }
 
 .btn-pill { border-radius: 999px; }
+
+// ── Tabelas dinâmicas (FormArray) ─────────────────────────────────────────────
+
+.wp-narrow { max-width: 240px; }
+
+.wp-table-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin-top: 4px;
+}
+
+.wp-table {
+  border: 1px solid var(--surface-border, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.wp-table--scroll { overflow-x: auto; }
+
+.wp-table__head,
+.wp-table__row {
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.wp-table__head {
+  background: var(--surface-muted, #f9fafb);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  border-bottom: 1px solid var(--surface-border, #e5e7eb);
+}
+
+.wp-table__row + .wp-table__row { border-top: 1px solid var(--surface-border, #f1f5f9); }
+.wp-table__row .form-control { padding: 7px 9px; font-size: 12px; }
+
+.wp-steps-grid { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 28px; }
+.wp-disb-grid  { grid-template-columns: 80px 1fr 1fr 1fr 28px; }
+.wp-app-grid   { grid-template-columns: repeat(9, minmax(90px, 1fr)) 28px; min-width: 900px; }
+
+.wp-row-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted, #9ca3af);
+  &:hover:not(:disabled) { color: #dc2626; }
+  &:disabled { opacity: .35; cursor: not-allowed; }
+}
+
+.wp-add-row {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 7px 14px;
+}

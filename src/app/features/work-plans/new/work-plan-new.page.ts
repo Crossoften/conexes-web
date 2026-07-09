@@ -7,11 +7,12 @@
 
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { WorkPlansService } from '../work-plans.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import {
   WorkPlanRef,
+  WorkPlanGoalPayload,
   CreateWorkPlanPayload,
 } from '../work-plans.model';
 import {
@@ -28,6 +29,13 @@ function toNumber(value: unknown): number | undefined {
   const n = parseFloat(cleaned);
   return Number.isNaN(n) ? undefined : n;
 }
+
+interface StepRow { step: string; place: string; period: string; startDate: string; endDate: string; }
+interface AppItemRow {
+  linkedGoal: string; linkedStep: string; expenseItem: string; inKindPayment: string;
+  expenseType: string; unit: string; quantity: string; unitValue: string; totalValue: string;
+}
+interface InstallmentRow { installment: string | number; dueDate: string; value: string; linkedGoal: string; }
 
 /** Remove chaves com valor vazio/undefined de um objeto. */
 function pruneEmpty<T extends Record<string, unknown>>(obj: T): T {
@@ -192,7 +200,68 @@ export class WorkPlanNewPage implements OnInit {
           mandatoryCounterpart: [''],
           globalValue:         [''],
         });
+      case 'goals':
+        return this.fb.group({
+          expectedResult:    [''],
+          indicator:         [''],
+          verificationMeans: [''],
+          quantitativeMeta:  [''],
+          networkAction:     ['Nao'],
+          executionSteps:    this.fb.array([this.newStep()]),
+        });
+      case 'app-detailed':
+        return this.fb.group({
+          items: this.fb.array([this.newAppItem()]),
+        });
+      case 'disbursement':
+        return this.fb.group({
+          installments: this.fb.array([this.newInstallment(1)]),
+        });
     }
+  }
+
+  // ── Linhas de tabelas (FormArray) ─────────────────────────────────────────────
+
+  private newStep(): FormGroup {
+    return this.fb.group({ step: [''], place: [''], period: [''], startDate: [''], endDate: [''] });
+  }
+
+  private newAppItem(): FormGroup {
+    return this.fb.group({
+      linkedGoal:    [''],
+      linkedStep:    [''],
+      expenseItem:   [''],
+      inKindPayment: ['Nao'],
+      expenseType:   [''],
+      unit:          [''],
+      quantity:      [''],
+      unitValue:     [''],
+      totalValue:    [''],
+    });
+  }
+
+  private newInstallment(installment: number): FormGroup {
+    return this.fb.group({ installment: [installment], dueDate: [''], value: [''], linkedGoal: [''] });
+  }
+
+  steps(uid: number): FormArray        { return this.formOf(uid).get('executionSteps') as FormArray; }
+  appItems(uid: number): FormArray     { return this.formOf(uid).get('items') as FormArray; }
+  installments(uid: number): FormArray { return this.formOf(uid).get('installments') as FormArray; }
+
+  addStep(uid: number): void        { this.steps(uid).push(this.newStep()); }
+  removeStep(uid: number, i: number): void { this.steps(uid).removeAt(i); }
+
+  addAppItem(uid: number): void     { this.appItems(uid).push(this.newAppItem()); }
+  removeAppItem(uid: number, i: number): void { this.appItems(uid).removeAt(i); }
+
+  addInstallment(uid: number): void {
+    const arr = this.installments(uid);
+    arr.push(this.newInstallment(arr.length + 1));
+  }
+  removeInstallment(uid: number, i: number): void {
+    const arr = this.installments(uid);
+    arr.removeAt(i);
+    arr.controls.forEach((c, idx) => c.get('installment')?.setValue(idx + 1));
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────────
@@ -248,6 +317,49 @@ export class WorkPlanNewPage implements OnInit {
           payload.mandatoryCounterpart = toNumber(v.mandatoryCounterpart);
           payload.globalValue         = toNumber(v.globalValue);
           break;
+        case 'goals': {
+          const steps = (v.executionSteps as StepRow[])
+            .filter(s => s.step || s.place || s.period || s.startDate || s.endDate);
+          const goal = pruneEmpty({
+            expectedResult:    v.expectedResult,
+            indicator:         v.indicator,
+            verificationMeans: v.verificationMeans,
+            quantitativeMeta:  toNumber(v.quantitativeMeta),
+            networkAction:     v.networkAction === 'Sim',
+            executionSteps:    steps.length ? JSON.stringify(steps) : '',
+          }) as WorkPlanGoalPayload;
+          payload.goals = [...(payload.goals ?? []), goal];
+          break;
+        }
+        case 'app-detailed': {
+          const items = (v.items as AppItemRow[])
+            .filter(r => r.expenseItem || r.expenseType || r.quantity || r.totalValue)
+            .map(r => ({
+              linkedGoalId:  toNumber(r.linkedGoal),
+              linkedStepId:  toNumber(r.linkedStep),
+              expenseItem:   r.expenseItem,
+              inKindPayment: r.inKindPayment === 'Sim',
+              expenseType:   r.expenseType,
+              unit:          r.unit,
+              quantity:      toNumber(r.quantity) ?? 0,
+              unitValue:     toNumber(r.unitValue) ?? 0,
+              totalValue:    toNumber(r.totalValue) ?? 0,
+            }));
+          if (items.length) payload.applicationPlans = items;
+          break;
+        }
+        case 'disbursement': {
+          const rows = (v.installments as InstallmentRow[])
+            .filter(r => r.dueDate || r.value)
+            .map((r, idx) => ({
+              installment:  Number(r.installment) || idx + 1,
+              monthYear:    r.dueDate,
+              value:        toNumber(r.value) ?? 0,
+              linkedGoalId: toNumber(r.linkedGoal),
+            }));
+          if (rows.length) payload.reimbursements = rows;
+          break;
+        }
       }
     }
 
