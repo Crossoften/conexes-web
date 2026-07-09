@@ -10,7 +10,10 @@ export type BlockType =
   | 'celebrante'
   | 'responsible'
   | 'executada'
-  | 'plan-data';
+  | 'plan-data'
+  | 'goals'
+  | 'app-detailed'
+  | 'disbursement';
 
 export interface BlockDef {
   type:        BlockType;
@@ -43,7 +46,15 @@ export const BLOCK_GROUPS: BlockGroup[] = [
   {
     label: 'Plano de Trabalho',
     blocks: [
-      { type: 'plan-data', title: 'Dados do Plano de Trabalho', description: 'Informações principais do plano…', unique: true },
+      { type: 'plan-data', title: 'Dados do Plano de Trabalho',            description: 'Informações principais do plano…', unique: true },
+      { type: 'goals',     title: 'Metas, Indicadores e Cronograma',       description: 'Uma meta com indicadores e etapas…', unique: false },
+    ],
+  },
+  {
+    label: 'Financeiro',
+    blocks: [
+      { type: 'app-detailed', title: 'Plano de Aplicação Detalhado', description: 'Itens de despesa detalhados…',     unique: true },
+      { type: 'disbursement', title: 'Cronograma de Desembolso',     description: 'Parcelas de desembolso…',          unique: true },
     ],
   },
 ];
