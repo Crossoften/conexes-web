@@ -1,100 +1,221 @@
 // src/app/features/contract-transfers/new/contract-transfer-new.page.ts
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ContractTransfersService } from '../contract-transfers.service';
+import {
+  PartnershipPayload,
+  PartnershipRef,
+  PartnershipResponsiblePayload,
+  PartnershipAnnexPayload,
+  PartnershipStatus,
+} from '../contract-transfers.model';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 type ContractTab = 'DADOS' | 'CONTAS' | 'ANEXOS';
+
+/** Converte string monetária/numérica (pt-BR) em number; vazio → undefined. */
+function toNumber(value: unknown): number | undefined {
+  if (value == null || value === '') return undefined;
+  const cleaned = String(value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(cleaned);
+  return Number.isNaN(n) ? undefined : n;
+}
 
 @Component({
   selector: 'app-contract-transfer-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule],
   templateUrl: './contract-transfer-new.page.html',
   styleUrl: './contract-transfer-new.page.scss',
 })
-export class ContractTransferNewPage {
-  form: FormGroup;
+export class ContractTransferNewPage implements OnInit {
+  private fb     = inject(FormBuilder);
+  private router = inject(Router);
+  private svc    = inject(ContractTransfersService);
+  private notify = inject(NotificationService);
+
   activeTab: ContractTab = 'DADOS';
 
-  // Mock de anexos para a aba 3
-  anexos = [
-    { id: 1, nome: 'Anexo 1' },
-    { id: 2, nome: 'Anexo 2' }
+  readonly loading  = signal(false);
+  readonly grantors = signal<PartnershipRef[]>([]);
+  readonly entities = signal<PartnershipRef[]>([]);
+
+  readonly statusOptions: { label: string; value: PartnershipStatus }[] = [
+    { label: 'Ativo',    value: 'Active'   },
+    { label: 'Pendente', value: 'Pending'  },
+    { label: 'Inativo',  value: 'Inactive' },
   ];
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      // -- Aba 1: Dados Gerais --
-      concessor: ['', Validators.required],
-      entidade: ['', Validators.required],
-      
-      tipoContratualizacao: ['', Validators.required],
-      gestorParceria: ['', Validators.required],
-      dataInicio: [''],
-      dataTermino: [''],
+  form: FormGroup = this.fb.group({
+    // -- Aba 1: Dados Gerais --
+    title:                ['', Validators.required],
+    concessor:            ['', Validators.required], // grantorId
+    entidade:             ['', Validators.required], // entityId
 
-      dataAssinatura: [''],
-      nroProcessoAdmin: [''],
-      nroTermo: [''],
-      nroDispensa: [''],
+    tipoContratualizacao: [''],
+    gestorParceria:       [''],
+    dataInicio:           [''],
+    dataTermino:          [''],
 
-      dataImpressaoAnexo1: [''], dataLimite1: [''], tipoValidacao1: [''],
-      dataImpressaoAnexo2: [''], dataLimite2: [''], tipoValidacao2: [''],
+    dataAssinatura:       [''],
+    nroProcessoAdmin:     [''],
+    nroTermo:             [''],
+    nroDispensa:          [''],
 
-      valorRecursoMunicipal: [''], valorRecursoEstadual: [''], valorRecursoFederal: [''],
-      fonteRecursoMunicipal: [''], fonteRecursoEstadual: [''], fonteRecursoFederal: [''],
-      contaRecursoMunicipal: [''], contaRecursoEstadual: [''], contaRecursoFederal: [''],
+    dataImpressaoAnexo1:  [''], dataLimite1: [''], tipoValidacao1: [''],
+    dataImpressaoAnexo2:  [''], dataLimite2: [''], tipoValidacao2: [''],
 
-      valorTotal: [''],
-      objeto: [''],
+    valorRecursoMunicipal: [''], valorRecursoEstadual: [''], valorRecursoFederal: [''],
+    fonteRecursoMunicipal: [''], fonteRecursoEstadual: [''], fonteRecursoFederal: [''],
+    contaRecursoMunicipal: [''], contaRecursoEstadual: [''], contaRecursoFederal: [''],
 
-      ocultarPortal: [''],
-      qtdeDiasPrestacao: [''],
-      qtdeDiasAnalise: [''],
+    valorTotal:           [''],
+    objeto:               [''],
 
-      comissaoMonitoramento: [''],
-      leiAutorizadora: [''],
-      status: [''],
+    ocultarPortal:        ['Nao'],
+    qtdeDiasPrestacao:    [''],
+    qtdeDiasAnalise:      [''],
 
-      responsaveis: [''],
-      responsaveisFisc: [''],
-      secretaria: [''],
-      emendaParlamentar: [''],
+    comissaoMonitoramento: [''],
+    leiAutorizadora:       [''],
+    status:                ['Active' as PartnershipStatus],
 
-      // -- Aba 2: Inclusão contas a pagar --
-      parcelar: ['Sim', Validators.required],
-      parcelas: ['', Validators.required],
-      definirValorVencimento: [false],
-      
-      // Campos desabilitados por padrão (como no mockup)
-      parcelaDetalhe: [{ value: 'Exemplo', disabled: true }],
-      vencimentoDetalhe: [{ value: 'Exemplo', disabled: true }],
-      valorDetalhe: [{ value: 'Exemplo', disabled: true }]
+    responsaveis:         [''],
+    responsaveisFisc:     [''],
+    secretaria:           [''],
+    emendaParlamentar:    [''],
+
+    // -- Aba 2: Inclusão contas a pagar (parcelas) --
+    parcelar:             ['Sim'],
+    payables:             this.fb.array([this.newPayable(1)]),
+  });
+
+  ngOnInit(): void {
+    this.svc.getGrantorsLookup().subscribe({
+      next: rows => this.grantors.set(rows),
+      error: () => this.notify.error('Erro ao carregar órgãos concessores.'),
+    });
+    this.svc.getEntitiesLookup().subscribe({
+      next: rows => this.entities.set(rows),
+      error: () => this.notify.error('Erro ao carregar entidades.'),
     });
   }
 
-  setTab(tab: ContractTab) {
+  // ── Parcelas (payables) ─────────────────────────────────────────────────────
+
+  get payables(): FormArray {
+    return this.form.get('payables') as FormArray;
+  }
+
+  private newPayable(installment: number): FormGroup {
+    return this.fb.group({
+      installment: [installment],
+      dueDate:     [''],
+      value:       [''],
+    });
+  }
+
+  addPayable(): void {
+    this.payables.push(this.newPayable(this.payables.length + 1));
+  }
+
+  removePayable(index: number): void {
+    this.payables.removeAt(index);
+    // Renumera as parcelas restantes.
+    this.payables.controls.forEach((ctrl, i) => ctrl.get('installment')?.setValue(i + 1));
+  }
+
+  refLabel(ref: PartnershipRef): string {
+    return ref.legalName ?? ref.tradeName ?? ref.name ?? String(ref.id);
+  }
+
+  setTab(tab: ContractTab): void {
     this.activeTab = tab;
   }
 
-  resetForm() {
-    this.form.reset({
-      parcelar: 'Sim',
-      definirValorVencimento: false,
-      parcelaDetalhe: 'Exemplo',
-      vencimentoDetalhe: 'Exemplo',
-      valorDetalhe: 'Exemplo'
-    });
+  resetForm(): void {
+    this.form.reset({ ocultarPortal: 'Nao', status: 'Active', parcelar: 'Sim' });
+    this.payables.clear();
+    this.payables.push(this.newPayable(1));
     this.activeTab = 'DADOS';
   }
 
-  onSubmit() {
-    if (this.form.valid) {
-      console.log('Form data:', this.form.getRawValue());
-      // Lógica de salvamento
-    } else {
+  onSubmit(): void {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.notify.error('Preencha os campos obrigatórios (Título, Concessor e Entidade).');
+      return;
     }
+
+    const v = this.form.getRawValue();
+
+    const responsibles: PartnershipResponsiblePayload[] = [];
+    if (v.responsaveis)     responsibles.push({ type: 'Responsável',  name: v.responsaveis });
+    if (v.responsaveisFisc) responsibles.push({ type: 'Fiscalização', name: v.responsaveisFisc });
+
+    const annexes: PartnershipAnnexPayload[] = [];
+    const a1 = { printDate: v.dataImpressaoAnexo1 || undefined, deadlineDate: v.dataLimite1 || undefined, validationType: v.tipoValidacao1 || undefined };
+    const a2 = { printDate: v.dataImpressaoAnexo2 || undefined, deadlineDate: v.dataLimite2 || undefined, validationType: v.tipoValidacao2 || undefined };
+    if (a1.printDate || a1.deadlineDate || a1.validationType) annexes.push(a1);
+    if (a2.printDate || a2.deadlineDate || a2.validationType) annexes.push(a2);
+
+    const payables = (v.payables as { installment: number; dueDate: string; value: string }[])
+      .filter(p => p.dueDate || p.value)
+      .map((p, i) => ({
+        installment: Number(p.installment) || i + 1,
+        dueDate:     p.dueDate,
+        value:       toNumber(p.value) ?? 0,
+      }));
+
+    const payload: PartnershipPayload = {
+      title:                 v.title,
+      manager:               v.gestorParceria      || undefined,
+      startDate:             v.dataInicio          || undefined,
+      endDate:               v.dataTermino         || undefined,
+      signatureDate:         v.dataAssinatura      || undefined,
+      adminProcessNumber:    v.nroProcessoAdmin    || undefined,
+      termNumber:            v.nroTermo            || undefined,
+      dispensationNumber:    v.nroDispensa         || undefined,
+      municipalValue:        toNumber(v.valorRecursoMunicipal),
+      stateValue:            toNumber(v.valorRecursoEstadual),
+      federalValue:          toNumber(v.valorRecursoFederal),
+      municipalSource:       v.fonteRecursoMunicipal || undefined,
+      stateSource:           v.fonteRecursoEstadual  || undefined,
+      federalSource:         v.fonteRecursoFederal   || undefined,
+      municipalAccount:      v.contaRecursoMunicipal || undefined,
+      stateAccount:          v.contaRecursoEstadual  || undefined,
+      federalAccount:        v.contaRecursoFederal   || undefined,
+      totalValue:            toNumber(v.valorTotal),
+      object:                v.objeto              || undefined,
+      hideTransparency:      v.ocultarPortal === 'Sim',
+      accountRenderingQty:   toNumber(v.qtdeDiasPrestacao),
+      analysisDaysQty:       toNumber(v.qtdeDiasAnalise),
+      monitoringCommission:  v.comissaoMonitoramento || undefined,
+      authorizedLaw:         v.leiAutorizadora     || undefined,
+      parliamentaryExemplar: v.emendaParlamentar   || undefined,
+      status:                v.status as PartnershipStatus,
+      contractingType:       v.tipoContratualizacao || undefined,
+      department:            v.secretaria          || undefined,
+      grantorId:             Number(v.concessor),
+      entityId:              Number(v.entidade),
+      responsibles,
+      payables,
+      annexes:               annexes.length ? annexes : undefined,
+    };
+
+    this.loading.set(true);
+    this.svc.create(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.notify.success('Parceria cadastrada com sucesso.');
+        this.router.navigate(['/contract-transfers']);
+      },
+      error: err => {
+        this.loading.set(false);
+        const raw = err?.error?.message ?? 'Erro ao salvar parceria. Tente novamente.';
+        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+      },
+    });
   }
 }

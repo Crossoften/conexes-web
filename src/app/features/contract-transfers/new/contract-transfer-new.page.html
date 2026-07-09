@@ -29,25 +29,44 @@
         @if (activeTab === 'DADOS') {
           <div class="form-grid">
             
+            <div class="form-row grid-cols-1">
+              <div class="form-group">
+                <label>Título da parceria<span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Ex.: Termo de Fomento 045/2024" formControlName="title" [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched">
+              </div>
+            </div>
+
             <div class="form-row grid-cols-2">
               <div class="form-group">
                 <label>Concessor<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="concessor" [class.is-invalid]="form.get('concessor')?.invalid && form.get('concessor')?.touched">
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="concessor" [class.is-invalid]="form.get('concessor')?.invalid && form.get('concessor')?.touched">
+                    <option value="">Selecione</option>
+                    @for (g of grantors(); track g.id) { <option [value]="g.id">{{ refLabel(g) }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
               <div class="form-group">
                 <label>Entidade<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Informe CNPJ ou Razão Social" formControlName="entidade" [class.is-invalid]="form.get('entidade')?.invalid && form.get('entidade')?.touched">
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="entidade" [class.is-invalid]="form.get('entidade')?.invalid && form.get('entidade')?.touched">
+                    <option value="">Selecione</option>
+                    @for (e of entities(); track e.id) { <option [value]="e.id">{{ refLabel(e) }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
             </div>
 
             <div class="form-row grid-cols-4">
               <div class="form-group">
-                <label>Tipo de Contratualização<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="tipoContratualizacao" [class.is-invalid]="form.get('tipoContratualizacao')?.invalid && form.get('tipoContratualizacao')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Tipo de Contratualização</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tipoContratualizacao">
               </div>
               <div class="form-group">
-                <label>Gestor da Parceria<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="gestorParceria" [class.is-invalid]="form.get('gestorParceria')?.invalid && form.get('gestorParceria')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Gestor da Parceria</label>
+                <input type="text" class="form-control" placeholder="Nome do gestor" formControlName="gestorParceria">
               </div>
               <div class="form-group"><label>Data início</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataInicio"></div>
               <div class="form-group"><label>Data término</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataTermino"></div>
@@ -96,7 +115,7 @@
             </div>
 
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Ocultar do portal da transparência</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="ocultarPortal"></div>
+              <div class="form-group"><label>Ocultar do portal da transparência</label><div class="select-wrap"><select class="form-control" formControlName="ocultarPortal"><option value="Nao">Não</option><option value="Sim">Sim</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
               <div class="form-group"><label>Qtde dias prestação de contas</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="qtdeDiasPrestacao"></div>
               <div class="form-group"><label>Qtde dias analise</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="qtdeDiasAnalise"></div>
             </div>
@@ -104,7 +123,7 @@
             <div class="form-row grid-cols-3">
               <div class="form-group"><label>Comissão de Monitoramento e Avaliação</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="comissaoMonitoramento"></div>
               <div class="form-group"><label>Lei Autorizadora</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="leiAutorizadora"></div>
-              <div class="form-group"><label>Status</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="status"></div>
+              <div class="form-group"><label>Status</label><div class="select-wrap"><select class="form-control" formControlName="status">@for (opt of statusOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
             </div>
 
             <div class="form-row grid-cols-4">
@@ -120,52 +139,48 @@
           <div class="form-grid">
             <div class="form-row grid-cols-3 align-items-end">
               <div class="form-group">
-                <label>Parcelar<span class="req">*</span></label>
+                <label>Parcelar</label>
                 <div class="select-wrap"><select class="form-control" formControlName="parcelar"><option value="Sim">Sim</option><option value="Nao">Não</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="form-group">
-                <label>Parcelas<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="parcelas" [class.is-invalid]="form.get('parcelas')?.invalid && form.get('parcelas')?.touched"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="form-group" style="padding-bottom: 12px;">
-                <label class="checkbox-inline">
-                  <div class="checkbox">
-                    <input type="checkbox" class="checkbox__input" formControlName="definirValorVencimento">
-                    <span class="checkbox__box"></span>
-                  </div>
-                  Definir valor e vencimento
-                </label>
               </div>
             </div>
 
-            <div class="form-row grid-cols-3 mt-2">
-              <div class="form-group">
-                <label>Parcela</label>
-                <input type="text" class="form-control disabled-bg" formControlName="parcelaDetalhe">
-              </div>
-              <div class="form-group">
-                <label>Vencimento</label>
-                <input type="text" class="form-control disabled-bg" formControlName="vencimentoDetalhe">
-              </div>
-              <div class="form-group">
-                <label>Valor</label>
-                <input type="text" class="form-control disabled-bg" formControlName="valorDetalhe">
-              </div>
+            <div formArrayName="payables">
+              @for (row of payables.controls; track $index) {
+                <div class="form-row grid-cols-3 mt-2 align-items-end" [formGroupName]="$index">
+                  <div class="form-group">
+                    <label>Parcela</label>
+                    <input type="text" class="form-control disabled-bg" formControlName="installment" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label>Vencimento</label>
+                    <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dueDate">
+                  </div>
+                  <div class="form-group" style="display:flex; gap:8px; align-items:flex-end;">
+                    <div style="flex:1;">
+                      <label>Valor</label>
+                      <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
+                    </div>
+                    <button type="button" class="icon-btn icon-btn--danger" title="Remover parcela" (click)="removePayable($index)" [disabled]="payables.length === 1">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="form-row grid-cols-1 mt-2">
+              <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar parcela</button>
             </div>
           </div>
         }
 
         @if (activeTab === 'ANEXOS') {
           <div class="attachments-list">
-            @for (anexo of anexos; track anexo.id) {
-              <div class="attachment-card">
-                <span class="attachment-name">{{ anexo.nome }}</span>
-                <button type="button" class="btn-outline btn-outline--sm">
-                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  Download
-                </button>
-              </div>
-            }
+            <p style="padding: 16px; font-size: 13px; color: var(--text-muted);">
+              Os dados dos anexos (data de impressão, data limite e tipo de validação) são
+              preenchidos na aba <strong>Dados gerais</strong>. O upload de arquivos será
+              habilitado após salvar a parceria.
+            </p>
           </div>
         }
 
