@@ -74,8 +74,8 @@
                     <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></label></td>
                     <td class="td td--name">{{ item.title }}</td>
                     <td class="td">
-                      <span class="status-badge" [ngClass]="'status-badge--' + proposalStatusConfig[item.status].variant">
-                        {{ proposalStatusConfig[item.status].label }}
+                      <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">
+                        {{ statusConfig[item.status].label }}
                       </span>
                     </td>
                   </tr>
@@ -105,7 +105,7 @@
                     <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></label></td>
                     <td class="td td--name">{{ item.title }}</td>
                     <td class="td">
-                      <span class="status-badge status-badge--success">{{ planStatusConfig[item.status].label }}</span>
+                      <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">{{ statusConfig[item.status].label }}</span>
                     </td>
                   </tr>
                 }
@@ -130,14 +130,7 @@
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
 
-        <div class="select-wrap">
-          <select class="select select--pill" [value]="store.filters().instrument" (change)="store.setInstrument($any($event.target).value)">
-            @for (opt of instrumentOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-          </select>
-          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-
-        <button class="btn-outline btn-pill">
+        <button class="btn-outline btn-pill" (click)="store.exportExcel()">
           Exportar
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
         </button>
@@ -165,6 +158,21 @@
             </tr>
           </thead>
           <tbody>
+            @if (store.loading()) {
+              @for (i of [1,2,3,4,5]; track i) {
+                <tr class="tr--skeleton"><td colspan="10"><div class="skeleton"></div></td></tr>
+              }
+            } @else if (store.error()) {
+              <tr><td class="td--empty" colspan="10">
+                <p class="empty-title">Erro ao carregar dados</p>
+                <span class="empty-desc">{{ store.error() }}</span>
+              </td></tr>
+            } @else if (store.pageItems().length === 0) {
+              <tr><td class="td--empty" colspan="10">
+                <p class="empty-title">Nenhum registro encontrado</p>
+                <span class="empty-desc">Tente ajustar os filtros aplicados</span>
+              </td></tr>
+            } @else {
             @for (item of store.pageItems(); track item.id) {
               <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
                 <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
@@ -176,20 +184,9 @@
                 <td class="td">{{ item.receivedValue }}</td>
                 <td class="td"><span class="type-badge">{{ item.type }}</span></td>
                 <td class="td">
-                  @if (isProposal(item)) {
-                    <span class="status-badge" [ngClass]="'status-badge--' + proposalStatusConfig[item.status].variant">
-                      @if (item.status === 'ANALYSIS') {
-                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                      } @else {
-                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                      }
-                      {{ proposalStatusConfig[item.status].label }}
-                    </span>
-                  }
-                  @if (isPlan(item)) {
-                    <span class="status-badge status-badge--success">
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      {{ planStatusConfig[item.status].label }}
+                  @if (item.status) {
+                    <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">
+                      {{ statusConfig[item.status].label }}
                     </span>
                   }
                 </td>
@@ -200,6 +197,7 @@
                   </div>
                 </td>
               </tr>
+            }
             }
           </tbody>
         </table>
