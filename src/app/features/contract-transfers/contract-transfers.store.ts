@@ -1,7 +1,7 @@
 // src/app/features/contract-transfers/contract-transfers.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
 import {
-  Partnership,
+  PartnershipListItem,
   PartnershipRow,
   PartnershipStatus,
 } from './contract-transfers.model';
@@ -10,7 +10,7 @@ import { NotificationService } from '../../shared/services/notification.service'
 import { formatBRL } from '../../shared/utils/format';
 
 interface State {
-  items:       Partnership[];
+  items:       PartnershipListItem[];
   total:       number;
   loading:     boolean;
   error:       string | null;
@@ -200,17 +200,17 @@ export class ContractTransfersStore {
 
   // ── Mapper ──────────────────────────────────────────────────────────────────
 
-  private toRow(p: Partnership): PartnershipRow {
+  private toRow(p: PartnershipListItem): PartnershipRow {
     return {
       id:            p.id,
-      displayId:     p.termNumber ?? String(p.id),
-      client:        p.entity?.legalName ?? p.entity?.tradeName ?? p.grantor?.legalName ?? '—',
-      contractName:  p.title || '—',
-      contractCode:  p.termNumber ?? '—',
-      description:   p.object ?? '—',
-      approvedValue: formatBRL(p.totalValue),
-      receivedValue: formatBRL(p.receivedValue),
-      balance:       formatBRL(p.balanceValue),
+      displayId:     String(p.id),
+      client:        p.client       ?? '—',
+      contractName:  p.contractName ?? '—',
+      contractCode:  p.contractCode ?? '—',
+      description:   p.description  ?? '—',
+      approvedValue: formatBRL(p.approvedValue),
+      receivedValue: '—',
+      balance:       '—',
       status:        p.status ?? '',
     };
   }
