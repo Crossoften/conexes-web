@@ -190,12 +190,12 @@
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     }
-                    @if (canApprove) {
+                    @if (canApprove()) {
                       <button class="icon-btn icon-btn--ok" title="Aprovar" (click)="approve(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     }
-                    @if (canReject) {
+                    @if (canReject()) {
                       <button class="icon-btn icon-btn--danger" title="Reprovar" (click)="reject(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                       </button>
@@ -210,7 +210,7 @@
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
                       </button>
                     }
-                    @if (canCancel) {
+                    @if (canCancel()) {
                       <button class="icon-btn icon-btn--danger" title="Cancelar" (click)="cancel(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                       </button>

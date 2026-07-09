@@ -19,28 +19,32 @@ interface LoginResponse {
 }
 
 interface MySelfResponse {
-  id:        number;
-  name:      string;
-  email:     string;
-  phone:     string;
-  code:      string;
-  role:      string;
-  status:    string;
-  createdAt: string;
-  updatedAt: string;
+  id:            number;
+  name:          string;
+  email:         string;
+  phone:         string;
+  code:          string;
+  role:          string;
+  status:        string;
+  createdAt:     string;
+  updatedAt:     string;
+  /** Papéis de alçada de compras derivados de /approval-limits (Swagger). */
+  purchaseRoles?: string[];
 }
 
 // ── Model interno do front ────────────────────────────────────────────────────
 
 export interface AuthUser {
-  id:     string;
-  name:   string;
-  email:  string;
-  phone:  string;
-  code:   string;
-  role:   string;
-  status: string;
-  avatar: string | null;
+  id:            string;
+  name:          string;
+  email:         string;
+  phone:         string;
+  code:          string;
+  role:          string;
+  status:        string;
+  avatar:        string | null;
+  /** Papéis de alçada de compras (vazio quando o usuário não tem alçadas). */
+  purchaseRoles: string[];
 }
 
 // ── Chaves do localStorage ────────────────────────────────────────────────────
@@ -90,14 +94,15 @@ export class AuthService {
 
     // 4. Monta o model interno e persiste
     const user: AuthUser = {
-      id:     String(me.id),
-      name:   me.name,
-      email:  me.email,
-      phone:  me.phone,
-      code:   me.code,
-      role:   me.role,
-      status: me.status,
-      avatar: null,
+      id:            String(me.id),
+      name:          me.name,
+      email:         me.email,
+      phone:         me.phone,
+      code:          me.code,
+      role:          me.role,
+      status:        me.status,
+      avatar:        null,
+      purchaseRoles: me.purchaseRoles ?? [],
     };
 
     this._user.set(user);

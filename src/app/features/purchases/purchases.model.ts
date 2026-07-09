@@ -22,6 +22,19 @@ export type PurchaseRequestStatus =
 
 export type QuotationStatus = 'Pending' | 'Sent' | 'Approved' | 'Rejected';
 
+/**
+ * Papéis de alçada de compras (Swagger: purchaseRole / purchaseRoles).
+ * Vêm das Alçadas de aprovação (/v1/approval-limits) e são refletidos em /my-self.
+ */
+export type PurchaseRole =
+  | 'Requester'
+  | 'Buyer'
+  | 'RequestSupervisor'
+  | 'PurchaseSupervisor'
+  | 'InvoiceReceiver'
+  | 'Finance'
+  | 'Manager';
+
 export type PurchaseContractStatus = 'Active' | 'Pending' | 'Inactive';
 
 // ── Config de status para UI (badges) ─────────────────────────────────────────

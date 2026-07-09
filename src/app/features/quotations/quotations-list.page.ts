@@ -8,6 +8,7 @@ import { Quotation, REQ_STATUS_CONFIG } from './quotations.model';
 import { PurchaseRequestStatus, PurchaseActionKind, PurchaseActionResult } from '../purchases/purchases.model';
 import { PurchaseRequestDetailModalComponent } from '../purchases/components/purchase-request-detail.modal';
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
+import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 
 @Component({
   selector: 'app-quotations-list',
@@ -21,6 +22,7 @@ export class QuotationsListPage {
   readonly store     = inject(QuotationsStore);
   readonly route     = inject(ActivatedRoute);
   private  router     = inject(Router);
+  readonly perms     = inject(PurchasePermissionsService);
   readonly reqConfig = REQ_STATUS_CONFIG;
 
   /** 0..5 = Etapas 1..6; 6 = Histórico. */
@@ -28,14 +30,25 @@ export class QuotationsListPage {
 
   readonly sectionTitle = computed(() => this.route.snapshot.data['title'] ?? 'Requisições');
 
-  // ── Ações disponíveis por etapa (conforme fluxo de compras) ────────────────
-  readonly canApprove = this.routeStage === 1 || this.routeStage === 3; // Etapas 2 e 4
-  readonly canReject  = this.routeStage === 1 || this.routeStage === 3;
-  readonly canCancel  = this.routeStage === 0 || this.routeStage === 2; // Etapas 1 e 3
-  readonly canCopy    = this.routeStage === 0 || this.routeStage === 2;
-  readonly canExcel   = this.routeStage === 0 || this.routeStage === 2;
-  readonly canDelete  = this.routeStage === 0;                          // Etapa 1 (rascunho)
-  readonly canEdit    = this.routeStage === 0;                          // Etapa 1
+  // ── Ações disponíveis por etapa × papel de compras ─────────────────────────
+  // Aprovar/Reprovar: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
+  // = Supervisor de Compras. Gestor sempre pode. (Backend valida a alçada por valor.)
+  readonly canApprove = computed(() =>
+    (this.routeStage === 1 && (this.perms.isRequestSupervisor()  || this.perms.isManager())) ||
+    (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager())),
+  );
+  readonly canReject = this.canApprove;
+
+  // Cancelar: ação administrativa exclusiva do Gestor (nas etapas onde já aparecia).
+  readonly canCancel = computed(() =>
+    (this.routeStage === 0 || this.routeStage === 2) && this.perms.isManager(),
+  );
+
+  // Consultar/Duplicar/Excel disponíveis a todos, conforme a etapa.
+  readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
+  readonly canExcel  = this.routeStage === 0 || this.routeStage === 2;
+  readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
+  readonly canEdit   = this.routeStage === 0;                          // Etapa 1
 
   readonly statusOptions: { label: string; value: PurchaseRequestStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
