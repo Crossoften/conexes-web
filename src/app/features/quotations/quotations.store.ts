@@ -233,6 +233,11 @@ export class QuotationsStore {
     });
   }
 
+  /** Etapa 1 → 2: envia a requisição para aprovação. */
+  submit(apiId: number): void {
+    this.svc.submitRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+  }
+
   approve(apiId: number): void {
     this.svc.approveRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
   }
