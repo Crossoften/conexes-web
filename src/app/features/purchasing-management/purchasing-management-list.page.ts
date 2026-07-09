@@ -8,6 +8,7 @@ import { RouterLink } from "@angular/router";
 import { PurchaseRequestDetailModalComponent } from '../purchases/components/purchase-request-detail.modal';
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
 import { PurchaseActionKind, PurchaseActionResult } from '../purchases/purchases.model';
+import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 
 @Component({
   selector: 'app-purchasing-management-list',
@@ -19,6 +20,7 @@ import { PurchaseActionKind, PurchaseActionResult } from '../purchases/purchases
 })
 export class PurchasingManagementListPage {
   readonly store = inject(PurchasingManagementStore);
+  readonly perms = inject(PurchasePermissionsService);
   readonly statusConfig = REQ_STATUS_CONFIG;
 
   constructor() {
