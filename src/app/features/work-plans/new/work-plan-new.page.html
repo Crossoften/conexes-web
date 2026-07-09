@@ -252,6 +252,84 @@
                 <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addInstallment(block.uid)">+ Adicionar Linha</button>
               }
 
+              @case ('app-summary') {
+                <div class="wp-summary">
+                  <div class="wp-summary__item"><span>Repasse</span><strong>{{ fmt(summaryRepass()) }}</strong></div>
+                  <div class="wp-summary__item"><span>Contrapartida Obrigatória</span><strong>{{ fmt(summaryMandatory()) }}</strong></div>
+                  <div class="wp-summary__item"><span>Total de despesas (itens)</span><strong>{{ fmt(summaryItemsTotal()) }}</strong></div>
+                  <div class="wp-summary__item"><span>Total Geral</span><strong>{{ fmt(summaryGlobal()) }}</strong></div>
+                </div>
+                <p class="wp-hint">Valores calculados a partir de "Dados do Plano de Trabalho" e "Plano de Aplicação Detalhado".</p>
+              }
+
+              @case ('team') {
+                <label class="wp-table-label">Membros da Equipe</label>
+                <div class="wp-table" formArrayName="members">
+                  <div class="wp-table__head wp-team-grid"><span>Nome</span><span>Atribuição</span><span>Mini currículo</span><span></span></div>
+                  @for (row of members(block.uid).controls; track $index) {
+                    <div class="wp-table__row wp-team-grid" [formGroupName]="$index">
+                      <input type="text" class="form-control" formControlName="name">
+                      <input type="text" class="form-control" formControlName="role">
+                      <input type="text" class="form-control" formControlName="miniCv">
+                      <button type="button" class="wp-row-remove" (click)="removeMember(block.uid, $index)" [disabled]="members(block.uid).length === 1" aria-label="Remover">×</button>
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addMember(block.uid)">+ Adicionar Linha</button>
+              }
+
+              @case ('monitoring') {
+                <label class="wp-table-label">Ações de Monitoramento</label>
+                <div class="wp-table wp-table--scroll" formArrayName="actions">
+                  <div class="wp-table__head wp-mon-grid"><span>Ação ou Meta</span><span>Informações Necessárias</span><span>Procedimento de Coleta</span><span>Data de Coleta</span><span>Responsável</span><span></span></div>
+                  @for (row of actions(block.uid).controls; track $index) {
+                    <div class="wp-table__row wp-mon-grid" [formGroupName]="$index">
+                      <input type="text" class="form-control" formControlName="goalOrAction">
+                      <input type="text" class="form-control" formControlName="requiredInfo">
+                      <input type="text" class="form-control" formControlName="collectionProcedure">
+                      <input type="date" class="form-control" formControlName="collectionDate">
+                      <input type="text" class="form-control" formControlName="responsible">
+                      <button type="button" class="wp-row-remove" (click)="removeAction(block.uid, $index)" [disabled]="actions(block.uid).length === 1" aria-label="Remover">×</button>
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addAction(block.uid)">+ Adicionar Linha</button>
+              }
+
+              @case ('free-text') {
+                <div class="form-group"><label>Título da Seção<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title"></div>
+                <div class="form-group"><label>Conteúdo</label><textarea class="form-control" rows="4" placeholder="Digite aqui..." formControlName="content"></textarea></div>
+              }
+
+              @case ('free-table') {
+                <div class="form-group"><label>Título da tabela<span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title"></div>
+                <label class="wp-table-label">Dados</label>
+                <div class="wp-table wp-table--scroll">
+                  <div class="wp-freetable__cols" formArrayName="columns">
+                    @for (col of freeColumns(block.uid).controls; track $index) {
+                      <div class="wp-freetable__col" [formGroupName]="$index">
+                        <input type="text" class="form-control" formControlName="name">
+                        <button type="button" class="wp-row-remove" (click)="removeColumn(block.uid, $index)" [disabled]="freeColumns(block.uid).length === 1" aria-label="Remover coluna">×</button>
+                      </div>
+                    }
+                    <button type="button" class="wp-col-add" (click)="addColumn(block.uid)" title="Adicionar coluna">+</button>
+                  </div>
+                  <div formArrayName="rows">
+                    @for (row of freeRows(block.uid).controls; track $index) {
+                      <div class="wp-freetable__row" [formGroupName]="$index">
+                        <div class="wp-freetable__cells" formArrayName="cells">
+                          @for (cell of rowCells(row).controls; track $index) {
+                            <input type="text" class="form-control" [formControlName]="$index">
+                          }
+                        </div>
+                        <button type="button" class="wp-row-remove" (click)="removeFreeRow(block.uid, $index)" [disabled]="freeRows(block.uid).length === 1" aria-label="Remover linha">×</button>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <button type="button" class="btn-outline btn-pill wp-add-row" (click)="addFreeRow(block.uid)">+ Adicionar Linha</button>
+              }
+
             }
 
           </div>
