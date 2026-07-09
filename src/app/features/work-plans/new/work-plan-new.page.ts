@@ -6,7 +6,7 @@
 // do plano. Metas/Financeiro/Monitoramento/Blocos Livres + Preview/PDF nos próximos.
 
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { WorkPlansService } from '../work-plans.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -14,6 +14,7 @@ import { formatBRL } from '../../../shared/utils/format';
 import {
   WorkPlanRef,
   WorkPlanGoalPayload,
+  WorkPlanDetail,
   CreateWorkPlanPayload,
 } from '../work-plans.model';
 import {
@@ -59,12 +60,14 @@ function pruneEmpty<T extends Record<string, unknown>>(obj: T): T {
 export class WorkPlanNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   private svc    = inject(WorkPlansService);
   private notify = inject(NotificationService);
 
   readonly groups   = BLOCK_GROUPS;
   readonly grantors = signal<WorkPlanRef[]>([]);
   readonly loading  = signal(false);
+  readonly planId   = signal<number | null>(null);
 
   /** Blocos ativos no canvas (ordem). */
   readonly blocks = signal<BlockInstance[]>([]);
@@ -86,6 +89,16 @@ export class WorkPlanNewPage implements OnInit {
       next: rows => this.grantors.set(rows),
       error: () => this.notify.error('Erro ao carregar órgãos concessores.'),
     });
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      const id = Number(idParam);
+      this.planId.set(id);
+      this.svc.getById(id).subscribe({
+        next: detail => this.hydrate(detail),
+        error: () => this.notify.error('Erro ao carregar o plano de trabalho.'),
+      });
+    }
   }
 
   // ── Paleta ──────────────────────────────────────────────────────────────────
@@ -96,9 +109,14 @@ export class WorkPlanNewPage implements OnInit {
 
   addBlock(def: BlockDef): void {
     if (def.unique && this.isUsed(def.type)) return;
+    this.pushBlock(def.type);
+  }
+
+  private pushBlock(type: BlockType): number {
     const uid = ++this.uidSeq;
-    this.forms.set(uid, this.createForm(def.type));
-    this.blocks.update(list => [...list, { uid, type: def.type }]);
+    this.forms.set(uid, this.createForm(type));
+    this.blocks.update(list => [...list, { uid, type }]);
+    return uid;
   }
 
   removeBlock(uid: number): void {
@@ -351,6 +369,162 @@ export class WorkPlanNewPage implements OnInit {
     });
   }
 
+  // ── Edição: reconstrução dos blocos a partir da entidade ──────────────────────
+
+  private str(v: unknown): string { return v == null ? '' : String(v); }
+  private dateOnly(s: string | null | undefined): string { return s ? String(s).slice(0, 10) : ''; }
+  private parseJson(s: string | null | undefined): Array<Record<string, unknown>> {
+    if (!s) return [];
+    try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; }
+    catch { return []; }
+  }
+
+  private hydrate(d: WorkPlanDetail): void {
+    this.headerForm.patchValue({
+      title:          d.title ?? '',
+      grantorId:      d.grantorId != null ? String(d.grantorId) : '',
+      instrumentType: d.instrumentType ?? '',
+    });
+
+    if (d.programNumber) {
+      const f = this.forms.get(this.pushBlock('program'))!;
+      f.patchValue({ programNumber: d.programNumber, instrumentType: d.instrumentType ?? '' });
+    }
+
+    if (d.proposalNumber || d.object || d.specificObjects || d.executionLocation || d.realityDescription ||
+        d.targetAudience || d.activityDescription || d.startDate || d.endDate ||
+        d.repassValue != null || d.mandatoryCounterpart != null || d.globalValue != null) {
+      const f = this.forms.get(this.pushBlock('plan-data'))!;
+      f.patchValue({
+        proposalNumber:      this.str(d.proposalNumber),
+        object:              this.str(d.object),
+        specificObjects:     this.str(d.specificObjects),
+        executionLocation:   this.str(d.executionLocation),
+        realityDescription:  this.str(d.realityDescription),
+        targetAudience:      this.str(d.targetAudience),
+        activityDescription: this.str(d.activityDescription),
+        startDate:           this.dateOnly(d.startDate),
+        endDate:             this.dateOnly(d.endDate),
+        repassValue:         d.repassValue != null ? String(d.repassValue) : '',
+        mandatoryCounterpart: d.mandatoryCounterpart != null ? String(d.mandatoryCounterpart) : '',
+        globalValue:         d.globalValue != null ? String(d.globalValue) : '',
+      });
+    }
+
+    if (d.celebrante)  this.forms.get(this.pushBlock('celebrante'))!.patchValue(d.celebrante);
+    if (d.executada)   this.forms.get(this.pushBlock('executada'))!.patchValue(d.executada);
+    if (d.responsible) this.forms.get(this.pushBlock('responsible'))!.patchValue(d.responsible);
+
+    (d.goals ?? []).forEach(g => {
+      const f = this.forms.get(this.pushBlock('goals'))!;
+      f.patchValue({
+        expectedResult:    this.str(g.expectedResult),
+        indicator:         this.str(g.indicator),
+        verificationMeans: this.str(g.verificationMeans),
+        quantitativeMeta:  g.quantitativeMeta != null ? String(g.quantitativeMeta) : '',
+        networkAction:     g.networkAction ? 'Sim' : 'Nao',
+      });
+      const steps = this.parseJson(g.executionSteps);
+      if (steps.length) {
+        const fa = f.get('executionSteps') as FormArray;
+        fa.clear();
+        steps.forEach(s => { const fg = this.newStep(); fg.patchValue(s); fa.push(fg); });
+      }
+    });
+
+    if (d.applicationPlans?.length) {
+      const fa = this.forms.get(this.pushBlock('app-detailed'))!.get('items') as FormArray;
+      fa.clear();
+      d.applicationPlans.forEach(it => {
+        const fg = this.newAppItem();
+        fg.patchValue({
+          linkedGoal:    it.linkedGoalId != null ? String(it.linkedGoalId) : '',
+          linkedStep:    it.linkedStepId != null ? String(it.linkedStepId) : '',
+          expenseItem:   this.str(it.expenseItem),
+          inKindPayment: it.inKindPayment ? 'Sim' : 'Nao',
+          expenseType:   this.str(it.expenseType),
+          unit:          this.str(it.unit),
+          quantity:      it.quantity  != null ? String(it.quantity)  : '',
+          unitValue:     it.unitValue != null ? String(it.unitValue) : '',
+          totalValue:    it.totalValue != null ? String(it.totalValue) : '',
+        });
+        fa.push(fg);
+      });
+    }
+
+    if (d.reimbursements?.length) {
+      const fa = this.forms.get(this.pushBlock('disbursement'))!.get('installments') as FormArray;
+      fa.clear();
+      d.reimbursements.forEach((r, i) => {
+        const fg = this.newInstallment(r.installment ?? i + 1);
+        fg.patchValue({
+          dueDate:    this.dateOnly(r.monthYear),
+          value:      r.value != null ? String(r.value) : '',
+          linkedGoal: r.linkedGoalId != null ? String(r.linkedGoalId) : '',
+        });
+        fa.push(fg);
+      });
+    }
+
+    const members = this.parseJson(d.teamWorkContent);
+    if (members.length) {
+      const fa = this.forms.get(this.pushBlock('team'))!.get('members') as FormArray;
+      fa.clear();
+      members.forEach(m => { const fg = this.newMember(); fg.patchValue(m); fa.push(fg); });
+    }
+
+    const actions = this.parseJson(d.monitoringContent);
+    if (actions.length) {
+      const fa = this.forms.get(this.pushBlock('monitoring'))!.get('actions') as FormArray;
+      fa.clear();
+      actions.forEach(a => { const fg = this.newAction(); fg.patchValue(a); fa.push(fg); });
+    }
+
+    if (Array.isArray(d.layout)) {
+      for (const raw of d.layout as Array<Record<string, unknown>>) {
+        if (raw['type'] === 'free-text') {
+          const f = this.forms.get(this.pushBlock('free-text'))!;
+          f.patchValue({ title: this.str(raw['title']), content: this.str(raw['content']) });
+        } else if (raw['type'] === 'free-table') {
+          const f = this.forms.get(this.pushBlock('free-table'))!;
+          const cols = Array.isArray(raw['columns']) ? raw['columns'] as string[] : [];
+          const rows = Array.isArray(raw['rows']) ? raw['rows'] as string[][] : [];
+          const colsFa = f.get('columns') as FormArray;
+          const rowsFa = f.get('rows') as FormArray;
+          colsFa.clear(); rowsFa.clear();
+          cols.forEach(c => colsFa.push(this.newColumn(c)));
+          if (colsFa.length === 0) colsFa.push(this.newColumn('Coluna 1'));
+          rows.forEach(cells => {
+            const list = cells.length ? cells : Array(colsFa.length).fill('');
+            rowsFa.push(this.fb.group({ cells: this.fb.array(list.map(c => this.fb.control(c))) }));
+          });
+          if (rowsFa.length === 0) rowsFa.push(this.newFreeRow(colsFa.length));
+        }
+      }
+    }
+  }
+
+  // ── Exportar PDF ──────────────────────────────────────────────────────────────
+
+  exportPdf(): void {
+    const id = this.planId();
+    if (!id) { this.notify.info('Salve o plano antes de exportar o PDF.'); return; }
+    this.svc.exportPdf(id).subscribe({
+      next: blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = `plano-trabalho-${id}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao exportar PDF.';
+        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+      },
+    });
+  }
+
   private allValid(): boolean {
     if (this.headerForm.invalid) return false;
     return [...this.forms.values()].every(f => f.valid);
@@ -462,11 +636,14 @@ export class WorkPlanNewPage implements OnInit {
 
     payload.layout = this.buildLayout();
 
+    const id = this.planId();
+    const request = id ? this.svc.update(id, payload) : this.svc.create(payload);
+
     this.loading.set(true);
-    this.svc.create(payload).subscribe({
+    request.subscribe({
       next: () => {
         this.loading.set(false);
-        this.notify.success('Plano de trabalho salvo com sucesso.');
+        this.notify.success(id ? 'Plano de trabalho atualizado com sucesso.' : 'Plano de trabalho salvo com sucesso.');
         this.router.navigate(['/work-plans']);
       },
       error: err => {

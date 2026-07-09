@@ -152,6 +152,41 @@ export interface ReimbursementPayload {
   linkedGoalId?: number;
 }
 
+/** Entidade completa retornada por GET /v1/work-plans/{id} (para edição). */
+export interface WorkPlanDetail {
+  id:                    number;
+  title?:                string | null;
+  instrumentType?:       string | null;
+  programNumber?:        string | null;
+  status?:               WorkPlanStatus;
+  proposalNumber?:       string | null;
+  object?:               string | null;
+  specificObjects?:      string | null;
+  executionLocation?:    string | null;
+  realityDescription?:   string | null;
+  partnershipObject?:    string | null;
+  targetAudience?:       string | null;
+  activityDescription?:  string | null;
+  startDate?:            string | null;
+  endDate?:              string | null;
+  repassValue?:          number | null;
+  mandatoryCounterpart?: number | null;
+  voluntaryCounterpart?: number | null;
+  globalValue?:          number | null;
+  adminExpensesValue?:   number | null;
+  teamWorkContent?:      string | null;
+  monitoringContent?:    string | null;
+  layout?:               unknown;
+  grantorId?:            number | null;
+  projectId?:            number | null;
+  celebrante?:           OSCCelebrantePayload | null;
+  executada?:            OSCExecutadaPayload | null;
+  responsible?:          WorkPlanResponsiblePayload | null;
+  goals?:                WorkPlanGoalPayload[] | null;
+  applicationPlans?:     ApplicationPlanPayload[] | null;
+  reimbursements?:       ReimbursementPayload[] | null;
+}
+
 export interface CreateWorkPlanPayload {
   title:                 string;
   instrumentType?:       string;
