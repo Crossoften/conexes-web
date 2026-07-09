@@ -1,11 +1,12 @@
 // src/app/features/contract-transfers/new/contract-transfer-new.page.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ContractTransfersService } from '../contract-transfers.service';
 import {
   PartnershipPayload,
   PartnershipRef,
+  PartnershipDetail,
   PartnershipResponsiblePayload,
   PartnershipAnnexPayload,
   PartnershipStatus,
@@ -32,14 +33,16 @@ function toNumber(value: unknown): number | undefined {
 export class ContractTransferNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   private svc    = inject(ContractTransfersService);
   private notify = inject(NotificationService);
 
   activeTab: ContractTab = 'DADOS';
 
-  readonly loading  = signal(false);
-  readonly grantors = signal<PartnershipRef[]>([]);
-  readonly entities = signal<PartnershipRef[]>([]);
+  readonly loading       = signal(false);
+  readonly grantors      = signal<PartnershipRef[]>([]);
+  readonly entities      = signal<PartnershipRef[]>([]);
+  readonly partnershipId = signal<number | null>(null);
 
   readonly statusOptions: { label: string; value: PartnershipStatus }[] = [
     { label: 'Ativo',    value: 'Active'   },
@@ -100,6 +103,76 @@ export class ContractTransferNewPage implements OnInit {
       next: rows => this.entities.set(rows),
       error: () => this.notify.error('Erro ao carregar entidades.'),
     });
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      const id = Number(idParam);
+      this.partnershipId.set(id);
+      this.svc.getById(id).subscribe({
+        next: detail => this.hydrate(detail),
+        error: () => this.notify.error('Erro ao carregar a parceria.'),
+      });
+    }
+  }
+
+  // ── Edição: hidratar o form ───────────────────────────────────────────────────
+
+  private dstr(s: string | null | undefined): string { return s ? String(s).slice(0, 10) : ''; }
+  private nstr(n: number | null | undefined): string { return n != null ? String(n) : ''; }
+
+  private hydrate(d: PartnershipDetail): void {
+    const resp = d.responsibles ?? [];
+    const anx  = d.annexes ?? [];
+
+    this.form.patchValue({
+      title:                 d.title ?? '',
+      concessor:             d.grantorId != null ? String(d.grantorId) : '',
+      entidade:              d.entityId != null ? String(d.entityId) : '',
+      tipoContratualizacao:  d.contractingType ?? '',
+      gestorParceria:        d.manager ?? '',
+      dataInicio:            this.dstr(d.startDate),
+      dataTermino:           this.dstr(d.endDate),
+      dataAssinatura:        this.dstr(d.signatureDate),
+      nroProcessoAdmin:      d.adminProcessNumber ?? '',
+      nroTermo:              d.termNumber ?? '',
+      nroDispensa:           d.dispensationNumber ?? '',
+      dataImpressaoAnexo1:   this.dstr(anx[0]?.printDate),
+      dataLimite1:           this.dstr(anx[0]?.deadlineDate),
+      tipoValidacao1:        anx[0]?.validationType ?? '',
+      dataImpressaoAnexo2:   this.dstr(anx[1]?.printDate),
+      dataLimite2:           this.dstr(anx[1]?.deadlineDate),
+      tipoValidacao2:        anx[1]?.validationType ?? '',
+      valorRecursoMunicipal: this.nstr(d.municipalValue),
+      valorRecursoEstadual:  this.nstr(d.stateValue),
+      valorRecursoFederal:   this.nstr(d.federalValue),
+      fonteRecursoMunicipal: d.municipalSource ?? '',
+      fonteRecursoEstadual:  d.stateSource ?? '',
+      fonteRecursoFederal:   d.federalSource ?? '',
+      contaRecursoMunicipal: d.municipalAccount ?? '',
+      contaRecursoEstadual:  d.stateAccount ?? '',
+      contaRecursoFederal:   d.federalAccount ?? '',
+      valorTotal:            this.nstr(d.totalValue),
+      objeto:                d.object ?? '',
+      ocultarPortal:         d.hideTransparency ? 'Sim' : 'Nao',
+      qtdeDiasPrestacao:     this.nstr(d.accountRenderingQty),
+      qtdeDiasAnalise:       this.nstr(d.analysisDaysQty),
+      comissaoMonitoramento: d.monitoringCommission ?? '',
+      leiAutorizadora:       d.authorizedLaw ?? '',
+      status:                d.status ?? 'Active',
+      responsaveis:          resp.find(r => r.type === 'Responsável')?.name ?? '',
+      responsaveisFisc:      resp.find(r => r.type === 'Fiscalização')?.name ?? '',
+      secretaria:            d.department ?? '',
+      emendaParlamentar:     d.parliamentaryExemplar ?? '',
+    });
+
+    if (d.payables?.length) {
+      this.payables.clear();
+      d.payables.forEach((p, i) => {
+        const fg = this.newPayable(p.installment ?? i + 1);
+        fg.patchValue({ dueDate: this.dstr(p.dueDate), value: this.nstr(p.value) });
+        this.payables.push(fg);
+      });
+    }
   }
 
   // ── Parcelas (payables) ─────────────────────────────────────────────────────
@@ -204,11 +277,14 @@ export class ContractTransferNewPage implements OnInit {
       annexes:               annexes.length ? annexes : undefined,
     };
 
+    const id = this.partnershipId();
+    const request = id ? this.svc.update(id, payload) : this.svc.create(payload);
+
     this.loading.set(true);
-    this.svc.create(payload).subscribe({
+    request.subscribe({
       next: () => {
         this.loading.set(false);
-        this.notify.success('Parceria cadastrada com sucesso.');
+        this.notify.success(id ? 'Parceria atualizada com sucesso.' : 'Parceria cadastrada com sucesso.');
         this.router.navigate(['/contract-transfers']);
       },
       error: err => {

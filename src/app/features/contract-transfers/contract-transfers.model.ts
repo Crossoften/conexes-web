@@ -47,6 +47,46 @@ export interface Partnership {
   updatedAt?:     string;
 }
 
+// ── Detalhe (GET /v1/partnerships/{id}) ───────────────────────────────────────
+
+export interface PartnershipDetail {
+  id:                    number;
+  title?:                string | null;
+  manager?:              string | null;
+  startDate?:            string | null;
+  endDate?:              string | null;
+  signatureDate?:        string | null;
+  adminProcessNumber?:   string | null;
+  termNumber?:           string | null;
+  dispensationNumber?:   string | null;
+  validationType?:       string | null;
+  municipalValue?:       number | null;
+  stateValue?:           number | null;
+  federalValue?:         number | null;
+  municipalSource?:      string | null;
+  stateSource?:          string | null;
+  federalSource?:        string | null;
+  municipalAccount?:     string | null;
+  stateAccount?:         string | null;
+  federalAccount?:       string | null;
+  totalValue?:           number | null;
+  object?:               string | null;
+  hideTransparency?:     boolean | null;
+  accountRenderingQty?:  number | null;
+  analysisDaysQty?:      number | null;
+  monitoringCommission?: string | null;
+  authorizedLaw?:        string | null;
+  parliamentaryExemplar?: string | null;
+  status?:               PartnershipStatus;
+  contractingType?:      string | null;
+  department?:           string | null;
+  grantorId?:            number | null;
+  entityId?:             number | null;
+  responsibles?:         { type: string; name: string }[] | null;
+  payables?:             { installment: number; dueDate: string; value: number }[] | null;
+  annexes?:              { printDate?: string | null; deadlineDate?: string | null; validationType?: string | null }[] | null;
+}
+
 // ── Sub-payloads ──────────────────────────────────────────────────────────────
 
 export interface PartnershipResponsiblePayload {
