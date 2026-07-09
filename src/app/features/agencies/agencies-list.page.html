@@ -113,10 +113,10 @@
                   </label>
                 </td>
                 <td class="td td--name">{{ item.legalName }}</td>
-                <td class="td">{{ item.tradeName }}</td>
+                <td class="td">{{ item.tradeName || '—' }}</td>
                 <td class="td td--mono">{{ item.cnpj }}</td>
-                <td class="td">{{ item.managingOrgan }}</td>
-                <td class="td">{{ item.email }}</td>
+                <td class="td">{{ item.managingOrgan || '—' }}</td>
+                <td class="td">{{ item.email || '—' }}</td>
                 <td class="td td--center">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar" (click)="onView(item)">
