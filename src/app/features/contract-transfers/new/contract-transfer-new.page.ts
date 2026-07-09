@@ -44,10 +44,40 @@ export class ContractTransferNewPage implements OnInit {
   readonly entities      = signal<PartnershipRef[]>([]);
   readonly partnershipId = signal<number | null>(null);
 
+  readonly viewMode = signal(false);
+
   readonly statusOptions: { label: string; value: PartnershipStatus }[] = [
     { label: 'Ativo',    value: 'Active'   },
     { label: 'Pendente', value: 'Pending'  },
     { label: 'Inativo',  value: 'Inactive' },
+  ];
+
+  readonly contractingTypeOptions = [
+    'Acordo de Cooperação',
+    'Auxílio',
+    'Contrato de Gestão',
+    'Contribuição',
+    'Termo de Convênio',
+    'Subvenção',
+    'Termo de Colaboração',
+    'Termo de Fomento',
+    'Termo de Parceria',
+  ];
+
+  readonly sourceOptions = [
+    'Indefinido',
+    'Recursos Do Tesouro',
+    'Transferências E Convênios Estaduais - Vinculados',
+    'Recursos Próprios De Fundos Especiais De Despesa - Vinculados',
+    'Recursos Próprios Da Administração Indireta',
+    'Transferências E Convênios Federais - Vinculados',
+    'Outras Fontes De Recursos',
+    'Operações De Crédito',
+  ];
+
+  readonly validationOptions = [
+    'Sem Validação',
+    'Validar Plano de Aplicação',
   ];
 
   form: FormGroup = this.fb.group({
@@ -60,6 +90,8 @@ export class ContractTransferNewPage implements OnInit {
     gestorParceria:       [''],
     dataInicio:           [''],
     dataTermino:          [''],
+
+    validationType:       ['', Validators.required],
 
     dataAssinatura:       [''],
     nroProcessoAdmin:     [''],
@@ -104,12 +136,17 @@ export class ContractTransferNewPage implements OnInit {
       error: () => this.notify.error('Erro ao carregar entidades.'),
     });
 
+    this.viewMode.set(!!this.route.snapshot.data['view']);
+
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       const id = Number(idParam);
       this.partnershipId.set(id);
       this.svc.getById(id).subscribe({
-        next: detail => this.hydrate(detail),
+        next: detail => {
+          this.hydrate(detail);
+          if (this.viewMode()) this.form.disable();
+        },
         error: () => this.notify.error('Erro ao carregar a parceria.'),
       });
     }
@@ -129,6 +166,7 @@ export class ContractTransferNewPage implements OnInit {
       concessor:             d.grantorId != null ? String(d.grantorId) : '',
       entidade:              d.entityId != null ? String(d.entityId) : '',
       tipoContratualizacao:  d.contractingType ?? '',
+      validationType:        d.validationType ?? '',
       gestorParceria:        d.manager ?? '',
       dataInicio:            this.dstr(d.startDate),
       dataTermino:           this.dstr(d.endDate),
@@ -268,6 +306,7 @@ export class ContractTransferNewPage implements OnInit {
       authorizedLaw:         v.leiAutorizadora     || undefined,
       parliamentaryExemplar: v.emendaParlamentar   || undefined,
       status:                v.status as PartnershipStatus,
+      validationType:        v.validationType      || undefined,
       contractingType:       v.tipoContratualizacao || undefined,
       department:            v.secretaria          || undefined,
       grantorId:             Number(v.concessor),
