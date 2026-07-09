@@ -214,21 +214,16 @@ export class WorkPlansStore {
 
   // ── Mapper ──────────────────────────────────────────────────────────────────
 
-  private display(v: number | string | null): string {
-    if (v == null || v === '') return '—';
-    return typeof v === 'number' ? formatBRL(v) : String(v);
-  }
-
   private toRow(p: WorkPlanListItem): WorkPlanRow {
     return {
       id:            p.id,
-      title:         p.title  ?? '—',
-      agency:        p.agency ?? '—',
+      title:         p.title ?? '—',
+      agency:        p.grantor?.legalName ?? p.grantor?.tradeName ?? '—',
       startDate:     p.startDate ?? '—',
-      transferValue: this.display(p.transferValue),
-      team:          p.team ?? '—',
-      receivedValue: this.display(p.receivedValue),
-      type:          p.type ?? '—',
+      transferValue: p.repassValue != null ? formatBRL(p.repassValue) : '—',
+      team:          '—',
+      receivedValue: '—',
+      type:          p.instrumentType ?? '—',
       status:        p.status ?? '',
     };
   }
