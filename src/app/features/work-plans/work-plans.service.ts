@@ -11,6 +11,7 @@ import {
   WorkPlanMetric,
   WorkPlanSummaryItem,
   WorkPlanRef,
+  WorkPlanDetail,
   CreateWorkPlanPayload,
 } from './work-plans.model';
 
@@ -39,12 +40,20 @@ export class WorkPlansService {
       .pipe(map(toPage));
   }
 
-  getById(id: number): Observable<unknown> {
-    return this.http.get(`${this.base}/${id}`);
+  getById(id: number): Observable<WorkPlanDetail> {
+    return this.http.get<WorkPlanDetail>(`${this.base}/${id}`);
   }
 
   create(payload: CreateWorkPlanPayload): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(this.base, payload);
+  }
+
+  update(id: number, payload: CreateWorkPlanPayload): Observable<{ id: number }> {
+    return this.http.patch<{ id: number }>(`${this.base}/${id}`, payload);
+  }
+
+  exportPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/pdf`, { responseType: 'blob' });
   }
 
   /** Órgãos concessionários → grantorId (select do bloco cabeçalho). */

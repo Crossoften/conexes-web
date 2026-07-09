@@ -7,12 +7,12 @@
     </div>
     <div class="wp-builder__actions">
       <button type="button" class="btn-outline btn-pill" disabled title="Em breve">Pré-visualizar</button>
-      <button type="button" class="btn-outline btn-pill" disabled title="Em breve">Exportar PDF</button>
+      <button type="button" class="btn-outline btn-pill" [disabled]="!planId()" (click)="exportPdf()">Exportar PDF</button>
       <button type="button" class="btn-solid" [disabled]="loading()" (click)="save()">Salvar</button>
     </div>
   </div>
 
-  <h1 class="wp-builder__title">Novo plano de trabalho</h1>
+  <h1 class="wp-builder__title">{{ planId() ? 'Editar plano de trabalho' : 'Novo plano de trabalho' }}</h1>
 
   <div class="wp-builder__body">
 
