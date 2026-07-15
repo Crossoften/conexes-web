@@ -29,6 +29,7 @@ export class StakeholderDetailModalComponent implements OnChanges {
 
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'GERAIS';
+  bankError: string | null = null;
 
   readonly statusConfig = STAKEHOLDER_STATUS_CONFIG;
   readonly typeLabels   = STAKEHOLDER_TYPE_LABELS;
@@ -268,15 +269,18 @@ export class StakeholderDetailModalComponent implements OnChanges {
   onClose(): void {
     this.mode = 'view';
     this.activeTab = 'GERAIS';
+    this.bankError = null;
     this.close.emit();
   }
 
   onEdit(): void {
     this.mode = 'edit';
+    this.bankError = null;
   }
 
   onCancelEdit(): void {
     this.mode = 'view';
+    this.bankError = null;
     if (this.stakeholder) this.patchForm(this.stakeholder);
   }
 
@@ -303,22 +307,49 @@ export class StakeholderDetailModalComponent implements OnChanges {
 
     const v = this.form.getRawValue(); // getRawValue inclui campos disabled (code)
 
-    // bankData: só envia se ao menos um campo obrigatório estiver preenchido
-    const hasBankData = !!(v.bankAccountName || v.bankAccountDocument || v.bank || v.bankAgency || v.bankAccount);
-    const bankData = hasBankData ? [{
-      accountName:     v.bankAccountName     || '',
-      accountDocument: v.bankAccountDocument || '',
-      bank:            v.bank                || '',
-      agency:          v.bankAgency          || '',
-      agencyDigit:     v.bankAgencyDigit     || '',
-      account:         v.bankAccount         || '',
-      accountDigit:    v.bankAccountDigit    || '',
-      // Enums: undefined se vazio para não violar validação do back
-      accountType:     (v.bankAccountType   || undefined) as any,
-      pixType:         (v.bankPixType       || undefined) as any,
-      pixKey:          v.bankPixKey          || '',
-      paymentMethod:   (v.bankPaymentMethod || undefined) as any,
-    }] : (this.stakeholder!.bankData ?? []);
+    // ── Dados bancários: bloco completo OU vazio ──────────────────────────────
+    // O back (CreateStakeholderBankDataDto) exige o conjunto obrigatório mesmo no
+    // PATCH. paymentMethod/PIX vivem dentro de bankData, então não dá para salvar
+    // só a forma de pagamento sem uma conta completa. Se o usuário preencheu parte,
+    // bloqueamos com mensagem clara em vez de enviar incompleto (400) ou descartar.
+    const bankFields = {
+      accountName:     v.bankAccountName?.trim()     || '',
+      accountDocument: v.bankAccountDocument?.trim() || '',
+      bank:            v.bank?.trim()                || '',
+      agency:          v.bankAgency?.trim()          || '',
+      agencyDigit:     v.bankAgencyDigit?.trim()     || '',
+      account:         v.bankAccount?.trim()         || '',
+      accountDigit:    v.bankAccountDigit?.trim()    || '',
+      accountType:     v.bankAccountType             || '',
+      pixType:         v.bankPixType                 || '',
+      pixKey:          v.bankPixKey?.trim()          || '',
+      paymentMethod:   v.bankPaymentMethod           || '',
+    };
+    const anyBankFilled = Object.values(bankFields).some(Boolean);
+    const bankComplete  = !!(bankFields.accountName && bankFields.accountDocument
+      && bankFields.bank && bankFields.agency && bankFields.account
+      && bankFields.accountType && bankFields.paymentMethod);
+
+    if (anyBankFilled && !bankComplete) {
+      this.bankError = 'Para salvar dados bancários, preencha: nome do correntista, documento, banco, agência, conta, tipo de conta e forma de pagamento.';
+      this.activeTab = 'GERAIS';
+      return;
+    }
+    this.bankError = null;
+
+    const bankData = anyBankFilled ? [{
+      accountName:     bankFields.accountName,
+      accountDocument: bankFields.accountDocument,
+      bank:            bankFields.bank,
+      agency:          bankFields.agency,
+      agencyDigit:     bankFields.agencyDigit,
+      account:         bankFields.account,
+      accountDigit:    bankFields.accountDigit,
+      accountType:     bankFields.accountType   as any,
+      pixType:         (bankFields.pixType || undefined) as any,
+      pixKey:          bankFields.pixKey,
+      paymentMethod:   bankFields.paymentMethod as any,
+    }] : [];
 
     // contacts: fallback para o contato original se nome ainda vazio
     const originalContact = this.stakeholder!.contacts?.[0];

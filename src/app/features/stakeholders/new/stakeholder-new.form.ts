@@ -13,8 +13,10 @@ export function buildStakeholderForm() {
     document:   ['', Validators.required],
     name:       ['', Validators.required],
 
+    // Tipo é obrigatório no contrato (CreateStakeholderDto.required inclui "type")
+    type:        ['', Validators.required],
+
     // Opcionais
-    type:        [''],
     zipCode:     [''],
     address:     [''],
     addressNum:  [''],
@@ -45,7 +47,7 @@ export function buildStakeholderForm() {
     accountType:          [''],
     pixType:              [''],
     pixKey:               [''],
-    defaultPaymentMethod: ['Transferência eletrônica'],
+    defaultPaymentMethod: ['EletronicTransferSameOwner'],
   });
 
   // ── Etapa 2 — tudo opcional para navegação ─────────────────
