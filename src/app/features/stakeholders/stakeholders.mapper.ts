@@ -48,49 +48,64 @@ function toIsoOrNull(value: string | null | undefined): string | null {
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-/** Só inclui endereço se os campos obrigatórios estiverem preenchidos */
+/**
+ * Endereço como bloco completo: o back exige zipCode, street, number, district,
+ * city e state. Só enviamos o endereço quando TODOS estiverem preenchidos —
+ * nunca gravamos "N/A". Se o bloco estiver incompleto, não enviamos endereço
+ * (a validação de completude fica na página, para avisar o usuário).
+ */
 function buildAddress(s1: any): StakeholderAddress[] {
-  // address = street, district/city/state são obrigatórios pelo back
-  const street   = s1.address?.trim()   ?? '';
-  const district = s1.district?.trim()  ?? '';
-  const city     = s1.city?.trim()      ?? '';
-  const state    = s1.state?.trim()     ?? '';
+  const zipCode  = s1.zipCode?.trim()    ?? '';
+  const street   = s1.address?.trim()    ?? '';
+  const number   = s1.addressNum?.trim() ?? '';
+  const district = s1.district?.trim()   ?? '';
+  const city     = s1.city?.trim()       ?? '';
+  const state    = s1.state?.trim()      ?? '';
 
-  // Se não tiver pelo menos rua preenchida, não envia endereço
-  if (!street) return [];
+  const complete = !!(zipCode && street && number && district && city && state);
+  if (!complete) return [];
 
   return [{
-    zipCode:    s1.zipCode?.trim()    ?? '',
+    zipCode,
     street,
-    number:     s1.addressNum?.trim() ?? '',
+    number,
     complement: s1.complement?.trim() ?? '',
-    district:   district || 'N/A',   // fallback para não rejeitar
-    city:       city     || 'N/A',
-    state:      state    || 'N/A',
+    district,
+    city,
+    state,
   }];
 }
 
-/** Só inclui dados bancários se bank E account estiverem preenchidos */
+/**
+ * Dados bancários como bloco completo: o back exige accountName, accountDocument,
+ * bank, agency, account, accountType e paymentMethod. Só enviamos quando o conjunto
+ * obrigatório estiver preenchido (accountType/paymentMethod têm default válido).
+ * Bloco incompleto → não enviamos (a página valida e avisa o usuário).
+ */
 function buildBankData(s1: any): StakeholderBankData[] {
+  const accountName = s1.differentHolder
+    ? (s1.holderName?.trim()     ?? '')
+    : (s1.name?.trim()           ?? '');
+  const accountDocument = s1.differentHolder
+    ? (s1.holderDocument?.trim() ?? '')
+    : (s1.document?.trim()       ?? '');
   const bank    = s1.bank?.trim()    ?? '';
+  const agency  = s1.agency?.trim()  ?? '';
   const account = s1.account?.trim() ?? '';
 
-  if (!bank || !account) return [];
+  const complete = !!(accountName && accountDocument && bank && agency && account);
+  if (!complete) return [];
 
   return [{
-    accountName:     s1.differentHolder
-      ? (s1.holderName?.trim()     ?? '')
-      : (s1.name?.trim()           ?? ''),
-    accountDocument: s1.differentHolder
-      ? (s1.holderDocument?.trim() ?? '')
-      : (s1.document?.trim()       ?? ''),
+    accountName,
+    accountDocument,
     bank,
-    agency:       s1.agency?.trim()      ?? '',
+    agency,
     agencyDigit:  s1.agencyDigit?.trim() ?? '',
     account,
     accountDigit: s1.accountDigit?.trim() ?? '',
-    accountType:  validEnum(s1.accountType,        VALID_ACCOUNT_TYPES,  'Checking'),
-    pixType:      validEnum(s1.pixType,             VALID_PIX_TYPES,      'CPF'),
+    accountType:  validEnum(s1.accountType,           VALID_ACCOUNT_TYPES,   'Checking'),
+    pixType:      validEnum(s1.pixType,               VALID_PIX_TYPES,       'CPF'),
     pixKey:       s1.pixKey?.trim() ?? '',
     paymentMethod: validEnum(s1.defaultPaymentMethod, VALID_PAYMENT_METHODS, 'EletronicTransferSameOwner'),
   }];

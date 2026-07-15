@@ -76,6 +76,10 @@
                 <span class="info-value">{{ account?.title || '—' }}</span>
               </div>
               <div class="info-item">
+                <span class="info-label">Grupo da Categoria</span>
+                <span class="info-value">{{ account?.categoryGroup || '—' }}</span>
+              </div>
+              <div class="info-item">
                 <span class="info-label">Tipo da Categoria</span>
                 <span class="info-value">{{ account?.categoryType || '—' }}</span>
               </div>
@@ -147,8 +151,9 @@
                   <div class="select-wrap">
                     <select class="select" formControlName="categoryType">
                       <option value="">Selecione</option>
-                      <option value="SINTETICA">Sintética</option>
-                      <option value="ANALITICA">Analítica</option>
+                      <option value="Entrada">Entrada</option>
+                      <option value="Saída">Saída</option>
+                      <option value="Totalizadora">Totalizadora</option>
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
                       <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -161,8 +166,8 @@
                   <div class="select-wrap">
                     <select class="select" formControlName="accountType">
                       <option value="">Selecione</option>
-                      <option value="DESPESA">Despesa</option>
-                      <option value="RECEITA">Receita</option>
+                      <option value="Sintética">Sintética</option>
+                      <option value="Analítica">Analítica</option>
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
                       <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -171,7 +176,7 @@
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Centro de Custo</label>
+                  <label class="field-label">Categoria (Centro de Custo) <span class="required">*</span></label>
                   <div class="select-wrap">
                     <select class="select" formControlName="costCenter">
                       <option value="">Selecione</option>
@@ -183,6 +188,11 @@
                       <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Grupo da Categoria <span class="required">*</span></label>
+                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="categoryGroup">
                 </div>
 
                 <div class="field">
