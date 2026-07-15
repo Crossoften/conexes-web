@@ -1,9 +1,9 @@
 diff --git a/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
 new file mode 100644
-index 0000000..597d08f
+index 0000000..a4d3c8c
 --- /dev/null
 +++ b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,65 @@
 +# Auditoria Técnica Front × Back — Contexto e Continuidade
 +
 +> **Leia este arquivo primeiro ao iniciar uma nova sessão.**
@@ -17,7 +17,7 @@ index 0000000..597d08f
 +- **Nunca commitar.** Entregas via **patch/diff**; commits são do usuário.
 +- **Nunca executar alterações sem aprovação explícita.**
 +- Fluxo por módulo: **Análise → Relatório (Front × Back) → Plano → (OK) → Patches.**
-+- Último **Swagger** = referência oficial. **Regras do cliente têm prioridade** (cruzar com Front/Back/Swagger).
++- Último **Swagger** = referência oficial. **Regras do cliente têm prioridade.**
 +- Trade-off → apresentar opções (prós/contras/riscos) e recomendar.
 +
 +## 2. Projeto e stack
@@ -41,39 +41,44 @@ index 0000000..597d08f
 +
 +| # | Módulo | Rota Front | Endpoint real | Status |
 +|---|---|---|---|---|
-+| 1 | **Stakeholders** | `features/stakeholders` | `/v1/stakeholders` | ✅ 5 patches · Back B-01..B-12 |
++| 1 | **Stakeholders** | `features/stakeholders` | `/v1/stakeholders` | ✅ 5 patches (01–05) · Back B-01..B-12 |
 +| 2 | **Plano de Contas** | `features/chart-of-accounts` | `/v1/account-plan` | ✅ 2 patches (06,07) · Back B-PC-01..06 |
-+| 3 | **Centro de Custo/Projeto/Atividade** | `features/cost-centers` | **`/v1/projects`** | ✅ 2 patches (08,09) · Back B-CC-01..06 |
++| 3 | **Centro de Custo/Projeto/Atividade** | `features/cost-centers` | **`/v1/projects`** | ✅ 6 patches (08–13) · Back B-CC-01..08 |
 +
 +## 7. Módulo 1 — Stakeholders
 +Patches: 01 limpeza · 02 ajustes cadastro · 03 toast · 04 edição bancária · 05 endereço/banco bloco completo.
-+Back: `pendencias-backend-stakeholders.md` (B-01..B-12). Decisões: modal p/ detalhe; impostos embutidos; Visão/Tipo depende B-02; bancário/endereço como bloco completo.
++Back: `pendencias-backend-stakeholders.md` (B-01..B-12).
 +
 +## 8. Módulo 2 — Plano de Contas
-+Patches: **06** vocabulário (Tipo da Categoria = Entrada/Saída/Totalizadora; Tipo de Conta = Sintética/Analítica), filtro corrigido, page size, "Salvar", remove mock. **07** Grupo da Categoria + obrigatoriedade (Categoria/Centro de Custo obrigatória).
-+Back: `pendencias-backend-plano-de-contas.md` (B-PC-01..06). Decisões: valores do PDF; manter Centro de Custo como "Categoria"; Provisão/Baixa texto livre.
-+Aberto (Back): orçamento em lote, hierarquia, migração de valores.
++Patches: **06** vocabulário (Tipo da Categoria = Entrada/Saída/Totalizadora; Tipo de Conta = Sintética/Analítica) + filtro + page size + "Salvar" + remove mock. **07** Grupo da Categoria + obrigatoriedade.
++Back: `pendencias-backend-plano-de-contas.md` (B-PC-01..06).
 +
 +## 9. Módulo 3 — Centro de Custo / Projeto / Atividade
 +**Endpoint:** `/v1/projects` (cria CC ou Projeto conforme `type`). `/v1/cost-centers` **não usado**.
-+Patches: **08** corrige valores de `type` (bug: form enviava `"Centro de Custos"` → Back criava Projeto; agora `centro_de_custo`/`projeto`), `costCenterId` null, filtro/labels, remove mock. **09** ação **"Adicionar Subnível"** (Projeto dentro de um CC, via query params `type`+`parentId`+`parentName`).
-+Decisões: (1) corrigir tipo; (2) **Atividade aguarda Back** (B-CC-01); (3) implementar Adicionar Subnível (Projeto sob CC); (4) incluir correções seguras. **Layout da expansão em cascata já pronto** (markup+scss) — renderiza quando o Back devolver `groups/children`.
-+Back: `pendencias-backend-cost-centers.md` (B-CC-01..06). Aberto: Atividade (3º nível), valores canônicos+migração, endpoints duplicados, cascata financeira.
-+Nota Front pendente: modal view-mode tem `input formControlName` fora de `[formGroup]`; store com duplicação (refactor).
++**Patches:**
++- **08** corrige valor de `type` (bug: form enviava `"Centro de Custos"` → Back criava Projeto; agora `centro_de_custo`/`projeto`) + `costCenterId` null + filtro/labels + remove mock.
++- **09** ação **"Adicionar Subnível"** (Projeto dentro de um CC, via query params `type`/`parentId`/`parentName`).
++- **10** (hotfix) `startDate` = `null` quando vazio (Back rejeitava `''` — 400).
++- **11** (hotfix) resolve `entityType` pelo campo **`_entityType`** do back (corrige **404** na edição/exclusão de registros legados).
++- **12** monta a **árvore no Front** (projetos aninhados sob o CC pai via `costCenterId`) + centraliza coluna Ações.
++- **13** subníveis como **linhas completas** (campos + ações Ver/Editar/Excluir), indentados.
++
++**Decisões:** (1) corrigir tipo; (2) Atividade aguarda Back (B-CC-01); (3) implementar Adicionar Subnível; (4) correções seguras. Manter Centro de Custo. Layout de expansão pronto.
++**Back:** `pendencias-backend-cost-centers.md` (B-CC-01..08). Destaques: **Atividade/3º nível (B-CC-01)**, **valores canônicos + migração (B-CC-02)**, **hierarquia + paginação (B-CC-04)**, **`_entityType` consistente (B-CC-07)**, datas null (B-CC-08).
++**Notas Front pendentes:** modal view-mode tem `input formControlName` fora de `[formGroup]`; store com duplicação de fetch (refactor A-CC-01).
 +
 +## 10. Acoplamento entre módulos
-+Ver `01-acoplamento-entre-modulos.md`.
++Ver `01-acoplamento-entre-modulos.md`. Destaques: **CC ↔ Plano de Contas** (circular), CC → Entidades (fonte pagadora), e futura cascata CC→Projeto→Atividade em Contas a Pagar/Receber.
 diff --git a/docs/auditoria-frontend/01-acoplamento-entre-modulos.md b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
 new file mode 100644
-index 0000000..2eece65
+index 0000000..d960a98
 --- /dev/null
 +++ b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +# Acoplamento entre Módulos (cross-references)
 +
 +> Registro de quando uma tela consome o endpoint de **outro módulo** para preencher
 +> um campo, ou quando um módulo é **fonte** de dados para vários outros.
-+> Objetivo: prever impactos quando um módulo mudar (contrato, valores, filtros).
 +
 +Legenda: **A → B** = a tela do módulo A chama o endpoint do módulo B.
 +
@@ -87,7 +92,7 @@ index 0000000..2eece65
 +| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/account-plan` | Select **"Contas vinculadas"** (`linkedAccounts[].accountPlanId`) | Se Plano de Contas mudar id/estrutura, quebra. |
 +| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/institutional/entities` | Select **"Fonte pagadora"** (`payingSource`) | Semântica a confirmar (fonte pagadora = entidade?). |
 +
-+> ⚠️ **Acoplamento circular:** Plano de Contas → Projects (Centro de Custo) **e** Centro de Custo → Account-Plan (contas vinculadas). Mudanças em qualquer um afetam o outro.
++> ⚠️ **Acoplamento circular:** Plano de Contas → Projects (Centro de Custo) **e** Centro de Custo → Account-Plan (contas vinculadas).
 +
 +## Dependências futuras (previstas no doc do cliente)
 +
@@ -121,55 +126,65 @@ index 0000000..2eece65
 +> _Alimentar a cada novo acoplamento descoberto._
 diff --git a/docs/auditoria-frontend/pendencias-backend-cost-centers.md b/docs/auditoria-frontend/pendencias-backend-cost-centers.md
 new file mode 100644
-index 0000000..a3d9292
+index 0000000..5dc2e58
 --- /dev/null
 +++ b/docs/auditoria-frontend/pendencias-backend-cost-centers.md
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,55 @@
 +# Pendências de Back-end — Módulo Centro de Custo / Projeto / Atividade
 +
 +> Auditoria Front × Back × Swagger × PDF.
-+> **O Front usa `/v1/projects`** (que cria CC ou Projeto conforme `type`). O `/v1/cost-centers` do Swagger **não é usado** pelo Front.
++> **O Front usa `/v1/projects`** (cria CC ou Projeto conforme `type`). O `/v1/cost-centers` do Swagger **não é usado**.
 +> Endpoints: `POST/GET /v1/projects`, `GET/PATCH/DELETE /v1/projects/{id}?entityType=...`, `GET /v1/projects/export/excel`.
 +
 +---
 +
-+## B-CC-01 🔴 ALTA — Suporte a "Atividade" (3º nível da hierarquia)
-+- **Doc do cliente:** cascata **Centro de Custo → Projeto → Atividade** (3 níveis).
-+- **Hoje:** `CreateProjectDto` tem `costCenterId` (Projeto → CC), mas **não há** `projectId` (Atividade → Projeto) nem tipo `atividade`.
-+- **Pedido:** permitir criar Atividade vinculada a um Projeto (campo `projectId`/parent) e reconhecer o `type='atividade'`. Sem isso, a cascata de 3 níveis e o "Adicionar Subnível (Atividade)" não funcionam.
++## B-CC-01 🔴 ALTA — Suporte a "Atividade" (3º nível)
++Doc pede cascata **Centro de Custo → Projeto → Atividade**. Hoje `CreateProjectDto` tem `costCenterId` (Projeto → CC) mas **não** há `projectId` (Atividade → Projeto) nem tipo `atividade`. Pedido: permitir criar Atividade vinculada a um Projeto e reconhecer `type='atividade'`.
 +
 +## B-CC-02 🔴 ALTA — Valores canônicos de `type` + regra de criação frágil
-+- **Hoje:** a criação decide pelo `type`: `"centro_de_custo"` cria CostCenter; **qualquer outro valor** cria Project. Isso causou bug no Front (enviava `"Centro de Custos"` → criava Projeto por engano — já corrigido no Patch 08).
-+- **Pedido:** fixar/validar os valores canônicos (`centro_de_custo`, `projeto`, `atividade`) como enum; **migrar** registros legados com valores divergentes (ex.: `"Centro de Custos"`, `"Projeto"`).
++A criação decide pelo texto: `"centro_de_custo"` cria CC; qualquer outro valor cria Project (causou bug no Front — corrigido no Patch 08). Pedido: fixar enum (`centro_de_custo`, `projeto`, `atividade`) e **migrar** registros legados (`"Centro de Custos"`, `"Projeto"` etc.).
++
++## B-CC-04 🔴 ALTA — Hierarquia + paginação da listagem (REFORÇADO)
++- **Hoje:** `findAll` devolve **tudo plano** (CCs, Projetos e — futuramente — Atividades como linhas soltas), sem schema documentado. O Front **monta a árvore client-side** agrupando os projetos sob o CC pai via `costCenterId` (Patches 12/13).
++- **Problema:** o agrupamento só funciona dentro da **página atual**. Se um CC e seus projetos caírem em páginas diferentes (paginação plana), o vínculo visual quebra; e a contagem/`total` mistura níveis.
++- **Pedido (uma das opções):**
++  1. Devolver a **hierarquia pronta** (cada CC com seus `children`/projetos, e cada projeto com suas atividades); **ou**
++  2. **Paginar por nível-topo** (apenas Centros de Custo), trazendo os projetos/atividades aninhados de cada CC.
++- Documentar o DTO de resposta (`{ data, total }` + estrutura aninhada).
++
++## B-CC-07 🟠 MÉDIA — `_entityType` sempre presente e consistente (NOVO)
++- O Front usa o campo **`_entityType`** (`cost_center` | `project`) de cada item para: (a) resolver o `entityType` correto no `update`/`delete` — **foi a causa do 404** (Patch 11); e (b) montar a árvore.
++- **Pedido:** garantir que **todo** item do `findAll` (e do detalhe) traga `_entityType` de forma consistente (incluindo `atividade` no futuro). Se o campo faltar, o Front cai no fallback por texto — que é justamente o que falha em dados legados.
++
++## B-CC-08 🟢 BAIXA — Datas opcionais devem aceitar `null`/omissão (NOVO)
++- O `PATCH`/`POST` rejeitou `startDate: ""` com `400 "startDate must be a valid ISO 8601 date string"`.
++- **Pedido:** campos de data **opcionais** devem aceitar `null` ou ausência do campo (não exigir ISO quando vazio). Já contornado no Front (envia `null`), mas convém padronizar no contrato.
 +
 +## B-CC-03 🟠 MÉDIA — Endpoints duplicados `/v1/cost-centers` × `/v1/projects`
-+- **Hoje:** existem os dois; o Front consome só `/v1/projects`. `/v1/cost-centers` fica sem uso.
-+- **Pedido:** definir o endpoint canônico e depreciar/remover o duplicado (evita divergência de contrato).
-+
-+## B-CC-04 🟠 MÉDIA — Schema de resposta e hierarquia não documentados
-+- **Hoje:** `findAll` retorna `200` sem schema. O Front espera `{ data, total }` e uma estrutura de hierarquia `groups[] → children[]` para a expansão em cascata.
-+- **Pedido:** documentar o DTO de resposta e **como a hierarquia é retornada** (o Front já tem o layout de expansão pronto; falta o Back devolver `groups/children` — CC → Projetos → Atividades).
++O Front usa só `/v1/projects`; `/v1/cost-centers` fica sem uso. Definir o canônico e depreciar o outro.
 +
 +## B-CC-05 🟡 MÉDIA — "Adicionar Subnível"
-+- **Projeto dentro de CC:** já suportado via `costCenterId` (Front implementado no Patch 09).
-+- **Atividade dentro de Projeto:** falta (ver B-CC-01).
++Projeto dentro de CC: já suportado via `costCenterId` (Front no Patch 09). Atividade dentro de Projeto: falta (ver B-CC-01).
 +
 +## B-CC-06 🟡 MÉDIA — Cascata nos lançamentos financeiros
-+- **Doc:** em Contas a Pagar/Receber, o usuário seleciona **Centro de Custo → Projeto → Atividade** em cascata.
-+- **Pedido:** expor endpoints/estrutura para o Front montar os selects em cascata (filtrar projetos por `costCenterId`, atividades por `projectId`).
++Em Contas a Pagar/Receber, selecionar **CC → Projeto → Atividade** em cascata. Expor estrutura/filtros (projetos por `costCenterId`, atividades por `projectId`).
 +
 +---
 +
 +### Resumo de prioridade
 +| Prioridade | Itens |
 +|---|---|
-+| 🔴 Alta | B-CC-01 (Atividade/3º nível), B-CC-02 (valores canônicos + migração) |
-+| 🟠 Média | B-CC-03 (endpoints duplicados), B-CC-04 (schema + hierarquia) |
-+| 🟡 Média | B-CC-05 (Adicionar Subnível Atividade), B-CC-06 (cascata financeira) |
++| 🔴 Alta | B-CC-01 (Atividade), B-CC-02 (valores canônicos + migração), **B-CC-04 (hierarquia + paginação)** |
++| 🟠 Média | B-CC-03 (endpoints duplicados), **B-CC-07 (_entityType consistente)** |
++| 🟡 Média/Baixa | B-CC-05, B-CC-06, **B-CC-08 (datas null)** |
 +
 +### Notas de Front (não são Back)
 +- Modal em **modo visualização** tem um `<input formControlName="startDate">` fora de `[formGroup]` (resquício) — corrigir em patch futuro.
 +- Store com duplicação de fetch (A-CC-01) — refactor sugerido.
++
++### Changelog
++- **v2** — reforço de B-CC-04 (paginação vs hierarquia, após Patches 12/13); adicionados B-CC-07 (`_entityType`, após 404/Patch 11) e B-CC-08 (datas null, após Patch 10).
++- **v1** — B-CC-01..06 iniciais.
 diff --git a/docs/auditoria-frontend/pendencias-backend-plano-de-contas.md b/docs/auditoria-frontend/pendencias-backend-plano-de-contas.md
 new file mode 100644
 index 0000000..95e7923
