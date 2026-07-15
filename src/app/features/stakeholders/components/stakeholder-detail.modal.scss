@@ -423,6 +423,17 @@
 
 // ── Rodapé do form (edit) ─────────────────────
 
+.edit-error {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  color: #B91C1C;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .edit-footer {
   display: flex;
   justify-content: flex-end;
