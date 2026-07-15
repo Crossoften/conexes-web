@@ -1,6 +1,19 @@
 // src/app/features/cost-centers/new/cost-centers-new.page.scss
 :host { display: block; }
 
+// Aviso de vínculo com o pai (fluxo "Adicionar Subnível")
+.parent-hint {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #F3F0FF;
+  border: 1px solid #DDD6FE;
+  color: #5B21B6;
+  font-size: 13px;
+
+  strong { font-weight: 700; }
+}
+
 // ── Tipografia e Cabeçalho ────────────────────
 .page-title {
   font-family: var(--font-display);
