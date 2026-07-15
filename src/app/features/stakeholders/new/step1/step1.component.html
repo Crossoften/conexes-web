@@ -20,6 +20,7 @@
             <option value="">Selecione</option>
             <option value="PF">Pessoa Física</option>
             <option value="PJ">Pessoa Jurídica</option>
+            <option value="Other">Outros</option>
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -67,8 +68,8 @@
     <!-- Linha 2: Tipo | CEP | Endereço | Nro | Complemento -->
     <div class="form-row form-row--address">
 
-      <div class="field">
-        <label class="field-label">Tipo</label>
+      <div class="field" [class.field--error]="isInvalid('type')">
+        <label class="field-label">Tipo <span class="required">*</span></label>
         <div class="select-wrap">
           <select class="select" formControlName="type">
             <option value="">Selecione</option>
@@ -80,6 +81,9 @@
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
+        @if (isInvalid('type')) {
+          <span class="field-error">Campo obrigatório</span>
+        }
       </div>
 
       <div class="field">

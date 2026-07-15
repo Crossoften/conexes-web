@@ -42,7 +42,7 @@ export class StakeholdersPage implements OnInit {
     { label: 'Outro',            value: 'Other' },
   ];
 
-  readonly pageSizeOptions = [10, 25, 50];
+  readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
   // ── Paginação ─────────────────────────────────────────────────────────────
 

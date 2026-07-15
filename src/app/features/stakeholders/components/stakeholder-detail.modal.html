@@ -655,6 +655,9 @@
           }
 
           <!-- ── Footer ────────────────────────────────────────────────── -->
+          @if (bankError) {
+            <p class="edit-error">{{ bankError }}</p>
+          }
           <div class="edit-footer">
             <button type="button" class="btn-cancel" (click)="onCancelEdit()">Cancelar</button>
             <button type="submit" class="btn-save">Salvar alterações</button>
