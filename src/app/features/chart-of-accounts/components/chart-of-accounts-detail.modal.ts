@@ -44,7 +44,8 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
     accountType:    [''],
-    costCenter:     [''],
+    categoryGroup:  ['', Validators.required],
+    costCenter:     ['', Validators.required],
     categoryCode:   ['', Validators.required],
     categoryTitle:  ['', Validators.required],
     budgetMgmt:     [false],
@@ -96,6 +97,7 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
     this.form.patchValue({
       categoryType:   a.categoryType   ?? '',
       accountType:    a.accountType    ?? '',
+      categoryGroup:  a.categoryGroup  ?? '',
       costCenter:     a.category       ?? '',
       categoryCode:   a.code           ?? '',
       categoryTitle:  a.title          ?? '',
@@ -160,6 +162,7 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
       code:              v.categoryCode   ?? '',
       title:             v.categoryTitle  ?? '',
       category:          v.costCenter     ?? '',
+      categoryGroup:     v.categoryGroup  ?? '',
       categoryType:      v.categoryType   ?? '',
       accountType:       v.accountType    ?? '',
       budgetManagement:  !!v.budgetMgmt,

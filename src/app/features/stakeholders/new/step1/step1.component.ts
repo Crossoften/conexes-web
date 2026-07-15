@@ -51,6 +51,9 @@ export class Step1Component {
         if (data.logradouro)  this.f['address']?.setValue(data.logradouro);
         if (data.numero)      this.f['addressNum']?.setValue(data.numero);
         if (data.complemento) this.f['complement']?.setValue(data.complemento);
+        if (data.bairro)      this.f['district']?.setValue(data.bairro);
+        if (data.municipio)   this.f['city']?.setValue(data.municipio);
+        if (data.uf)          this.f['state']?.setValue(data.uf);
         this.cnpjLoading.set(false);
       },
       error: err => {

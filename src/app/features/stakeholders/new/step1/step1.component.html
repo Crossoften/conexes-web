@@ -110,6 +110,26 @@
 
     </div>
 
+    <!-- Linha 2b: Bairro | Cidade | UF (obrigatórios pelo back quando há endereço) -->
+    <div class="form-row form-row--3">
+
+      <div class="field">
+        <label class="field-label">Bairro</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="district">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Cidade</label>
+        <input class="input" type="text" placeholder="Digite aqui..." formControlName="city">
+      </div>
+
+      <div class="field">
+        <label class="field-label">UF</label>
+        <input class="input" type="text" placeholder="UF" maxlength="2" formControlName="state">
+      </div>
+
+    </div>
+
     <!-- Linha 3: Telefone | Celular | E-mail -->
     <div class="form-row form-row--3">
 

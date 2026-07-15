@@ -1,7 +1,12 @@
 // src/app/features/chart-of-accounts/chart-of-accounts.model.ts
 
 export type AccountStatus = 'Active' | 'Inactive';
-export type AccountType   = 'T' | 'A' | 'S'; // Totalizadora, Analítica, Sintética
+
+// Tipo de Conta (doc): Sintética / Analítica
+export type AccountType   = 'Sintética' | 'Analítica';
+
+// Tipo da Categoria (doc): Entrada / Saída / Totalizadora
+export type CategoryType  = 'Entrada' | 'Saída' | 'Totalizadora';
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
@@ -59,8 +64,15 @@ export const ACCOUNT_STATUS_CONFIG: Record<AccountStatus, StatusConfig> = {
   Inactive: { label: 'Inativo', variant: 'danger'  },
 };
 
+// Mapa de exibição do Tipo de Conta. Inclui valores canônicos (doc) e
+// variantes legadas já gravadas, para exibir rótulo amigável mesmo em dados antigos.
 export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  T: 'Totalizadora',
-  A: 'Analítica',
+  'Sintética': 'Sintética',
+  'Analítica': 'Analítica',
+  // legado
+  SINTETICA: 'Sintética',
+  ANALITICA: 'Analítica',
   S: 'Sintética',
+  A: 'Analítica',
+  T: 'Totalizadora',
 };
