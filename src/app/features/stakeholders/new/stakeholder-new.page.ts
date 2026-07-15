@@ -80,6 +80,15 @@ export class StakeholderNewPage {
       return;
     }
 
+    // Blocos "completo ou vazio": se o usuário preencheu parte do endereço ou dos
+    // dados bancários, exige o conjunto obrigatório (evita 400 e dados incompletos).
+    const blockError = this.validateBlocks();
+    if (blockError) {
+      this.errorMsg.set(blockError);
+      this.currentStep.set(0);
+      return;
+    }
+
     this.loading.set(true);
     this.errorMsg.set(null);
     const payload = mapFormToPayload(this.form.value);
@@ -96,5 +105,30 @@ export class StakeholderNewPage {
       },
     });
   }
-  
+
+  /** Valida endereço e dados bancários como "bloco completo ou vazio". */
+  private validateBlocks(): string | null {
+    const s1: any = this.step1Form.value;
+    const filled = (v: any) => !!(typeof v === 'string' ? v.trim() : v);
+
+    // Endereço: se qualquer campo foi preenchido, exige o conjunto obrigatório.
+    const addrRequired = [s1.zipCode, s1.address, s1.addressNum, s1.district, s1.city, s1.state];
+    const anyAddress   = addrRequired.some(filled) || filled(s1.complement);
+    if (anyAddress && !addrRequired.every(filled)) {
+      return 'Endereço incompleto: preencha CEP, Endereço, Nº, Bairro, Cidade e UF — ou deixe todos em branco.';
+    }
+
+    // Dados bancários: idem. Nome/documento do correntista seguem o titular ou o correntista.
+    const holderName = s1.differentHolder ? s1.holderName     : s1.name;
+    const holderDoc  = s1.differentHolder ? s1.holderDocument : s1.document;
+    const bankRequired = [holderName, holderDoc, s1.bank, s1.agency, s1.account];
+    const anyBank = [s1.bank, s1.agency, s1.agencyDigit, s1.account, s1.accountDigit,
+                     s1.pixKey, s1.holderName, s1.holderDocument].some(filled);
+    if (anyBank && !bankRequired.every(filled)) {
+      return 'Dados bancários incompletos: preencha nome do correntista, documento, banco, agência e conta — ou deixe em branco.';
+    }
+
+    return null;
+  }
+
 }

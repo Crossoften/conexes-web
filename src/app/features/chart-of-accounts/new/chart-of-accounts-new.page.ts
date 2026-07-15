@@ -34,8 +34,8 @@ export class ChartOfAccountsNewPage implements OnInit {
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
     accountType:    [''],
-    categoryGroup:  [''],
-    costCenter:     [''],
+    categoryGroup:  ['', Validators.required],
+    costCenter:     ['', Validators.required],
     categoryCode:   ['', Validators.required],
     categoryTitle:  ['', Validators.required],
     budgetMgmt:     [false],

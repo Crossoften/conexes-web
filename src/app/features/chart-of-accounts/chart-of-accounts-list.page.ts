@@ -28,14 +28,14 @@ export class ChartOfAccountsListPage implements OnInit {
     { label: 'Inativo',            value: 'Inactive' },
   ];
 
+  // Filtro por Tipo de Conta (coluna "Tipo" = Sintética/Analítica, conforme doc).
   readonly typeOptions: { label: string; value: AccountType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'Totalizadora',     value: 'T' },
-    { label: 'Analítica',        value: 'A' },
-    { label: 'Sintética',        value: 'S' },
+    { label: 'Selecione o tipo', value: ''          },
+    { label: 'Sintética',        value: 'Sintética' },
+    { label: 'Analítica',        value: 'Analítica' },
   ];
 
-  readonly pageSizeOptions = [10, 25, 50];
+  readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
