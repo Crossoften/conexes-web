@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, sign
 import { NgClass, SlicePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, LinkedAccount } from '../cost-centers.model';
+import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, LinkedAccount, resolveEntityType } from '../cost-centers.model';
 import { CostCentersService } from '../cost-centers.service';
 import { environment } from '../../../../environments/environment';
 
@@ -186,15 +186,15 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       status:               (v.status as CostCenterStatus) ?? 'Active',
       accountingCode:       v.accountingCode       ?? '',
       payingSource:         (v.payingSource && v.payingSource !== 'undefined') ? String(v.payingSource) : '',
-      startDate:            v.startDate ? new Date(v.startDate).toISOString() : '',
+      startDate:            v.startDate ? new Date(v.startDate).toISOString() : null,
       categoryDescription:  v.categoryDescription  ?? '',
       restrictInterestFine: !!v.restrictInterest,
       restrictBudget:       !!v.budgetRestriction,
-      costCenterId:         v.costCenterId ? Number(v.costCenterId) : 0,
+      costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
       linkedAccounts:       this.linkedAccounts,
     };
 
-    this.svc.update(this.item.id, this.form.value.projectType ?? '', payload).subscribe({
+    this.svc.update(this.item.id, resolveEntityType(this.item), payload).subscribe({
       next: updated => {
         this.loading.set(false);
         this.mode = 'view';

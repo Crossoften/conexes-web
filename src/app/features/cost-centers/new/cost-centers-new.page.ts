@@ -1,6 +1,6 @@
 // src/app/features/cost-centers/new/cost-centers-new.page.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { CostCentersService } from '../cost-centers.service';
@@ -30,6 +30,7 @@ interface EntityItem {
 export class CostCentersNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   private svc    = inject(CostCentersService);
   private http   = inject(HttpClient);
 
@@ -38,6 +39,9 @@ export class CostCentersNewPage implements OnInit {
   readonly accountPlans = signal<AccountPlanItem[]>([]);
   readonly entities     = signal<EntityItem[]>([]);
   readonly loadingLists = signal(true);
+
+  // Preenchido quando a tela é aberta via "Adicionar Subnível" a partir de um pai.
+  readonly parentName = signal<string | null>(null);
 
   // Contas vinculadas gerenciadas separadamente (array dinâmico)
   linkedAccounts: LinkedAccount[] = [];
@@ -60,6 +64,17 @@ export class CostCentersNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    // "Adicionar Subnível": abre já vinculado a um pai (ex.: projeto dentro de um CC).
+    const qp       = this.route.snapshot.queryParamMap;
+    const parentId = qp.get('parentId');
+    if (parentId) {
+      this.form.patchValue({
+        projectType:  qp.get('type') ?? 'projeto',
+        costCenterId: Number(parentId),
+      });
+      this.parentName.set(qp.get('parentName'));
+    }
+
     let loaded = 0;
     const checkDone = () => { if (++loaded >= 2) this.loadingLists.set(false); };
 
@@ -124,11 +139,11 @@ export class CostCentersNewPage implements OnInit {
       status:              'Active',
       accountingCode:      v.accountingCode      ?? '',
       payingSource:        (v.payingSource && v.payingSource !== 'undefined') ? String(v.payingSource) : '',
-      startDate:           v.startDate ? new Date(v.startDate).toISOString() : '',
+      startDate:           v.startDate ? new Date(v.startDate).toISOString() : null,
       categoryDescription: v.categoryDescription  ?? '',
       restrictInterestFine: !!v.restrictInterest,
       restrictBudget:       !!v.budgetRestriction,
-      costCenterId:         v.costCenterId ? Number(v.costCenterId) : 0,
+      costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
       linkedAccounts:       this.linkedAccounts,
     };
 

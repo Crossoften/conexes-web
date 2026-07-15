@@ -1,7 +1,7 @@
 // src/app/features/cost-centers/cost-centers.store.ts
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { inject, computed } from '@angular/core';
-import { CostCenter, CostCenterStatus } from './cost-centers.model';
+import { CostCenter, CostCenterStatus, resolveEntityType } from './cost-centers.model';
 import { CostCentersService } from './cost-centers.service';
 
 export type SortDirection = 'asc' | 'desc' | null;
@@ -65,7 +65,37 @@ export const CostCentersStore = signalStore(
 
     const expandedIds = computed(() => expanded());
 
-    return { sortedItems, totalPages, expandedIds };
+    // Monta a hierarquia para exibição: Centros de Custo no topo e os Projetos
+    // aninhados como "groups" do seu CC pai (via costCenterId). O back devolve
+    // tudo plano; aqui agrupamos para a expansão em cascata. Projetos sem pai na
+    // página atual caem como itens de topo (órfãos).
+    const treeItems = computed<CostCenter[]>(() => {
+      const all     = sortedItems();
+      const parents = all.filter(i => resolveEntityType(i) === 'cost_center');
+      const parentIds = new Set(parents.map(p => p.id));
+      const childrenByParent = new Map<number, CostCenter[]>();
+      const orphans: CostCenter[] = [];
+
+      for (const i of all) {
+        if (resolveEntityType(i) === 'cost_center') continue;
+        if (i.costCenterId != null && parentIds.has(i.costCenterId)) {
+          const arr = childrenByParent.get(i.costCenterId) ?? [];
+          arr.push(i);
+          childrenByParent.set(i.costCenterId, arr);
+        } else {
+          orphans.push(i);
+        }
+      }
+
+      const withChildren = parents.map(p => ({
+        ...p,
+        _children: childrenByParent.get(p.id) ?? [],
+      }));
+
+      return [...withChildren, ...orphans];
+    });
+
+    return { sortedItems, treeItems, totalPages, expandedIds };
   }),
 
   withMethods(store => {
@@ -110,8 +140,8 @@ export const CostCentersStore = signalStore(
         }));
       },
 
-      deleteById(id: number, type: string) {
-        svc.delete(id, type).subscribe({
+      deleteById(id: number, entityType: 'cost_center' | 'project') {
+        svc.delete(id, entityType).subscribe({
           next: () => patchState(store, s => ({
             items: s.items.filter(c => c.id !== id),
             pagination: { ...s.pagination, total: Math.max(0, s.pagination.total - 1) },
