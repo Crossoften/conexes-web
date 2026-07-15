@@ -1,0 +1,169 @@
+diff --git a/src/app/features/stakeholders/new/stakeholder-new.page.ts b/src/app/features/stakeholders/new/stakeholder-new.page.ts
+index 70f5659..b43d70b 100644
+--- a/src/app/features/stakeholders/new/stakeholder-new.page.ts
++++ b/src/app/features/stakeholders/new/stakeholder-new.page.ts
+@@ -82,9 +82,7 @@ export class StakeholderNewPage {
+ 
+     this.loading.set(true);
+     this.errorMsg.set(null);
+-    console.log('FORM VALUE:', JSON.stringify(this.form.value, null, 2));
+     const payload = mapFormToPayload(this.form.value);
+-    console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
+ 
+     this.svc.create(payload).subscribe({
+       next: () => {
+diff --git a/src/app/features/stakeholders/stakeholder-detail.page.ts b/src/app/features/stakeholders/stakeholder-detail.page.ts
+deleted file mode 100644
+index f7ae95a..0000000
+--- a/src/app/features/stakeholders/stakeholder-detail.page.ts
++++ /dev/null
+@@ -1,25 +0,0 @@
+-// src/app/features/stakeholders/stakeholder-detail.page.ts
+-import { Component, inject } from '@angular/core';
+-import { ActivatedRoute, RouterLink } from '@angular/router';
+-
+-@Component({
+-  selector: 'app-stakeholder-detail',
+-  standalone: true,
+-  imports: [RouterLink],
+-  template: `
+-    <div class="placeholder">
+-      <a class="back" routerLink="/stakeholders">← Voltar</a>
+-      <h2>Detalhe — ID: {{ id }}</h2>
+-      <p>Tela em desenvolvimento</p>
+-    </div>
+-  `,
+-  styles: [`
+-    .placeholder { padding: 32px; }
+-    .back { display: inline-block; margin-bottom: 16px; color: #7C3AED; font-weight: 600; text-decoration: none; }
+-    h2 { font-family: 'Sora', sans-serif; color: #1E1B4B; margin-bottom: 8px; font-size: 18px; }
+-    p  { color: #9CA3AF; font-size: 13px; }
+-  `],
+-})
+-export class StakeholderDetailPage {
+-  id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+-}
+diff --git a/src/app/features/stakeholders/stakeholders.mock.ts b/src/app/features/stakeholders/stakeholders.mock.ts
+deleted file mode 100644
+index 631a187..0000000
+--- a/src/app/features/stakeholders/stakeholders.mock.ts
++++ /dev/null
+@@ -1,17 +0,0 @@
+-// src/app/features/stakeholders/stakeholders.mock.ts
+-import { Stakeholder } from './stakeholders.model';
+-
+-export const STAKEHOLDERS_MOCK: Stakeholder[] = [
+-  { id: '000000001', name: 'Tech Solutions Ltda',    document: '12.345.678/0001-99', type: 'SUPPLIER', status: 'ACTIVE',   email: 'contato@tech.com',    phone: '(11) 3333-4444', createdAt: '2025-01-10T10:00:00Z', updatedAt: '2025-03-01T10:00:00Z' },
+-  { id: '000000002', name: 'Distribuidora Sul S/A',   document: '33.444.555/0001-66', type: 'SUPPLIER', status: 'ACTIVE',   email: 'sul@distrib.com',     phone: '(41) 2222-1111', createdAt: '2025-01-15T10:00:00Z', updatedAt: '2025-03-05T10:00:00Z' },
+-  { id: '000000003', name: 'Construtora Norte Ltda',  document: '77.888.999/0001-11', type: 'SUPPLIER', status: 'ACTIVE',   email: 'norte@const.com',     phone: '(51) 3333-2222', createdAt: '2025-02-01T10:00:00Z', updatedAt: '2025-03-25T10:00:00Z' },
+-  { id: '000000004', name: 'Global Services S/A',     document: '98.765.432/0001-10', type: 'SUPPLIER', status: 'INACTIVE', email: 'global@services.com', phone: '(11) 2222-3333', createdAt: '2025-03-01T10:00:00Z', updatedAt: '2025-03-15T10:00:00Z' },
+-  { id: '000000005', name: 'Fundação Esperança',       document: '88.999.000/0001-22', type: 'OTHER',    status: 'INACTIVE', email: 'fundo@esp.org',       phone: '(11) 5555-6666', createdAt: '2024-10-01T10:00:00Z', updatedAt: '2025-01-20T10:00:00Z' },
+-  { id: '000000006', name: 'Instituto Futuro',         document: '44.555.666/0001-77', type: 'OTHER',    status: 'ACTIVE',   email: 'contato@futuro.org',  phone: '(11) 4444-5555', createdAt: '2025-01-05T10:00:00Z', updatedAt: '2025-03-20T10:00:00Z' },
+-  { id: '000000007', name: 'Ana Martins',              document: '123.456.789-00',     type: 'CLIENT',   status: 'ACTIVE',   email: 'ana@email.com',       phone: '(11) 9 9999-1111', createdAt: '2025-01-10T10:00:00Z', updatedAt: '2025-03-01T10:00:00Z' },
+-  { id: '000000008', name: 'Carlos Rocha',             document: '987.654.321-00',     type: 'CLIENT',   status: 'ACTIVE',   email: 'carlos@email.com',    phone: '(21) 9 8888-7777', createdAt: '2025-01-20T10:00:00Z', updatedAt: '2025-02-20T10:00:00Z' },
+-  { id: '000000009', name: 'Maria Silva',              document: '222.333.444-55',     type: 'CLIENT',   status: 'INACTIVE', email: 'maria@email.com',     phone: '(61) 9 5555-4444', createdAt: '2025-03-10T10:00:00Z', updatedAt: '2025-03-28T10:00:00Z' },
+-  { id: '000000010', name: 'João Pereira',             document: '666.777.888-99',     type: 'CLIENT',   status: 'ACTIVE',   email: 'joao@email.com',      phone: '(71) 9 4444-3333', createdAt: '2025-02-20T10:00:00Z', updatedAt: '2025-03-15T10:00:00Z' },
+-  { id: '000000011', name: 'Lucia Ferreira',           document: '111.222.333-44',     type: 'DONOR',    status: 'ACTIVE',   email: 'lucia@email.com',     phone: '(31) 9 7777-6666', createdAt: '2024-12-01T10:00:00Z', updatedAt: '2025-01-05T10:00:00Z' },
+-  { id: '000000012', name: 'Roberto Lima',             document: '555.666.777-88',     type: 'DONOR',    status: 'INACTIVE', email: 'roberto@email.com',   phone: '(41) 9 6666-5555', createdAt: '2024-11-01T10:00:00Z', updatedAt: '2025-02-01T10:00:00Z' },
+-];
+diff --git a/src/app/features/stakeholders/stakeholders.page.ts b/src/app/features/stakeholders/stakeholders.page.ts
+deleted file mode 100644
+index 7b7546a..0000000
+--- a/src/app/features/stakeholders/stakeholders.page.ts
++++ /dev/null
+@@ -1,77 +0,0 @@
+-// src/app/features/stakeholders/stakeholders.page.ts
+-import { Component, inject, computed } from '@angular/core';
+-import { FormsModule } from '@angular/forms';
+-import { NgClass } from '@angular/common';
+-import { RouterLink } from '@angular/router';
+-import { StakeholdersStore } from './stakeholders.store';
+-import { StakeholderDetailModalComponent } from './components/stakeholder-detail.modal';
+-
+-@Component({
+-  selector: 'app-stakeholders-list',
+-  standalone: true,
+-  imports: [FormsModule, NgClass, RouterLink, StakeholderDetailModalComponent],
+-  providers: [StakeholdersStore],
+-  templateUrl: './stakeholders-list.page.html',
+-  styleUrl: './stakeholders-list.page.scss',
+-})
+-export class StakeholdersPage {
+-  readonly store = inject(StakeholdersStore);
+-
+-  readonly statusOptions = [
+-    { label: 'Selecione o status', value: '' },
+-    { label: 'Ativo', value: 'ACTIVE' },
+-    { label: 'Inativo', value: 'INACTIVE' },
+-  ];
+-
+-  readonly pageSizeOptions = [10, 25, 50];
+-
+-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
+-
+-  readonly pageNumbers = computed((): (number | '...')[] => {
+-    const total = this.totalPages();
+-    const current = this.store.pagination().page;
+-    const pages: (number | '...')[] = [];
+-
+-    if (total <= 7) {
+-      for (let i = 1; i <= total; i++) pages.push(i);
+-      return pages;
+-    }
+-    pages.push(1);
+-    if (current > 3) pages.push('...');
+-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+-    if (current < total - 2) pages.push('...');
+-    pages.push(total);
+-    return pages;
+-  });
+-
+-  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+-
+-  onSearch(value: string) {
+-    if (this.searchTimer) clearTimeout(this.searchTimer);
+-    this.searchTimer = setTimeout(() => this.store.setSearch(value), 400);
+-  }
+-
+-  getSortState(col: string): 'none' | 'asc' | 'desc' {
+-    const { column, direction } = this.store.sort();
+-    if (column !== col || !direction) return 'none';
+-    return direction;
+-  }
+-
+-  goToPage(p: number | '...') {
+-    if (typeof p === 'number') this.store.setPage(p);
+-  }
+-
+-  // Controle do Modal
+-  selectedStakeholder: any = null;
+-  isModalOpen = false;
+-
+-  openModal(stakeholder: any) {
+-    this.selectedStakeholder = stakeholder;
+-    this.isModalOpen = true;
+-  }
+-
+-  closeModal() {
+-    this.isModalOpen = false;
+-    this.selectedStakeholder = null;
+-  }
+-}
+\ No newline at end of file
+diff --git a/src/app/features/stakeholders/stakeholders.routes.ts b/src/app/features/stakeholders/stakeholders.routes.ts
+index 01522f2..cbe62d3 100644
+--- a/src/app/features/stakeholders/stakeholders.routes.ts
++++ b/src/app/features/stakeholders/stakeholders.routes.ts
+@@ -14,10 +14,6 @@ export const stakeholdersRoutes: Routes = [
+       import('./new/stakeholder-new.page').then(m => m.StakeholderNewPage),
+     data: { title: 'Novo Stakeholder' },
+   },
+-  {
+-    path: ':id',
+-    loadComponent: () =>
+-      import('./stakeholder-detail.page').then(m => m.StakeholderDetailPage),
+-    data: { title: 'Detalhe do Stakeholder' },
+-  },
++  // Detalhe/edição é feito via modal na listagem (StakeholderDetailModalComponent);
++  // não há página dedicada de detalhe por enquanto.
+ ];
