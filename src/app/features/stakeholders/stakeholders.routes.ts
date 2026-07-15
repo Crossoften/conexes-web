@@ -14,10 +14,6 @@ export const stakeholdersRoutes: Routes = [
       import('./new/stakeholder-new.page').then(m => m.StakeholderNewPage),
     data: { title: 'Novo Stakeholder' },
   },
-  {
-    path: ':id',
-    loadComponent: () =>
-      import('./stakeholder-detail.page').then(m => m.StakeholderDetailPage),
-    data: { title: 'Detalhe do Stakeholder' },
-  },
+  // Detalhe/edição é feito via modal na listagem (StakeholderDetailModalComponent);
+  // não há página dedicada de detalhe por enquanto.
 ];

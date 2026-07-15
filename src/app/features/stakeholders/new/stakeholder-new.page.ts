@@ -82,9 +82,7 @@ export class StakeholderNewPage {
 
     this.loading.set(true);
     this.errorMsg.set(null);
-    console.log('FORM VALUE:', JSON.stringify(this.form.value, null, 2));
     const payload = mapFormToPayload(this.form.value);
-    console.log('PAYLOAD:', JSON.stringify(payload, null, 2));
 
     this.svc.create(payload).subscribe({
       next: () => {
