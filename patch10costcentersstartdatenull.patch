@@ -1,0 +1,39 @@
+diff --git a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+index 9a283d4..c9ede76 100644
+--- a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
++++ b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+@@ -186,7 +186,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
+       status:               (v.status as CostCenterStatus) ?? 'Active',
+       accountingCode:       v.accountingCode       ?? '',
+       payingSource:         (v.payingSource && v.payingSource !== 'undefined') ? String(v.payingSource) : '',
+-      startDate:            v.startDate ? new Date(v.startDate).toISOString() : '',
++      startDate:            v.startDate ? new Date(v.startDate).toISOString() : null,
+       categoryDescription:  v.categoryDescription  ?? '',
+       restrictInterestFine: !!v.restrictInterest,
+       restrictBudget:       !!v.budgetRestriction,
+diff --git a/src/app/features/cost-centers/cost-centers.model.ts b/src/app/features/cost-centers/cost-centers.model.ts
+index 960f45f..5023126 100644
+--- a/src/app/features/cost-centers/cost-centers.model.ts
++++ b/src/app/features/cost-centers/cost-centers.model.ts
+@@ -57,7 +57,7 @@ export interface CostCenterPayload {
+   status:               CostCenterStatus;
+   accountingCode:       string;
+   payingSource:         string;
+-  startDate:            string;
++  startDate:            string | null;
+   categoryDescription:  string;
+   restrictInterestFine: boolean;
+   restrictBudget:       boolean;
+diff --git a/src/app/features/cost-centers/new/cost-centers-new.page.ts b/src/app/features/cost-centers/new/cost-centers-new.page.ts
+index a92dad3..7b110dd 100644
+--- a/src/app/features/cost-centers/new/cost-centers-new.page.ts
++++ b/src/app/features/cost-centers/new/cost-centers-new.page.ts
+@@ -139,7 +139,7 @@ export class CostCentersNewPage implements OnInit {
+       status:              'Active',
+       accountingCode:      v.accountingCode      ?? '',
+       payingSource:        (v.payingSource && v.payingSource !== 'undefined') ? String(v.payingSource) : '',
+-      startDate:           v.startDate ? new Date(v.startDate).toISOString() : '',
++      startDate:           v.startDate ? new Date(v.startDate).toISOString() : null,
+       categoryDescription: v.categoryDescription  ?? '',
+       restrictInterestFine: !!v.restrictInterest,
+       restrictBudget:       !!v.budgetRestriction,

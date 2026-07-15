@@ -171,6 +171,7 @@
 
   &--expand { width: 40px; padding: 0 8px 0 16px; }
   &--right  { text-align: right; }
+  &--center { text-align: center; }
   &--sortable { cursor: pointer; &:hover { background: #F3F0FF; color: var(--brand-purple); } }
 }
 
@@ -205,6 +206,27 @@
   &--name   { color: var(--text-primary); font-weight: 500; }
   &--right  { text-align: right; }
   &--empty  { padding: 64px 16px; text-align: center; }
+}
+
+// ── Linhas de subnível (projetos aninhados sob o CC) ──
+.tr--child {
+  background: #FBFAFF;
+  &:hover { background: #F5F3FF; }
+}
+
+.td--child-first {
+  padding-left: 44px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background: var(--brand-purple-mid, #C4B5FD);
+  }
 }
 
 .empty-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
@@ -321,7 +343,7 @@
 .action-icons {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
 }
 

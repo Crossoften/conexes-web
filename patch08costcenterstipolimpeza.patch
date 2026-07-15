@@ -1,0 +1,183 @@
+diff --git a/src/app/features/cost-centers/components/cost-centers-detail.modal.html b/src/app/features/cost-centers/components/cost-centers-detail.modal.html
+index 49489c2..ac28008 100644
+--- a/src/app/features/cost-centers/components/cost-centers-detail.modal.html
++++ b/src/app/features/cost-centers/components/cost-centers-detail.modal.html
+@@ -131,8 +131,8 @@
+                     <select class="select" formControlName="projectType"
+                       [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
+                       <option value="">Selecione</option>
+-                      <option value="Projeto">Projeto</option>
+-                      <option value="Centro de Custos">Centro de Custos</option>
++                      <option value="centro_de_custo">Centro de Custo</option>
++                      <option value="projeto">Projeto</option>
+                     </select>
+                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                   </div>
+diff --git a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+index 88b017e..9a283d4 100644
+--- a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
++++ b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+@@ -190,7 +190,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
+       categoryDescription:  v.categoryDescription  ?? '',
+       restrictInterestFine: !!v.restrictInterest,
+       restrictBudget:       !!v.budgetRestriction,
+-      costCenterId:         v.costCenterId ? Number(v.costCenterId) : 0,
++      costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
+       linkedAccounts:       this.linkedAccounts,
+     };
+ 
+diff --git a/src/app/features/cost-centers/cost-centers-list.page.html b/src/app/features/cost-centers/cost-centers-list.page.html
+index fc58240..1d5b2ff 100644
+--- a/src/app/features/cost-centers/cost-centers-list.page.html
++++ b/src/app/features/cost-centers/cost-centers-list.page.html
+@@ -120,7 +120,7 @@
+ 
+                 <td class="td td--mono">{{ item.code }}</td>
+                 <td class="td td--name">{{ item.name || item.title }}</td>
+-                <td class="td">{{ item.type === 'centro_de_custo' ? 'Centro de Custo' : item.type }}</td>
++                <td class="td">{{ typeLabel(item.type) }}</td>
+                 <td class="td">{{ item.restrictBudget ? 'Sim' : 'Não' }}</td>
+                 <td class="td">{{ item.description }}</td>
+ 
+diff --git a/src/app/features/cost-centers/cost-centers-list.page.ts b/src/app/features/cost-centers/cost-centers-list.page.ts
+index 8c9e4ab..ac25ce2 100644
+--- a/src/app/features/cost-centers/cost-centers-list.page.ts
++++ b/src/app/features/cost-centers/cost-centers-list.page.ts
+@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
+ import { NgClass } from '@angular/common';
+ import { RouterLink } from '@angular/router';
+ import { CostCentersStore } from './cost-centers.store';
+-import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
++import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG, COST_CENTER_TYPE_LABELS } from './cost-centers.model';
+ import { CostCentersDetailModalComponent } from './components/cost-centers-detail.modal';
+ import { CostCentersService } from './cost-centers.service';
+ 
+@@ -29,11 +29,15 @@ export class CostCentersListPage implements OnInit {
+   readonly exporting = signal(false);
+ 
+   readonly typeOptions: { label: string; value: string }[] = [
+-    { label: 'Todos os tipos',    value: ''               },
++    { label: 'Todos os tipos',    value: ''                },
+     { label: 'Centro de Custo',   value: 'centro_de_custo' },
+-    { label: 'Projeto',           value: 'Projeto'         },
++    { label: 'Projeto',           value: 'projeto'         },
+   ];
+ 
++  typeLabel(type: string): string {
++    return COST_CENTER_TYPE_LABELS[type] ?? type;
++  }
++
+   readonly pageSizeOptions = [10, 25, 50];
+ 
+   readonly totalPages = computed(() => this.store.totalPages());
+diff --git a/src/app/features/cost-centers/cost-centers.mock.ts b/src/app/features/cost-centers/cost-centers.mock.ts
+deleted file mode 100644
+index 0fe1fe3..0000000
+--- a/src/app/features/cost-centers/cost-centers.mock.ts
++++ /dev/null
+@@ -1,55 +0,0 @@
+-// src/app/features/cost-centers/cost-centers.mock.ts
+-import { CostCenter } from './cost-centers.model';
+-
+-export const COST_CENTERS_MOCK: CostCenter[] = [
+-  {
+-    id: '1', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-    groups: [
+-      {
+-        id: 'g1', code: '1.1.02', title: 'PROJETO TRANSFORMANDO VIDAS',
+-        children: [
+-          { id: 'g1-1', code: '1.1.02.01', title: 'Curso de Corte e Costura',        description: 'Descrição atividade', status: 'ACTIVE' },
+-          { id: 'g1-2', code: '1.1.02.02', title: 'Curso de Auxiliar Administrativo', description: 'Descrição atividade', status: 'ACTIVE' },
+-          { id: 'g1-3', code: '1.1.02.03', title: 'Curso de Unha',                   description: 'Descrição atividade', status: 'ACTIVE' },
+-        ],
+-      },
+-    ],
+-  },
+-  {
+-    id: '2', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-  {
+-    id: '3', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-  {
+-    id: '4', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-  {
+-    id: '5', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'INACTIVE',
+-  },
+-  {
+-    id: '6', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'INACTIVE',
+-  },
+-  {
+-    id: '7', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'INACTIVE',
+-  },
+-  {
+-    id: '8', number: '000000000', title: 'IGEP Gestão estratégica', type: 'T',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-  {
+-    id: '9', number: '000000000', title: 'IGEP Gestão estratégica', type: 'A',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-  {
+-    id: '10', number: '000000000', title: 'IGEP Gestão estratégica', type: 'A',
+-    budgetMgmt: 'Ativo', description: 'IGEP Gestão estratégica', status: 'ACTIVE',
+-  },
+-];
+diff --git a/src/app/features/cost-centers/cost-centers.model.ts b/src/app/features/cost-centers/cost-centers.model.ts
+index dc2a578..960f45f 100644
+--- a/src/app/features/cost-centers/cost-centers.model.ts
++++ b/src/app/features/cost-centers/cost-centers.model.ts
+@@ -93,6 +93,17 @@ export const COST_CENTER_STATUS_CONFIG: Record<CostCenterStatus, StatusConfig> =
+   Inactive: { label: 'Inativo', variant: 'danger'  },
+ };
+ 
++// Rótulos do Tipo. Valores canônicos: centro_de_custo | projeto | atividade.
++// Inclui variantes legadas já gravadas para exibir rótulo amigável.
++export const COST_CENTER_TYPE_LABELS: Record<string, string> = {
++  centro_de_custo:     'Centro de Custo',
++  projeto:             'Projeto',
++  atividade:           'Atividade',
++  // legado
++  'Centro de Custos':  'Centro de Custo',
++  'Projeto':           'Projeto',
++};
++
+ // ── Helper: deriva entityType a partir do campo type ─────────────────────────
+ 
+ export function toEntityType(type: string): 'cost_center' | 'project' {
+diff --git a/src/app/features/cost-centers/new/cost-centers-new.page.html b/src/app/features/cost-centers/new/cost-centers-new.page.html
+index c6de9c4..9752392 100644
+--- a/src/app/features/cost-centers/new/cost-centers-new.page.html
++++ b/src/app/features/cost-centers/new/cost-centers-new.page.html
+@@ -28,8 +28,8 @@
+                 <select class="form-control" formControlName="projectType"
+                   [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
+                   <option value="">Selecione</option>
+-                  <option value="Projeto">Projeto</option>
+-                  <option value="Centro de Custos">Centro de Custos</option>
++                  <option value="centro_de_custo">Centro de Custo</option>
++                  <option value="projeto">Projeto</option>
+                 </select>
+                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+               </div>
+diff --git a/src/app/features/cost-centers/new/cost-centers-new.page.ts b/src/app/features/cost-centers/new/cost-centers-new.page.ts
+index 4badc5e..2b0e1b9 100644
+--- a/src/app/features/cost-centers/new/cost-centers-new.page.ts
++++ b/src/app/features/cost-centers/new/cost-centers-new.page.ts
+@@ -128,7 +128,7 @@ export class CostCentersNewPage implements OnInit {
+       categoryDescription: v.categoryDescription  ?? '',
+       restrictInterestFine: !!v.restrictInterest,
+       restrictBudget:       !!v.budgetRestriction,
+-      costCenterId:         v.costCenterId ? Number(v.costCenterId) : 0,
++      costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
+       linkedAccounts:       this.linkedAccounts,
+     };
+ 

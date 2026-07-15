@@ -18,6 +18,12 @@
           <div class="error-banner" role="alert">{{ errorMsg() }}</div>
         }
 
+        @if (parentName()) {
+          <div class="parent-hint">
+            Novo subnível vinculado a: <strong>{{ parentName() }}</strong>
+          </div>
+        }
+
         <div class="form-grid">
 
           <div class="form-row grid-cols-3">
@@ -28,8 +34,8 @@
                 <select class="form-control" formControlName="projectType"
                   [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
                   <option value="">Selecione</option>
-                  <option value="Projeto">Projeto</option>
-                  <option value="Centro de Custos">Centro de Custos</option>
+                  <option value="centro_de_custo">Centro de Custo</option>
+                  <option value="projeto">Projeto</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>

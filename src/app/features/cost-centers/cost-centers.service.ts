@@ -8,7 +8,6 @@ import {
   CostCenterPayload,
   CostCenterListParams,
   CostCenterListResponse,
-  toEntityType,
 } from './cost-centers.model';
 
 @Injectable({ providedIn: 'root' })
@@ -25,8 +24,8 @@ export class CostCentersService {
     return this.http.get<CostCenterListResponse>(this.base, { params: p });
   }
 
-  getById(id: number, type: string): Observable<CostCenter> {
-    const params = new HttpParams().set('entityType', toEntityType(type));
+  getById(id: number, entityType: 'cost_center' | 'project'): Observable<CostCenter> {
+    const params = new HttpParams().set('entityType', entityType);
     return this.http.get<CostCenter>(`${this.base}/${id}`, { params });
   }
 
@@ -34,13 +33,13 @@ export class CostCentersService {
     return this.http.post<CostCenter>(this.base, payload);
   }
 
-  update(id: number, type: string, payload: Partial<CostCenterPayload>): Observable<CostCenter> {
-    const params = new HttpParams().set('entityType', toEntityType(type));
+  update(id: number, entityType: 'cost_center' | 'project', payload: Partial<CostCenterPayload>): Observable<CostCenter> {
+    const params = new HttpParams().set('entityType', entityType);
     return this.http.patch<CostCenter>(`${this.base}/${id}`, payload, { params });
   }
 
-  delete(id: number, type: string): Observable<void> {
-    const params = new HttpParams().set('entityType', toEntityType(type));
+  delete(id: number, entityType: 'cost_center' | 'project'): Observable<void> {
+    const params = new HttpParams().set('entityType', entityType);
     return this.http.delete<void>(`${this.base}/${id}`, { params });
   }
 

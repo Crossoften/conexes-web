@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CostCentersStore } from './cost-centers.store';
-import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG } from './cost-centers.model';
+import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG, COST_CENTER_TYPE_LABELS, resolveEntityType } from './cost-centers.model';
 import { CostCentersDetailModalComponent } from './components/cost-centers-detail.modal';
 import { CostCentersService } from './cost-centers.service';
 
@@ -29,10 +29,14 @@ export class CostCentersListPage implements OnInit {
   readonly exporting = signal(false);
 
   readonly typeOptions: { label: string; value: string }[] = [
-    { label: 'Todos os tipos',    value: ''               },
+    { label: 'Todos os tipos',    value: ''                },
     { label: 'Centro de Custo',   value: 'centro_de_custo' },
-    { label: 'Projeto',           value: 'Projeto'         },
+    { label: 'Projeto',           value: 'projeto'         },
   ];
+
+  typeLabel(type: string): string {
+    return COST_CENTER_TYPE_LABELS[type] ?? type;
+  }
 
   readonly pageSizeOptions = [10, 25, 50];
 
@@ -108,7 +112,7 @@ export class CostCentersListPage implements OnInit {
     const item = this.selectedItem();
     this.showModal.set(false);
     this.selectedItem.set(null);
-    if (item) this.store.deleteById(id, item.type);
+    if (item) this.store.deleteById(id, resolveEntityType(item));
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -122,7 +126,7 @@ export class CostCentersListPage implements OnInit {
 
   onDelete(item: CostCenter): void {
     if (!confirm('Tem certeza que deseja excluir este registro?')) return;
-    this.store.deleteById(item.id, item.type);
+    this.store.deleteById(item.id, resolveEntityType(item));
   }
 
   getSortState(col: keyof CostCenter): 'none' | 'asc' | 'desc' {
