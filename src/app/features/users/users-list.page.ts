@@ -73,7 +73,14 @@ export class UsersListPage implements OnInit {
 
   // ── Modal — User ──────────────────────────────────────────────────────────
 
-  openUser(user: User): void { this.selectedUser.set(user); }
+  openUser(user: User): void {
+    this.selectedUser.set(user);
+    // O findAll pode vir enxuto (sem modulePermissions); busca o detalhe completo.
+    this.svc.getUserById(user.id).subscribe({
+      next: full => { if (this.selectedUser()?.id === user.id) this.selectedUser.set(full); },
+      error: () => { /* mantém os dados da lista */ },
+    });
+  }
   closeUserModal(): void     { this.selectedUser.set(null); }
 
   onUserSaved(event: { id: number; payload: Partial<UserUpdatePayload> }): void {
@@ -92,14 +99,28 @@ export class UsersListPage implements OnInit {
 
   onUserDeleted(id: number): void {
     if (!confirm('Deseja excluir este usuário?')) return;
-    this.store.deleteUser(id);
-    this.closeUserModal();
-    this.showToast('Usuário excluído.', 'success');
+    this.store.deleteUser(id).subscribe({
+      next: () => {
+        this.closeUserModal();
+        this.showToast('Usuário excluído.', 'success');
+      },
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao excluir usuário.';
+        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
+      },
+    });
   }
 
   // ── Modal — Profile ───────────────────────────────────────────────────────
 
-  openProfile(p: PermissionProfile): void { this.selectedProfile.set(p); }
+  openProfile(p: PermissionProfile): void {
+    this.selectedProfile.set(p);
+    // O findAll pode vir sem a matriz de permissões; busca o detalhe completo.
+    this.svc.getProfileById(p.id).subscribe({
+      next: full => { if (this.selectedProfile()?.id === p.id) this.selectedProfile.set(full); },
+      error: () => { /* mantém os dados da lista */ },
+    });
+  }
   closeProfileModal(): void               { this.selectedProfile.set(null); }
 
   onProfileSaved(event: { id: number; payload: Partial<PermissionProfileUpdatePayload> }): void {
@@ -118,9 +139,16 @@ export class UsersListPage implements OnInit {
 
   onProfileDeleted(id: number): void {
     if (!confirm('Deseja excluir este perfil de permissão?')) return;
-    this.store.deleteProfile(id);
-    this.closeProfileModal();
-    this.showToast('Perfil excluído.', 'success');
+    this.store.deleteProfile(id).subscribe({
+      next: () => {
+        this.closeProfileModal();
+        this.showToast('Perfil excluído.', 'success');
+      },
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao excluir perfil.';
+        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
+      },
+    });
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────

@@ -32,11 +32,13 @@ export class UserDetailModalComponent {
   readonly roleLabels   = USER_ROLE_LABELS;
 
   readonly roleOptions = [
-    { label: 'Master',   value: 'Master'   },
-    { label: 'Admin',    value: 'Admin'    },
-    { label: 'Gerente',  value: 'Manager'  },
-    { label: 'Operador', value: 'Operator' },
-    { label: 'Viewer',   value: 'Viewer'   },
+    { label: 'Master',              value: 'Master'             },
+    { label: 'Admin',               value: 'Admin'              },
+    { label: 'Backoffice',          value: 'Backoffice'         },
+    { label: 'Gestor de Entidades', value: 'EntityManager'      },
+    { label: 'Gestor de Compras',   value: 'ProcurementManager' },
+    { label: 'Financeiro',          value: 'Finance'            },
+    { label: 'Operacional',         value: 'Operational'        },
   ];
 
   readonly statusOptions = [

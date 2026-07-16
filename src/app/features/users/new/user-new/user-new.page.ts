@@ -43,7 +43,7 @@ export class UserNewPage implements OnInit {
     email:               ['', [Validators.required, Validators.email]],
     role:                ['', Validators.required],
     password:            ['', [Validators.required, Validators.minLength(6)]],
-    permissionProfileId: [null],
+    permissionProfileId: [null, Validators.required],
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
