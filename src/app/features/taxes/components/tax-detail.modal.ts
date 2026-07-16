@@ -33,8 +33,23 @@ export class TaxDetailModalComponent implements OnChanges {
   services: TaxService[] = [];
   newService: Partial<TaxService> = this.emptyService();
 
+  // Campos de alíquota que compõem o Total das Retenções (soma simples).
+  private readonly ALIQUOT_FIELDS = [
+    'aliqIRRF', 'aliqPIS', 'aliqPCC', 'aliqCOFINS',
+    'aliqINSS', 'aliqCSLL', 'aliqIBS', 'aliqCBS',
+  ];
+
+  computeTotal(): number {
+    const v = this.form.getRawValue();
+    return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + (Number(v[k]) || 0), 0);
+  }
+
   constructor(private fb: FormBuilder) {
     this.form = this.buildForm();
+    // Atualiza o "Total das Retenções" ao alterar as alíquotas.
+    this.form.valueChanges.subscribe(() => {
+      this.form.get('resumoRetencoes')?.setValue(this.computeTotal(), { emitEvent: false });
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -118,7 +133,7 @@ export class TaxDetailModalComponent implements OnChanges {
       serviceClassCode: v.codigoServico                ?? this.tax.serviceClassCode,
       serviceTitle:     v.tituloServico                ?? this.tax.serviceTitle,
       operationNature:  v.naturezaOperacao             ?? this.tax.operationNature,
-      totalRetentions:  this.tax.totalRetentions,
+      totalRetentions:  this.computeTotal(),
       manualAliquots:   !!v.definirAliquotasManual,
       irfAliquot:       Number(v.aliqIRRF)             || 0,
       irfCode:          v.irfCode                      ?? '',

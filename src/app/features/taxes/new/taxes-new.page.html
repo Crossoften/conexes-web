@@ -25,6 +25,7 @@
               <label>Fornecedor <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="fornecedor"
+                  (change)="onSupplierChange($any($event.target).value)"
                   [class.is-invalid]="form.get('fornecedor')?.invalid && form.get('fornecedor')?.touched">
                   <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
                   @for (s of stakeholders(); track s.id) {

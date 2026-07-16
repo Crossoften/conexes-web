@@ -1,84 +1,74 @@
 diff --git a/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
 new file mode 100644
-index 0000000..a4d3c8c
+index 0000000..0bfd914
 --- /dev/null
 +++ b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,55 @@
 +# Auditoria Técnica Front × Back — Contexto e Continuidade
 +
 +> **Leia este arquivo primeiro ao iniciar uma nova sessão.**
-+> Consolida regras de trabalho, fluxo de git, estado da auditoria e pontos que se
-+> cruzam entre módulos. Alimentar a cada módulo.
++> Consolida regras de trabalho, fluxo de git, estado da auditoria e acoplamentos.
 +
 +---
 +
-+## 1. Papel e regras de trabalho (permanentes)
-+- **Revisor técnico + desenvolvedor Front-end**, garantindo aderência total ao Back.
++## 1. Papel e regras (permanentes)
++- **Revisor técnico + desenvolvedor Front-end**, aderência total ao Back.
 +- **Nunca commitar.** Entregas via **patch/diff**; commits são do usuário.
-+- **Nunca executar alterações sem aprovação explícita.**
++- **Nunca alterar sem aprovação explícita.**
 +- Fluxo por módulo: **Análise → Relatório (Front × Back) → Plano → (OK) → Patches.**
 +- Último **Swagger** = referência oficial. **Regras do cliente têm prioridade.**
-+- Trade-off → apresentar opções (prós/contras/riscos) e recomendar.
 +
-+## 2. Projeto e stack
++## 2. Stack
 +- **Repo:** `crossoften/conexes-web` (`conexao-3-setor`). **Angular 20** (standalone + signals), `@ngrx/signals` em alguns stores.
 +- **API base:** `https://homolog.crosoften.com:8045`. **Auth:** `authInterceptor` (Bearer); `errorInterceptor` (401/403).
 +- **Estrutura:** `src/app/features/<modulo>/` com `*.model.ts`, `*.service.ts`, `*.store.ts`, `*-list.page.*`, `new/`, `components/*-detail.modal.*`.
 +
 +## 3. Git — branch e fluxo
 +- **Branch oficial:** `ajustes-gerais-modulos` (de `compras-teste`, publicada no `origin`).
-+- Usuário edita **local** e commita; agente edita na **nuvem** e entrega **patches**.
++- Agente edita na **nuvem** e entrega **patches**; usuário aplica e commita local.
 +- Patches sequenciais: empilhar os já entregues (staged) e gerar `git diff` do novo por cima.
 +- Aplicar: `git apply --check <patch>` → `git apply <patch>` → `git add -A` → `git commit`.
 +
-+## 4. Convenções: **F-xx** Front · **B-xx** Back (prefixo por módulo, ex. `B-CC-01`) · **A-xx** arquitetura.
++## 4. Convenções: **F-xx** Front · **B-xx** Back (prefixo por módulo) · **A-xx** arquitetura.
 +
-+## 5. Enums globais
-+- **UserRole:** Master, Admin, Backoffice, EntityManager, ProcurementManager, Finance, Operational
-+- **Status:** Active/Pending/Inactive · **Financeiro:** Open/Paid/Cancelled/Reconciled
++## 5. Estado da auditoria
 +
-+## 6. Estado da auditoria
-+
-+| # | Módulo | Rota Front | Endpoint real | Status |
++| # | Módulo | Rota Front | Endpoint | Status |
 +|---|---|---|---|---|
 +| 1 | **Stakeholders** | `features/stakeholders` | `/v1/stakeholders` | ✅ 5 patches (01–05) · Back B-01..B-12 |
 +| 2 | **Plano de Contas** | `features/chart-of-accounts` | `/v1/account-plan` | ✅ 2 patches (06,07) · Back B-PC-01..06 |
-+| 3 | **Centro de Custo/Projeto/Atividade** | `features/cost-centers` | **`/v1/projects`** | ✅ 6 patches (08–13) · Back B-CC-01..08 |
++| 3 | **Centro de Custo/Projeto/Atividade** | `features/cost-centers` | `/v1/projects` | ✅ 6 patches (08–13) · Back B-CC-01..08 |
++| 4 | **Impostos e Retenções** | `features/taxes` | `/v1/tax-service` | ✅ 2 patches (14,15) · Back B-TX-01..07 |
 +
-+## 7. Módulo 1 — Stakeholders
-+Patches: 01 limpeza · 02 ajustes cadastro · 03 toast · 04 edição bancária · 05 endereço/banco bloco completo.
-+Back: `pendencias-backend-stakeholders.md` (B-01..B-12).
++## 6. Módulo 1 — Stakeholders
++Patches 01–05 (limpeza, ajustes cadastro, toast, edição bancária, endereço/banco bloco completo). Back: `pendencias-backend-stakeholders.md` (entregue à parte). Impostos **embutidos no stakeholder** (decisão).
 +
-+## 8. Módulo 2 — Plano de Contas
-+Patches: **06** vocabulário (Tipo da Categoria = Entrada/Saída/Totalizadora; Tipo de Conta = Sintética/Analítica) + filtro + page size + "Salvar" + remove mock. **07** Grupo da Categoria + obrigatoriedade.
-+Back: `pendencias-backend-plano-de-contas.md` (B-PC-01..06).
++## 7. Módulo 2 — Plano de Contas
++Patches 06 (vocabulário/filtro/pagesize/salvar/mock) e 07 (Grupo da Categoria + obrigatoriedade). Back: `pendencias-backend-plano-de-contas.md`.
 +
-+## 9. Módulo 3 — Centro de Custo / Projeto / Atividade
-+**Endpoint:** `/v1/projects` (cria CC ou Projeto conforme `type`). `/v1/cost-centers` **não usado**.
++## 8. Módulo 3 — Centro de Custo / Projeto / Atividade
++Endpoint `/v1/projects` (`/v1/cost-centers` não usado). Patches 08–13: tipo canônico + `costCenterId` null, "Adicionar Subnível", startDate null (hotfix), `entityType` via `_entityType` (hotfix 404), árvore no Front + coluna Ações, subníveis como linhas completas. Back: `pendencias-backend-cost-centers.md` (B-CC-01..08). Atividade (3º nível) aguarda Back.
++
++## 9. Módulo 4 — Impostos e Retenções
++**Endpoint:** `/v1/tax-service`. Contrato só tem `POST` (createOrUpdate/upsert), `GET` (findAll), `GET /stakeholder/{id}`, `DELETE /{id}`, `export` — **não há GET/{id} nem PATCH/{id}**.
 +**Patches:**
-+- **08** corrige valor de `type` (bug: form enviava `"Centro de Custos"` → Back criava Projeto; agora `centro_de_custo`/`projeto`) + `costCenterId` null + filtro/labels + remove mock.
-+- **09** ação **"Adicionar Subnível"** (Projeto dentro de um CC, via query params `type`/`parentId`/`parentName`).
-+- **10** (hotfix) `startDate` = `null` quando vazio (Back rejeitava `''` — 400).
-+- **11** (hotfix) resolve `entityType` pelo campo **`_entityType`** do back (corrige **404** na edição/exclusão de registros legados).
-+- **12** monta a **árvore no Front** (projetos aninhados sob o CC pai via `costCenterId`) + centraliza coluna Ações.
-+- **13** subníveis como **linhas completas** (campos + ações Ver/Editar/Excluir), indentados.
-+
-+**Decisões:** (1) corrigir tipo; (2) Atividade aguarda Back (B-CC-01); (3) implementar Adicionar Subnível; (4) correções seguras. Manter Centro de Custo. Layout de expansão pronto.
-+**Back:** `pendencias-backend-cost-centers.md` (B-CC-01..08). Destaques: **Atividade/3º nível (B-CC-01)**, **valores canônicos + migração (B-CC-02)**, **hierarquia + paginação (B-CC-04)**, **`_entityType` consistente (B-CC-07)**, datas null (B-CC-08).
-+**Notas Front pendentes:** modal view-mode tem `input formControlName` fora de `[formGroup]`; store com duplicação de fetch (refactor A-CC-01).
++- **14** corrige **edição via POST** (upsert; PATCH/{id} não existia — editar estava quebrado); calcula **Total das Retenções** (soma simples das alíquotas, IBS/CBS incluídos); page size 100/200/500; remove mock e métodos inexistentes (getById/update).
++- **15** ao selecionar o **Fornecedor**, pré-preenche os impostos do cadastro dele (`stakeholder.taxesAndServices`) — direção stakeholder → tela de impostos.
++**Decisões:** (1) editar via POST; (2) **manter em ambos + sincronizar** (o inverso, salvar aqui refletir no stakeholder, é Back — B-TX-07); (3) Total = soma simples; (4) Natureza da Operação e Atividade aguardam Back; (5) correções seguras. **Manter IBS e CBS** nas alíquotas (não estão no PDF, mas entram).
++**Back:** `pendencias-backend-impostos-retencoes.md` (B-TX-01..07). Destaques: CRUD/POST (B-TX-01), **fonte da verdade / sync (B-TX-07)**, natureza→impostos (B-TX-03), regra do total (B-TX-05), activityId (B-TX-06).
 +
 +## 10. Acoplamento entre módulos
-+Ver `01-acoplamento-entre-modulos.md`. Destaques: **CC ↔ Plano de Contas** (circular), CC → Entidades (fonte pagadora), e futura cascata CC→Projeto→Atividade em Contas a Pagar/Receber.
++Ver `01-acoplamento-entre-modulos.md`.
 diff --git a/docs/auditoria-frontend/01-acoplamento-entre-modulos.md b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
 new file mode 100644
-index 0000000..d960a98
+index 0000000..8a19c0e
 --- /dev/null
 +++ b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,45 @@
 +# Acoplamento entre Módulos (cross-references)
 +
-+> Registro de quando uma tela consome o endpoint de **outro módulo** para preencher
-+> um campo, ou quando um módulo é **fonte** de dados para vários outros.
++> Registro de quando uma tela consome o endpoint de **outro módulo**, ou quando um
++> módulo é **fonte** de dados para vários outros. Objetivo: prever impactos.
 +
 +Legenda: **A → B** = a tela do módulo A chama o endpoint do módulo B.
 +
@@ -88,130 +78,126 @@ index 0000000..d960a98
 +
 +| Origem (tela) | Consome | Para quê | Riscos |
 +|---|---|---|---|
-+| **Plano de Contas** (novo + modal) | `GET /v1/projects?take=100` | Select **"Categoria (Centro de Custo)"** (filtra `_entityType='cost_center'`) → payload `category` | Depende de `_entityType` e de `{data:[]}`. Após Patch 07 é **obrigatório** → sem CC cadastrado, não cria conta. |
-+| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/account-plan` | Select **"Contas vinculadas"** (`linkedAccounts[].accountPlanId`) | Se Plano de Contas mudar id/estrutura, quebra. |
-+| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/institutional/entities` | Select **"Fonte pagadora"** (`payingSource`) | Semântica a confirmar (fonte pagadora = entidade?). |
++| **Plano de Contas** (novo + modal) | `GET /v1/projects?take=100` | Select **"Categoria (Centro de Custo)"** (`_entityType='cost_center'`) → payload `category` | Obrigatório após Patch 07 → sem CC cadastrado, não cria conta. |
++| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/account-plan` | Select **"Contas vinculadas"** (`linkedAccounts[].accountPlanId`) | Muda se Plano de Contas mudar id/estrutura. |
++| **Centro de Custo/Projeto** (novo + modal) | `GET /v1/institutional/entities` | Select **"Fonte pagadora"** (`payingSource`) | Semântica a confirmar. |
++| **Impostos e Retenções** (lista + novo) | `GET /v1/stakeholders?take=200` | Select **"Fornecedor"** | — |
++| **Impostos e Retenções** (novo) | `GET /v1/stakeholders/{id}` | **Pré-preencher** impostos do fornecedor (`taxesAndServices`) ao selecioná-lo (Patch 15) | Depende de `taxesAndServices` no detalhe do stakeholder. |
 +
-+> ⚠️ **Acoplamento circular:** Plano de Contas → Projects (Centro de Custo) **e** Centro de Custo → Account-Plan (contas vinculadas).
++> ⚠️ **Acoplamento circular:** Plano de Contas → Projects **e** Centro de Custo → Account-Plan.
++> ⚠️ **Dado duplicado:** impostos do fornecedor vivem em `stakeholder.taxesAndServices` **e** em `/v1/tax-service` — precisa de fonte única/sync (B-TX-07).
 +
-+## Dependências futuras (previstas no doc do cliente)
++## Dependências futuras (previstas no doc)
 +
 +| Origem | Consumirá | Para quê |
 +|---|---|---|
-+| **Contas a Pagar / Contas a Receber** | hierarquia `/v1/projects` (CC → Projeto → Atividade) | Selects em **cascata** (Centro de Custo → Projeto vinculado → Atividade vinculada) |
++| **Contas a Pagar / Receber** | hierarquia `/v1/projects` | Selects em cascata CC → Projeto → Atividade |
++| **Impostos (serviços)** | grantors / cost-centers / projects | Órgão concessor, Centro de Custo, Projeto (hoje texto/ID manual) |
 +
-+## Módulos que são FONTE (consumidos via ID)
++## Módulos FONTE (consumidos via ID)
 +
-+| Módulo fonte | Campo/ID | Consumido por (Swagger) |
++| Fonte | Campo/ID | Consumido por |
 +|---|---|---|
-+| **Plano de Contas** (`account-plan`) | `accountPlanId` | Produtos/Serviços, Compras, Orçamentos, Contas a Pagar (rateios), Projetos (`linkedAccounts`), Impostos |
-+| **Projetos/Centro de Custo** (`projects`) | `projectId` / `costCenterId` | Compras, Orçamentos, Contas a Pagar (rateios), **Plano de Contas** (Centro de Custo) |
-+| **Stakeholders** | `stakeholderId`/`supplierId` | Impostos, Compras/Cotações, Contas a Pagar/Receber, Contratos |
-+| **Entidades** (`institutional/entities`) | `entityId` | Contas bancárias, Colaboradores, Corpo diretivo, Parcerias, **Centro de Custo** (fonte pagadora) |
-+| **Órgãos Concessionários** | `grantorId` | Planos de Trabalho, Parcerias |
++| **Plano de Contas** | `accountPlanId` | Produtos/Serviços, Compras, Orçamentos, Contas a Pagar (rateios), Projetos (`linkedAccounts`), Impostos |
++| **Projetos/Centro de Custo** | `projectId`/`costCenterId` | Compras, Orçamentos, Contas a Pagar, **Plano de Contas** (Centro de Custo), **Impostos** (serviços) |
++| **Stakeholders** | `stakeholderId`/`supplierId` | **Impostos**, Compras/Cotações, Contas a Pagar/Receber, Contratos |
++| **Entidades** | `entityId` | Contas bancárias, Colaboradores, Parcerias, **Centro de Custo** (fonte pagadora) |
++| **Órgãos Concessionários** | `grantorId` | Planos de Trabalho, Parcerias, **Impostos** (serviços, futuro) |
 +| **Usuários** | `userId`/`requesterId`/`buyerId` | Alçadas, Compras, Permissões |
 +
-+## Candidatos a acoplamento a confirmar (self-reference)
-+
-+| Local | Campo | Suspeita |
-+|---|---|---|
-+| Plano de Contas | `creditProvision/debitProvision/creditWriteOff/debitWriteOff` | Texto livre; provável FK a outras categorias (B-PC-04). |
-+| Plano de Contas | `parentId` | Hierarquia (B-PC-06). |
-+| Centro de Custo/Projeto | `costCenterId` / (futuro) `projectId` | Hierarquia CC→Projeto→Atividade (B-CC-01). |
-+
 +## Regras / cuidados
-+- Antes de mudar o **contrato de um módulo-fonte** (enum, resposta, filtros), checar esta tabela.
-+- Ao criar select dependente de outro módulo, registrar **endpoint exato**, **filtro** e **campo de destino** no payload.
++- Antes de mudar o **contrato de um módulo-fonte**, checar esta tabela.
++- Ao criar select dependente de outro módulo, registrar **endpoint**, **filtro** e **campo de destino**.
 +
 +> _Alimentar a cada novo acoplamento descoberto._
 diff --git a/docs/auditoria-frontend/pendencias-backend-cost-centers.md b/docs/auditoria-frontend/pendencias-backend-cost-centers.md
 new file mode 100644
-index 0000000..5dc2e58
+index 0000000..227458f
 --- /dev/null
 +++ b/docs/auditoria-frontend/pendencias-backend-cost-centers.md
-@@ -0,0 +1,55 @@
-+# Pendências de Back-end — Módulo Centro de Custo / Projeto / Atividade
+@@ -0,0 +1,16 @@
++# Pendências de Back-end — Centro de Custo / Projeto / Atividade
 +
-+> Auditoria Front × Back × Swagger × PDF.
-+> **O Front usa `/v1/projects`** (cria CC ou Projeto conforme `type`). O `/v1/cost-centers` do Swagger **não é usado**.
-+> Endpoints: `POST/GET /v1/projects`, `GET/PATCH/DELETE /v1/projects/{id}?entityType=...`, `GET /v1/projects/export/excel`.
++> Front usa `/v1/projects` (cria CC ou Projeto conforme `type`). `/v1/cost-centers` não usado.
++
++- **B-CC-01 🔴** Suporte a **Atividade** (3º nível): falta `projectId` (Atividade → Projeto) e tipo `atividade`.
++- **B-CC-02 🔴** Valores canônicos de `type` (`centro_de_custo`/`projeto`/`atividade`) + **migração** de legados. Front corrigido no Patch 08.
++- **B-CC-04 🔴** Hierarquia **+ paginação**: hoje o Front monta a árvore client-side por `costCenterId` na página atual (quebra se pai/filhos em páginas diferentes). Pedir hierarquia pronta **ou** paginar por CC-topo. Documentar `{data,total}`.
++- **B-CC-07 🟠** `_entityType` **sempre presente e consistente** — usado no update/delete (causa do 404, Patch 11) e para montar a árvore.
++- **B-CC-03 🟠** Endpoints duplicados `/v1/cost-centers` × `/v1/projects` — definir canônico.
++- **B-CC-05 🟡** "Adicionar Subnível": Projeto sob CC ok (Patch 09); Atividade sob Projeto falta (B-CC-01).
++- **B-CC-06 🟡** Cascata CC→Projeto→Atividade em Contas a Pagar/Receber.
++- **B-CC-08 🟢** Datas opcionais devem aceitar `null`/omissão (rejeitou `startDate:''`; Front envia null no Patch 10).
++
++### Notas Front
++- Modal view-mode tem `input formControlName` fora de `[formGroup]` (corrigir depois).
++- Store com duplicação de fetch (refactor A-CC-01).
+diff --git a/docs/auditoria-frontend/pendencias-backend-impostos-retencoes.md b/docs/auditoria-frontend/pendencias-backend-impostos-retencoes.md
+new file mode 100644
+index 0000000..9754c7a
+--- /dev/null
++++ b/docs/auditoria-frontend/pendencias-backend-impostos-retencoes.md
+@@ -0,0 +1,47 @@
++# Pendências de Back-end — Módulo Impostos e Retenções (`/v1/tax-service`)
++
++> Auditoria Front × Back × Swagger × PDF ("Cadastro de Retenção de Serviços").
++> Endpoints: `POST /v1/tax-service` (createOrUpdate), `GET /v1/tax-service` (findAll),
++> `GET /v1/tax-service/stakeholder/{id}`, `DELETE /v1/tax-service/{id}`, `GET /export/excel`.
 +
 +---
 +
-+## B-CC-01 🔴 ALTA — Suporte a "Atividade" (3º nível)
-+Doc pede cascata **Centro de Custo → Projeto → Atividade**. Hoje `CreateProjectDto` tem `costCenterId` (Projeto → CC) mas **não** há `projectId` (Atividade → Projeto) nem tipo `atividade`. Pedido: permitir criar Atividade vinculada a um Projeto e reconhecer `type='atividade'`.
++## B-TX-01 🔴 ALTA — CRUD incompleto / edição via POST
++- **Hoje:** não há `GET /v1/tax-service/{id}` nem `PATCH /v1/tax-service/{id}`. O único write é `POST` (createOrUpdate = upsert por `stakeholderId`).
++- **Sintoma:** o Front chamava `PATCH /{id}` na edição → falharia. **Corrigido no Patch 14** (edição via POST/upsert).
++- **Pedido:** confirmar/documentar que edição é via POST (upsert). Idealmente expor `GET /{id}` para consistência.
 +
-+## B-CC-02 🔴 ALTA — Valores canônicos de `type` + regra de criação frágil
-+A criação decide pelo texto: `"centro_de_custo"` cria CC; qualquer outro valor cria Project (causou bug no Front — corrigido no Patch 08). Pedido: fixar enum (`centro_de_custo`, `projeto`, `atividade`) e **migrar** registros legados (`"Centro de Custos"`, `"Projeto"` etc.).
++## B-TX-07 🔴 ALTA — Fonte da verdade dos impostos: `/tax-service` × `stakeholder.taxesAndServices`
++- **Contexto:** os impostos do fornecedor existem em **dois lugares**: embutidos no cadastro do fornecedor (`stakeholder.taxesAndServices`, decisão do cliente de manter) **e** nesta tela dedicada (`/v1/tax-service`).
++- **Decisão do cliente:** manter em ambos, **sincronizados** — o que estiver preenchido em um aparece no outro.
++- **Front (Patch 15):** ao selecionar o fornecedor na tela de impostos, **puxa** `stakeholder.taxesAndServices` para pré-preencher (direção stakeholder → tela de impostos).
++- **Pedido ao Back (direção inversa / consistência):** garantir que **salvar em `/tax-service` reflita** em `stakeholder.taxesAndServices` (e vice-versa) — ideal **uma única fonte** compartilhada, ou sincronização no servidor. Sem isso, o "vice-versa" fica só no Back.
 +
-+## B-CC-04 🔴 ALTA — Hierarquia + paginação da listagem (REFORÇADO)
-+- **Hoje:** `findAll` devolve **tudo plano** (CCs, Projetos e — futuramente — Atividades como linhas soltas), sem schema documentado. O Front **monta a árvore client-side** agrupando os projetos sob o CC pai via `costCenterId` (Patches 12/13).
-+- **Problema:** o agrupamento só funciona dentro da **página atual**. Se um CC e seus projetos caírem em páginas diferentes (paginação plana), o vínculo visual quebra; e a contagem/`total` mistura níveis.
-+- **Pedido (uma das opções):**
-+  1. Devolver a **hierarquia pronta** (cada CC com seus `children`/projetos, e cada projeto com suas atividades); **ou**
-+  2. **Paginar por nível-topo** (apenas Centros de Custo), trazendo os projetos/atividades aninhados de cada CC.
-+- Documentar o DTO de resposta (`{ data, total }` + estrutura aninhada).
++## B-TX-02 🟠 MÉDIA — `findAll` sem filtros/paginação e resposta sem schema
++Adicionar `status`, `search`, `take`, `skip`; documentar a resposta (traz `status`? nome do fornecedor?). Hoje o Front faz filtro/paginação client-side.
 +
-+## B-CC-07 🟠 MÉDIA — `_entityType` sempre presente e consistente (NOVO)
-+- O Front usa o campo **`_entityType`** (`cost_center` | `project`) de cada item para: (a) resolver o `entityType` correto no `update`/`delete` — **foi a causa do 404** (Patch 11); e (b) montar a árvore.
-+- **Pedido:** garantir que **todo** item do `findAll` (e do detalhe) traga `_entityType` de forma consistente (incluindo `atividade` no futuro). Se o campo faltar, o Front cai no fallback por texto — que é justamente o que falha em dados legados.
++## B-TX-03 🟠 MÉDIA — "Natureza da Operação → impostos aplicáveis"
++O PDF pede uma **busca por natureza da operação** que **auto-preenche** as alíquotas aplicáveis. Não há endpoint. Pedido: criar (ex.: `GET /v1/tax-service/operation-nature?q=...` → alíquotas).
 +
-+## B-CC-08 🟢 BAIXA — Datas opcionais devem aceitar `null`/omissão (NOVO)
-+- O `PATCH`/`POST` rejeitou `startDate: ""` com `400 "startDate must be a valid ISO 8601 date string"`.
-+- **Pedido:** campos de data **opcionais** devem aceitar `null` ou ausência do campo (não exigir ISO quando vazio). Já contornado no Front (envia `null`), mas convém padronizar no contrato.
++## B-TX-04 🟡 MÉDIA — Campo `status`
++O contrato do tax-service **não tem `status`**; o doc pede filtro Ativos/Inativos. Adicionar `status` ou confirmar que não existe (nesse caso o Front remove o filtro).
 +
-+## B-CC-03 🟠 MÉDIA — Endpoints duplicados `/v1/cost-centers` × `/v1/projects`
-+O Front usa só `/v1/projects`; `/v1/cost-centers` fica sem uso. Definir o canônico e depreciar o outro.
++## B-TX-05 🟡 MÉDIA — Regra do "Total das Retenções"
++- **Front (Patch 14):** calcula uma **soma simples** das alíquotas (IRRF+PIS+PCC+COFINS+INSS+CSLL+**IBS+CBS**) — provisório, conforme decisão do cliente.
++- **Pedido:** definir a regra oficial (quais tributos entram, se é % ou valor, base de cálculo) para alinharmos.
 +
-+## B-CC-05 🟡 MÉDIA — "Adicionar Subnível"
-+Projeto dentro de CC: já suportado via `costCenterId` (Front no Patch 09). Atividade dentro de Projeto: falta (ver B-CC-01).
-+
-+## B-CC-06 🟡 MÉDIA — Cascata nos lançamentos financeiros
-+Em Contas a Pagar/Receber, selecionar **CC → Projeto → Atividade** em cascata. Expor estrutura/filtros (projetos por `costCenterId`, atividades por `projectId`).
++## B-TX-06 🟡 MÉDIA — `activityId` no serviço (Atividade)
++`CreateStakeholderServiceDto` tem `costCenterId`/`projectId` mas **não `activityId`**; o PDF (pág. 3) pede vínculo a "PROJETO, ATIVIDADE". Adicionar (liga-se ao **B-CC-01**).
 +
 +---
 +
 +### Resumo de prioridade
 +| Prioridade | Itens |
 +|---|---|
-+| 🔴 Alta | B-CC-01 (Atividade), B-CC-02 (valores canônicos + migração), **B-CC-04 (hierarquia + paginação)** |
-+| 🟠 Média | B-CC-03 (endpoints duplicados), **B-CC-07 (_entityType consistente)** |
-+| 🟡 Média/Baixa | B-CC-05, B-CC-06, **B-CC-08 (datas null)** |
++| 🔴 Alta | B-TX-01 (CRUD/POST), B-TX-07 (fonte da verdade / sync) |
++| 🟠 Média | B-TX-02 (filtros/schema), B-TX-03 (natureza→impostos) |
++| 🟡 Média | B-TX-04 (status), B-TX-05 (regra do total), B-TX-06 (activityId) |
 +
-+### Notas de Front (não são Back)
-+- Modal em **modo visualização** tem um `<input formControlName="startDate">` fora de `[formGroup]` (resquício) — corrigir em patch futuro.
-+- Store com duplicação de fetch (A-CC-01) — refactor sugerido.
-+
-+### Changelog
-+- **v2** — reforço de B-CC-04 (paginação vs hierarquia, após Patches 12/13); adicionados B-CC-07 (`_entityType`, após 404/Patch 11) e B-CC-08 (datas null, após Patch 10).
-+- **v1** — B-CC-01..06 iniciais.
++### Notas
++- **IBS e CBS** são mantidos nas alíquotas (decisão do cliente), mesmo não estando no PDF. Já presentes no contrato (`ibsAliquot`/`cbsAliquot`).
++- Serviços vinculados (Órgão concessor, Centro de Custo, Projeto) hoje são preenchidos como ID/texto manual no Front — deveriam ser **selects** (acoplamento a grantors/cost-centers/projects) — pendência de **Front** para quando os contratos estiverem definidos.
 diff --git a/docs/auditoria-frontend/pendencias-backend-plano-de-contas.md b/docs/auditoria-frontend/pendencias-backend-plano-de-contas.md
 new file mode 100644
-index 0000000..95e7923
+index 0000000..826da75
 --- /dev/null
 +++ b/docs/auditoria-frontend/pendencias-backend-plano-de-contas.md
-@@ -0,0 +1,24 @@
-+# Pendências de Back-end — Módulo Plano de Contas e Categorias
+@@ -0,0 +1,10 @@
++# Pendências de Back-end — Plano de Contas e Categorias
 +
-+> Endpoints: `POST/GET /v1/account-plan`, `GET/PATCH/DELETE /v1/account-plan/{id}`, `GET /v1/account-plan/export/excel`.
++> `POST/GET /v1/account-plan`, `GET/PATCH/DELETE /{id}`, `GET /export/excel`.
 +
-+## B-PC-01 🔴 ALTA — `findAll` sem filtros/paginação e resposta sem schema
-+Adicionar `status`, `search`, `take`, `skip`; documentar DTO de resposta (com hierarquia — ver B-PC-06). Hoje o Front filtra/pagina client-side.
-+
-+## B-PC-02 🔴 ALTA — Valores canônicos de `categoryType` e `accountType`
-+Fixar enum (categoryType ∈ Entrada/Saída/Totalizadora; accountType ∈ Sintética/Analítica) e **migrar** registros legados (ex.: SINTETICA, DESPESA). Front alinhado no Patch 06.
-+
-+## B-PC-03 🟠 MÉDIA — Endpoints de "orçamento em lote"
-+Marcar todas / marcar só com transação / desmarcar todas o flag `budgetManagement`. Não existem hoje.
-+
-+## B-PC-04 🟠 MÉDIA — Semântica de "Categoria" e Provisão/Baixa
-+"Categoria" hoje = select de Centro de Custo (`/v1/projects`). Provisão/Baixa são texto livre — confirmar se deveriam referenciar IDs de outras categorias (FK).
-+
-+## B-PC-05 🟠 MÉDIA — Obrigatoriedade divergente
-+Swagger exige só code/title; cliente exige Categoria, Grupo, Tipo da Categoria, Código, Título. Front (Patch 07) alinhado à regra do cliente.
-+
-+## B-PC-06 🟡 MÉDIA — Hierarquia (`parentId` / "Adicionar Conta")
-+Confirmar se `findAll` retorna `children[]` ou se o Front monta por `parentId`.
-+
-+### Prioridade
-+🔴 B-PC-01, B-PC-02 · 🟠 B-PC-03, B-PC-04, B-PC-05 · 🟡 B-PC-06
++- **B-PC-01 🔴** `findAll` sem filtros/paginação (`status/search/take/skip`) e resposta sem schema.
++- **B-PC-02 🔴** Valores canônicos de `categoryType` (Entrada/Saída/Totalizadora) e `accountType` (Sintética/Analítica) + **migração** de legados. Front alinhado no Patch 06.
++- **B-PC-03 🟠** Endpoints de "orçamento em lote" (marcar/desmarcar `budgetManagement`).
++- **B-PC-04 🟠** Semântica de "Categoria" (= Centro de Custo hoje) e Provisão/Baixa (texto livre × FK a categorias).
++- **B-PC-05 🟠** Obrigatoriedade: Swagger só code/title; cliente exige Categoria/Grupo/Tipo/Código/Título (Front alinhado no Patch 07).
++- **B-PC-06 🟡** Hierarquia (`parentId` / "Adicionar Conta") — confirmar `children[]`.

@@ -61,7 +61,23 @@ export class TaxesNewPage implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+  // Campos de alíquota que compõem o Total das Retenções (soma simples).
+  private readonly ALIQUOT_FIELDS = [
+    'aliqIRRF', 'aliqPIS', 'aliqPCC', 'aliqCOFINS',
+    'aliqINSS', 'aliqCSLL', 'aliqIBS', 'aliqCBS',
+  ];
+
+  computeTotal(): number {
+    const v = this.form.getRawValue();
+    return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + (Number(v[k]) || 0), 0);
+  }
+
   ngOnInit(): void {
+    // Atualiza o "Total das Retenções" (campo calculado) ao alterar as alíquotas.
+    this.form.valueChanges.subscribe(() => {
+      this.form.get('resumoRetencoes')?.setValue(this.computeTotal(), { emitEvent: false });
+    });
+
     this.svc.getStakeholders().subscribe({
       next: (res: any) => {
         const list = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
@@ -74,6 +90,39 @@ export class TaxesNewPage implements OnInit {
         this.loadingLists.set(false);
       },
       error: () => this.loadingLists.set(false),
+    });
+  }
+
+  // ── Sincronização com o cadastro do fornecedor ────────────────────────────
+  // Ao selecionar o fornecedor, traz os impostos já preenchidos no cadastro dele
+  // (stakeholder.taxesAndServices). Não sobrescreve se o fornecedor não tiver.
+  onSupplierChange(value: string | number): void {
+    const id = Number(value);
+    if (!id) return;
+
+    this.svc.getStakeholderById(id).subscribe({
+      next: (s: any) => {
+        const t = s?.taxesAndServices;
+        if (!t) return;
+        this.form.patchValue({
+          codigoServico:    t.serviceClassCode || this.form.get('codigoServico')?.value || '',
+          tituloServico:    t.serviceTitle     || this.form.get('tituloServico')?.value || '',
+          naturezaOperacao: t.operationNature  ?? '',
+          aliqIRRF:   t.irfAliquot    ?? '',
+          irfCode:    t.irfCode       ?? '',
+          aliqPIS:    t.pisAliquot    ?? '',
+          pisCode:    t.pisCode       ?? '',
+          aliqPCC:    t.pccAliquot    ?? '',
+          pccCode:    t.pccCode       ?? '',
+          aliqCOFINS: t.cofinsAliquot ?? '',
+          cofinsCode: t.cofinsCode    ?? '',
+          aliqINSS:   t.inssAliquot   ?? '',
+          aliqCSLL:   t.csllAliquot   ?? '',
+          aliqIBS:    t.ibsAliquot    ?? '',
+          aliqCBS:    t.cbsAliquot    ?? '',
+        });
+      },
+      error: () => { /* fornecedor sem impostos: mantém o formulário como está */ },
     });
   }
 
@@ -127,7 +176,7 @@ export class TaxesNewPage implements OnInit {
       serviceClassCode: v.codigoServico                ?? '',
       serviceTitle:    v.tituloServico                 ?? '',
       operationNature: v.naturezaOperacao              ?? '',
-      totalRetentions: 0,
+      totalRetentions: this.computeTotal(),
       manualAliquots:  !!v.definirAliquotasManual,
       irfAliquot:      Number(v.aliqIRRF)              || 0,
       irfCode:         v.irfCode                       ?? '',
@@ -144,7 +193,7 @@ export class TaxesNewPage implements OnInit {
       services:        this.services,
     };
 
-    this.svc.create(payload).subscribe({
+    this.svc.save(payload).subscribe({
       next: () => {
         this.loading.set(false);
         this.router.navigate(['/taxes']);
