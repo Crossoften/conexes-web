@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApprovalTiersStore } from './approval-tiers.store';
-import { ApprovalTier, ApprovalTierPayload, APPROVAL_TIER_STATUS_CONFIG } from './approval-tiers.model';
+import { ApprovalTier, ApprovalTierPayload, approvalPurchaseRoleLabel } from './approval-tiers.model';
 import { ApprovalTierDetailModalComponent } from './components/approval-tier-detail.modal';
 
 @Component({
@@ -16,16 +16,16 @@ import { ApprovalTierDetailModalComponent } from './components/approval-tier-det
   styleUrl: './approval-tiers-list.page.scss',
 })
 export class ApprovalTiersListPage implements OnInit {
-  readonly store        = inject(ApprovalTiersStore);
-  readonly statusConfig = APPROVAL_TIER_STATUS_CONFIG;
+  readonly store = inject(ApprovalTiersStore);
 
-  readonly statusOptions = [
-    { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'Active'   },
-    { label: 'Inativo',            value: 'Inactive' },
-  ];
+  // Filtro de status oculto: o back-end de /v1/approval-limits ainda não expõe
+  // `status` (ver B-AL-05). Reativar quando o campo existir no contrato.
 
   readonly pageSizeOptions = [10, 25, 50];
+
+  roleLabel(role: string | null | undefined): string {
+    return approvalPurchaseRoleLabel(role);
+  }
 
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))

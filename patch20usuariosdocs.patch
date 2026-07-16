@@ -1,0 +1,126 @@
+diff --git a/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
+index 2465afd..d650dae 100644
+--- a/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
++++ b/docs/auditoria-frontend/00-CONTEXTO-E-CONTINUIDADE.md
+@@ -34,6 +34,7 @@
+ | 3 | **Centro de Custo/Projeto/Atividade** | `features/cost-centers` | `/v1/projects` | ✅ 6 patches (08–13) · Back B-CC-01..08 |
+ | 4 | **Impostos e Retenções** | `features/taxes` | `/v1/tax-service` | ✅ 2 patches (14,15) + 16 (layout) · Back B-TX-01..07 |
+ | 5 | **Alçadas de Aprovação** | `features/approval-tiers` | `/v1/approval-limits` | 🟡 Patch 17 (limpeza) · Back B-AL-01..08 · split de forms aguarda Back |
++| 6 | **Usuários e Permissões** | `features/users` | `/v1/users` · `/v1/permission-profiles` | 🟡 Patch 19 (bugs) · Back B-US-01..09 · **enforcement inexistente** aguarda Back |
+ 
+ ## 6. Módulo 1 — Stakeholders
+ Patches 01–05 (limpeza, ajustes cadastro, toast, edição bancária, endereço/banco bloco completo). Back: `pendencias-backend-stakeholders.md` (entregue à parte). Impostos **embutidos no stakeholder** (decisão).
+@@ -64,5 +65,14 @@ Endpoint `/v1/projects` (`/v1/cost-centers` não usado). Patches 08–13: tipo c
+ ## 11. Flag pós-Swagger (a confirmar) — Plano de Contas
+ O Swagger mais recente traz enums **sem acento**: `categoryType` = `Entrada`/**`Saida`**/`Totalizadora` e `accountType` = **`Sintetica`**/**`Analitica`**. O Patch 06 usou os **acentuados** (`Saída`, `Sintética`, `Analítica`). **Verificar/alinhar** o vocabulário do Front (Módulo 2) ao contrato atual antes de novos ajustes.
+ 
+-## 12. Acoplamento entre módulos
++## 12. Módulo 6 — Usuários e Permissões
++**Endpoints:** `/v1/users` (= `/v1/user-management`, mesmo controller): POST/GET/GET{id}/PATCH{id} — **sem DELETE**. `/v1/permission-profiles`: POST/GET/GET{id}/PATCH{id} — **sem DELETE**. `/v1/permissions` (permissão de módulo por usuário): CRUD completo. `/my-self` retorna `role` + `purchaseRoles`, **não** `modulePermissions`/perfil.
++**Contrato usuário (`CreateUserManagementDto`):** name, surname, email, document, jobTitle, area, phone, role(enum), status(enum), password, permissionProfileId, modulePermissions[]. **Obrigatórios: name, email, role, password.** Perfil (`CreatePermissionProfileDto`): name(req), description, permissions[] (ProfileModulePermissionDto = module/subMenu/canView/canCreate/canEdit/canDelete/isUnlimited).
++**🔴 VEREDITO FUNCIONAL:** as permissões são **cadastradas mas não aplicadas** — `authGuard` só checa login; `/my-self` não traz `modulePermissions`; ninguém lê a matriz; menu não filtra por permissão. Hoje o "Perfil de Permissões" é **decorativo**. Compras usa `purchaseRoles`+role global (`PurchasePermissionsService`), não a matriz.
++**Decisões (cliente):** enforcement = **documentar e aguardar Back** (B-US-01); role×perfil = **Perfil é a fonte** (form exigirá só o perfil; `role` sai quando o Back tornar opcional — B-US-04); limpeza segura aprovada.
++**Patch 19 (seguro, não depende do Back):** (F-US-02) corrige `roleOptions` legado do modal de edição (Manager/Operator/Viewer → enum real); (F-US-03) abre modal buscando `getUserById`/`getProfileById` (matriz não vem vazia); (F-US-04) toast de exclusão só no sucesso (store devolve Observable); (F-US-05) **Perfil de permissão obrigatório** no cadastro; (F-US-09) remove `users.mock.ts` morto.
++**Back:** `pendencias-backend-usuarios-permissoes.md` (B-US-01..09). 🔴 `/my-self` sem permissões (B-US-01), sem DELETE (B-US-02), campos Empresa/Login ausentes (B-US-03), role obrigatório × PDF (B-US-04).
++**Aguarda Back (Front):** enforcement (F-US-01), remoção de `role` do form (F-US-04/2a), campos Empresa/Login (F-US-06), catálogo real de módulos p/ matriz — hoje `DEFAULT_MODULES` é placeholder (F-US-07).
++
++## 13. Acoplamento entre módulos
+ Ver `01-acoplamento-entre-modulos.md`.
+diff --git a/docs/auditoria-frontend/01-acoplamento-entre-modulos.md b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
+index 9b14e84..823ae9c 100644
+--- a/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
++++ b/docs/auditoria-frontend/01-acoplamento-entre-modulos.md
+@@ -21,6 +21,7 @@ Legenda: **A → B** = a tela do módulo A chama o endpoint do módulo B.
+ > ⚠️ **Acoplamento circular:** Plano de Contas → Projects **e** Centro de Custo → Account-Plan.
+ > ⚠️ **Dado duplicado:** impostos do fornecedor vivem em `stakeholder.taxesAndServices` **e** em `/v1/tax-service` — precisa de fonte única/sync (B-TX-07).
+ > ⚠️ **Acoplamento reverso (derivado):** `ResponseAllUserDto.purchaseRoles` é **calculado pelo Back a partir de `/v1/approval-limits`** e alimenta o **gate de permissão de Compras** (FE-1/FE-2/FE-3). Editar uma **Alçada** altera as permissões de Compras do usuário.
++> ⚠️ **Permissão de módulo NÃO aplicada:** o cadastro de **Usuários/Perfis** grava `modulePermissions`/`permissionProfile`, mas `/my-self` não os devolve e **nenhuma tela/guard os consome** (F-US-01/B-US-01). Enquanto isso, o único gate real é o de Compras (via `role` global + `purchaseRoles`).
+ 
+ ## Dependências futuras (previstas no doc)
+ 
+diff --git a/docs/auditoria-frontend/pendencias-backend-usuarios-permissoes.md b/docs/auditoria-frontend/pendencias-backend-usuarios-permissoes.md
+new file mode 100644
+index 0000000..f1c2d3f
+--- /dev/null
++++ b/docs/auditoria-frontend/pendencias-backend-usuarios-permissoes.md
+@@ -0,0 +1,80 @@
++# Pendências de Back-end — Usuários e Permissões
++
++> Auditoria Front × Back × Swagger × PDF ("Cadastros de Usuários e Permissões").
++> **Endpoints:** `/v1/users` (= `/v1/user-management`, mesmo `UserManagementController`):
++> `POST`, `GET`, `GET/{id}` ("detalhar usuário, permissões e alçadas"), `PATCH/{id}` — **sem DELETE**.
++> `/v1/permission-profiles`: `POST`, `GET`, `GET/{id}` ("com usuários vinculados"), `PATCH/{id}` — **sem DELETE**.
++> `/v1/permissions` (permissão de módulo por usuário): CRUD completo (inclui DELETE).
++>
++> **Obrigatórios (`CreateUserManagementDto`):** `name, email, role, password`. Perfil: `name`.
++
++---
++
++## 🔴 VEREDITO — a permissão é cadastrada mas **não é aplicada**
++O CRUD de Usuários/Perfis e a matriz de acessos funcionam, porém **nada no app consome
++essas permissões**: `authGuard` só checa login, `/my-self` não devolve `modulePermissions`
++nem o perfil, nenhuma tela lê a matriz e o menu não filtra por permissão. Tornar isso
++funcional depende primariamente do Back (B-US-01).
++
++---
++
++## B-US-01 🔴 ALTA — `/my-self` não expõe as permissões do usuário
++Retorna `role` + `purchaseRoles`, mas **não** `modulePermissions` nem o `permissionProfile`
++resolvido. Sem isso o front não tem como aplicar (guard/menu/ações). **Incluir** as permissões
++efetivas do usuário logado no `/my-self`.
++
++## B-US-02 🔴 ALTA — Sem `DELETE` em usuários e perfis
++Não há `DELETE /v1/users/{id}` nem `DELETE /v1/permission-profiles/{id}`. O front chama os dois
++(a ação "Excluir" existe no PDF de Permissões). **Adicionar DELETE** ou inativação por `status`.
++(Obs.: o front foi ajustado no Patch 19 para só dar "sucesso" com resposta OK — hoje a exclusão
++retornaria erro real até o Back existir.)
++
++## B-US-03 🔴 ALTA — Campos do formulário de negócio ausentes no contrato
++O PDF ("Cadastro de usuário") tem **"Empresa*"** (também coluna na lista) e **"Usuário/Login*"**
++(coluna "Login"). **Nenhum dos dois existe** em `CreateUserManagementDto` nem no retorno.
++Definir: `company`/FK de entidade e `username`/`login`.
++
++## B-US-04 🔴 ALTA — `role` obrigatório × PDF sem campo de papel
++O Back exige `role` (enum), mas o formulário de negócio só tem **"Perfil de Permissões"**.
++**Decisão do cliente:** o **perfil é a fonte** — tornar `role` **opcional/derivado do perfil**.
++Enquanto o Back não muda, o front mantém `role` no formulário (senão o POST falha).
++
++## B-US-05 🟠 MÉDIA — `password` obrigatório × PDF sem senha
++O cadastro de negócio não tem senha, mas o Back exige `password` no create. Definir o fluxo
++(convite por e-mail / definição posterior de senha, ou senha gerada). Hoje o front inventa um
++campo de senha obrigatório (mín. 6).
++
++## B-US-06 🟠 MÉDIA — Catálogo canônico de módulos/subMenus da matriz
++A matriz usa uma lista **placeholder** no front (`DEFAULT_MODULES`); o PDF mostra linhas reais
++(Cockpit, Gestão de Orçamento, …) sob "Acessos módulo financeiro". Expor endpoint com a árvore
++oficial **Função (module) / Grupo (subMenu)**.
++
++## B-US-07 🟠 MÉDIA — Semântica "Acesso Limitado" × `isUnlimited`
++O PDF rotula a coluna **"ACESSO LIMITADO"** (limitado); o campo é `isUnlimited` (ilimitado) e o
++front rotula "Acesso ilimitado". **Confirmar o significado** para não inverter a regra.
++
++## B-US-08 🟡 BAIXA — `GET /v1/users` (findAll): filtros e schema
++Confirmar se aceita `name`/`role`/`status` (o front envia) e **o corpo retornado** — se traz os
++campos do model (surname, document, area, `modulePermissions`) ou só o enxuto `ResponseAllUserDto`.
++(O front foi ajustado para buscar o detalhe por id ao abrir o modal — B-US-08 define se isso é
++mesmo necessário.)
++
++## B-US-09 🟡 BAIXA — `/v1/users` × `/v1/user-management` duplicados
++Mesmo controller em duas rotas. Definir a canônica e documentar.
++
++---
++
++### Resumo de prioridade
++| Prioridade | Itens |
++|---|---|
++| 🔴 Alta | B-US-01 (/my-self sem permissões), B-US-02 (sem DELETE), B-US-03 (Empresa/Login), B-US-04 (role × perfil) |
++| 🟠 Média | B-US-05 (senha/convite), B-US-06 (catálogo de módulos), B-US-07 (Acesso Limitado × isUnlimited) |
++| 🟡 Baixa | B-US-08 (findAll schema/filtros), B-US-09 (rotas duplicadas) |
++
++### Pendências de Front (aguardam Back)
++Enforcement real — guard + gating de menu + consumo das permissões (F-US-01, dep. B-US-01);
++remoção do `role` do formulário (dep. B-US-04); campos Empresa/Login (dep. B-US-03); substituir
++`DEFAULT_MODULES` placeholder pelo catálogo real (dep. B-US-06).
++**Já aplicado (Patch 19, sem depender do Back):** roleOptions do modal de edição corrigidos
++(F-US-02); modal busca detalhe por id (F-US-03); toast de exclusão só no sucesso (F-US-04);
++Perfil de permissão obrigatório no cadastro (F-US-05); remoção de mock morto (F-US-09).
