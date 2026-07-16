@@ -94,19 +94,23 @@
 
           <div class="form-row grid-cols-1">
             <div class="form-group">
-              <label>Perfil de permissão</label>
+              <label>Perfil de permissão <span class="req">*</span></label>
               @if (profilesLoading()) {
                 <input class="form-control" disabled placeholder="Carregando perfis...">
               } @else {
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="permissionProfileId">
-                    <option [ngValue]="null">Nenhum perfil (opcional)</option>
+                  <select class="form-control" formControlName="permissionProfileId"
+                    [class.is-invalid]="form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched">
+                    <option [ngValue]="null">Selecione o perfil</option>
                     @for (p of profiles(); track p.id) {
                       <option [value]="p.id">{{ p.name }}</option>
                     }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
+              }
+              @if (form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched) {
+                <span class="field-error">É obrigatório selecionar uma configuração de permissões do usuário.</span>
               }
               <span class="field-hint">As permissões de módulo serão herdadas do perfil selecionado.</span>
             </div>

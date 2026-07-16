@@ -1,0 +1,224 @@
+diff --git a/src/app/features/users/components/user-detail.modal.ts b/src/app/features/users/components/user-detail.modal.ts
+index 68d2439..e8728e3 100644
+--- a/src/app/features/users/components/user-detail.modal.ts
++++ b/src/app/features/users/components/user-detail.modal.ts
+@@ -32,11 +32,13 @@ export class UserDetailModalComponent {
+   readonly roleLabels   = USER_ROLE_LABELS;
+ 
+   readonly roleOptions = [
+-    { label: 'Master',   value: 'Master'   },
+-    { label: 'Admin',    value: 'Admin'    },
+-    { label: 'Gerente',  value: 'Manager'  },
+-    { label: 'Operador', value: 'Operator' },
+-    { label: 'Viewer',   value: 'Viewer'   },
++    { label: 'Master',              value: 'Master'             },
++    { label: 'Admin',               value: 'Admin'              },
++    { label: 'Backoffice',          value: 'Backoffice'         },
++    { label: 'Gestor de Entidades', value: 'EntityManager'      },
++    { label: 'Gestor de Compras',   value: 'ProcurementManager' },
++    { label: 'Financeiro',          value: 'Finance'            },
++    { label: 'Operacional',         value: 'Operational'        },
+   ];
+ 
+   readonly statusOptions = [
+diff --git a/src/app/features/users/new/user-new/user-new.page.html b/src/app/features/users/new/user-new/user-new.page.html
+index a20368f..3a4d8cf 100644
+--- a/src/app/features/users/new/user-new/user-new.page.html
++++ b/src/app/features/users/new/user-new/user-new.page.html
+@@ -94,13 +94,14 @@
+ 
+           <div class="form-row grid-cols-1">
+             <div class="form-group">
+-              <label>Perfil de permissão</label>
++              <label>Perfil de permissão <span class="req">*</span></label>
+               @if (profilesLoading()) {
+                 <input class="form-control" disabled placeholder="Carregando perfis...">
+               } @else {
+                 <div class="select-wrap">
+-                  <select class="form-control" formControlName="permissionProfileId">
+-                    <option [ngValue]="null">Nenhum perfil (opcional)</option>
++                  <select class="form-control" formControlName="permissionProfileId"
++                    [class.is-invalid]="form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched">
++                    <option [ngValue]="null">Selecione o perfil</option>
+                     @for (p of profiles(); track p.id) {
+                       <option [value]="p.id">{{ p.name }}</option>
+                     }
+@@ -108,6 +109,9 @@
+                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                 </div>
+               }
++              @if (form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched) {
++                <span class="field-error">É obrigatório selecionar uma configuração de permissões do usuário.</span>
++              }
+               <span class="field-hint">As permissões de módulo serão herdadas do perfil selecionado.</span>
+             </div>
+           </div>
+diff --git a/src/app/features/users/new/user-new/user-new.page.ts b/src/app/features/users/new/user-new/user-new.page.ts
+index d354d72..8c701a9 100644
+--- a/src/app/features/users/new/user-new/user-new.page.ts
++++ b/src/app/features/users/new/user-new/user-new.page.ts
+@@ -43,7 +43,7 @@ export class UserNewPage implements OnInit {
+     email:               ['', [Validators.required, Validators.email]],
+     role:                ['', Validators.required],
+     password:            ['', [Validators.required, Validators.minLength(6)]],
+-    permissionProfileId: [null],
++    permissionProfileId: [null, Validators.required],
+   });
+ 
+   // ── Lifecycle ─────────────────────────────────────────────────────────────
+diff --git a/src/app/features/users/users-list.page.ts b/src/app/features/users/users-list.page.ts
+index dd5faa7..349a595 100644
+--- a/src/app/features/users/users-list.page.ts
++++ b/src/app/features/users/users-list.page.ts
+@@ -73,7 +73,14 @@ export class UsersListPage implements OnInit {
+ 
+   // ── Modal — User ──────────────────────────────────────────────────────────
+ 
+-  openUser(user: User): void { this.selectedUser.set(user); }
++  openUser(user: User): void {
++    this.selectedUser.set(user);
++    // O findAll pode vir enxuto (sem modulePermissions); busca o detalhe completo.
++    this.svc.getUserById(user.id).subscribe({
++      next: full => { if (this.selectedUser()?.id === user.id) this.selectedUser.set(full); },
++      error: () => { /* mantém os dados da lista */ },
++    });
++  }
+   closeUserModal(): void     { this.selectedUser.set(null); }
+ 
+   onUserSaved(event: { id: number; payload: Partial<UserUpdatePayload> }): void {
+@@ -92,14 +99,28 @@ export class UsersListPage implements OnInit {
+ 
+   onUserDeleted(id: number): void {
+     if (!confirm('Deseja excluir este usuário?')) return;
+-    this.store.deleteUser(id);
+-    this.closeUserModal();
+-    this.showToast('Usuário excluído.', 'success');
++    this.store.deleteUser(id).subscribe({
++      next: () => {
++        this.closeUserModal();
++        this.showToast('Usuário excluído.', 'success');
++      },
++      error: err => {
++        const msg = err?.error?.message ?? 'Erro ao excluir usuário.';
++        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
++      },
++    });
+   }
+ 
+   // ── Modal — Profile ───────────────────────────────────────────────────────
+ 
+-  openProfile(p: PermissionProfile): void { this.selectedProfile.set(p); }
++  openProfile(p: PermissionProfile): void {
++    this.selectedProfile.set(p);
++    // O findAll pode vir sem a matriz de permissões; busca o detalhe completo.
++    this.svc.getProfileById(p.id).subscribe({
++      next: full => { if (this.selectedProfile()?.id === p.id) this.selectedProfile.set(full); },
++      error: () => { /* mantém os dados da lista */ },
++    });
++  }
+   closeProfileModal(): void               { this.selectedProfile.set(null); }
+ 
+   onProfileSaved(event: { id: number; payload: Partial<PermissionProfileUpdatePayload> }): void {
+@@ -118,9 +139,16 @@ export class UsersListPage implements OnInit {
+ 
+   onProfileDeleted(id: number): void {
+     if (!confirm('Deseja excluir este perfil de permissão?')) return;
+-    this.store.deleteProfile(id);
+-    this.closeProfileModal();
+-    this.showToast('Perfil excluído.', 'success');
++    this.store.deleteProfile(id).subscribe({
++      next: () => {
++        this.closeProfileModal();
++        this.showToast('Perfil excluído.', 'success');
++      },
++      error: err => {
++        const msg = err?.error?.message ?? 'Erro ao excluir perfil.';
++        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
++      },
++    });
+   }
+ 
+   // ── Toast ─────────────────────────────────────────────────────────────────
+diff --git a/src/app/features/users/users.mock.ts b/src/app/features/users/users.mock.ts
+deleted file mode 100644
+index 27e980d..0000000
+--- a/src/app/features/users/users.mock.ts
++++ /dev/null
+@@ -1,12 +0,0 @@
+-// src/app/features/users/users.mock.ts
+-import { User } from './users.model';
+-
+-export const USERS_MOCK: User[] = Array.from({ length: 25 }, (_, i) => ({
+-  id: `usr-${i + 1}`,
+-  name: 'Amanda Souza Silva',
+-  company: 'INSTITUTO DE GESTAO ESTRATEGICA',
+-  login: 'LOGIN',
+-  email: 'mail@mail.com',
+-  permissions: '12 - JURIDICO',
+-  status: i % 6 === 0 ? 'INACTIVE' : 'ACTIVE', // Simula alguns inativos
+-}));
+\ No newline at end of file
+diff --git a/src/app/features/users/users.store.ts b/src/app/features/users/users.store.ts
+index 19178de..c4495a7 100644
+--- a/src/app/features/users/users.store.ts
++++ b/src/app/features/users/users.store.ts
+@@ -1,5 +1,7 @@
+ // src/app/features/users/users.store.ts
+ import { Injectable, computed, signal, inject } from '@angular/core';
++import { Observable } from 'rxjs';
++import { tap } from 'rxjs/operators';
+ import { User, PermissionProfile } from './users.model';
+ import { UsersService } from './users.service';
+ 
+@@ -116,18 +118,16 @@ export class UsersStore {
+     });
+   }
+ 
+-  deleteUser(id: number): void {
+-    this.svc.deleteUser(id).subscribe({
+-      next: () => this.state.update(s => ({
++  /** Remove o usuário da lista apenas em caso de sucesso; devolve o Observable
++   *  para que a página trate o resultado real (toast só no sucesso). */
++  deleteUser(id: number): Observable<void> {
++    return this.svc.deleteUser(id).pipe(
++      tap(() => this.state.update(s => ({
+         ...s,
+         users:       s.users.filter(u => u.id !== id),
+         selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
+-      })),
+-      error: err => this.state.update(s => ({
+-        ...s,
+-        usersError: err?.error?.message ?? 'Erro ao excluir usuário.',
+-      })),
+-    });
++      }))),
++    );
+   }
+ 
+   // ── Actions — Profiles ────────────────────────────────────────────────────
+@@ -154,18 +154,16 @@ export class UsersStore {
+     });
+   }
+ 
+-  deleteProfile(id: number): void {
+-    this.svc.deleteProfile(id).subscribe({
+-      next: () => this.state.update(s => ({
++  /** Remove o perfil da lista apenas em caso de sucesso; devolve o Observable
++   *  para que a página trate o resultado real (toast só no sucesso). */
++  deleteProfile(id: number): Observable<void> {
++    return this.svc.deleteProfile(id).pipe(
++      tap(() => this.state.update(s => ({
+         ...s,
+         profiles:    s.profiles.filter(p => p.id !== id),
+         selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
+-      })),
+-      error: err => this.state.update(s => ({
+-        ...s,
+-        profilesError: err?.error?.message ?? 'Erro ao excluir perfil.',
+-      })),
+-    });
++      }))),
++    );
+   }
+ 
+   // ── Actions — Tab ─────────────────────────────────────────────────────────

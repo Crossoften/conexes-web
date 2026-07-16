@@ -1,5 +1,7 @@
 // src/app/features/users/users.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { User, PermissionProfile } from './users.model';
 import { UsersService } from './users.service';
 
@@ -116,18 +118,16 @@ export class UsersStore {
     });
   }
 
-  deleteUser(id: number): void {
-    this.svc.deleteUser(id).subscribe({
-      next: () => this.state.update(s => ({
+  /** Remove o usuário da lista apenas em caso de sucesso; devolve o Observable
+   *  para que a página trate o resultado real (toast só no sucesso). */
+  deleteUser(id: number): Observable<void> {
+    return this.svc.deleteUser(id).pipe(
+      tap(() => this.state.update(s => ({
         ...s,
         users:       s.users.filter(u => u.id !== id),
         selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
-      })),
-      error: err => this.state.update(s => ({
-        ...s,
-        usersError: err?.error?.message ?? 'Erro ao excluir usuário.',
-      })),
-    });
+      }))),
+    );
   }
 
   // ── Actions — Profiles ────────────────────────────────────────────────────
@@ -154,18 +154,16 @@ export class UsersStore {
     });
   }
 
-  deleteProfile(id: number): void {
-    this.svc.deleteProfile(id).subscribe({
-      next: () => this.state.update(s => ({
+  /** Remove o perfil da lista apenas em caso de sucesso; devolve o Observable
+   *  para que a página trate o resultado real (toast só no sucesso). */
+  deleteProfile(id: number): Observable<void> {
+    return this.svc.deleteProfile(id).pipe(
+      tap(() => this.state.update(s => ({
         ...s,
         profiles:    s.profiles.filter(p => p.id !== id),
         selectedIds: new Set([...s.selectedIds].filter(x => x !== id)),
-      })),
-      error: err => this.state.update(s => ({
-        ...s,
-        profilesError: err?.error?.message ?? 'Erro ao excluir perfil.',
-      })),
-    });
+      }))),
+    );
   }
 
   // ── Actions — Tab ─────────────────────────────────────────────────────────
