@@ -233,7 +233,8 @@ export class TaxesStore {
 
     this.state.update(s => ({ ...s, detailModal: { ...s.detailModal, saving: true, error: null } }));
 
-    this.svc.update(modal.tax.id, payload).subscribe({
+    // POST createOrUpdate (upsert por stakeholderId) — o contrato não tem PATCH/{id}.
+    this.svc.save({ ...payload, stakeholderId: payload.stakeholderId || modal.tax.stakeholderId }).subscribe({
       next: () => {
         this.svc.getAll().subscribe({
           next: items => {

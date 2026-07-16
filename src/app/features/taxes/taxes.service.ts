@@ -17,20 +17,15 @@ export class TaxesService {
     return this.http.get<Tax[]>(this.base);
   }
 
-  getById(id: number): Observable<Tax> {
-    return this.http.get<Tax>(`${this.base}/${id}`);
-  }
-
+  // Busca a configuração de impostos de um fornecedor (usada para pré-preencher).
   getByStakeholder(id: number): Observable<Tax> {
     return this.http.get<Tax>(`${this.base}/stakeholder/${id}`);
   }
 
-  create(payload: TaxPayload): Observable<Tax> {
+  // POST é createOrUpdate (upsert por stakeholderId) — serve para criar E editar.
+  // O contrato não expõe PATCH/{id} nem GET/{id}.
+  save(payload: TaxPayload): Observable<Tax> {
     return this.http.post<Tax>(this.base, payload);
-  }
-
-  update(id: number, payload: TaxPayload): Observable<Tax> {
-    return this.http.patch<Tax>(`${this.base}/${id}`, payload);
   }
 
   delete(id: number): Observable<void> {
@@ -41,5 +36,10 @@ export class TaxesService {
 
   getStakeholders(): Observable<any> {
     return this.http.get<any>(`${this.stakeholdersBase}?take=200`);
+  }
+
+  // Detalhe do fornecedor (para trazer os impostos já preenchidos no cadastro dele).
+  getStakeholderById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.stakeholdersBase}/${id}`);
   }
 }

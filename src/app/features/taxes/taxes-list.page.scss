@@ -227,6 +227,7 @@
 
   &--check  { width: 48px; text-align: center; }
   &--right  { text-align: right; }
+  &--center { text-align: center; }
   &--sortable { cursor: pointer; &:hover { background: #F3F0FF; color: var(--brand-purple); } }
 }
 
@@ -296,7 +297,7 @@
 .action-icons {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
 }
 
