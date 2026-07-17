@@ -26,19 +26,7 @@ export class EntityRegistryListPage implements OnInit {
   protected readonly showModal       = signal(false);
   protected readonly modalLoading    = signal(false);
 
-  // ── Opções dos filtros ────────────────────────────────────────────────────
-  protected readonly statusOptions = [
-    { label: 'Todos os status', value: '' },
-    { label: 'Ativo',           value: 'ACTIVE' },
-    { label: 'Inativo',         value: 'INACTIVE' },
-  ];
-
-  protected readonly typeOptions = [
-    { label: 'Todos os tipos',  value: '' },
-    { label: 'Pessoa Física',   value: 'PF' },
-    { label: 'Pessoa Jurídica', value: 'PJ' },
-  ];
-
+  // ── Opções ────────────────────────────────────────────────────────────────
   protected readonly pageSizeOptions = [5, 10, 20, 50];
 
   // ── Paginação ─────────────────────────────────────────────────────────────

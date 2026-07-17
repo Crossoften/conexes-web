@@ -6,6 +6,31 @@
   border-radius: 24px !important; // Devolve o visual arredondado das caixas de texto
 }
 
+// ── Select alinhado ao padrão dos inputs (mesmo pill + chevron custom) ─────
+.select-wrap {
+  position: relative;
+
+  select.form-control {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 40px;
+    cursor: pointer;
+  }
+
+  .select-chevron {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    color: var(--text-muted, #9CA3AF);
+  }
+}
+
 .btn-outline, .btn-solid, .tab-button {
   border-radius: 50px !important; // Garante os botões e abas em formato de pílula
 }

@@ -5,8 +5,6 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import {
   EntityRegistry,
   EntityRegistryPayload,
-  ENTITY_STATUS_CONFIG,
-  ENTITY_TYPE_LABELS,
 } from '../entity-registry.model';
 
 @Component({
@@ -28,9 +26,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
 
   protected mode: 'view' | 'edit' = 'view';
   protected activeTab: 'geral' | 'contador' = 'geral';
-
-  readonly statusConfig = ENTITY_STATUS_CONFIG;
-  readonly typeLabels   = ENTITY_TYPE_LABELS;
+  protected showRequiredWarning = false;
 
   protected readonly form = this.fb.group({
     cnpj:                  ['', Validators.required],
@@ -68,21 +64,6 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
     }
   }
 
-  get statusLabel(): string {
-    if (!this.entity) return '';
-    return this.statusConfig[this.entity.status]?.label ?? this.entity.status;
-  }
-
-  get statusVariant(): string {
-    if (!this.entity) return '';
-    return this.statusConfig[this.entity.status]?.variant ?? 'neutral';
-  }
-
-  get typeLabel(): string {
-    if (!this.entity) return '';
-    return this.typeLabels[this.entity.type] ?? this.entity.type;
-  }
-
   onClose(): void {
     this.mode = 'view';
     this.activeTab = 'geral';
@@ -91,10 +72,12 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
 
   onEdit(): void {
     this.mode = 'edit';
+    this.showRequiredWarning = false;
   }
 
   onCancelEdit(): void {
     this.mode = 'view';
+    this.showRequiredWarning = false;
     if (this.entity) this.form.patchValue(this.entity as any);
   }
 
@@ -105,9 +88,14 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Se algum campo obrigatório estiver em outra aba, leva o usuário até ela.
+      if (this.hasInvalidInTab('geral'))         this.activeTab = 'geral';
+      else if (this.hasInvalidInTab('contador')) this.activeTab = 'contador';
+      this.showRequiredWarning = true;
       return;
     }
 
+    this.showRequiredWarning = false;
     const raw = this.form.value;
     const onlyNumbers = (v: string | undefined) => v ? v.replace(/\D/g, '') : '';
 
@@ -124,5 +112,14 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
     };
 
     this.saved.emit(payload);
+  }
+
+  /** True se houver campo inválido na aba informada (geral = entidade; contador = accountant*). */
+  private hasInvalidInTab(tab: 'geral' | 'contador'): boolean {
+    return Object.entries(this.form.controls).some(([name, ctrl]) => {
+      const isContador = name.startsWith('accountant');
+      const inTab = tab === 'contador' ? isContador : !isContador;
+      return inTab && ctrl.invalid;
+    });
   }
 }
