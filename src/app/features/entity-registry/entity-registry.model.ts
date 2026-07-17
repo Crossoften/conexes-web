@@ -1,7 +1,8 @@
 // src/app/features/entity-registry/entity-registry.model.ts
 
-export type EntityStatus = 'ACTIVE' | 'INACTIVE';
-export type EntityType   = 'PF' | 'PJ';
+// Obs.: `status`, `type` (PF/PJ) e hierarquia Entidade/Filial (children) NÃO existem
+// no contrato `/v1/institutional/entities` — removidos do front até o Back definir
+// (ver B-EN-04). PF/PJ não se aplica a entidade institucional (é sempre PJ/CNPJ).
 
 // ── Payload de criação / edição (POST e PATCH) ────────────────────────────
 export interface EntityRegistryPayload {
@@ -36,30 +37,15 @@ export interface EntityRegistryPayload {
 
 // ── Entidade completa retornada pelo GET /{id} ────────────────────────────
 export interface EntityRegistry extends EntityRegistryPayload {
-  id:      number;
-  status:  EntityStatus;
-  type:    EntityType;
-  children?: EntityRegistry[];
+  id: number;
 }
 
 // ── Shape mínimo do GET /entities (listagem) ──────────────────────────────
+// Back retorna hoje só id/cnpj/legalName/city; tradeName aguarda B-EN-02.
 export interface EntityRegistryListItem {
   id:        number;
   cnpj:      string;
   legalName: string;
   tradeName: string;
   city:      string;
-  status:    EntityStatus;
-  type:      EntityType;
 }
-
-// ── Helpers de label / badge ──────────────────────────────────────────────
-export const ENTITY_STATUS_CONFIG: Record<EntityStatus, { label: string; variant: string }> = {
-  ACTIVE:   { label: 'Ativo',   variant: 'success' },
-  INACTIVE: { label: 'Inativo', variant: 'neutral' },
-};
-
-export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
-  PF: 'Pessoa Física',
-  PJ: 'Pessoa Jurídica',
-};

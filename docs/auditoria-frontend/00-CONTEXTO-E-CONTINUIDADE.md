@@ -35,6 +35,7 @@
 | 4 | **Impostos e Retenções** | `features/taxes` | `/v1/tax-service` | ✅ 2 patches (14,15) + 16 (layout) · Back B-TX-01..07 |
 | 5 | **Alçadas de Aprovação** | `features/approval-tiers` | `/v1/approval-limits` | 🟡 Patch 17 (limpeza) · Back B-AL-01..08 · split de forms aguarda Back |
 | 6 | **Usuários e Permissões** | `features/users` | `/v1/users` · `/v1/permission-profiles` | 🟡 Patch 19 (bugs) · Back B-US-01..09 · **enforcement inexistente** aguarda Back |
+| 7 | **Entidades** (5 sub-menus) | `features/entity-registry` (+ bank-accounts, employees…) | `/v1/institutional/entities` | 🟡 Sub-menu 1 (Cadastro): Patch 21 · Back B-EN-01..06 · sub-menus 2–5 pendentes |
 
 ## 6. Módulo 1 — Stakeholders
 Patches 01–05 (limpeza, ajustes cadastro, toast, edição bancária, endereço/banco bloco completo). Back: `pendencias-backend-stakeholders.md` (entregue à parte). Impostos **embutidos no stakeholder** (decisão).
@@ -74,5 +75,14 @@ O Swagger mais recente traz enums **sem acento**: `categoryType` = `Entrada`/**`
 **Back:** `pendencias-backend-usuarios-permissoes.md` (B-US-01..09). 🔴 `/my-self` sem permissões (B-US-01), sem DELETE (B-US-02), campos Empresa/Login ausentes (B-US-03), role obrigatório × PDF (B-US-04).
 **Aguarda Back (Front):** enforcement (F-US-01), remoção de `role` do form (F-US-04/2a), campos Empresa/Login (F-US-06), catálogo real de módulos p/ matriz — hoje `DEFAULT_MODULES` é placeholder (F-US-07).
 
-## 13. Acoplamento entre módulos
+## 13. Módulo 7 — Entidades (5 sub-menus, um a um)
+**Sub-menus:** (1) Cadastro de entidades, (2) Contas bancárias e bancos, (3) Colaboradores e dirigentes, (4) Corpo diretivo, (5) Anexos da entidade. Na UI o cadastro tem abas: Cadastro / Contador / Contas Bancárias / Colaboradores / Anexos / Regulamento de Compras.
+**Endpoint (sub-menu 1):** `/v1/institutional/entities` — POST (com contador), GET (lista **só** id/cnpj/legalName/city), GET/{id}, PATCH/{id}. **Sem DELETE.** `CreateEntityDto` = 27 campos (entidade+contador); **obrigatórios só `cnpj`+`legalName`**. **Não existem** no contrato: `status`, `type` (PF/PJ), `children` (filial), **bairro**, nem upload de arquivo (só `digitalCertPassword` e `logoUrl:string`).
+**Decisões (cliente):** (1a) **remover do front** status/type/filial (não existem no contrato); limpeza segura aprovada.
+**Patch 21 (Sub-menu 1, seguro):** (F-EN-01) `baseUrl` hardcoded → `environment.apiUrl`; (1a) remove status/type/children + colunas/filtros + expand (filial) + badge de status no modal; (F-EN-06) Estado (UF) vira **select das 27 UFs**; (F-EN-08) remove `console.log` de debug; (F-EN-07/10) remove "Salvar rascunho" no-op + `entity-registry.mock.ts` morto.
+**Back:** `pendencias-backend-entidades.md` (B-EN-01..06). 🔴 sem DELETE/Inativar (B-EN-01), findAll enxuto (B-EN-02), Bairro + upload cert/logo (B-EN-03).
+**Aguarda Back (Front):** uploads de certificado/logo (F-EN-02), campo Bairro (F-EN-03), obrigatoriedade do contador (F-EN-04), tratamento do delete (F-EN-09).
+**Próximo:** sub-menu 2 — Contas bancárias e bancos.
+
+## 14. Acoplamento entre módulos
 Ver `01-acoplamento-entre-modulos.md`.

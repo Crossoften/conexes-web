@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
   EntityRegistry,
   EntityRegistryListItem,
@@ -11,7 +12,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class EntityRegistryService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'https://homolog.crosoften.com:8045/v1/institutional/entities';
+  private readonly baseUrl = `${environment.apiUrl}/v1/institutional/entities`;
 
   /** GET /v1/institutional/entities — lista resumida */
   getAll(): Observable<EntityRegistryListItem[]> {

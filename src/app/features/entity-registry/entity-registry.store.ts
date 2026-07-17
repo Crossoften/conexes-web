@@ -5,19 +5,16 @@ import {
   EntityRegistry,
   EntityRegistryListItem,
   EntityRegistryPayload,
-  EntityStatus,
-  EntityType,
 } from './entity-registry.model';
 import { EntityRegistryService } from './entity-registry.service';
 
 interface State {
   items:       EntityRegistryListItem[];
   loading:     boolean;
-  filters:     { search: string; status: EntityStatus | ''; type: EntityType | '' };
+  filters:     { search: string };
   sort:        { column: keyof EntityRegistryListItem | ''; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
   selectedIds: Set<number>;
-  expandedIds: Set<number>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,11 +24,10 @@ export class EntityRegistryStore {
   private readonly state = signal<State>({
     items:       [],
     loading:     false,
-    filters:     { search: '', status: '', type: '' },
+    filters:     { search: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
-    expandedIds: new Set(),
   });
 
   // ── Selectors ─────────────────────────────────────────────────────────────
@@ -41,7 +37,6 @@ export class EntityRegistryStore {
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
-  readonly expandedIds = computed(() => this.state().expandedIds);
 
   readonly filteredItems = computed(() => {
     let result = this.state().items;
@@ -56,16 +51,6 @@ export class EntityRegistryStore {
         item.tradeName.toLowerCase().includes(term) ||
         item.cnpj.includes(term)
       );
-    }
-
-    // Filtro de status
-    if (f.status) {
-      result = result.filter(item => item.status === f.status);
-    }
-
-    // Filtro de tipo
-    if (f.type) {
-      result = result.filter(item => item.type === f.type);
     }
 
     // Ordenação
@@ -178,14 +163,6 @@ export class EntityRegistryStore {
     this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
   }
 
-  setStatus(status: EntityStatus | ''): void {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
-  }
-
-  setType(type: EntityType | ''): void {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
-  }
-
   setSort(column: keyof EntityRegistryListItem): void {
     this.state.update(s => {
       const direction = s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
@@ -209,14 +186,6 @@ export class EntityRegistryStore {
     });
   }
 
-  toggleExpand(id: number): void {
-    this.state.update(s => {
-      const newSet = new Set(s.expandedIds);
-      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
-      return { ...s, expandedIds: newSet };
-    });
-  }
-
   toggleAllPage(items: EntityRegistryListItem[]): void {
     this.state.update(s => {
       const newSet = new Set(s.selectedIds);
@@ -235,8 +204,6 @@ export class EntityRegistryStore {
       legalName: entity.legalName,
       tradeName: entity.tradeName,
       city:      entity.city,
-      status:    entity.status,
-      type:      entity.type,
     };
   }
 }

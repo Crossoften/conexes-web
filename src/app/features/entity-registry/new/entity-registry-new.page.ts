@@ -20,6 +20,11 @@ export class EntityRegistryNewPage {
 
   protected activeTab: 'certificado' | 'contador' = 'certificado';
 
+  protected readonly ufOptions = [
+    'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
+    'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+  ];
+
   protected readonly form = this.fb.group({
     cnpj:                  ['', Validators.required],
     stateRegistration:     [''],
@@ -51,12 +56,6 @@ export class EntityRegistryNewPage {
   });
 
   async onSubmit(): Promise<void> {
-      console.log('🔍 Form valid?', this.form.valid);
-      console.log('🔍 Campos inválidos:', 
-     Object.entries(this.form.controls)
-      .filter(([, c]) => c.invalid)
-      .map(([name]) => name)
-  );
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -79,9 +78,5 @@ export class EntityRegistryNewPage {
 
     const ok = await this.store.createEntity(payload);
     if (ok) this.router.navigate(['/entity-registry']);
-  }
-
-  saveDraft(): void {
-    console.log('📝 Rascunho salvo:', this.form.value);
   }
 }
