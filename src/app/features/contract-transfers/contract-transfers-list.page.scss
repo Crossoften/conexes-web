@@ -163,6 +163,36 @@
   &:hover { background: var(--nav-hover-bg, #F3F0FF); color: var(--brand-purple); }
 }
 
+// ── Menu de opções (⋯) ────────────────────────
+.menu-wrap { position: relative; display: inline-flex; }
+
+.menu-backdrop { position: fixed; inset: 0; z-index: 40; }
+
+.menu-dropdown {
+  position: fixed; z-index: 50;
+  min-width: 232px; padding: 6px;
+  background: #fff; border: 1px solid var(--surface-border, #E5E7EB);
+  border-radius: 10px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.menu-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 10px;
+  background: none; border: none; border-radius: 7px;
+  font-size: 13px; color: var(--text-primary, #111827); text-align: left; cursor: pointer;
+  transition: background var(--transition, 0.15s ease);
+  svg { flex-shrink: 0; color: var(--text-muted, #6B7280); }
+  &:hover { background: var(--nav-hover-bg, #F3F0FF); }
+  &:disabled { opacity: .45; cursor: not-allowed; &:hover { background: none; } }
+
+  &--danger {
+    color: #DC2626;
+    svg { color: #DC2626; }
+    &:hover:not(:disabled) { background: #FEF2F2; }
+  }
+}
+
 // ── Paginação ─────────────────────────────────
 .pagination {
   display: flex; align-items: center; justify-content: space-between; padding: 14px 24px;

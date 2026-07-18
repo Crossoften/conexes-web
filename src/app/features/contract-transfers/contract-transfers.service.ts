@@ -12,6 +12,8 @@ import {
   PartnershipPayload,
   PartnershipUpdatePayload,
   PartnershipRef,
+  PartnershipFile,
+  PartnershipFilePayload,
 } from './contract-transfers.model';
 
 export interface PartnershipListParams {
@@ -55,6 +57,22 @@ export class ContractTransfersService {
 
   exportExcel(): Observable<Blob> {
     return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
+  }
+
+  // ── Anexos com arquivo (/v1/partnerships/{id}/files) ────────────────────────
+
+  getFiles(id: number): Observable<PartnershipFile[]> {
+    return this.http
+      .get<RawListEnvelope<PartnershipFile> | PartnershipFile[]>(`${this.base}/${id}/files`)
+      .pipe(map(res => (Array.isArray(res) ? res : res.data ?? [])));
+  }
+
+  addFile(id: number, payload: PartnershipFilePayload): Observable<PartnershipFile> {
+    return this.http.post<PartnershipFile>(`${this.base}/${id}/files`, payload);
+  }
+
+  deleteFile(id: number, fileId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/files/${fileId}`);
   }
 
   // ── Lookups (selects do formulário) ─────────────────────────────────────────

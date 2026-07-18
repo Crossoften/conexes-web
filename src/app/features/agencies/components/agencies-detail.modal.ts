@@ -50,10 +50,11 @@ export class AgencyDetailModalComponent implements OnChanges {
     address:       ['', Validators.required],
     number:        ['', Validators.required],
     complement:    [''],
-    managingOrgan: ['', Validators.required],
-    phone:         [''],
-    email:         ['', Validators.email],
-    staff:         this.fb.array([] as FormGroup[]),
+    managingOrgan:   ['', Validators.required],
+    phone:           [''],
+    email:           ['', Validators.email],
+    transparencyUrl: [''],
+    staff:           this.fb.array([] as FormGroup[]),
   });
 
   // ── Equipe / Servidores (staff) ─────────────────────────────────────────────
@@ -102,9 +103,10 @@ export class AgencyDetailModalComponent implements OnChanges {
         address:       this.agency.address        ?? '',
         number:        this.agency.number         ?? '',
         complement:    this.agency.complement     ?? '',
-        managingOrgan: this.agency.managingOrgan  ?? '',
-        phone:         this.agency.phone          ?? '',
-        email:         this.agency.email          ?? '',
+        managingOrgan:   this.agency.managingOrgan  ?? '',
+        phone:           this.agency.phone          ?? '',
+        email:           this.agency.email          ?? '',
+        transparencyUrl: this.agency.transparencyUrl ?? '',
       });
 
       // Reconstrói a equipe a partir do órgão carregado.
@@ -145,10 +147,9 @@ export class AgencyDetailModalComponent implements OnChanges {
     if (this.agency) this.delete.emit(this.agency.id);
   }
 
-  /** 🌐 Portal da Transparência — abre a URL do órgão quando o back expuser
-   *  `transparencyUrl` (B-OR-01). Visível por ora, inerte até o campo existir. */
+  /** 🌐 Portal da Transparência — abre a URL do órgão (B-OR-01, atendido no back). */
   onTransparency(): void {
-    const url = (this.agency as unknown as { transparencyUrl?: string } | null)?.transparencyUrl;
+    const url = this.agency?.transparencyUrl;
     if (url) window.open(url, '_blank');
   }
 
@@ -241,10 +242,11 @@ export class AgencyDetailModalComponent implements OnChanges {
       address:       raw.address       || undefined,
       number:        raw.number        || undefined,
       complement:    raw.complement    || undefined,
-      managingOrgan: raw.managingOrgan || undefined,
-      phone:         onlyDigits(raw.phone) || undefined,
-      email:         raw.email         || undefined,
-      logo:          this.logoUrl()    || undefined,
+      managingOrgan:   raw.managingOrgan || undefined,
+      phone:           onlyDigits(raw.phone) || undefined,
+      email:           raw.email         || undefined,
+      transparencyUrl: raw.transparencyUrl || undefined,
+      logo:            this.logoUrl()    || undefined,
       staff,
     };
 

@@ -208,13 +208,13 @@
                 <span>Valor previsto</span>
                 <span></span>
               </div>
-              @for (row of payables.controls; track $index) {
+              @for (row of payables.controls; track row) {
                 <div class="schedule-grid mt-2" [formGroupName]="$index">
                   <div class="form-group">
                     <div class="select-wrap">
                       <select class="form-control" formControlName="competency">
                         <option value="">Selecione o mês</option>
-                        @for (m of monthOptions; track m) { <option [value]="m">{{ m }}</option> }
+                        @for (m of monthOptions; track m.value) { <option [value]="m.value">{{ m.label }}</option> }
                       </select>
                       <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
@@ -242,12 +242,74 @@
         }
 
         @if (activeTab === 'ANEXOS') {
-          <div class="attachments-list">
-            <p style="padding: 16px; font-size: 13px; color: var(--text-muted);">
-              Os dados dos anexos (data de impressão, data limite e tipo de validação) são
-              preenchidos na aba <strong>Dados gerais</strong>. O upload de arquivos será
-              habilitado após salvar a parceria.
-            </p>
+          <div class="form-grid">
+
+            @if (!partnershipId()) {
+              <p class="anexos-hint">
+                Salve a parceria primeiro para habilitar o envio de anexos.
+              </p>
+            } @else {
+
+              @if (!viewMode()) {
+                <div class="anexos-uploader">
+                  <div class="form-row grid-cols-3 align-items-end">
+                    <div class="form-group">
+                      <label>Arquivo</label>
+                      <label class="upload-area">
+                        <input type="file" hidden (change)="onAnexoSelected($event)">
+                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>
+                          @if (fileUploading()) { Enviando... }
+                          @else if (newFileName()) { {{ newFileName() }} }
+                          @else { Clique para selecionar }
+                        </span>
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label>Descrição</label>
+                      <input type="text" class="form-control" placeholder="Ex.: Contrato assinado, CND..."
+                        [value]="newFileDescription()" (input)="newFileDescription.set($any($event.target).value)">
+                    </div>
+                    <div class="form-group">
+                      <button type="button" class="btn-solid btn-solid--orange" [disabled]="!newFileUrl() || fileUploading()" (click)="addAnexo()">
+                        Adicionar anexo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <div class="anexos-list">
+                @if (filesLoading()) {
+                  <p class="anexos-hint">Carregando anexos...</p>
+                } @else if (files().length === 0) {
+                  <p class="anexos-hint">Nenhum anexo cadastrado para este contrato.</p>
+                } @else {
+                  @for (f of files(); track f.id) {
+                    <div class="anexo-row">
+                      <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      <div class="anexo-row__info">
+                        <span class="anexo-row__desc">{{ f.description || 'Sem descrição' }}</span>
+                      </div>
+                      <a class="anexo-row__link" [href]="f.fileUrl" target="_blank" rel="noopener">Abrir</a>
+                      @if (!viewMode()) {
+                        <button type="button" class="icon-btn icon-btn--danger" title="Remover anexo" (click)="removeAnexo(f.id)">
+                          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+
+            }
           </div>
         }
 
