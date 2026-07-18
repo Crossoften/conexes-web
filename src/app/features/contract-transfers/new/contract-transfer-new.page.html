@@ -19,7 +19,7 @@
             Dados gerais
           </button>
           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'CONTAS'" (click)="setTab('CONTAS')">
-            Inclusão contas a pagar
+            Cronograma de repasses
           </button>
           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'ANEXOS'" (click)="setTab('ANEXOS')">
             Anexos
@@ -162,40 +162,80 @@
 
         @if (activeTab === 'CONTAS') {
           <div class="form-grid">
+
             <div class="form-row grid-cols-3 align-items-end">
               <div class="form-group">
-                <label>Parcelar</label>
-                <div class="select-wrap"><select class="form-control" formControlName="parcelar"><option value="Sim">Sim</option><option value="Nao">Não</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <label>Valor total do contrato</label>
+                <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="valorTotal">
               </div>
+              <div class="form-group">
+                <label>Tipo de recebimento</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="receiptType">
+                    <option value="Unico">Único</option>
+                    <option value="Recorrente">Recorrente</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              @if (form.get('receiptType')?.value === 'Recorrente') {
+                <div class="form-group">
+                  <label>Número de repasses</label>
+                  <input type="text" class="form-control" placeholder="Ex.: 12" formControlName="installmentsCount">
+                </div>
+              }
             </div>
 
+            @if (form.get('receiptType')?.value === 'Recorrente') {
+              <div class="form-row grid-cols-1">
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-primary);">
+                  <input type="checkbox" formControlName="manualSchedule">
+                  Definir valor e data manualmente
+                </label>
+              </div>
+            }
+
+            @if (!viewMode()) {
+              <div class="form-row grid-cols-1 mt-2">
+                <button type="button" class="btn-outline btn-pill" (click)="generateSchedule()">Gerar cronograma</button>
+              </div>
+            }
+
             <div formArrayName="payables">
+              <div class="schedule-grid schedule-head mt-2">
+                <span>Competência</span>
+                <span>Data prevista para repasse</span>
+                <span>Valor previsto</span>
+                <span></span>
+              </div>
               @for (row of payables.controls; track $index) {
-                <div class="form-row grid-cols-3 mt-2 align-items-end" [formGroupName]="$index">
+                <div class="schedule-grid mt-2" [formGroupName]="$index">
                   <div class="form-group">
-                    <label>Parcela</label>
-                    <input type="text" class="form-control disabled-bg" formControlName="installment" readonly>
-                  </div>
-                  <div class="form-group">
-                    <label>Vencimento</label>
-                    <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dueDate">
-                  </div>
-                  <div class="form-group" style="display:flex; gap:8px; align-items:flex-end;">
-                    <div style="flex:1;">
-                      <label>Valor</label>
-                      <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
+                    <div class="select-wrap">
+                      <select class="form-control" formControlName="competency">
+                        <option value="">Selecione o mês</option>
+                        @for (m of monthOptions; track m) { <option [value]="m">{{ m }}</option> }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <button type="button" class="icon-btn icon-btn--danger" title="Remover parcela" (click)="removePayable($index)" [disabled]="payables.length === 1" [hidden]="viewMode()">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
                   </div>
+                  <div class="form-group">
+                    <input type="text" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10"
+                      formControlName="dueDate" (input)="applyDateMask($event, row.get('dueDate'))">
+                  </div>
+                  <div class="form-group">
+                    <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
+                  </div>
+                  <button type="button" class="icon-btn icon-btn--danger schedule-remove" title="Remover competência" (click)="removePayable($index)" [disabled]="payables.length === 1" [hidden]="viewMode()">
+                    <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
                 </div>
               }
             </div>
 
             @if (!viewMode()) {
               <div class="form-row grid-cols-1 mt-2">
-                <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar parcela</button>
+                <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar competência</button>
               </div>
             }
           </div>

@@ -1,0 +1,269 @@
+diff --git a/src/app/features/contract-transfers/contract-transfers.model.ts b/src/app/features/contract-transfers/contract-transfers.model.ts
+index ae53e7d..096382b 100644
+--- a/src/app/features/contract-transfers/contract-transfers.model.ts
++++ b/src/app/features/contract-transfers/contract-transfers.model.ts
+@@ -83,7 +83,7 @@ export interface PartnershipDetail {
+   grantorId?:            number | null;
+   entityId?:             number | null;
+   responsibles?:         { type: string; name: string }[] | null;
+-  payables?:             { installment: number; dueDate: string; value: number }[] | null;
++  payables?:             { installment: number; competency?: string | null; dueDate: string; value: number }[] | null;
+   annexes?:              { printDate?: string | null; deadlineDate?: string | null; validationType?: string | null }[] | null;
+ }
+ 
+@@ -96,6 +96,7 @@ export interface PartnershipResponsiblePayload {
+ 
+ export interface PartnershipPayablePayload {
+   installment: number;
++  competency?: string;   // Competência do repasse (mês) — Swagger CreatePartnershipPayableDto
+   dueDate:     string;
+   value:       number;
+ }
+diff --git a/src/app/features/contract-transfers/new/contract-transfer-new.page.html b/src/app/features/contract-transfers/new/contract-transfer-new.page.html
+index 3960deb..6a1bd9a 100644
+--- a/src/app/features/contract-transfers/new/contract-transfer-new.page.html
++++ b/src/app/features/contract-transfers/new/contract-transfer-new.page.html
+@@ -19,7 +19,7 @@
+             Dados gerais
+           </button>
+           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'CONTAS'" (click)="setTab('CONTAS')">
+-            Inclusão contas a pagar
++            Cronograma de repasses
+           </button>
+           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'ANEXOS'" (click)="setTab('ANEXOS')">
+             Anexos
+@@ -162,30 +162,70 @@
+ 
+         @if (activeTab === 'CONTAS') {
+           <div class="form-grid">
++
+             <div class="form-row grid-cols-3 align-items-end">
+               <div class="form-group">
+-                <label>Parcelar</label>
+-                <div class="select-wrap"><select class="form-control" formControlName="parcelar"><option value="Sim">Sim</option><option value="Nao">Não</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
++                <label>Valor total do contrato</label>
++                <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="valorTotal">
++              </div>
++              <div class="form-group">
++                <label>Tipo de recebimento</label>
++                <div class="select-wrap">
++                  <select class="form-control" formControlName="receiptType">
++                    <option value="Unico">Único</option>
++                    <option value="Recorrente">Recorrente</option>
++                  </select>
++                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                </div>
+               </div>
++              @if (form.get('receiptType')?.value === 'Recorrente') {
++                <div class="form-group">
++                  <label>Número de repasses</label>
++                  <input type="text" class="form-control" placeholder="Ex.: 12" formControlName="installmentsCount">
++                </div>
++              }
+             </div>
+ 
++            @if (form.get('receiptType')?.value === 'Recorrente') {
++              <div class="form-row grid-cols-1">
++                <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-primary);">
++                  <input type="checkbox" formControlName="manualSchedule">
++                  Definir valor e data manualmente
++                </label>
++              </div>
++            }
++
++            @if (!viewMode()) {
++              <div class="form-row grid-cols-1 mt-2">
++                <button type="button" class="btn-outline btn-pill" (click)="generateSchedule()">Gerar cronograma</button>
++              </div>
++            }
++
+             <div formArrayName="payables">
++              <div class="form-row grid-cols-3 mt-2 schedule-head">
++                <span>Competência</span>
++                <span>Data prevista para repasse</span>
++                <span>Valor previsto</span>
++              </div>
+               @for (row of payables.controls; track $index) {
+                 <div class="form-row grid-cols-3 mt-2 align-items-end" [formGroupName]="$index">
+                   <div class="form-group">
+-                    <label>Parcela</label>
+-                    <input type="text" class="form-control disabled-bg" formControlName="installment" readonly>
++                    <div class="select-wrap">
++                      <select class="form-control" formControlName="competency">
++                        <option value="">Selecione o mês</option>
++                        @for (m of monthOptions; track m) { <option [value]="m">{{ m }}</option> }
++                      </select>
++                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                    </div>
+                   </div>
+                   <div class="form-group">
+-                    <label>Vencimento</label>
+                     <input type="text" class="form-control" placeholder="00/00/0000" formControlName="dueDate">
+                   </div>
+                   <div class="form-group" style="display:flex; gap:8px; align-items:flex-end;">
+                     <div style="flex:1;">
+-                      <label>Valor</label>
+                       <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">
+                     </div>
+-                    <button type="button" class="icon-btn icon-btn--danger" title="Remover parcela" (click)="removePayable($index)" [disabled]="payables.length === 1" [hidden]="viewMode()">
++                    <button type="button" class="icon-btn icon-btn--danger" title="Remover competência" (click)="removePayable($index)" [disabled]="payables.length === 1" [hidden]="viewMode()">
+                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                     </button>
+                   </div>
+@@ -195,7 +235,7 @@
+ 
+             @if (!viewMode()) {
+               <div class="form-row grid-cols-1 mt-2">
+-                <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar parcela</button>
++                <button type="button" class="btn-outline btn-pill" (click)="addPayable()">+ Adicionar competência</button>
+               </div>
+             }
+           </div>
+diff --git a/src/app/features/contract-transfers/new/contract-transfer-new.page.scss b/src/app/features/contract-transfers/new/contract-transfer-new.page.scss
+index 195dbef..45b8d67 100644
+--- a/src/app/features/contract-transfers/new/contract-transfer-new.page.scss
++++ b/src/app/features/contract-transfers/new/contract-transfer-new.page.scss
+@@ -70,6 +70,11 @@
+ 
+ .align-items-end { align-items: flex-end; } // Para alinhar o checkbox com os selects
+ 
++// Cabeçalho da tabela do cronograma de repasses (Competência / Data / Valor)
++.schedule-head {
++  span { font-size: 12.5px; font-weight: 600; color: var(--text-muted, #6B7280); }
++}
++
+ .form-group {
+   display: flex; flex-direction: column; gap: 8px;
+   label { font-size: 13.5px; font-weight: 600; color: var(--text-primary, #111827); }
+diff --git a/src/app/features/contract-transfers/new/contract-transfer-new.page.ts b/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
+index e57e822..ff9bf11 100644
+--- a/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
++++ b/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
+@@ -80,6 +80,13 @@ export class ContractTransferNewPage implements OnInit {
+     'Validar Plano de Aplicação',
+   ];
+ 
++  // Competência do repasse (mês). Valor enviado = nome em PT; trocar aqui caso o
++  // back use enum em inglês (January…December).
++  readonly monthOptions = [
++    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
++    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
++  ];
++
+   form: FormGroup = this.fb.group({
+     // -- Aba 1: Dados Gerais --
+     title:                ['', Validators.required],
+@@ -121,8 +128,10 @@ export class ContractTransferNewPage implements OnInit {
+     secretaria:           [''],
+     emendaParlamentar:    [''],
+ 
+-    // -- Aba 2: Inclusão contas a pagar (parcelas) --
+-    parcelar:             ['Sim'],
++    // -- Aba 2: Cronograma de Repasses --
++    receiptType:          ['Unico'],   // Único | Recorrente (UI — não persiste no back)
++    installmentsCount:    [''],        // nº de repasses (quando Recorrente)
++    manualSchedule:       [false],     // "Definir valor e data manualmente"
+     payables:             this.fb.array([this.newPayable(1)]),
+   });
+ 
+@@ -206,9 +215,19 @@ export class ContractTransferNewPage implements OnInit {
+     if (d.payables?.length) {
+       this.payables.clear();
+       d.payables.forEach((p, i) => {
+-        const fg = this.newPayable(p.installment ?? i + 1);
+-        fg.patchValue({ dueDate: this.dstr(p.dueDate), value: this.nstr(p.value) });
+-        this.payables.push(fg);
++        this.payables.push(this.newPayable(
++          p.installment ?? i + 1,
++          p.competency ?? '',
++          this.dstr(p.dueDate),
++          this.nstr(p.value),
++        ));
++      });
++      // Reconstrói o "Tipo de recebimento" a partir da tabela salva (o back não
++      // persiste essa config — front-first).
++      const recurring = d.payables.length > 1;
++      this.form.patchValue({
++        receiptType:       recurring ? 'Recorrente' : 'Unico',
++        installmentsCount: recurring ? String(d.payables.length) : '',
+       });
+     }
+   }
+@@ -219,11 +238,12 @@ export class ContractTransferNewPage implements OnInit {
+     return this.form.get('payables') as FormArray;
+   }
+ 
+-  private newPayable(installment: number): FormGroup {
++  private newPayable(installment: number, competency = '', dueDate = '', value: string | number = ''): FormGroup {
+     return this.fb.group({
+       installment: [installment],
+-      dueDate:     [''],
+-      value:       [''],
++      competency:  [competency],
++      dueDate:     [dueDate],
++      value:       [value],
+     });
+   }
+ 
+@@ -233,10 +253,37 @@ export class ContractTransferNewPage implements OnInit {
+ 
+   removePayable(index: number): void {
+     this.payables.removeAt(index);
+-    // Renumera as parcelas restantes.
++    // Renumera a sequência interna (installment) das linhas restantes.
+     this.payables.controls.forEach((ctrl, i) => ctrl.get('installment')?.setValue(i + 1));
+   }
+ 
++  /** Gera o cronograma de repasses a partir do Tipo de recebimento.
++   *  - Único: 1 linha com o valor total.
++   *  - Recorrente: N linhas; se não for manual, distribui o valor total e
++   *    pré-seleciona as competências (meses) em sequência. */
++  generateSchedule(): void {
++    const type   = this.form.get('receiptType')?.value;
++    const total  = toNumber(this.form.get('valorTotal')?.value) ?? 0;
++
++    this.payables.clear();
++
++    if (type !== 'Recorrente') {
++      this.payables.push(this.newPayable(1, '', '', total ? String(total) : ''));
++      return;
++    }
++
++    const count  = Math.max(1, Number(this.form.get('installmentsCount')?.value) || 0);
++    const manual = this.form.get('manualSchedule')?.value === true;
++    const per    = manual || !total ? '' : String(this.round2(total / count));
++
++    for (let i = 0; i < count; i++) {
++      const competency = manual ? '' : this.monthOptions[i % 12];
++      this.payables.push(this.newPayable(i + 1, competency, '', per));
++    }
++  }
++
++  private round2(n: number): number { return Math.round(n * 100) / 100; }
++
+   refLabel(ref: PartnershipRef): string {
+     return ref.legalName ?? ref.tradeName ?? ref.name ?? String(ref.id);
+   }
+@@ -246,7 +293,7 @@ export class ContractTransferNewPage implements OnInit {
+   }
+ 
+   resetForm(): void {
+-    this.form.reset({ ocultarPortal: 'Nao', status: 'Active', parcelar: 'Sim' });
++    this.form.reset({ ocultarPortal: 'Nao', status: 'Active', receiptType: 'Unico', manualSchedule: false });
+     this.payables.clear();
+     this.payables.push(this.newPayable(1));
+     this.activeTab = 'DADOS';
+@@ -271,10 +318,11 @@ export class ContractTransferNewPage implements OnInit {
+     if (a1.printDate || a1.deadlineDate || a1.validationType) annexes.push(a1);
+     if (a2.printDate || a2.deadlineDate || a2.validationType) annexes.push(a2);
+ 
+-    const payables = (v.payables as { installment: number; dueDate: string; value: string }[])
+-      .filter(p => p.dueDate || p.value)
++    const payables = (v.payables as { installment: number; competency: string; dueDate: string; value: string }[])
++      .filter(p => p.competency || p.dueDate || p.value)
+       .map((p, i) => ({
+         installment: Number(p.installment) || i + 1,
++        competency:  p.competency || undefined,
+         dueDate:     p.dueDate,
+         value:       toNumber(p.value) ?? 0,
+       }));
