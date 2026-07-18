@@ -70,6 +70,21 @@
 
 .align-items-end { align-items: flex-end; } // Para alinhar o checkbox com os selects
 
+// Tabela do cronograma de repasses (Competência / Data / Valor / remover)
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 40px;
+  gap: 20px;
+  align-items: end;
+}
+
+.schedule-head {
+  span { font-size: 12.5px; font-weight: 600; color: var(--text-muted, #6B7280); }
+}
+
+// Alinha o botão de remover com a base dos inputs da linha.
+.schedule-remove { margin-bottom: 5px; }
+
 .form-group {
   display: flex; flex-direction: column; gap: 8px;
   label { font-size: 13.5px; font-weight: 600; color: var(--text-primary, #111827); }
