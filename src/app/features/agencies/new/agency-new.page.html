@@ -143,7 +143,18 @@
                 <button type="button" class="staff-card__remove" (click)="removeStaff($index)" aria-label="Remover servidor">×</button>
               </div>
               <div class="form-row grid-cols-3">
-                <div class="form-group"><label>Tipo de servidor</label><input type="text" class="form-control" formControlName="serverType"></div>
+                <div class="form-group">
+                  <label>Tipo de servidor</label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="serverType">
+                      <option value="">Selecione</option>
+                      @for (opt of serverTypeOptions; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
                 <div class="form-group"><label>Cargo</label><input type="text" class="form-control" formControlName="jobTitle"></div>
                 <div class="form-group">
                   <label>Nome <span class="req">*</span></label>

@@ -1,0 +1,61 @@
+diff --git a/src/app/features/agencies/agencies-list.page.ts b/src/app/features/agencies/agencies-list.page.ts
+index 830536c..d150a9e 100644
+--- a/src/app/features/agencies/agencies-list.page.ts
++++ b/src/app/features/agencies/agencies-list.page.ts
+@@ -86,13 +86,27 @@ export class AgenciesListPage implements OnInit {
+   // ── Modal handlers ────────────────────────────────────────────────────────
+ 
+   onView(item: Agency): void {
+-    this.selectedAgency.set(item);
+-    this.showModal.set(true);
++    this.openModal(item);
+   }
+ 
+   onEdit(item: Agency): void {
++    this.openModal(item);
++  }
++
++  /** Abre o modal com o item da lista (para o header) e, em seguida, carrega o
++   *  registro completo via GET /{id} — a projeção da listagem pode não trazer
++   *  todos os campos (ex.: CEP e Número). */
++  private openModal(item: Agency): void {
+     this.selectedAgency.set(item);
+     this.showModal.set(true);
++    this.modalLoading.set(true);
++    this.store.loadOne(item.id,
++      full => {
++        this.selectedAgency.set(full);
++        this.modalLoading.set(false);
++      },
++      () => this.modalLoading.set(false),
++    );
+   }
+ 
+   onCloseModal(): void {
+diff --git a/src/app/features/agencies/agencies.store.ts b/src/app/features/agencies/agencies.store.ts
+index 11aab70..2fd4ce5 100644
+--- a/src/app/features/agencies/agencies.store.ts
++++ b/src/app/features/agencies/agencies.store.ts
+@@ -140,6 +140,22 @@ export class AgenciesStore {
+     });
+   }
+ 
++  // ── Carregar um registro completo (detalhe/edição) ─────────────────────────
++  // A listagem (findAll) pode trazer uma projeção parcial; para o modal de
++  // detalhe/edição buscamos a entidade inteira via GET /v1/grantors/{id}.
++
++  loadOne(id: number, onSuccess: (agency: Agency) => void, onError?: (msg: string) => void): void {
++    this.svc.getById(id).subscribe({
++      next: agency => onSuccess(agency),
++      error: err => {
++        const raw = err?.error?.message ?? 'Erro ao carregar o órgão.';
++        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
++        this.notify.error(msg);
++        onError?.(msg);
++      },
++    });
++  }
++
+   // ── Update ────────────────────────────────────────────────────────────────
+ 
+   update(id: number, payload: AgencyUpdatePayload, onSuccess?: () => void, onError?: (msg: string) => void): void {

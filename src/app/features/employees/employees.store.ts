@@ -7,7 +7,7 @@ interface State {
   items:       Employee[];
   loading:     boolean;
   error:       string | null;
-  filters:     { search: string; status: string; type: string };
+  filters:     { search: string; type: string };
   sort:        { column: keyof Employee | ''; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
   selectedIds: Set<number>;
@@ -22,7 +22,7 @@ export class EmployeesStore {
     items:       [],
     loading:     false,
     error:       null,
-    filters:     { search: '', status: '', type: '' },
+    filters:     { search: '', type: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -51,7 +51,6 @@ export class EmployeesStore {
         item.title?.toLowerCase().includes(term)
       );
     }
-    if (f.status) result = result.filter(item => item.status === f.status);
     if (f.type)   result = result.filter(item => item.responsibleType === f.type);
 
     return result;
@@ -92,6 +91,12 @@ export class EmployeesStore {
 
   openDetail(employee: Employee): void {
     this.state.update(s => ({ ...s, selected: employee }));
+    // A listagem pode vir enxuta; busca o detalhe completo e atualiza o modal.
+    this.svc.getById(employee.id).subscribe({
+      next: full => this.state.update(s =>
+        s.selected?.id === employee.id ? { ...s, selected: full } : s),
+      error: () => { /* mantém os dados da lista */ },
+    });
   }
 
   closeDetail(): void {
@@ -140,10 +145,6 @@ export class EmployeesStore {
 
   setSearch(search: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
-  }
-
-  setStatus(status: string): void {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   setType(type: string): void {

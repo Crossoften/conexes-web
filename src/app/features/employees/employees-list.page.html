@@ -26,17 +26,6 @@
 
       <div class="select-wrap">
         <select class="select select--pill"
-          [value]="store.filters().status"
-          (change)="store.setStatus($any($event.target).value)">
-          @for (opt of statusOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-
-      <div class="select-wrap">
-        <select class="select select--pill"
           [value]="store.filters().type"
           (change)="store.setType($any($event.target).value)">
           @for (opt of typeOptions; track opt.value) {

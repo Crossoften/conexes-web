@@ -18,12 +18,6 @@ import { Employee, EmployeeUpdatePayload } from './employees.model';
 export class EmployeesListPage implements OnInit {
   readonly store = inject(EmployeesStore);
 
-  readonly statusOptions = [
-    { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'Active'   },
-    { label: 'Inativo',            value: 'Inactive' },
-  ];
-
   readonly typeOptions = [
     { label: 'Selecione o tipo', value: ''            },
     { label: 'Colaborador',      value: 'COLABORADOR' },

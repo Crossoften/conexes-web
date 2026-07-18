@@ -7,7 +7,7 @@ interface State {
   items:      Position[];
   loading:    boolean;
   error:      string | null;
-  filters:    { search: string; status: string; type: string };
+  filters:    { search: string; type: string };
   sort:       { column: keyof Position | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
   selectedIds: Set<number>;
@@ -21,7 +21,7 @@ export class PositionsStore {
     items:      [],
     loading:    false,
     error:      null,
-    filters:    { search: '', status: '', type: '' },
+    filters:    { search: '', type: '' },
     sort:       { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -48,7 +48,6 @@ export class PositionsStore {
         item.description?.toLowerCase().includes(term)
       );
     }
-    if (f.status) result = result.filter(item => item.status === f.status);
     if (f.type)   result = result.filter(item => item.type === f.type);
 
     return result;
@@ -89,10 +88,6 @@ export class PositionsStore {
 
   setSearch(search: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
-  }
-
-  setStatus(status: string): void {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   setType(type: string): void {

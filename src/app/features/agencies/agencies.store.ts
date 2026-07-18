@@ -140,6 +140,22 @@ export class AgenciesStore {
     });
   }
 
+  // ── Carregar um registro completo (detalhe/edição) ─────────────────────────
+  // A listagem (findAll) pode trazer uma projeção parcial; para o modal de
+  // detalhe/edição buscamos a entidade inteira via GET /v1/grantors/{id}.
+
+  loadOne(id: number, onSuccess: (agency: Agency) => void, onError?: (msg: string) => void): void {
+    this.svc.getById(id).subscribe({
+      next: agency => onSuccess(agency),
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao carregar o órgão.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
+      },
+    });
+  }
+
   // ── Update ────────────────────────────────────────────────────────────────
 
   update(id: number, payload: AgencyUpdatePayload, onSuccess?: () => void, onError?: (msg: string) => void): void {
@@ -158,7 +174,25 @@ export class AgenciesStore {
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // ── Desativar (regra de negócio: 🗑 = desativar, não excluir) ───────────────
+
+  deactivate(id: number, onSuccess?: () => void, onError?: (msg: string) => void): void {
+    this.svc.update(id, { status: 'Inactive' }).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Órgão desativado com sucesso.');
+        onSuccess?.();
+      },
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao desativar órgão.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
+      },
+    });
+  }
+
+  // ── Delete (hard delete — não usado pela UI; regra do cliente é desativar) ──
 
   delete(id: number, onSuccess?: () => void, onError?: (msg: string) => void): void {
     this.svc.delete(id).subscribe({

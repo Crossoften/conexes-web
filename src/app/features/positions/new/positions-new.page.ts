@@ -45,7 +45,6 @@ export class PositionsNewPage implements OnInit {
     descricao:      ['', Validators.required],
     dataEleicao:    ['', Validators.required],
     codigoAudesp:   [''],
-    celular:        [''],
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────

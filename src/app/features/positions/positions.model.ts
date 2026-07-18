@@ -1,6 +1,7 @@
 // src/app/features/positions/positions.model.ts
 
-export type PositionStatus = 'Active' | 'Inactive';
+// Obs.: `status` NÃO existe no contrato `/v1/institutional/governing-bodies` —
+// removido do front até o Back definir (B-CD-02).
 
 // ── Sub-modelos ───────────────────────────────────────────────────────────────
 
@@ -21,7 +22,6 @@ export interface Position {
   description:   string;
   tcespCertCode: string;
   members:       GoverningBodyMember[];
-  status?:       PositionStatus;
   createdAt?:    string;
   updatedAt?:    string;
 }

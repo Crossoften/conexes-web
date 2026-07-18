@@ -43,9 +43,10 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Cadastro de entidades',        route: '/entity-registry' },
       { label: 'Contas bancárias e bancos',    route: '/bank-accounts' },
       { label: 'Colaboradores e dirigentes',   route: '/employees' },
-      { label: 'Corpo diretivo', route: '/positions' },
-      { label: 'Anexos da entidade',           route: '/entity-attachments' },
-      // { label: 'Corpo diretivo',               route: '/board-members' },
+      { label: 'Corpo diretivo',               route: '/positions' },
+      // 'Anexos da entidade' oculto até a feature existir: a rota /entity-attachments está
+      // comentada em app.routes e o Back ainda não tem o contrato (B-AN-01). Reativar quando pronto.
+      // { label: 'Anexos da entidade',           route: '/entity-attachments' },
     ],
   },
   {

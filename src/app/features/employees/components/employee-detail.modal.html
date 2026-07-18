@@ -128,15 +128,6 @@
                   <span class="info-value">{{ employee.salary ? (employee.salary | number:'1.2-2') : '—' }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Status</span>
-                  <span class="info-value">
-                    <span class="status-badge" [ngClass]="'status-badge--' + statusVariant">
-                      {{ statusLabel }}
-                    </span>
-                  </span>
-                </div>
-
-                <div class="info-item">
                   <span class="info-label">Órgão de Classe</span>
                   <span class="info-value">{{ employee.professionalBoard || '—' }}</span>
                 </div>

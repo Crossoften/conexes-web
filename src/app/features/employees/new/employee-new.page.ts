@@ -89,12 +89,9 @@ export class EmployeeNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    // Cargos: usa fallback imediato, atualiza se o back retornar dados
+    // Cargos: lista fixa por ora. O endpoint GET /v1/positions ainda não existe (B-CO-02) —
+    // chamá-lo retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
     this.positions.set(this.POSITIONS_FALLBACK);
-
-    this.http.get<PositionItem[]>(`${environment.apiUrl}/v1/positions`).subscribe({
-      next: items => { if (items?.length > 0) this.positions.set(items); },
-    });
 
     // Entidades: carrega do back
     this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
@@ -166,7 +163,9 @@ export class EmployeeNewPage implements OnInit {
       email:              v.emailInstitucional          ?? '',
       phone:              v.telefone                   ?? '',
       cellPhone:          v.celular                    ?? '',
-      title:              v.tipoResponsavel            ?? '',
+      // `title` (cargo/título) não tem campo próprio no formulário e NÃO deve receber o
+      // tipo (COLABORADOR/DIRIGENTE) — enviado vazio até definir a fonte (B-CO-07).
+      title:              '',
       responsibleType:    v.tipoResponsavel            ?? '',
       positionId:         Number(v.cargo)              || 0,
       formation:          v.formacao                   ?? '',
