@@ -306,6 +306,120 @@
   }
 }
 
+// ── Servidores / Equipe (edit) ────────────────
+
+.staff-section {
+  margin-top: 8px;
+}
+
+.staff-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.staff-card {
+  border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.staff-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+}
+
+.staff-card__remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted, #9CA3AF);
+  &:hover { color: #DC2626; }
+}
+
+.staff-empty {
+  font-size: 13px;
+  color: var(--text-muted, #9CA3AF);
+  padding: 8px 0;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0 0 12px 0;
+}
+
+// ── Select estilizado ─────────────────────────
+
+.select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 36px;
+    width: 100%;
+  }
+}
+
+.select-chevron {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted, #6B7280);
+  pointer-events: none;
+}
+
+// ── Área de Upload (edit) ─────────────────────
+
+.upload-section {
+  margin-top: 20px;
+}
+
+.upload-area {
+  border: 1.5px dashed #BFDBFE;
+  background-color: #F8FAFC;
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: #4B5563;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background-color: #EFF6FF;
+    border-color: #93C5FD;
+  }
+
+  svg {
+    color: var(--text-primary, #111827);
+    opacity: 0.7;
+  }
+}
+
 // ── Animações ─────────────────────────────────
 
 @keyframes fadeIn {

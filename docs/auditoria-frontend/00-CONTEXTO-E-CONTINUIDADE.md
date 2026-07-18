@@ -35,7 +35,7 @@
 | 4 | **Impostos e Retenções** | `features/taxes` | `/v1/tax-service` | ✅ 2 patches (14,15) + 16 (layout) · Back B-TX-01..07 |
 | 5 | **Alçadas de Aprovação** | `features/approval-tiers` | `/v1/approval-limits` | 🟡 Patch 17 (limpeza) · Back B-AL-01..08 · split de forms aguarda Back |
 | 6 | **Usuários e Permissões** | `features/users` | `/v1/users` · `/v1/permission-profiles` | 🟡 Patch 19 (bugs) · Back B-US-01..09 · **enforcement inexistente** aguarda Back |
-| 7 | **Entidades** (5 sub-menus) | `features/entity-registry` (+ bank-accounts, employees…) | `/v1/institutional/entities` | 🟡 Sub-menu 1 (Cadastro): Patch 21 · Back B-EN-01..06 · sub-menus 2–5 pendentes |
+| 7 | **Entidades** (5 sub-menus) | `features/entity-registry` (+ bank-accounts, employees, positions…) | `/v1/institutional/entities` | ✅ SM1: 21+23 · SM2: 25 · SM3: 27+28 · SM4: 29 · SM5: 30 (não-construído) · Back B-EN/B-BK/B-CO/B-CD/B-AN |
 
 ## 6. Módulo 1 — Stakeholders
 Patches 01–05 (limpeza, ajustes cadastro, toast, edição bancária, endereço/banco bloco completo). Back: `pendencias-backend-stakeholders.md` (entregue à parte). Impostos **embutidos no stakeholder** (decisão).
@@ -80,9 +80,28 @@ O Swagger mais recente traz enums **sem acento**: `categoryType` = `Entrada`/**`
 **Endpoint (sub-menu 1):** `/v1/institutional/entities` — POST (com contador), GET (lista **só** id/cnpj/legalName/city), GET/{id}, PATCH/{id}. **Sem DELETE.** `CreateEntityDto` = 27 campos (entidade+contador); **obrigatórios só `cnpj`+`legalName`**. **Não existem** no contrato: `status`, `type` (PF/PJ), `children` (filial), **bairro**, nem upload de arquivo (só `digitalCertPassword` e `logoUrl:string`).
 **Decisões (cliente):** (1a) **remover do front** status/type/filial (não existem no contrato); limpeza segura aprovada.
 **Patch 21 (Sub-menu 1, seguro):** (F-EN-01) `baseUrl` hardcoded → `environment.apiUrl`; (1a) remove status/type/children + colunas/filtros + expand (filial) + badge de status no modal; (F-EN-06) Estado (UF) vira **select das 27 UFs**; (F-EN-08) remove `console.log` de debug; (F-EN-07/10) remove "Salvar rascunho" no-op + `entity-registry.mock.ts` morto.
+**Patch 23 (ajustes de UI, sobre o 21):** select **Estado (UF)** alinhado ao padrão dos inputs (`.select-wrap` + chevron custom, `appearance:none`); **aviso de campos obrigatórios no modal de edição** — barra de alerta + destaque vermelho dos campos + troca automática para a aba (Geral/Contador) que contém a pendência (antes o salvar era silencioso).
 **Back:** `pendencias-backend-entidades.md` (B-EN-01..06). 🔴 sem DELETE/Inativar (B-EN-01), findAll enxuto (B-EN-02), Bairro + upload cert/logo (B-EN-03).
 **Aguarda Back (Front):** uploads de certificado/logo (F-EN-02), campo Bairro (F-EN-03), obrigatoriedade do contador (F-EN-04), tratamento do delete (F-EN-09).
-**Próximo:** sub-menu 2 — Contas bancárias e bancos.
+**Sub-menu 2 — Contas bancárias e bancos** (`features/bank-accounts`; `/v1/institutional/bank-accounts` + `/banks`): duas abas (Contas/Bancos). Contrato: POST/GET/GET{id}/PATCH{id} nos dois — **sem DELETE**. Create conta (`CreateBankAccountFullDto`) obrig.: `entityId,bankId,agency,account,accountType`. **`status` não existe** (era especulativo e a lista renderizava `statusConfig[item.status].variant` sem guarda → risco de crash).
+**Decisões (cliente):** (1a) remover `status` do front (mantém `accountType`, que é real); limpeza segura aprovada.
+**Patch 25 (Sub-menu 2, seguro):** (F-BK-01/1a) remove `status` (filtro + coluna + badge + config + getters) → elimina o crash; (F-BK-03) modal de conta passa a buscar `getById` ao abrir; delete confirmado **já honesto** (só remove no sucesso) — segue quebrado até B-BK-01.
+**Back:** `pendencias-backend-entidades.md` §Sub-menu 2 (B-BK-01..07). 🔴 sem DELETE (B-BK-01), `status` inexistente (B-BK-02); 🟠 `code`/`closingDate` (B-BK-03), `entityId`×`payingSourceId` conflados (B-BK-04), obrigatoriedade (B-BK-05); 🟡 schema da lista (B-BK-06), Boleto disabled (B-BK-07).
+**Sub-menu 3 — Colaboradores e dirigentes** (`features/employees`; `/v1/institutional/collaborators`): POST/GET/GET{id}/PATCH{id} — **sem DELETE**. Create (`CreateCollaboratorFullDto`) obrig.: `entityId, name, cpf`. **Sem `status`** (removido do front). **Colaborador × Dirigente** vive em `responsibleType` (COLABORADOR/DIRIGENTE — campo real; filtro por Tipo funciona). **Cargos:** `GET /v1/positions` **não existe** → front usa lista **hardcoded**. **Pagamentos (💵)** do PPT não implementado (pergunta: vir de Contas a Pagar?).
+**Decisões (cliente):** (1a) remover filtro de `status`; (2a) parar de duplicar `title` (não enviar o tipo em `title`); limpeza segura aprovada.
+**Patch 27 (Sub-menu 3, seguro):** remove `status` (filtro + campo do model + badge/getters do modal); modal abre via `getById` (F-CO-04); `title` deixa de receber o tipo (create envia vazio; edit preserva o existente — B-CO-07); remove `employees.mock.ts` morto.
+**Back:** `pendencias-backend-colaboradores.md` (B-CO-01..08). 🔴 sem DELETE/Inativar (B-CO-01), catálogo de Cargos inexistente (B-CO-02), Pagamentos do colaborador (B-CO-03); 🟠 status (B-CO-04), discriminador Colaborador/Dirigente (B-CO-05), obrigatoriedade (B-CO-06); 🟡 title/email (B-CO-07), schema (B-CO-08).
+**Patch 28 (fix):** removida a chamada a `GET /v1/positions` (não existe — dava 404 ao abrir novo/editar colaborador); Cargos ficam na lista fixa até B-CO-02.
+
+**Sub-menu 4 — Corpo diretivo** (`features/positions` — nome confuso; `/v1/institutional/governing-bodies`): **só POST + GET** (sem GET/{id}, PATCH, DELETE). Create (`CreateGoverningBodyDto`) obrig.: `entityId, electionDate, type`; `members[]` = colaboradores (`collaboratorId`, `startDate`, `endDate`). DOCX: Tipo = Conselho Fiscal/Corpo Diretivo/**Responsável**; Finalidade = Ajuste/Prestação de Contas. **Sem `status`.**
+**Decisões (cliente):** (1a) remover filtro de status; (2a) esconder ações não-funcionais (tela vira criar+listar); ajustes de negócio + limpeza aprovados.
+**Patch 29 (Sub-menu 4, seguro):** remove `status` (filtro + model); **esconde a coluna Ações** (Visualizar/Editar/Histórico eram decorativos, sem endpoint); adiciona **"Responsável"** ao Tipo; **Finalidade** vira select (Ajuste/Prestação de Contas); remove control `celular` morto + `positions.mock.ts`.
+**Back:** `pendencias-backend-corpo-diretivo.md` (B-CD-01..04). 🔴 faltam GET/{id}+PATCH+DELETE (B-CD-01); 🟠 status (B-CD-02), enums/obrigatoriedade (B-CD-03); 🟡 schema (B-CD-04).
+**Sub-menu 5 — Anexos da entidade** (**não construído** dos dois lados): o menu apontava para `/entity-attachments`, mas a rota está **comentada** em `app.routes` e a feature **não existe**; o Back **não tem endpoint de domínio** (só `POST /v1/upload/one-file` + `/many-files` genéricos). PPT pede: **CNDs** (tipo + validade + notificação de vencimento), **Regulamento de Compras** (publicou? + veículo de publicação, 10 opções), **Anexos do Termo de Fomento/Colaboração/Parceria**.
+**Decisões (cliente):** (1a) esconder o item de menu morto; (2a) **não** construir a tela agora — aguardar o Back definir o contrato (não inventar contrato).
+**Patch 30 (Sub-menu 5, seguro):** comenta o item "Anexos da entidade" no `nav.config` (rota morta) até a feature existir.
+**Back:** `pendencias-backend-anexos-entidade.md` (B-AN-01..03). 🔴 definir endpoints de CNDs/Regulamento/Fomento (B-AN-01); 🟠 notificação de vencimento (B-AN-02); 🟡 domínio que associa upload↔entidade (B-AN-03).
+**Módulo 7 concluído** (auditoria dos 5 sub-menus). SM5 fica bloqueado no Back para construção.
 
 ## 14. Acoplamento entre módulos
 Ver `01-acoplamento-entre-modulos.md`.

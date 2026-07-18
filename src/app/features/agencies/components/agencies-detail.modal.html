@@ -24,7 +24,13 @@
                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
+          <button class="action-btn action-btn--orange" (click)="onTransparency()" title="Portal da Transparência">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M2 10h16M10 2c2.5 2.2 2.5 13.8 0 16M10 2c-2.5 2.2-2.5 13.8 0 16" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Desativar">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
               <path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5"
                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -223,6 +229,87 @@
               </div>
 
             </div>
+
+            <!-- ── Servidores / Equipe ─────────────────────────────────────── -->
+            <div class="staff-section" formArrayName="staff">
+              <div class="staff-section__header">
+                <h3 class="section-title">Servidores / Equipe</h3>
+                <button type="button" class="btn-outline btn-outline--orange" (click)="addStaff()">+ Adicionar servidor</button>
+              </div>
+
+              @for (member of staff.controls; track $index) {
+                <div class="staff-card" [formGroupName]="$index">
+                  <div class="staff-card__header">
+                    <span class="staff-card__title">Servidor {{ $index + 1 }}</span>
+                    <button type="button" class="staff-card__remove" (click)="removeStaff($index)" aria-label="Remover servidor">×</button>
+                  </div>
+                  <div class="form-row grid-cols-3">
+                    <div class="form-group">
+                      <label>Tipo de servidor</label>
+                      <div class="select-wrap">
+                        <select class="form-control" formControlName="serverType">
+                          <option value="">Selecione</option>
+                          @for (opt of serverTypeOptions; track opt) {
+                            <option [value]="opt">{{ opt }}</option>
+                          }
+                        </select>
+                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </div>
+                    </div>
+                    <div class="form-group"><label>Cargo</label><input type="text" class="form-control" formControlName="jobTitle"></div>
+                    <div class="form-group">
+                      <label>Nome <span class="req">*</span></label>
+                      <input type="text" class="form-control" formControlName="name">
+                      @if (member.get('name')?.invalid && member.get('name')?.touched) {
+                        <span class="field-error">Campo obrigatório</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="form-row grid-cols-3">
+                    <div class="form-group"><label>Ato de nomeação</label><input type="text" class="form-control" formControlName="appointmentAct"></div>
+                    <div class="form-group"><label>Data de nascimento</label><input type="date" class="form-control" formControlName="birthDate"></div>
+                    <div class="form-group"><label>RG</label><input type="text" class="form-control" formControlName="rg"></div>
+                  </div>
+                  <div class="form-row grid-cols-3">
+                    <div class="form-group"><label>CPF</label><input type="text" class="form-control" formControlName="cpf"></div>
+                    <div class="form-group"><label>Telefone</label><input type="text" class="form-control" formControlName="phone"></div>
+                    <div class="form-group"><label>CEP</label><input type="text" class="form-control" formControlName="zipCode"></div>
+                  </div>
+                  <div class="form-row grid-cols-3">
+                    <div class="form-group"><label>Endereço</label><input type="text" class="form-control" formControlName="address"></div>
+                    <div class="form-group"><label>Nro</label><input type="text" class="form-control" formControlName="number"></div>
+                    <div class="form-group"><label>Complemento</label><input type="text" class="form-control" formControlName="complement"></div>
+                  </div>
+                  <div class="form-row grid-cols-2">
+                    <div class="form-group"><label>E-mail institucional</label><input type="email" class="form-control" formControlName="institutionalEmail"></div>
+                    <div class="form-group"><label>E-mail pessoal</label><input type="email" class="form-control" formControlName="personalEmail"></div>
+                  </div>
+                </div>
+              }
+
+              @if (staff.controls.length === 0) {
+                <p class="staff-empty">Nenhum servidor adicionado. Clique em "Adicionar servidor".</p>
+              }
+            </div>
+
+            <!-- ── Logotipo ────────────────────────────────────────────────── -->
+            <div class="upload-section">
+              <h3 class="section-title">Logotipo do concessor</h3>
+              <label class="upload-area">
+                <input type="file" accept="image/png,image/jpeg,image/jpg" hidden (change)="onLogoSelected($event)">
+                <svg viewBox="0 0 24 24" fill="none" width="24" height="24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span class="upload-area__text">
+                  @if (logoUploading()) { Enviando... }
+                  @else if (logoName()) { {{ logoName() }} }
+                  @else { Clique para fazer upload }
+                </span>
+              </label>
+            </div>
+
           </form>
         </ng-container>
         <!-- /MODO EDIT -->

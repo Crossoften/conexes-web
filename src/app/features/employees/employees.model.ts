@@ -1,6 +1,8 @@
 // src/app/features/employees/employees.model.ts
 
-export type EmployeeStatus = 'Active' | 'Inactive';
+// Obs.: `status` NÃO existe no contrato `/v1/institutional/collaborators` — removido
+// do front até o Back definir (B-CO-04). A distinção Colaborador × Dirigente usa
+// `responsibleType` (COLABORADOR/DIRIGENTE), que é campo real do DTO.
 export type EmployeeType   = 'COLABORADOR' | 'DIRIGENTE';
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
@@ -34,7 +36,6 @@ export interface Employee {
   resourceOrigin:     string;
   reference:          string;
   grossValue:         number;
-  status?:            EmployeeStatus;
   createdAt?:         string;
   updatedAt?:         string;
 }

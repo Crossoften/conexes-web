@@ -86,13 +86,27 @@ export class AgenciesListPage implements OnInit {
   // ── Modal handlers ────────────────────────────────────────────────────────
 
   onView(item: Agency): void {
-    this.selectedAgency.set(item);
-    this.showModal.set(true);
+    this.openModal(item);
   }
 
   onEdit(item: Agency): void {
+    this.openModal(item);
+  }
+
+  /** Abre o modal com o item da lista (para o header) e, em seguida, carrega o
+   *  registro completo via GET /{id} — a projeção da listagem pode não trazer
+   *  todos os campos (ex.: CEP e Número). */
+  private openModal(item: Agency): void {
     this.selectedAgency.set(item);
     this.showModal.set(true);
+    this.modalLoading.set(true);
+    this.store.loadOne(item.id,
+      full => {
+        this.selectedAgency.set(full);
+        this.modalLoading.set(false);
+      },
+      () => this.modalLoading.set(false),
+    );
   }
 
   onCloseModal(): void {
@@ -115,14 +129,19 @@ export class AgenciesListPage implements OnInit {
     );
   }
 
-  onDelete(id: number): void {
-    const confirmed = window.confirm(
-      'Deseja realmente excluir este órgão? Esta ação não pode ser desfeita.'
-    );
+  onDeactivate(id: number): void {
+    const confirmed = window.confirm('Deseja desativar este órgão concessor?');
     if (!confirmed) return;
-    this.store.delete(id,
+    this.store.deactivate(id,
       () => this.onCloseModal(),
     );
+  }
+
+  /** 🌐 Portal da Transparência (link por órgão). Aguarda o campo `transparencyUrl`
+   *  no back (B-OR-01). Botão fica visível; abre a URL quando o campo existir. */
+  onTransparency(item: Agency): void {
+    const url = (item as unknown as { transparencyUrl?: string }).transparencyUrl;
+    if (url) window.open(url, '_blank');
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
