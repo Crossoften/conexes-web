@@ -33,14 +33,15 @@ export interface Agency {
   address:       string;
   number:        string;
   complement:    string;
-  managingOrgan: string;
-  phone:         string;
-  email:         string;
-  logo:          string;
-  staff:         AgencyStaff[];
-  status?:       AgencyStatus;
-  createdAt?:    string;
-  updatedAt?:    string;
+  managingOrgan:    string;
+  phone:            string;
+  email:            string;
+  logo:             string;
+  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
+  staff:            AgencyStaff[];
+  status?:          AgencyStatus;
+  createdAt?:       string;
+  updatedAt?:       string;
 }
 
 // ── Payload de criação ────────────────────────────────────────────────────────
@@ -54,12 +55,13 @@ export interface AgencyPayload {
   address:       string;
   number:        string;
   complement:    string;
-  managingOrgan: string;
-  phone:         string;
-  email?:        string;
-  logo:          string;
-  status?:       AgencyStatus;
-  staff:         AgencyStaff[];
+  managingOrgan:    string;
+  phone:            string;
+  email?:           string;
+  logo:             string;
+  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
+  status?:          AgencyStatus;
+  staff:            AgencyStaff[];
 }
 
 // ── Payload de atualização (PATCH — todos opcionais) ──────────────────────────

@@ -137,11 +137,9 @@ export class AgenciesListPage implements OnInit {
     );
   }
 
-  /** 🌐 Portal da Transparência (link por órgão). Aguarda o campo `transparencyUrl`
-   *  no back (B-OR-01). Botão fica visível; abre a URL quando o campo existir. */
+  /** 🌐 Portal da Transparência (link por órgão) — B-OR-01, atendido no back. */
   onTransparency(item: Agency): void {
-    const url = (item as unknown as { transparencyUrl?: string }).transparencyUrl;
-    if (url) window.open(url, '_blank');
+    if (item.transparencyUrl) window.open(item.transparencyUrl, '_blank');
   }
 
   // ── Export ────────────────────────────────────────────────────────────────

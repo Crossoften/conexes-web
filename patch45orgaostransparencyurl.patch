@@ -1,0 +1,212 @@
+diff --git a/src/app/features/agencies/agencies-list.page.ts b/src/app/features/agencies/agencies-list.page.ts
+index d150a9e..a6809d1 100644
+--- a/src/app/features/agencies/agencies-list.page.ts
++++ b/src/app/features/agencies/agencies-list.page.ts
+@@ -137,11 +137,9 @@ export class AgenciesListPage implements OnInit {
+     );
+   }
+ 
+-  /** 🌐 Portal da Transparência (link por órgão). Aguarda o campo `transparencyUrl`
+-   *  no back (B-OR-01). Botão fica visível; abre a URL quando o campo existir. */
++  /** 🌐 Portal da Transparência (link por órgão) — B-OR-01, atendido no back. */
+   onTransparency(item: Agency): void {
+-    const url = (item as unknown as { transparencyUrl?: string }).transparencyUrl;
+-    if (url) window.open(url, '_blank');
++    if (item.transparencyUrl) window.open(item.transparencyUrl, '_blank');
+   }
+ 
+   // ── Export ────────────────────────────────────────────────────────────────
+diff --git a/src/app/features/agencies/agencies.model.ts b/src/app/features/agencies/agencies.model.ts
+index 7b5263a..ee7a9fb 100644
+--- a/src/app/features/agencies/agencies.model.ts
++++ b/src/app/features/agencies/agencies.model.ts
+@@ -33,14 +33,15 @@ export interface Agency {
+   address:       string;
+   number:        string;
+   complement:    string;
+-  managingOrgan: string;
+-  phone:         string;
+-  email:         string;
+-  logo:          string;
+-  staff:         AgencyStaff[];
+-  status?:       AgencyStatus;
+-  createdAt?:    string;
+-  updatedAt?:    string;
++  managingOrgan:    string;
++  phone:            string;
++  email:            string;
++  logo:             string;
++  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
++  staff:            AgencyStaff[];
++  status?:          AgencyStatus;
++  createdAt?:       string;
++  updatedAt?:       string;
+ }
+ 
+ // ── Payload de criação ────────────────────────────────────────────────────────
+@@ -54,12 +55,13 @@ export interface AgencyPayload {
+   address:       string;
+   number:        string;
+   complement:    string;
+-  managingOrgan: string;
+-  phone:         string;
+-  email?:        string;
+-  logo:          string;
+-  status?:       AgencyStatus;
+-  staff:         AgencyStaff[];
++  managingOrgan:    string;
++  phone:            string;
++  email?:           string;
++  logo:             string;
++  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
++  status?:          AgencyStatus;
++  staff:            AgencyStaff[];
+ }
+ 
+ // ── Payload de atualização (PATCH — todos opcionais) ──────────────────────────
+diff --git a/src/app/features/agencies/components/agencies-detail.modal.html b/src/app/features/agencies/components/agencies-detail.modal.html
+index 684417e..e11d97b 100644
+--- a/src/app/features/agencies/components/agencies-detail.modal.html
++++ b/src/app/features/agencies/components/agencies-detail.modal.html
+@@ -111,6 +111,15 @@
+                 <span class="info-value">{{ agency.email || '—' }}</span>
+               </div>
+ 
++              <div class="info-item col-span-4">
++                <span class="info-label">Portal da Transparência</span>
++                <span class="info-value">
++                  @if (agency.transparencyUrl) {
++                    <a [href]="agency.transparencyUrl" target="_blank" rel="noopener">{{ agency.transparencyUrl }}</a>
++                  } @else { — }
++                </span>
++              </div>
++
+               <div class="info-item col-span-2">
+                 <span class="info-label">Status</span>
+                 <span class="info-value">
+@@ -228,6 +237,14 @@
+                 </div>
+               </div>
+ 
++              <div class="form-row grid-cols-2">
++                <div class="form-group col-span-2">
++                  <label>Portal da Transparência (URL)</label>
++                  <input type="url" class="form-control" placeholder="https://transparencia.exemplo.gov.br"
++                    formControlName="transparencyUrl">
++                </div>
++              </div>
++
+             </div>
+ 
+             <!-- ── Servidores / Equipe ─────────────────────────────────────── -->
+diff --git a/src/app/features/agencies/components/agencies-detail.modal.ts b/src/app/features/agencies/components/agencies-detail.modal.ts
+index 4c61cd7..5004b3d 100644
+--- a/src/app/features/agencies/components/agencies-detail.modal.ts
++++ b/src/app/features/agencies/components/agencies-detail.modal.ts
+@@ -50,10 +50,11 @@ export class AgencyDetailModalComponent implements OnChanges {
+     address:       ['', Validators.required],
+     number:        ['', Validators.required],
+     complement:    [''],
+-    managingOrgan: ['', Validators.required],
+-    phone:         [''],
+-    email:         ['', Validators.email],
+-    staff:         this.fb.array([] as FormGroup[]),
++    managingOrgan:   ['', Validators.required],
++    phone:           [''],
++    email:           ['', Validators.email],
++    transparencyUrl: [''],
++    staff:           this.fb.array([] as FormGroup[]),
+   });
+ 
+   // ── Equipe / Servidores (staff) ─────────────────────────────────────────────
+@@ -102,9 +103,10 @@ export class AgencyDetailModalComponent implements OnChanges {
+         address:       this.agency.address        ?? '',
+         number:        this.agency.number         ?? '',
+         complement:    this.agency.complement     ?? '',
+-        managingOrgan: this.agency.managingOrgan  ?? '',
+-        phone:         this.agency.phone          ?? '',
+-        email:         this.agency.email          ?? '',
++        managingOrgan:   this.agency.managingOrgan  ?? '',
++        phone:           this.agency.phone          ?? '',
++        email:           this.agency.email          ?? '',
++        transparencyUrl: this.agency.transparencyUrl ?? '',
+       });
+ 
+       // Reconstrói a equipe a partir do órgão carregado.
+@@ -145,10 +147,9 @@ export class AgencyDetailModalComponent implements OnChanges {
+     if (this.agency) this.delete.emit(this.agency.id);
+   }
+ 
+-  /** 🌐 Portal da Transparência — abre a URL do órgão quando o back expuser
+-   *  `transparencyUrl` (B-OR-01). Visível por ora, inerte até o campo existir. */
++  /** 🌐 Portal da Transparência — abre a URL do órgão (B-OR-01, atendido no back). */
+   onTransparency(): void {
+-    const url = (this.agency as unknown as { transparencyUrl?: string } | null)?.transparencyUrl;
++    const url = this.agency?.transparencyUrl;
+     if (url) window.open(url, '_blank');
+   }
+ 
+@@ -241,10 +242,11 @@ export class AgencyDetailModalComponent implements OnChanges {
+       address:       raw.address       || undefined,
+       number:        raw.number        || undefined,
+       complement:    raw.complement    || undefined,
+-      managingOrgan: raw.managingOrgan || undefined,
+-      phone:         onlyDigits(raw.phone) || undefined,
+-      email:         raw.email         || undefined,
+-      logo:          this.logoUrl()    || undefined,
++      managingOrgan:   raw.managingOrgan || undefined,
++      phone:           onlyDigits(raw.phone) || undefined,
++      email:           raw.email         || undefined,
++      transparencyUrl: raw.transparencyUrl || undefined,
++      logo:            this.logoUrl()    || undefined,
+       staff,
+     };
+ 
+diff --git a/src/app/features/agencies/new/agency-new.page.html b/src/app/features/agencies/new/agency-new.page.html
+index 140fe30..3e43fc1 100644
+--- a/src/app/features/agencies/new/agency-new.page.html
++++ b/src/app/features/agencies/new/agency-new.page.html
+@@ -127,6 +127,17 @@
+             </div>
+           </div>
+ 
++          <div class="form-row grid-cols-1">
++            <div class="form-group">
++              <label class="flex-label">
++                Portal da Transparência (URL)
++                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
++              </label>
++              <input type="url" class="form-control" placeholder="https://transparencia.exemplo.gov.br"
++                formControlName="portalTransparencia">
++            </div>
++          </div>
++
+         </div>
+ 
+         <!-- ── Servidores / Equipe ─────────────────────────────────────────── -->
+diff --git a/src/app/features/agencies/new/agency-new.page.ts b/src/app/features/agencies/new/agency-new.page.ts
+index aca2307..a6537b1 100644
+--- a/src/app/features/agencies/new/agency-new.page.ts
++++ b/src/app/features/agencies/new/agency-new.page.ts
+@@ -43,6 +43,7 @@ export class AgencyNewPage {
+     orgaoGestor:    ['', Validators.required],
+     telefoneCelular:[''],
+     email:          ['', Validators.email],
++    portalTransparencia: [''],
+     staff:          this.fb.array([]),
+   });
+ 
+@@ -173,9 +174,10 @@ export class AgencyNewPage {
+       number:        v.nro           ?? '',
+       complement:    v.complemento   ?? '',
+       managingOrgan: v.orgaoGestor   ?? '',
+-      phone:         onlyDigits(v.telefoneCelular),
+-      email:         v.email || undefined,
+-      logo:          this.logoUrl(),
++      phone:           onlyDigits(v.telefoneCelular),
++      email:           v.email || undefined,
++      transparencyUrl: v.portalTransparencia || undefined,
++      logo:            this.logoUrl(),
+       staff,
+     };
+ 

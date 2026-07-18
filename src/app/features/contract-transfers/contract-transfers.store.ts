@@ -167,7 +167,7 @@ export class ContractTransfersStore {
 
   // ── Delete / Export ─────────────────────────────────────────────────────────
 
-  delete(id: number, onSuccess?: () => void): void {
+  delete(id: number, onSuccess?: () => void, onError?: (msg: string) => void): void {
     this.svc.delete(id).subscribe({
       next: () => {
         this.load();
@@ -175,8 +175,12 @@ export class ContractTransfersStore {
         onSuccess?.();
       },
       error: err => {
-        const raw = err?.error?.message ?? 'Erro ao excluir parceria.';
-        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+        const raw = err?.status === 403
+          ? 'Exclusão restrita: exige autorização de um superior (Admin/Master).'
+          : err?.error?.message ?? 'Erro ao excluir parceria.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
       },
     });
   }
@@ -209,8 +213,8 @@ export class ContractTransfersStore {
       contractCode:  p.contractCode ?? '—',
       description:   p.description  ?? '—',
       approvedValue: formatBRL(p.approvedValue),
-      receivedValue: '—',
-      balance:       '—',
+      receivedValue: formatBRL(p.receivedValue),
+      balance:       formatBRL(p.balanceValue),
       status:        p.status ?? '',
     };
   }
