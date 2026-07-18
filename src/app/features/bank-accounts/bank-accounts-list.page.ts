@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BankAccountsStore } from './bank-accounts.store';
-import { BankAccountStatus, BANK_ACCOUNT_STATUS_CONFIG, BankPayload, BankAccountPayload } from './bank-accounts.model';
+import { BankPayload, BankAccountPayload } from './bank-accounts.model';
 import { BankAccountDetailModalComponent } from './components/bank-account-detail.modal';
 
 @Component({
@@ -16,14 +16,7 @@ import { BankAccountDetailModalComponent } from './components/bank-account-detai
   styleUrl: './bank-accounts-list.page.scss',
 })
 export class BankAccountsListPage implements OnInit {
-  readonly store        = inject(BankAccountsStore);
-  readonly statusConfig = BANK_ACCOUNT_STATUS_CONFIG;
-
-  readonly statusOptions: { label: string; value: BankAccountStatus | '' }[] = [
-    { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'Active'   },
-    { label: 'Inativo',           value: 'Inactive' },
-  ];
+  readonly store = inject(BankAccountsStore);
 
   readonly typeOptions: { label: string; value: string }[] = [
     { label: 'Selecione o tipo', value: ''         },

@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AgenciesService } from '../agencies.service';
-import { AgencyPayload, AgencyStaff } from '../agencies.model';
+import { AgencyPayload, AgencyStaff, AGENCY_SERVER_TYPE_OPTIONS } from '../agencies.model';
 import { onlyDigits } from '../../../shared/utils/format';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { UploadService } from '../../../shared/services/upload.service';
@@ -22,6 +22,8 @@ export class AgencyNewPage {
   private svc    = inject(AgenciesService);
   private notify = inject(NotificationService);
   private upload = inject(UploadService);
+
+  readonly serverTypeOptions = AGENCY_SERVER_TYPE_OPTIONS;
 
   readonly loading       = signal(false);
   readonly errorMsg      = signal<string | null>(null);
@@ -146,13 +148,18 @@ export class AgencyNewPage {
 
     const v = this.form.value;
 
+    // Campos com validação de formato no back (email/data) não podem ir como ''
+    // — quando vazios, são omitidos (undefined) para não disparar erro de validação.
     const staff: AgencyStaff[] = this.staff.controls.map(ctrl => {
       const s = ctrl.value;
       return {
         ...s,
-        cpf:     onlyDigits(s.cpf),
-        phone:   onlyDigits(s.phone),
-        zipCode: onlyDigits(s.zipCode),
+        cpf:                onlyDigits(s.cpf),
+        phone:              onlyDigits(s.phone),
+        zipCode:            onlyDigits(s.zipCode),
+        birthDate:          s.birthDate ? new Date(s.birthDate).toISOString() : undefined,
+        institutionalEmail: s.institutionalEmail || undefined,
+        personalEmail:      s.personalEmail || undefined,
       } as AgencyStaff;
     });
 
@@ -167,7 +174,7 @@ export class AgencyNewPage {
       complement:    v.complemento   ?? '',
       managingOrgan: v.orgaoGestor   ?? '',
       phone:         onlyDigits(v.telefoneCelular),
-      email:         v.email         ?? '',
+      email:         v.email || undefined,
       logo:          this.logoUrl(),
       staff,
     };
@@ -178,10 +185,11 @@ export class AgencyNewPage {
         this.notify.success('Órgão cadastrado com sucesso.');
         this.router.navigate(['/agencies']);
       },
-      error: err => {
+      error: () => {
         this.loading.set(false);
-        const raw = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
-        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        // Não expor mensagens cruas do validador do back-end (ex.: "email must
+        // be an email"). Mensagem genérica e amigável para o usuário.
+        const msg = 'Não foi possível salvar o órgão. Verifique os dados e tente novamente.';
         this.errorMsg.set(msg);
         this.notify.error(msg);
       },

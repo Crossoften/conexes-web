@@ -5,7 +5,6 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import {
   BankAccount,
   Bank,
-  BANK_ACCOUNT_STATUS_CONFIG,
   BANK_ACCOUNT_TYPE_LABELS,
   BankAccountPayload,
 } from '../bank-accounts.model';
@@ -33,7 +32,6 @@ export class BankAccountDetailModalComponent implements OnChanges {
 
   activeTab: ModalTab = 'GERAIS';
 
-  readonly statusConfig = BANK_ACCOUNT_STATUS_CONFIG;
   readonly typeLabels   = BANK_ACCOUNT_TYPE_LABELS;
 
   form: FormGroup;
@@ -89,16 +87,6 @@ export class BankAccountDetailModalComponent implements OnChanges {
   }
 
   // ── Accessors ─────────────────────────────────────────────────────────────
-
-  get statusLabel(): string {
-    if (!this.account) return '';
-    return this.statusConfig[this.account.status]?.label ?? this.account.status;
-  }
-
-  get statusVariant(): string {
-    if (!this.account) return '';
-    return this.statusConfig[this.account.status]?.variant ?? 'neutral';
-  }
 
   get accountTypeLabel(): string {
     if (!this.account) return '';

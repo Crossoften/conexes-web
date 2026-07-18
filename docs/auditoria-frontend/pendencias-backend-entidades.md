@@ -1,4 +1,4 @@
-# Pendências de Back-end — Entidades
+git # Pendências de Back-end — Entidades
 
 > Auditoria Front × Back × Swagger × PPT/DOCX ("ENTIDADE" + "Campos de Entidade / Dirigentes").
 > Módulo com 5 sub-menus — auditados **um a um**. Este arquivo é alimentado por sub-menu.

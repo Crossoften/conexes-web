@@ -1,9 +1,17 @@
 // src/app/features/agencies/components/agencies-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, inject, signal } from '@angular/core';
 import { NgClass, NgIf } from '@angular/common';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Agency, AgencyUpdatePayload, AGENCY_STATUS_CONFIG } from '../agencies.model';
+import { NonNullableFormBuilder, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  Agency,
+  AgencyStaff,
+  AgencyUpdatePayload,
+  AGENCY_STATUS_CONFIG,
+  AGENCY_SERVER_TYPE_OPTIONS,
+} from '../agencies.model';
 import { onlyDigits } from '../../../shared/utils/format';
+import { NotificationService } from '../../../shared/services/notification.service';
+import { UploadService } from '../../../shared/services/upload.service';
 
 @Component({
   selector: 'app-agency-detail-modal',
@@ -20,11 +28,18 @@ export class AgencyDetailModalComponent implements OnChanges {
   @Output() delete = new EventEmitter<number>();
   @Output() saved  = new EventEmitter<AgencyUpdatePayload>();
 
-  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly fb     = inject(NonNullableFormBuilder);
+  private readonly notify = inject(NotificationService);
+  private readonly upload = inject(UploadService);
 
   protected mode: 'view' | 'edit' = 'view';
 
-  readonly statusConfig = AGENCY_STATUS_CONFIG;
+  readonly statusConfig     = AGENCY_STATUS_CONFIG;
+  readonly serverTypeOptions = AGENCY_SERVER_TYPE_OPTIONS;
+
+  readonly logoUrl       = signal<string>('');
+  readonly logoName      = signal<string>('');
+  readonly logoUploading = signal(false);
 
   protected readonly form = this.fb.group({
     cnpj:          ['', Validators.required],
@@ -38,7 +53,43 @@ export class AgencyDetailModalComponent implements OnChanges {
     managingOrgan: ['', Validators.required],
     phone:         [''],
     email:         ['', Validators.email],
+    staff:         this.fb.array([] as FormGroup[]),
   });
+
+  // ── Equipe / Servidores (staff) ─────────────────────────────────────────────
+
+  get staff(): FormArray {
+    return this.form.get('staff') as FormArray;
+  }
+
+  private newStaff(data?: Partial<AgencyStaff>): FormGroup {
+    return this.fb.group({
+      serverType:         [data?.serverType         ?? ''],
+      jobTitle:           [data?.jobTitle           ?? ''],
+      name:               [data?.name               ?? '', Validators.required],
+      appointmentAct:     [data?.appointmentAct     ?? ''],
+      birthDate:          [this.toDateInput(data?.birthDate)],
+      rg:                 [data?.rg                 ?? ''],
+      cpf:                [data?.cpf                ?? ''],
+      phone:              [data?.phone              ?? ''],
+      zipCode:            [data?.zipCode            ?? ''],
+      address:            [data?.address            ?? ''],
+      number:             [data?.number             ?? ''],
+      complement:         [data?.complement         ?? ''],
+      institutionalEmail: [data?.institutionalEmail ?? ''],
+      personalEmail:      [data?.personalEmail      ?? ''],
+    });
+  }
+
+  addStaff(): void { this.staff.push(this.newStaff()); }
+  removeStaff(i: number): void { this.staff.removeAt(i); }
+
+  /** ISO/`Date` → `yyyy-MM-dd` para o input[type=date]; vazio se inválido. */
+  private toDateInput(value?: string): string {
+    if (!value) return '';
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
 
   ngOnChanges(): void {
     if (this.agency) {
@@ -55,6 +106,14 @@ export class AgencyDetailModalComponent implements OnChanges {
         phone:         this.agency.phone          ?? '',
         email:         this.agency.email          ?? '',
       });
+
+      // Reconstrói a equipe a partir do órgão carregado.
+      this.staff.clear();
+      (this.agency.staff ?? []).forEach(member => this.staff.push(this.newStaff(member)));
+
+      // Logotipo já cadastrado.
+      this.logoUrl.set(this.agency.logo ?? '');
+      this.logoName.set(this.agency.logo ? 'Logotipo atual' : '');
     }
   }
 
@@ -84,6 +143,34 @@ export class AgencyDetailModalComponent implements OnChanges {
 
   onDelete(): void {
     if (this.agency) this.delete.emit(this.agency.id);
+  }
+
+  /** 🌐 Portal da Transparência — abre a URL do órgão quando o back expuser
+   *  `transparencyUrl` (B-OR-01). Visível por ora, inerte até o campo existir. */
+  onTransparency(): void {
+    const url = (this.agency as unknown as { transparencyUrl?: string } | null)?.transparencyUrl;
+    if (url) window.open(url, '_blank');
+  }
+
+  // ── Upload de logo ──────────────────────────────────────────────────────────
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.logoUploading.set(true);
+    this.upload.uploadOneFile(file).subscribe({
+      next: res => {
+        this.logoUploading.set(false);
+        this.logoUrl.set(res.fileUrl);
+        this.logoName.set(file.name);
+        this.notify.success('Logotipo enviado.');
+      },
+      error: () => {
+        this.logoUploading.set(false);
+        this.notify.error('Erro ao enviar o logotipo.');
+      },
+    });
   }
 
   // ── Máscaras ──────────────────────────────────────────────────────────────
@@ -130,6 +217,21 @@ export class AgencyDetailModalComponent implements OnChanges {
 
     const raw = this.form.value;
 
+    // Campos com validação de formato no back (email/data) não podem ir como ''
+    // — quando vazios, são omitidos (undefined) para não disparar erro de validação.
+    const staff: AgencyStaff[] = this.staff.controls.map(ctrl => {
+      const s = ctrl.value;
+      return {
+        ...s,
+        cpf:                onlyDigits(s.cpf),
+        phone:              onlyDigits(s.phone),
+        zipCode:            onlyDigits(s.zipCode),
+        birthDate:          s.birthDate ? new Date(s.birthDate).toISOString() : undefined,
+        institutionalEmail: s.institutionalEmail || undefined,
+        personalEmail:      s.personalEmail || undefined,
+      } as AgencyStaff;
+    });
+
     const payload: AgencyUpdatePayload = {
       cnpj:          onlyDigits(raw.cnpj)  || undefined,
       legalName:     raw.legalName     || undefined,
@@ -142,6 +244,8 @@ export class AgencyDetailModalComponent implements OnChanges {
       managingOrgan: raw.managingOrgan || undefined,
       phone:         onlyDigits(raw.phone) || undefined,
       email:         raw.email         || undefined,
+      logo:          this.logoUrl()    || undefined,
+      staff,
     };
 
     this.saved.emit(payload);

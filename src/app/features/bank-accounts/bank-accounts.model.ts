@@ -1,6 +1,7 @@
 // src/app/features/bank-accounts/bank-accounts.model.ts
 
-export type BankAccountStatus = 'Active' | 'Inactive';
+// Obs.: `status` NÃO existe no contrato `/v1/institutional/bank-accounts` (nem no
+// DTO nem na resposta documentada) — removido do front até o Back definir (B-BK-02).
 export type BankAccountTab    = 'ACCOUNTS' | 'BANKS';
 export type BankAccountType   = 'Checking' | 'Savings' | 'Salary' | 'Payment';
 
@@ -40,14 +41,12 @@ export interface BankAccount {
   convCollectionNumber: string;
   walletVariation: string;
   modality:       string;
-  status:         BankAccountStatus;
 }
 
 export interface Bank {
   id:     number;
   code:   string;
   name:   string;
-  status: BankAccountStatus;
   type?:  string;
 }
 
@@ -100,11 +99,6 @@ export interface BankAccountsListResponse {
 }
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────
-
-export const BANK_ACCOUNT_STATUS_CONFIG: Record<BankAccountStatus, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
-  Active:   { label: 'Ativo',   variant: 'success' },
-  Inactive: { label: 'Inativo', variant: 'danger'  },
-};
 
 export const BANK_ACCOUNT_TYPE_LABELS: Record<BankAccountType, string> = {
   Checking: 'Conta Corrente',

@@ -1,6 +1,6 @@
 // src/app/features/bank-accounts/bank-accounts.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
-import { BankAccount, Bank, BankAccountStatus, BankAccountTab, BankPayload, BankAccountPayload } from './bank-accounts.model';
+import { BankAccount, Bank, BankAccountTab, BankPayload, BankAccountPayload } from './bank-accounts.model';
 import { BankAccountsService } from './bank-accounts.service';
 
 interface State {
@@ -9,7 +9,7 @@ interface State {
   loading:     boolean;
   error:       string | null;
   activeTab:   BankAccountTab;
-  filters:     { search: string; status: BankAccountStatus | ''; type: string };
+  filters:     { search: string; type: string };
   sort:        { column: string; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
   selectedIds: Set<string>;
@@ -58,7 +58,7 @@ export class BankAccountsStore {
     loading:     false,
     error:       null,
     activeTab:   'ACCOUNTS',
-    filters:     { search: '', status: '', type: '' },
+    filters:     { search: '', type: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -125,8 +125,6 @@ export class BankAccountsStore {
           : (item.name?.toLowerCase().includes(term)    || item.code?.includes(f.search))
       );
     }
-
-    if (f.status) result = result.filter(item => item.status === f.status);
 
     if (f.type) {
       result = result.filter(item =>
@@ -210,17 +208,13 @@ export class BankAccountsStore {
       ...s,
       activeTab:   tab,
       selectedIds: new Set(),
-      filters:     { search: '', status: '', type: '' },
+      filters:     { search: '', type: '' },
       pagination:  { ...s.pagination, page: 1 },
     }));
   }
 
   setSearch(search: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
-  }
-
-  setStatus(status: BankAccountStatus | ''): void {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   setType(type: string): void {
@@ -274,6 +268,7 @@ export class BankAccountsStore {
       ...s,
       accountDetailModal: { open: true, mode: 'view', loading: false, saving: false, error: null, account },
     }));
+    this.hydrateAccount(account.id);
   }
 
   openEditAccount(account: BankAccount): void {
@@ -281,6 +276,18 @@ export class BankAccountsStore {
       ...s,
       accountDetailModal: { open: true, mode: 'edit', loading: false, saving: false, error: null, account },
     }));
+    this.hydrateAccount(account.id);
+  }
+
+  /** Busca o detalhe completo da conta (a listagem pode vir enxuta) e atualiza o modal. */
+  private hydrateAccount(id: number): void {
+    this.svc.getById(id).subscribe({
+      next: full => this.state.update(s =>
+        s.accountDetailModal.open && s.accountDetailModal.account?.id === id
+          ? { ...s, accountDetailModal: { ...s.accountDetailModal, account: full } }
+          : s),
+      error: () => { /* mantém os dados da lista */ },
+    });
   }
 
   switchAccountModalToEdit(): void {

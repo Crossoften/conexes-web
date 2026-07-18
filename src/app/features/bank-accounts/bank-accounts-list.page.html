@@ -46,17 +46,6 @@
 
       <div class="select-wrap">
         <select class="select select--pill"
-          [value]="store.filters().status"
-          (change)="store.setStatus($any($event.target).value)">
-          @for (opt of statusOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-
-      <div class="select-wrap">
-        <select class="select select--pill"
           [value]="store.filters().type"
           (change)="store.setType($any($event.target).value)">
           @for (opt of typeOptions; track opt.value) {
@@ -100,7 +89,6 @@
               <th class="th th--sortable" (click)="store.setSort('initialBalance')">Saldo inicial <span class="sort-icon" [ngClass]="'sort--' + getSortState('initialBalance')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('openDate')">Data Abertura <span class="sort-icon" [ngClass]="'sort--' + getSortState('openDate')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('bankName')">Banco <span class="sort-icon" [ngClass]="'sort--' + getSortState('bankName')"></span></th>
-              <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
               <th class="th th--center">Ações</th>
             </tr>
           } @else {
@@ -124,18 +112,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -164,16 +152,6 @@
                   }
                 </td>
                 <td class="td">{{ item.bankName || '—' }}</td>
-                <td class="td">
-                  <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">
-                    @if (item.status === 'Active') {
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    } @else {
-                      <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 5L5 9M5 5l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                    }
-                    {{ statusConfig[item.status].label }}
-                  </span>
-                </td>
                 <td class="td td--center">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar" (click)="store.openViewAccount(item)">

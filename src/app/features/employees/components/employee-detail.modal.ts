@@ -90,11 +90,9 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    // Cargos: lista fixa por ora. GET /v1/positions ainda não existe (B-CO-02) — chamá-lo
+    // retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
     this.positions.set(this.POSITIONS_FALLBACK);
-
-    this.http.get<PositionItem[]>(`${environment.apiUrl}/v1/positions`).subscribe({
-      next: items => { if (items?.length > 0) this.positions.set(items); },
-    });
 
     this.loadingLists.set(true);
     this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
@@ -149,15 +147,6 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
     return found ? (found.title || found.name) : String(this.employee.positionId);
   }
 
-  get statusVariant(): string {
-    if (!this.employee?.status) return 'neutral';
-    return this.employee.status === 'Active' ? 'success' : 'danger';
-  }
-
-  get statusLabel(): string {
-    if (!this.employee?.status) return '—';
-    return this.employee.status === 'Active' ? 'Ativo' : 'Inativo';
-  }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -196,7 +185,8 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       email:              v.emailInstitucional  ?? '',
       phone:              v.telefone           ?? '',
       cellPhone:          v.celular            ?? '',
-      title:              v.tipoResponsavel    ?? '',
+      // `title` (cargo/título) não recebe o tipo — preserva o valor existente (B-CO-07).
+      title:              this.employee?.title ?? '',
       responsibleType:    v.tipoResponsavel    ?? '',
       positionId:         Number(v.cargo)      || 0,
       formation:          v.formacao           ?? '',

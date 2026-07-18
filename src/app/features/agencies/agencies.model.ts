@@ -56,7 +56,7 @@ export interface AgencyPayload {
   complement:    string;
   managingOrgan: string;
   phone:         string;
-  email:         string;
+  email?:        string;
   logo:          string;
   status?:       AgencyStatus;
   staff:         AgencyStaff[];
@@ -78,3 +78,13 @@ export const AGENCY_STATUS_CONFIG: Record<string, StatusConfig> = {
   Pending:  { label: 'Pendente', variant: 'neutral' },
   Inactive: { label: 'Inativo',  variant: 'danger'  },
 };
+
+// Tipo de Servidor (staff) — valores fixos conforme documento do cliente.
+export const AGENCY_SERVER_TYPE_OPTIONS: string[] = [
+  'Gestor de Parceria',
+  'Comissão de Seleção',
+  'Comissão de Monitoramento e Avaliação',
+  'Prefeito',
+  'Responsável Atendimento',
+  'Gestor do Órgão',
+];

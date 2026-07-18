@@ -17,16 +17,11 @@ import { Position } from './positions.model';
 export class PositionsListPage implements OnInit {
   readonly store = inject(PositionsStore);
 
-  readonly statusOptions = [
-    { label: 'Selecione o status', value: ''         },
-    { label: 'Ativo',              value: 'Active'   },
-    { label: 'Inativo',            value: 'Inactive' },
-  ];
-
   readonly typeOptions = [
-    { label: 'Selecione o tipo',  value: ''              },
-    { label: 'Corpo Diretivo',    value: 'Corpo Diretivo' },
-    { label: 'Conselho Fiscal',   value: 'Conselho Fiscal'},
+    { label: 'Selecione o tipo',  value: ''               },
+    { label: 'Corpo Diretivo',    value: 'Corpo Diretivo'  },
+    { label: 'Conselho Fiscal',   value: 'Conselho Fiscal' },
+    { label: 'Responsável',       value: 'Responsável'     },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];
