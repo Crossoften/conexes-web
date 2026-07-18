@@ -83,7 +83,7 @@ export interface PartnershipDetail {
   grantorId?:            number | null;
   entityId?:             number | null;
   responsibles?:         { type: string; name: string }[] | null;
-  payables?:             { installment: number; dueDate: string; value: number }[] | null;
+  payables?:             { installment: number; competency?: string | null; dueDate: string; value: number }[] | null;
   annexes?:              { printDate?: string | null; deadlineDate?: string | null; validationType?: string | null }[] | null;
 }
 
@@ -96,6 +96,7 @@ export interface PartnershipResponsiblePayload {
 
 export interface PartnershipPayablePayload {
   installment: number;
+  competency?: string;   // Competência do repasse (mês) — Swagger CreatePartnershipPayableDto
   dueDate:     string;
   value:       number;
 }

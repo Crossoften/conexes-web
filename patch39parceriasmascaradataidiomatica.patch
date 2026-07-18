@@ -1,0 +1,29 @@
+diff --git a/src/app/features/contract-transfers/new/contract-transfer-new.page.ts b/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
+index 0936560..79aacc2 100644
+--- a/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
++++ b/src/app/features/contract-transfers/new/contract-transfer-new.page.ts
+@@ -202,15 +202,21 @@ export class ContractTransferNewPage implements OnInit {
+     return isNaN(date.getTime()) ? undefined : date.toISOString();
+   }
+ 
+-  /** Máscara dd/mm/aaaa aplicada ao control informado (linhas do cronograma). */
++  /** Máscara dd/mm/aaaa aplicada ao control informado (linhas do cronograma).
++   *  Escreve exclusivamente via `control.setValue` (que sincroniza o input) para
++   *  garantir que o VALOR DO MODELO seja sempre o mascarado — evita a dessincronia
++   *  (input mostra a data, mas o FormControl fica vazio) em linhas dinâmicas. */
+   applyDateMask(event: Event, control: AbstractControl | null): void {
+     const input  = event.target as HTMLInputElement;
+     const digits = input.value.replace(/\D/g, '').slice(0, 8);
+     let masked = digits;
+     if (digits.length > 4)      masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+     else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+-    input.value = masked;
+-    control?.setValue(masked, { emitEvent: false });
++    if (control) {
++      control.setValue(masked);
++    } else {
++      input.value = masked;
++    }
+   }
+ 
+   private hydrate(d: PartnershipDetail): void {

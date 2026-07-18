@@ -1,10 +1,11 @@
 // src/app/features/contract-transfers/new/contract-transfer-new.page.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { ContractTransfersService } from '../contract-transfers.service';
 import {
   PartnershipPayload,
+  PartnershipPayablePayload,
   PartnershipRef,
   PartnershipDetail,
   PartnershipResponsiblePayload,
@@ -80,6 +81,13 @@ export class ContractTransferNewPage implements OnInit {
     'Validar Plano de Aplicação',
   ];
 
+  // Competência do repasse (mês). Valor enviado = nome em PT; trocar aqui caso o
+  // back use enum em inglês (January…December).
+  readonly monthOptions = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
+
   form: FormGroup = this.fb.group({
     // -- Aba 1: Dados Gerais --
     title:                ['', Validators.required],
@@ -121,8 +129,10 @@ export class ContractTransferNewPage implements OnInit {
     secretaria:           [''],
     emendaParlamentar:    [''],
 
-    // -- Aba 2: Inclusão contas a pagar (parcelas) --
-    parcelar:             ['Sim'],
+    // -- Aba 2: Cronograma de Repasses --
+    receiptType:          ['Unico'],   // Único | Recorrente (UI — não persiste no back)
+    installmentsCount:    [''],        // nº de repasses (quando Recorrente)
+    manualSchedule:       [false],     // "Definir valor e data manualmente"
     payables:             this.fb.array([this.newPayable(1)]),
   });
 
@@ -156,6 +166,58 @@ export class ContractTransferNewPage implements OnInit {
 
   private dstr(s: string | null | undefined): string { return s ? String(s).slice(0, 10) : ''; }
   private nstr(n: number | null | undefined): string { return n != null ? String(n) : ''; }
+
+  /** ISO (yyyy-mm-dd…) → dd/mm/aaaa para exibição nos campos mascarados. */
+  private dbr(value: string | null | undefined): string {
+    if (!value) return '';
+    const m = String(value).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+  }
+
+  /** Converte data para ISO 8601 (UTC). Tolerante a formatos: `dd/mm/aaaa`,
+   *  `ddmmaaaa` (8 dígitos crus), ISO `yyyy-mm-dd…` e espaços em volta.
+   *  Vazio / inválido → undefined. */
+  private toIso(value: string | null | undefined): string | undefined {
+    if (value == null) return undefined;
+    const s = String(value).trim();
+    if (!s) return undefined;
+
+    let y: number, mo: number, d: number;
+
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);        // já ISO (yyyy-mm-dd…)
+    const br  = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);     // dd/mm/aaaa
+    const raw = s.replace(/\D/g, '');                       // só dígitos
+
+    if (iso) {
+      y = +iso[1]; mo = +iso[2]; d = +iso[3];
+    } else if (br) {
+      d = +br[1]; mo = +br[2]; y = +br[3];
+    } else if (raw.length === 8) {                          // ddmmaaaa
+      d = +raw.slice(0, 2); mo = +raw.slice(2, 4); y = +raw.slice(4);
+    } else {
+      return undefined;
+    }
+
+    const date = new Date(Date.UTC(y, mo - 1, d));
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+
+  /** Máscara dd/mm/aaaa aplicada ao control informado (linhas do cronograma).
+   *  Escreve exclusivamente via `control.setValue` (que sincroniza o input) para
+   *  garantir que o VALOR DO MODELO seja sempre o mascarado — evita a dessincronia
+   *  (input mostra a data, mas o FormControl fica vazio) em linhas dinâmicas. */
+  applyDateMask(event: Event, control: AbstractControl | null): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 8);
+    let masked = digits;
+    if (digits.length > 4)      masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    if (control) {
+      control.setValue(masked);
+    } else {
+      input.value = masked;
+    }
+  }
 
   private hydrate(d: PartnershipDetail): void {
     const resp = d.responsibles ?? [];
@@ -206,9 +268,19 @@ export class ContractTransferNewPage implements OnInit {
     if (d.payables?.length) {
       this.payables.clear();
       d.payables.forEach((p, i) => {
-        const fg = this.newPayable(p.installment ?? i + 1);
-        fg.patchValue({ dueDate: this.dstr(p.dueDate), value: this.nstr(p.value) });
-        this.payables.push(fg);
+        this.payables.push(this.newPayable(
+          p.installment ?? i + 1,
+          p.competency ?? '',
+          this.dbr(p.dueDate),
+          this.nstr(p.value),
+        ));
+      });
+      // Reconstrói o "Tipo de recebimento" a partir da tabela salva (o back não
+      // persiste essa config — front-first).
+      const recurring = d.payables.length > 1;
+      this.form.patchValue({
+        receiptType:       recurring ? 'Recorrente' : 'Unico',
+        installmentsCount: recurring ? String(d.payables.length) : '',
       });
     }
   }
@@ -219,11 +291,12 @@ export class ContractTransferNewPage implements OnInit {
     return this.form.get('payables') as FormArray;
   }
 
-  private newPayable(installment: number): FormGroup {
+  private newPayable(installment: number, competency = '', dueDate = '', value: string | number = ''): FormGroup {
     return this.fb.group({
       installment: [installment],
-      dueDate:     [''],
-      value:       [''],
+      competency:  [competency],
+      dueDate:     [dueDate],
+      value:       [value],
     });
   }
 
@@ -233,9 +306,36 @@ export class ContractTransferNewPage implements OnInit {
 
   removePayable(index: number): void {
     this.payables.removeAt(index);
-    // Renumera as parcelas restantes.
+    // Renumera a sequência interna (installment) das linhas restantes.
     this.payables.controls.forEach((ctrl, i) => ctrl.get('installment')?.setValue(i + 1));
   }
+
+  /** Gera o cronograma de repasses a partir do Tipo de recebimento.
+   *  - Único: 1 linha com o valor total.
+   *  - Recorrente: N linhas; se não for manual, distribui o valor total e
+   *    pré-seleciona as competências (meses) em sequência. */
+  generateSchedule(): void {
+    const type   = this.form.get('receiptType')?.value;
+    const total  = toNumber(this.form.get('valorTotal')?.value) ?? 0;
+
+    this.payables.clear();
+
+    if (type !== 'Recorrente') {
+      this.payables.push(this.newPayable(1, '', '', total ? String(total) : ''));
+      return;
+    }
+
+    const count  = Math.max(1, Number(this.form.get('installmentsCount')?.value) || 0);
+    const manual = this.form.get('manualSchedule')?.value === true;
+    const per    = manual || !total ? '' : String(this.round2(total / count));
+
+    for (let i = 0; i < count; i++) {
+      const competency = manual ? '' : this.monthOptions[i % 12];
+      this.payables.push(this.newPayable(i + 1, competency, '', per));
+    }
+  }
+
+  private round2(n: number): number { return Math.round(n * 100) / 100; }
 
   refLabel(ref: PartnershipRef): string {
     return ref.legalName ?? ref.tradeName ?? ref.name ?? String(ref.id);
@@ -246,7 +346,7 @@ export class ContractTransferNewPage implements OnInit {
   }
 
   resetForm(): void {
-    this.form.reset({ ocultarPortal: 'Nao', status: 'Active', parcelar: 'Sim' });
+    this.form.reset({ ocultarPortal: 'Nao', status: 'Active', receiptType: 'Unico', manualSchedule: false });
     this.payables.clear();
     this.payables.push(this.newPayable(1));
     this.activeTab = 'DADOS';
@@ -271,13 +371,24 @@ export class ContractTransferNewPage implements OnInit {
     if (a1.printDate || a1.deadlineDate || a1.validationType) annexes.push(a1);
     if (a2.printDate || a2.deadlineDate || a2.validationType) annexes.push(a2);
 
-    const payables = (v.payables as { installment: number; dueDate: string; value: string }[])
-      .filter(p => p.dueDate || p.value)
-      .map((p, i) => ({
-        installment: Number(p.installment) || i + 1,
-        dueDate:     p.dueDate,
-        value:       toNumber(p.value) ?? 0,
-      }));
+    // Cronograma: o back exige dueDate obrigatório e em ISO 8601. Consideramos
+    // "com conteúdo" as linhas que tenham mês, valor ou data; todas elas precisam
+    // de uma data válida (dd/mm/aaaa) — senão bloqueamos com aviso claro.
+    const scheduleRows = (v.payables as { competency: string; dueDate: string; value: string }[])
+      .filter(p => p.competency || p.value || p.dueDate);
+
+    if (scheduleRows.some(p => !this.toIso(p.dueDate))) {
+      this.activeTab = 'CONTAS';
+      this.notify.error('Preencha a data (dd/mm/aaaa) de todas as competências do cronograma de repasses.');
+      return;
+    }
+
+    const payables: PartnershipPayablePayload[] = scheduleRows.map((p, i) => ({
+      installment: i + 1,
+      competency:  p.competency || undefined,
+      dueDate:     this.toIso(p.dueDate)!,
+      value:       toNumber(p.value) ?? 0,
+    }));
 
     const payload: PartnershipPayload = {
       title:                 v.title,
