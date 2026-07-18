@@ -23,6 +23,8 @@ export interface PartnershipListItem {
   contractCode:  string | null;
   description:   string | null;
   approvedValue: number | null;
+  receivedValue: number | null;
+  balanceValue:  number | null;
   grantor:       string | null;
   status:        PartnershipStatus;
 }
@@ -105,6 +107,22 @@ export interface PartnershipAnnexPayload {
   printDate?:      string;
   deadlineDate?:   string;
   validationType?: string;
+}
+
+// ── Anexos com arquivo (/v1/partnerships/{id}/files) ──────────────────────────
+
+export interface PartnershipFile {
+  id:          number;
+  fileUrl:     string;
+  fileKey:     string;
+  description: string;
+  createdAt?:  string;
+}
+
+export interface PartnershipFilePayload {
+  fileUrl:      string;
+  fileKey:      string;
+  description?: string;
 }
 
 // ── Payload de criação/atualização ────────────────────────────────────────────

@@ -1,9 +1,15 @@
 // src/app/features/contract-transfers/contract-transfers-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ContractTransfersStore } from './contract-transfers.store';
 import { PartnershipRow, PartnershipStatus } from './contract-transfers.model';
+import { AuthService } from '../../core/auth/auth.service';
+import { NotificationService } from '../../shared/services/notification.service';
+
+/** Papéis globais autorizados a excluir/inativar contrato (regra do doc:
+ *  exclusão é restrita e exige autorização de um superior). */
+const DELETE_ROLES = ['Master', 'Admin'];
 
 @Component({
   selector: 'app-contract-transfers-list',
@@ -14,7 +20,53 @@ import { PartnershipRow, PartnershipStatus } from './contract-transfers.model';
   styleUrl: './contract-transfers-list.page.scss',
 })
 export class ContractTransfersListPage implements OnInit {
-  readonly store = inject(ContractTransfersStore);
+  readonly store  = inject(ContractTransfersStore);
+  private  router = inject(Router);
+  private  auth   = inject(AuthService);
+  private  notify = inject(NotificationService);
+
+  /** Menu de opções (⋯) aberto para qual linha. */
+  readonly openMenuId = signal<number | null>(null);
+  /** Posição (fixed) do dropdown — evita corte pelo overflow da tabela. */
+  readonly menuPos = signal<{ top: number; right: number } | null>(null);
+
+  /** Só Admin/Master podem excluir (o back também gateia com 403). */
+  readonly canDelete = computed(() => DELETE_ROLES.includes(this.auth.user()?.role ?? ''));
+
+  toggleMenu(id: number, event: Event): void {
+    event.stopPropagation();
+    if (this.openMenuId() === id) { this.closeMenu(); return; }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.menuPos.set({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    this.openMenuId.set(id);
+  }
+
+  closeMenu(): void {
+    this.openMenuId.set(null);
+    this.menuPos.set(null);
+  }
+
+  /** Anexos: abre o contrato na aba de anexos (gerenciar arquivos). */
+  onAnexos(id: number): void {
+    this.closeMenu();
+    this.router.navigate(['/contract-transfers', id, 'edit'], { queryParams: { tab: 'anexos' } });
+  }
+
+  onDelete(id: number): void {
+    this.closeMenu();
+    if (!this.canDelete()) {
+      this.notify.error('Exclusão restrita: exige autorização de um superior (Admin/Master).');
+      return;
+    }
+    if (!window.confirm('Excluir este contrato de parceria? Esta ação é restrita e não pode ser desfeita.')) return;
+    this.store.delete(id);
+  }
+
+  /** Ações P2 ainda sem endpoint no back (instrumentos / financeiro / recebimentos). */
+  onComingSoon(label: string): void {
+    this.closeMenu();
+    this.notify.error(`"${label}" ainda não está disponível — em desenvolvimento no back-end.`);
+  }
 
   readonly statusOptions: { label: string; value: PartnershipStatus | '' }[] = [
     { label: 'Selecione o status', value: ''         },

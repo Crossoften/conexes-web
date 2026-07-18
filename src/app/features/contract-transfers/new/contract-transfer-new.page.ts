@@ -11,8 +11,10 @@ import {
   PartnershipResponsiblePayload,
   PartnershipAnnexPayload,
   PartnershipStatus,
+  PartnershipFile,
 } from '../contract-transfers.model';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { UploadService } from '../../../shared/services/upload.service';
 
 type ContractTab = 'DADOS' | 'CONTAS' | 'ANEXOS';
 
@@ -37,6 +39,16 @@ export class ContractTransferNewPage implements OnInit {
   private route  = inject(ActivatedRoute);
   private svc    = inject(ContractTransfersService);
   private notify = inject(NotificationService);
+  private upload = inject(UploadService);
+
+  // ── Anexos (arquivos vinculados ao contrato — /files) ───────────────────────
+  readonly files            = signal<PartnershipFile[]>([]);
+  readonly filesLoading     = signal(false);
+  readonly fileUploading    = signal(false);
+  readonly newFileUrl       = signal<string>('');
+  readonly newFileKey       = signal<string>('');
+  readonly newFileName      = signal<string>('');
+  readonly newFileDescription = signal<string>('');
 
   activeTab: ContractTab = 'DADOS';
 
@@ -81,11 +93,21 @@ export class ContractTransferNewPage implements OnInit {
     'Validar Plano de Aplicação',
   ];
 
-  // Competência do repasse (mês). Valor enviado = nome em PT; trocar aqui caso o
-  // back use enum em inglês (January…December).
-  readonly monthOptions = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  // Competência do repasse (mês). Exibe em PT (label) e envia em inglês (value),
+  // conforme o Swagger (CreatePartnershipPayableDto.competency = "January…December").
+  readonly monthOptions: { label: string; value: string }[] = [
+    { label: 'Janeiro',   value: 'January'   },
+    { label: 'Fevereiro', value: 'February'  },
+    { label: 'Março',     value: 'March'     },
+    { label: 'Abril',     value: 'April'     },
+    { label: 'Maio',      value: 'May'       },
+    { label: 'Junho',     value: 'June'      },
+    { label: 'Julho',     value: 'July'      },
+    { label: 'Agosto',    value: 'August'    },
+    { label: 'Setembro',  value: 'September' },
+    { label: 'Outubro',   value: 'October'   },
+    { label: 'Novembro',  value: 'November'  },
+    { label: 'Dezembro',  value: 'December'  },
   ];
 
   form: FormGroup = this.fb.group({
@@ -159,7 +181,83 @@ export class ContractTransferNewPage implements OnInit {
         },
         error: () => this.notify.error('Erro ao carregar a parceria.'),
       });
+      this.loadFiles(id);
     }
+
+    // Abre direto na aba de Anexos quando vier da ação "Anexos" da lista.
+    if (this.route.snapshot.queryParamMap.get('tab') === 'anexos') {
+      this.activeTab = 'ANEXOS';
+    }
+  }
+
+  // ── Anexos (arquivos vinculados — /files) ───────────────────────────────────
+
+  private loadFiles(id: number): void {
+    this.filesLoading.set(true);
+    this.svc.getFiles(id).subscribe({
+      next: files => { this.files.set(files); this.filesLoading.set(false); },
+      error: () => { this.filesLoading.set(false); /* endpoint pode não existir ainda */ },
+    });
+  }
+
+  onAnexoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.fileUploading.set(true);
+    this.upload.uploadOneFile(file).subscribe({
+      next: res => {
+        this.fileUploading.set(false);
+        this.newFileUrl.set(res.fileUrl);
+        this.newFileKey.set(res.fileKey);
+        this.newFileName.set(file.name);
+        this.notify.success('Arquivo enviado. Informe a descrição e clique em Adicionar.');
+      },
+      error: () => {
+        this.fileUploading.set(false);
+        this.notify.error('Erro ao enviar o arquivo.');
+      },
+    });
+  }
+
+  addAnexo(): void {
+    const id = this.partnershipId();
+    if (!id) return;
+    if (!this.newFileUrl()) {
+      this.notify.error('Selecione um arquivo antes de adicionar.');
+      return;
+    }
+    this.svc.addFile(id, {
+      fileUrl:     this.newFileUrl(),
+      fileKey:     this.newFileKey(),
+      description: this.newFileDescription() || undefined,
+    }).subscribe({
+      next: () => {
+        this.notify.success('Anexo adicionado.');
+        this.newFileUrl.set('');
+        this.newFileKey.set('');
+        this.newFileName.set('');
+        this.newFileDescription.set('');
+        this.loadFiles(id);
+      },
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao adicionar o anexo.';
+        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+      },
+    });
+  }
+
+  removeAnexo(fileId: number): void {
+    const id = this.partnershipId();
+    if (!id) return;
+    if (!window.confirm('Remover este anexo?')) return;
+    this.svc.deleteFile(id, fileId).subscribe({
+      next: () => { this.notify.success('Anexo removido.'); this.loadFiles(id); },
+      error: err => {
+        const raw = err?.error?.message ?? 'Erro ao remover o anexo.';
+        this.notify.error(Array.isArray(raw) ? raw.join(', ') : raw);
+      },
+    });
   }
 
   // ── Edição: hidratar o form ───────────────────────────────────────────────────
@@ -330,7 +428,7 @@ export class ContractTransferNewPage implements OnInit {
     const per    = manual || !total ? '' : String(this.round2(total / count));
 
     for (let i = 0; i < count; i++) {
-      const competency = manual ? '' : this.monthOptions[i % 12];
+      const competency = manual ? '' : this.monthOptions[i % 12].value;
       this.payables.push(this.newPayable(i + 1, competency, '', per));
     }
   }
@@ -355,7 +453,18 @@ export class ContractTransferNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.notify.error('Preencha os campos obrigatórios (Título, Concessor e Entidade).');
+      const requiredLabels: Record<string, string> = {
+        title:          'Título da parceria',
+        concessor:      'Concessor',
+        entidade:       'Entidade',
+        validationType: 'Tipo de Validação do Lançamento',
+      };
+      const missing = Object.keys(requiredLabels).filter(k => this.form.get(k)?.invalid);
+      this.activeTab = 'DADOS';
+      this.notify.error(
+        'Preencha os campos obrigatórios: ' +
+        (missing.length ? missing.map(k => requiredLabels[k]).join(', ') : 'verifique o formulário') + '.'
+      );
       return;
     }
 
@@ -377,9 +486,22 @@ export class ContractTransferNewPage implements OnInit {
     const scheduleRows = (v.payables as { competency: string; dueDate: string; value: string }[])
       .filter(p => p.competency || p.value || p.dueDate);
 
+    // [DIAGNÓSTICO TEMPORÁRIO] — loga o que cada linha do cronograma tem no modelo.
+    // Abra o Console do navegador, reproduza e envie estas linhas "[cronograma]".
+    // eslint-disable-next-line no-console
+    console.log('[cronograma] payables (getRawValue) =', JSON.stringify(v.payables));
+    // eslint-disable-next-line no-console
+    console.log('[cronograma] avaliação =', scheduleRows.map(p => ({
+      competency: p.competency,
+      dueDateRaw: p.dueDate,
+      tipo:       typeof p.dueDate,
+      iso:        this.toIso(p.dueDate) ?? 'INVALIDO',
+    })));
+
     if (scheduleRows.some(p => !this.toIso(p.dueDate))) {
+      const dbg = scheduleRows.map((p, i) => `${i}:"${p.dueDate}"→${this.toIso(p.dueDate) ? 'ok' : 'X'}`).join('  ');
       this.activeTab = 'CONTAS';
-      this.notify.error('Preencha a data (dd/mm/aaaa) de todas as competências do cronograma de repasses.');
+      this.notify.error('DEBUG cronograma — ' + dbg);
       return;
     }
 

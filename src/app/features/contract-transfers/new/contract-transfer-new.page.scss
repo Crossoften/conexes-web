@@ -196,3 +196,73 @@
     &:active { transform: translateY(0); }
   }
 }
+// ── Anexos com arquivo (aba Anexos) ───────────
+.anexos-hint {
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-muted, #9CA3AF);
+}
+
+.anexos-uploader { margin-bottom: 8px; }
+
+.upload-area {
+  border: 1.5px dashed #BFDBFE;
+  background-color: #F8FAFC;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  color: #4B5563;
+  font-size: 13px;
+  transition: background-color 0.2s, border-color 0.2s;
+  &:hover { background-color: #EFF6FF; border-color: #93C5FD; }
+  svg { color: var(--text-primary, #111827); opacity: 0.7; }
+}
+
+.anexos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anexo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 10px;
+  svg { color: var(--text-muted, #6B7280); flex-shrink: 0; }
+}
+
+.anexo-row__info { flex: 1; min-width: 0; }
+
+.anexo-row__desc {
+  font-size: 13.5px;
+  color: var(--text-primary, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anexo-row__link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-orange, #F97316);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+// Botão-ícone (remover) usado no cronograma e nos anexos.
+.icon-btn {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 8px; cursor: pointer; color: var(--text-muted, #6B7280);
+  transition: all 0.2s;
+  &:hover:not(:disabled) { border-color: #FCA5A5; color: #DC2626; background: #FEF2F2; }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+  &--danger { color: #DC2626; }
+}
