@@ -21,7 +21,16 @@ export class PermissionNewPage {
   readonly loading  = signal(false);
   readonly errorMsg = signal<string | null>(null);
 
-  modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+  /** US-7: base da matriz vinda do catálogo oficial (fallback = DEFAULT_MODULES). */
+  private catalogBase: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+  modules: ModulePermission[] = this.catalogBase.map(m => ({ ...m }));
+
+  constructor() {
+    this.svc.getModulesCatalog().subscribe({
+      next: c => { if (c.length) { this.catalogBase = c; this.modules = c.map(m => ({ ...m })); } },
+      error: () => {},
+    });
+  }
 
   form: FormGroup = this.fb.group({
     name:        ['', Validators.required],
@@ -38,7 +47,7 @@ export class PermissionNewPage {
 
   resetForm(): void {
     this.form.reset();
-    this.modules = DEFAULT_MODULES.map(m => ({ ...m }));
+    this.modules = this.catalogBase.map(m => ({ ...m }));
     this.errorMsg.set(null);
   }
 

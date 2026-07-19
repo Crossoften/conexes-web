@@ -305,6 +305,7 @@ export interface ApproverLevel {
 export interface ApprovalLimit {
   id?:          number;
   description?: string;
+  type?:        'FINANCEIRO' | 'COMPRAS';   // só COMPRAS vale para aprovar requisição
   level:        number;
   minValue:     number;
   maxValue:     number;

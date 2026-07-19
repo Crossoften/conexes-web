@@ -11,7 +11,7 @@
         </div>
         <div class="header-text">
           <h2>{{ tier?.description || '—' }}</h2>
-          <p>Nível {{ tier?.level }} · {{ purchaseRoleLabel }}</p>
+          <p>{{ typeLabel }} · Nível {{ levelLabel }}@if (tier?.type === 'COMPRAS') { · {{ purchaseRoleLabel }} }</p>
         </div>
       </div>
 
@@ -46,17 +46,21 @@
             <strong>Papel:</strong> {{ purchaseRoleLabel }}
           </div>
           <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Tipo</span>
+              <span class="info-value">{{ typeLabel }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nível de alçada</span>
+              <span class="info-value mono">{{ levelLabel }}</span>
+            </div>
             <div class="info-item col-span-2">
               <span class="info-label">Descrição</span>
               <span class="info-value">{{ tier?.description || '—' }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">Nível de alçada</span>
-              <span class="info-value mono">{{ tier?.level ?? '—' }}</span>
-            </div>
-            <div class="info-item">
               <span class="info-label">Papel de compra</span>
-              <span class="info-value">{{ purchaseRoleLabel }}</span>
+              <span class="info-value">{{ tier?.type === 'COMPRAS' ? purchaseRoleLabel : 'N/A' }}</span>
             </div>
             <div class="info-item col-span-2">
               <span class="info-label">Aprovador</span>
@@ -81,11 +85,25 @@
 
             <div class="form-row grid-cols-2">
               <div class="form-group">
+                <label class="form-label">Tipo de alçada <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="type">
+                    @for (opt of typeOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
                 <label class="form-label">Descrição da alçada <span class="req">*</span></label>
                 <input type="text" class="form-control" placeholder="Digite aqui..."
                   formControlName="description"
                   [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
               </div>
+            </div>
+
+            <div class="form-row grid-cols-2">
               <div class="form-group">
                 <label class="form-label">Aprovador <span class="req">*</span></label>
                 <div class="select-wrap">
@@ -108,28 +126,28 @@
                   <select class="form-control" formControlName="tierLevel"
                     [class.is-invalid]="form.get('tierLevel')?.invalid && form.get('tierLevel')?.touched">
                     <option value="">Selecione</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Papel de compra <span class="req">*</span></label>
-                <div class="select-wrap">
-                  <select class="form-control" formControlName="purchaseRole"
-                    [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
-                    <option value="">Selecione</option>
-                    @for (opt of purchaseRoleOptions; track opt.value) {
+                    @for (opt of levelOptions; track opt.value) {
                       <option [value]="opt.value">{{ opt.label }}</option>
                     }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
+              @if (isCompras) {
+                <div class="form-group">
+                  <label class="form-label">Papel de compra <span class="req">*</span></label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="purchaseRole"
+                      [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
+                      <option value="">Selecione</option>
+                      @for (opt of purchaseRoleOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              }
               <div class="form-group">
                 <label class="form-label">Valor mínimo <span class="req">*</span></label>
                 <input type="number" class="form-control" placeholder="0,00" min="0"
