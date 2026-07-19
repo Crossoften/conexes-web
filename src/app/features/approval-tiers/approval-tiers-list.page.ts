@@ -4,8 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { NgClass, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApprovalTiersStore } from './approval-tiers.store';
-import { ApprovalTier, ApprovalTierPayload, approvalPurchaseRoleLabel } from './approval-tiers.model';
+import { ApprovalTier, ApprovalTierPayload, APPROVAL_TIER_STATUS_CONFIG, APPROVAL_TIER_TYPE_LABELS } from './approval-tiers.model';
 import { ApprovalTierDetailModalComponent } from './components/approval-tier-detail.modal';
+
+const PURCHASE_ROLE_LABELS: Record<string, string> = {
+  Requester: 'Solicitante', Buyer: 'Comprador', RequestSupervisor: 'Supervisor de Pedidos',
+  PurchaseSupervisor: 'Supervisor de Compras', InvoiceReceiver: 'Recebedor de NF',
+  Finance: 'Financeiro', Manager: 'Gerente',
+};
 
 @Component({
   selector: 'app-approval-tiers-list',
@@ -16,16 +22,17 @@ import { ApprovalTierDetailModalComponent } from './components/approval-tier-det
   styleUrl: './approval-tiers-list.page.scss',
 })
 export class ApprovalTiersListPage implements OnInit {
-  readonly store = inject(ApprovalTiersStore);
+  readonly store        = inject(ApprovalTiersStore);
+  readonly statusConfig = APPROVAL_TIER_STATUS_CONFIG;
 
-  // Filtro de status oculto: o back-end de /v1/approval-limits ainda não expõe
-  // `status` (ver B-AL-05). Reativar quando o campo existir no contrato.
+  readonly statusOptions = [
+    { label: 'Selecione o status', value: ''         },
+    { label: 'Ativo',              value: 'Active'   },
+    { label: 'Pendente',           value: 'Pending'  },
+    { label: 'Inativo',            value: 'Inactive' },
+  ];
 
   readonly pageSizeOptions = [10, 25, 50];
-
-  roleLabel(role: string | null | undefined): string {
-    return approvalPurchaseRoleLabel(role);
-  }
 
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
@@ -78,4 +85,18 @@ export class ApprovalTiersListPage implements OnInit {
   }
 
   trackById(_: number, item: ApprovalTier): number { return item.id; }
+
+  typeLabel(item: ApprovalTier): string {
+    return item.type ? (APPROVAL_TIER_TYPE_LABELS[item.type] ?? item.type) : '—';
+  }
+
+  roleLabel(item: ApprovalTier): string {
+    if (item.type && item.type !== 'COMPRAS') return 'N/A';
+    return item.purchaseRole ? (PURCHASE_ROLE_LABELS[item.purchaseRole] ?? item.purchaseRole) : '—';
+  }
+
+  levelLabel(item: ApprovalTier): string {
+    if (item.isManagerTier) return 'Gestor';
+    return item.level != null ? String(item.level) : '—';
+  }
 }
