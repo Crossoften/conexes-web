@@ -1,0 +1,138 @@
+diff --git a/src/app/features/bank-accounts/bank-accounts-list.page.html b/src/app/features/bank-accounts/bank-accounts-list.page.html
+index 5d7fff8..87c81d7 100644
+--- a/src/app/features/bank-accounts/bank-accounts-list.page.html
++++ b/src/app/features/bank-accounts/bank-accounts-list.page.html
+@@ -158,9 +158,9 @@
+                 <td class="td">{{ item.accountType }}</td>
+                 <td class="td">{{ item.initialBalance }}</td>
+                 <td class="td td--dates">
+-                  <span class="date-line">{{ item.openDate }}</span>
++                  <span class="date-line">{{ item.openDate | date:'dd/MM/yyyy':'UTC' }}</span>
+                   @if (item.closeDate) {
+-                    <span class="date-line date-line--muted">{{ item.closeDate }}</span>
++                    <span class="date-line date-line--muted">{{ item.closeDate | date:'dd/MM/yyyy':'UTC' }}</span>
+                   }
+                 </td>
+                 <td class="td">{{ item.bankName || '—' }}</td>
+diff --git a/src/app/features/bank-accounts/bank-accounts-list.page.ts b/src/app/features/bank-accounts/bank-accounts-list.page.ts
+index 0d25d70..dc2403c 100644
+--- a/src/app/features/bank-accounts/bank-accounts-list.page.ts
++++ b/src/app/features/bank-accounts/bank-accounts-list.page.ts
+@@ -1,7 +1,7 @@
+ // src/app/features/bank-accounts/bank-accounts-list.page.ts
+ import { Component, inject, computed, signal, OnInit } from '@angular/core';
+ import { FormsModule } from '@angular/forms';
+-import { NgClass } from '@angular/common';
++import { NgClass, DatePipe } from '@angular/common';
+ import { RouterLink } from '@angular/router';
+ import { BankAccountsStore } from './bank-accounts.store';
+ import { BankPayload, BankAccountPayload, BANK_ACCOUNT_STATUS_CONFIG } from './bank-accounts.model';
+@@ -10,7 +10,7 @@ import { BankAccountDetailModalComponent } from './components/bank-account-detai
+ @Component({
+   selector: 'app-bank-accounts-list',
+   standalone: true,
+-  imports: [FormsModule, NgClass, RouterLink, BankAccountDetailModalComponent],
++  imports: [FormsModule, NgClass, DatePipe, RouterLink, BankAccountDetailModalComponent],
+   providers: [BankAccountsStore],
+   templateUrl: './bank-accounts-list.page.html',
+   styleUrl: './bank-accounts-list.page.scss',
+diff --git a/src/app/features/bank-accounts/bank-accounts.model.ts b/src/app/features/bank-accounts/bank-accounts.model.ts
+index fee5c68..dc49181 100644
+--- a/src/app/features/bank-accounts/bank-accounts.model.ts
++++ b/src/app/features/bank-accounts/bank-accounts.model.ts
+@@ -63,7 +63,7 @@ export interface BankAccountPayload {
+   nickname:          string;
+   initialBalance:    number;
+   openDate:          string;
+-  payingSourceId:    number;
++  payingSourceId?:   number;   // opcional: se omitido, o back assume a entidade dona
+   phone:             string;
+   cellPhone:         string;
+   contactEmail:      string;
+diff --git a/src/app/features/bank-accounts/bank-accounts.service.ts b/src/app/features/bank-accounts/bank-accounts.service.ts
+index 9e9575b..fff64c4 100644
+--- a/src/app/features/bank-accounts/bank-accounts.service.ts
++++ b/src/app/features/bank-accounts/bank-accounts.service.ts
+@@ -1,7 +1,7 @@
+ // src/app/features/bank-accounts/bank-accounts.service.ts
+ import { Injectable, inject } from '@angular/core';
+ import { HttpClient } from '@angular/common/http';
+-import { Observable } from 'rxjs';
++import { Observable, map } from 'rxjs';
+ import { environment } from '../../../environments/environment';
+ import { BankAccount, BankAccountPayload, BankAccountsListResponse, Bank, BankPayload } from './bank-accounts.model';
+ import { Entity } from './new/bank-account-new.page';
+@@ -38,7 +38,9 @@ export class BankAccountsService {
+   // ── Bancos ────────────────────────────────────────────────────────────────
+ 
+   getAllBanks(): Observable<Bank[]> {
+-    return this.http.get<Bank[]>(this.banksBase);
++    return this.http
++      .get<Bank[] | { data?: Bank[] }>(this.banksBase)
++      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
+   }
+ 
+   getBankById(id: number): Observable<Bank> {
+diff --git a/src/app/features/bank-accounts/components/bank-account-detail.modal.html b/src/app/features/bank-accounts/components/bank-account-detail.modal.html
+index 1084b3f..fa3b30d 100644
+--- a/src/app/features/bank-accounts/components/bank-account-detail.modal.html
++++ b/src/app/features/bank-accounts/components/bank-account-detail.modal.html
+@@ -94,12 +94,12 @@
+               </div>
+               <div class="info-item">
+                 <span class="info-label">Data de abertura</span>
+-                <span class="info-value">{{ account?.openDate || '—' }}</span>
++                <span class="info-value">{{ (account?.openDate | date:'dd/MM/yyyy':'UTC') || '—' }}</span>
+               </div>
+               @if (account?.closeDate) {
+                 <div class="info-item">
+                   <span class="info-label">Data de encerramento</span>
+-                  <span class="info-value">{{ account?.closeDate }}</span>
++                  <span class="info-value">{{ account?.closeDate | date:'dd/MM/yyyy':'UTC' }}</span>
+                 </div>
+               }
+               <div class="info-item col-span-2">
+diff --git a/src/app/features/bank-accounts/components/bank-account-detail.modal.ts b/src/app/features/bank-accounts/components/bank-account-detail.modal.ts
+index 13db213..c89e0be 100644
+--- a/src/app/features/bank-accounts/components/bank-account-detail.modal.ts
++++ b/src/app/features/bank-accounts/components/bank-account-detail.modal.ts
+@@ -1,6 +1,6 @@
+ // src/app/features/bank-accounts/components/bank-account-detail.modal.ts
+ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, signal } from '@angular/core';
+-import { NgClass, DecimalPipe } from '@angular/common';
++import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
+ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+ import {
+   BankAccount,
+@@ -16,7 +16,7 @@ type ModalTab = 'GERAIS' | 'PARAMS' | 'BOLETO';
+ @Component({
+   selector: 'app-bank-account-detail-modal',
+   standalone: true,
+-  imports: [NgClass, ReactiveFormsModule, DecimalPipe],
++  imports: [NgClass, ReactiveFormsModule, DecimalPipe, DatePipe],
+   templateUrl: './bank-account-detail.modal.html',
+   styleUrl: './bank-account-detail.modal.scss',
+ })
+@@ -50,7 +50,8 @@ export class BankAccountDetailModalComponent implements OnChanges {
+         banco:                    this.account.bankId,
+         tipoConta:                this.account.accountType,
+         status:                   this.account.status,
+-        dataAbertura:             this.account.openDate,
++        // input type=date exige yyyy-MM-dd — fatiamos o ISO (evita input vazio).
++        dataAbertura:             this.account.openDate?.substring(0, 10) ?? '',
+         apelidoConta:             this.account.nickname,
+         agenciaDigito:            this.account.agency,
+         numeroContaDigito:        this.account.account,
+diff --git a/src/app/features/bank-accounts/new/bank-account-new.page.ts b/src/app/features/bank-accounts/new/bank-account-new.page.ts
+index b18c245..e284232 100644
+--- a/src/app/features/bank-accounts/new/bank-account-new.page.ts
++++ b/src/app/features/bank-accounts/new/bank-account-new.page.ts
+@@ -114,7 +114,7 @@ export class BankAccountNewPage implements OnInit {
+     const payload: BankAccountPayload = {
+       bankId:            Number(v.banco)           || 0,
+       entityId:          Number(v.fontePagadora)   || 0,
+-      payingSourceId:    Number(v.fontePagadora)   || 0,
++      // payingSourceId omitido: o back assume a entidade dona (a Fonte Pagadora selecionada).
+       accountType:       v.tipoConta               || 'Checking',
+       status:            'Active',
+       openDate:          v.dataAbertura            ?? '',

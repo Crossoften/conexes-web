@@ -1,7 +1,7 @@
 // src/app/features/bank-accounts/bank-accounts.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BankAccount, BankAccountPayload, BankAccountsListResponse, Bank, BankPayload } from './bank-accounts.model';
 import { Entity } from './new/bank-account-new.page';
@@ -38,7 +38,9 @@ export class BankAccountsService {
   // ── Bancos ────────────────────────────────────────────────────────────────
 
   getAllBanks(): Observable<Bank[]> {
-    return this.http.get<Bank[]>(this.banksBase);
+    return this.http
+      .get<Bank[] | { data?: Bank[] }>(this.banksBase)
+      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
   }
 
   getBankById(id: number): Observable<Bank> {
