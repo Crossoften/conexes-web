@@ -81,6 +81,17 @@ export interface StakeholderContact {
   observation: string;
 }
 
+// Serviço vinculado ao fornecedor — item do array `services` do contrato
+// (CreateStakeholderServiceDto). Substitui os campos flat `service*` antigos.
+export interface StakeholderService {
+  name:          string;
+  description:   string;
+  externalCode:  string;
+  grantorOrgan:  string;
+  hasRetention:  boolean;
+  accessorOrgan: string;
+}
+
 export interface StakeholderTaxesAndServices {
   serviceClassCode:     string;
   serviceTitle:         string;
@@ -105,12 +116,7 @@ export interface StakeholderTaxesAndServices {
   ibsCode?:             string;    // FE-S5
   cbsAliquot:           number;
   cbsCode?:             string;    // FE-S5
-  serviceName:          string;
-  serviceDescription:   string;
-  serviceExternalCode:  string;
-  serviceGrantorOrgan:  string;
-  serviceHasRetention:  boolean;
-  serviceAccessorOrgan: string;
+  services:             StakeholderService[];   // contrato: array (era flat service*)
 }
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────

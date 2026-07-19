@@ -1,8 +1,9 @@
 // src/app/features/taxes/components/tax-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, SimpleChanges, inject, signal } from '@angular/core';
 import { NgClass, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Tax, TaxPayload, TaxService, StakeholderItem } from '../taxes.model';
+import { Tax, TaxPayload, TaxService, StakeholderItem, ScopeOption } from '../taxes.model';
+import { TaxesService } from '../taxes.service';
 
 type ModalTab = 'GERAIS' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -13,7 +14,7 @@ type ModalTab = 'GERAIS' | 'ALIQUOTAS' | 'SERVICOS';
   templateUrl: './tax-detail.modal.html',
   styleUrl: './tax-detail.modal.scss',
 })
-export class TaxDetailModalComponent implements OnChanges {
+export class TaxDetailModalComponent implements OnChanges, OnInit {
   @Input() tax:          Tax | null          = null;
   @Input() stakeholders: StakeholderItem[]   = [];
   @Input() mode:         'view' | 'edit'     = 'view';
@@ -27,6 +28,13 @@ export class TaxDetailModalComponent implements OnChanges {
 
   activeTab: ModalTab = 'GERAIS';
 
+  private svc = inject(TaxesService);
+
+  // Opções de escopo para os selects do serviço.
+  readonly costCenters = signal<ScopeOption[]>([]);
+  readonly projects    = signal<ScopeOption[]>([]);
+  readonly activities  = signal<ScopeOption[]>([]);
+
   form: FormGroup;
 
   // services dinâmicos no modo edição
@@ -36,7 +44,7 @@ export class TaxDetailModalComponent implements OnChanges {
   // Campos de alíquota que compõem o Total das Retenções (soma simples).
   private readonly ALIQUOT_FIELDS = [
     'aliqIRRF', 'aliqPIS', 'aliqPCC', 'aliqCOFINS',
-    'aliqINSS', 'aliqCSLL', 'aliqIBS', 'aliqCBS',
+    'aliqINSS', 'aliqCSLL', 'aliqISS', 'aliqIBS', 'aliqCBS',
   ];
 
   computeTotal(): number {
@@ -49,6 +57,17 @@ export class TaxDetailModalComponent implements OnChanges {
     // Atualiza o "Total das Retenções" ao alterar as alíquotas.
     this.form.valueChanges.subscribe(() => {
       this.form.get('resumoRetencoes')?.setValue(this.computeTotal(), { emitEvent: false });
+    });
+  }
+
+  ngOnInit(): void {
+    this.svc.getScopeOptions().subscribe({
+      next: opts => {
+        this.costCenters.set(opts.costCenters);
+        this.projects.set(opts.projects);
+        this.activities.set(opts.activities);
+      },
+      error: () => { /* mantém selects vazios se a lista falhar */ },
     });
   }
 
@@ -70,9 +89,15 @@ export class TaxDetailModalComponent implements OnChanges {
         aliqCOFINS:             this.tax.cofinsAliquot,
         cofinsCode:             this.tax.cofinsCode,
         aliqINSS:               this.tax.inssAliquot,
+        inssCode:               this.tax.inssCode,
         aliqCSLL:               this.tax.csllAliquot,
+        csllCode:               this.tax.csllCode,
+        aliqISS:                this.tax.issAliquot,
+        issCode:                this.tax.issCode,
         aliqIBS:                this.tax.ibsAliquot,
+        ibsCode:                this.tax.ibsCode,
         aliqCBS:                this.tax.cbsAliquot,
+        cbsCode:                this.tax.cbsCode,
       });
       this.services = [...(this.tax.services ?? [])];
     }
@@ -144,10 +169,17 @@ export class TaxDetailModalComponent implements OnChanges {
       cofinsAliquot:    Number(v.aliqCOFINS)           || 0,
       cofinsCode:       v.cofinsCode                   ?? '',
       inssAliquot:      Number(v.aliqINSS)             || 0,
+      inssCode:         v.inssCode                     ?? '',
       csllAliquot:      Number(v.aliqCSLL)             || 0,
+      csllCode:         v.csllCode                     ?? '',
+      issAliquot:       Number(v.aliqISS)              || 0,
+      issCode:          v.issCode                      ?? '',
       ibsAliquot:       Number(v.aliqIBS)              || 0,
+      ibsCode:          v.ibsCode                      ?? '',
       cbsAliquot:       Number(v.aliqCBS)              || 0,
-      services:         this.services,
+      cbsCode:          v.cbsCode                      ?? '',
+      status:           this.tax.status ?? 'Active',
+      services:         this.normalizeServices(this.services),
     };
 
     this.save.emit(payload);
@@ -167,10 +199,11 @@ export class TaxDetailModalComponent implements OnChanges {
       aliqPIS:    [''], pisCode:    [''],
       aliqPCC:    [''], pccCode:    [''],
       aliqCOFINS: [''], cofinsCode: [''],
-      aliqINSS:   [''],
-      aliqCSLL:   [''],
-      aliqIBS:    [''],
-      aliqCBS:    [''],
+      aliqINSS:   [''], inssCode:   [''],
+      aliqCSLL:   [''], csllCode:   [''],
+      aliqISS:    [''], issCode:    [''],
+      aliqIBS:    [''], ibsCode:    [''],
+      aliqCBS:    [''], cbsCode:    [''],
     });
   }
 
@@ -179,7 +212,22 @@ export class TaxDetailModalComponent implements OnChanges {
       name: '', description: '', externalCode: '',
       grantorOrgan: '', hasRetention: false,
       accessorOrgan: '', concessionLink: '',
-      costCenterId: 0, projectId: 0,
+      costCenterId: null, projectId: null, activityId: null,
     };
+  }
+
+  /** FK do serviço: id positivo ou null (o back rejeita 0/"" como referência inexistente). */
+  private idOrNull(v: unknown): number | null {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  private normalizeServices(list: TaxService[]): TaxService[] {
+    return list.map(s => ({
+      ...s,
+      costCenterId: this.idOrNull(s.costCenterId),
+      projectId:    this.idOrNull(s.projectId),
+      activityId:   this.idOrNull(s.activityId),
+    }));
   }
 }

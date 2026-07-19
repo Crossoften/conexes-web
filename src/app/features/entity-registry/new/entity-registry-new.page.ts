@@ -1,10 +1,11 @@
 // src/app/features/entity-registry/new/entity-registry-new.page.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass, NgIf } from '@angular/common';
 import { EntityRegistryStore } from '../entity-registry.store';
-import { EntityRegistryPayload } from '../entity-registry.model';
+import { EntityRegistryService } from '../entity-registry.service';
+import { EntityRegistryPayload, ENTITY_STATUS_OPTIONS } from '../entity-registry.model';
 
 @Component({
   selector: 'app-entity-registry-new',
@@ -16,14 +17,24 @@ import { EntityRegistryPayload } from '../entity-registry.model';
 export class EntityRegistryNewPage {
   private readonly fb     = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
+  private readonly svc    = inject(EntityRegistryService);
   protected readonly store = inject(EntityRegistryStore);
 
   protected activeTab: 'certificado' | 'contador' = 'certificado';
+
+  // Estado dos uploads (certificado / logotipo).
+  protected readonly uploadingCert = signal(false);
+  protected readonly uploadingLogo = signal(false);
+  protected readonly certFileName  = signal<string | null>(null);
+  protected readonly logoFileName  = signal<string | null>(null);
+  protected readonly uploadError   = signal<string | null>(null);
 
   protected readonly ufOptions = [
     'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
     'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
   ];
+
+  protected readonly statusOptions = ENTITY_STATUS_OPTIONS;
 
   protected readonly form = this.fb.group({
     cnpj:                  ['', Validators.required],
@@ -31,16 +42,20 @@ export class EntityRegistryNewPage {
     constitutionDate:      [''],
     legalName:             ['', Validators.required],
     tradeName:             ['', Validators.required],
+    status:                ['Active'],
     zipCode:               ['', Validators.required],
     address:               ['', Validators.required],
     number:                ['', Validators.required],
     complement:            [''],
+    district:              [''],
     city:                  ['', Validators.required],
     state:                 ['', Validators.required],
     mainPhone:             ['', Validators.required],
     cellPhone:             ['', Validators.required],
     directorEmail:         ['', [Validators.required, Validators.email]],
     digitalCertPassword:   [''],
+    digitalCertFileUrl:    [''],
+    digitalCertFileKey:    [''],
     logoUrl:               [''],
     accountantName:        ['', Validators.required],
     accountantCpf:         ['', Validators.required],
@@ -54,6 +69,44 @@ export class EntityRegistryNewPage {
     accountantOffice:      ['', Validators.required],
     accountantOfficePhone: ['', Validators.required],
   });
+
+  // ── Uploads (certificado / logotipo) via /upload/one-file ──────────────────
+
+  onCertSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingCert.set(true);
+    this.uploadError.set(null);
+    this.svc.uploadFile(file).subscribe({
+      next: res => {
+        this.form.patchValue({ digitalCertFileUrl: res.url, digitalCertFileKey: res.key });
+        this.certFileName.set(file.name);
+        this.uploadingCert.set(false);
+      },
+      error: () => {
+        this.uploadError.set('Falha ao enviar o certificado. Tente novamente.');
+        this.uploadingCert.set(false);
+      },
+    });
+  }
+
+  onLogoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingLogo.set(true);
+    this.uploadError.set(null);
+    this.svc.uploadFile(file).subscribe({
+      next: res => {
+        this.form.patchValue({ logoUrl: res.url });
+        this.logoFileName.set(file.name);
+        this.uploadingLogo.set(false);
+      },
+      error: () => {
+        this.uploadError.set('Falha ao enviar o logotipo. Tente novamente.');
+        this.uploadingLogo.set(false);
+      },
+    });
+  }
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
