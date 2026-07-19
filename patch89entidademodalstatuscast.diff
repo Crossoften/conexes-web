@@ -1,0 +1,22 @@
+diff --git a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+index 8c2bf23..97710e9 100644
+--- a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
++++ b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+@@ -108,7 +108,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
+     const raw = this.form.value;
+     const onlyNumbers = (v: string | undefined) => v ? v.replace(/\D/g, '') : '';
+ 
+-    const payload: Partial<EntityRegistryPayload> = {
++    const payload = {
+       ...raw,
+       cnpj:                  onlyNumbers(raw.cnpj),
+       zipCode:               onlyNumbers(raw.zipCode),
+@@ -118,7 +118,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
+       accountantZipCode:     onlyNumbers(raw.accountantZipCode),
+       accountantPhone:       onlyNumbers(raw.accountantPhone),
+       accountantOfficePhone: onlyNumbers(raw.accountantOfficePhone),
+-    };
++    } as Partial<EntityRegistryPayload>;
+ 
+     this.saved.emit(payload);
+   }

@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { TaxesService } from '../taxes.service';
-import { TaxPayload, TaxService } from '../taxes.model';
+import { TaxPayload, TaxService, ScopeOption } from '../taxes.model';
 
 type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -27,6 +27,11 @@ export class TaxesNewPage implements OnInit {
   readonly stakeholders = signal<StakeholderItem[]>([]);
   readonly loadingLists = signal(true);
 
+  // Opções de escopo para os selects do serviço (evitam id inválido digitado à mão).
+  readonly costCenters = signal<ScopeOption[]>([]);
+  readonly projects    = signal<ScopeOption[]>([]);
+  readonly activities  = signal<ScopeOption[]>([]);
+
   activeTab: TaxTab = 'CONFIG';
 
   // Services gerenciados como array dinâmico
@@ -38,8 +43,23 @@ export class TaxesNewPage implements OnInit {
       name: '', description: '', externalCode: '',
       grantorOrgan: '', hasRetention: false,
       accessorOrgan: '', concessionLink: '',
-      costCenterId: 0, projectId: 0,
+      costCenterId: null, projectId: null, activityId: null,
     };
+  }
+
+  /** FK do serviço: id positivo ou null (o back rejeita 0/"" como referência inexistente). */
+  private idOrNull(v: unknown): number | null {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  private normalizeServices(list: TaxService[]): TaxService[] {
+    return list.map(s => ({
+      ...s,
+      costCenterId: this.idOrNull(s.costCenterId),
+      projectId:    this.idOrNull(s.projectId),
+      activityId:   this.idOrNull(s.activityId),
+    }));
   }
 
   form: FormGroup = this.fb.group({
@@ -53,10 +73,11 @@ export class TaxesNewPage implements OnInit {
     aliqPIS:    [''], pisCode:    [''],
     aliqPCC:    [''], pccCode:    [''],
     aliqCOFINS: [''], cofinsCode: [''],
-    aliqINSS:   [''],
-    aliqCSLL:   [''],
-    aliqIBS:    [''],
-    aliqCBS:    [''],
+    aliqINSS:   [''], inssCode:   [''],
+    aliqCSLL:   [''], csllCode:   [''],
+    aliqISS:    [''], issCode:    [''],
+    aliqIBS:    [''], ibsCode:    [''],
+    aliqCBS:    [''], cbsCode:    [''],
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -64,7 +85,7 @@ export class TaxesNewPage implements OnInit {
   // Campos de alíquota que compõem o Total das Retenções (soma simples).
   private readonly ALIQUOT_FIELDS = [
     'aliqIRRF', 'aliqPIS', 'aliqPCC', 'aliqCOFINS',
-    'aliqINSS', 'aliqCSLL', 'aliqIBS', 'aliqCBS',
+    'aliqINSS', 'aliqCSLL', 'aliqISS', 'aliqIBS', 'aliqCBS',
   ];
 
   computeTotal(): number {
@@ -90,6 +111,15 @@ export class TaxesNewPage implements OnInit {
         this.loadingLists.set(false);
       },
       error: () => this.loadingLists.set(false),
+    });
+
+    this.svc.getScopeOptions().subscribe({
+      next: opts => {
+        this.costCenters.set(opts.costCenters);
+        this.projects.set(opts.projects);
+        this.activities.set(opts.activities);
+      },
+      error: () => { /* mantém selects vazios se a lista falhar */ },
     });
   }
 
@@ -117,9 +147,15 @@ export class TaxesNewPage implements OnInit {
           aliqCOFINS: t.cofinsAliquot ?? '',
           cofinsCode: t.cofinsCode    ?? '',
           aliqINSS:   t.inssAliquot   ?? '',
+          inssCode:   t.inssCode      ?? '',
           aliqCSLL:   t.csllAliquot   ?? '',
+          csllCode:   t.csllCode      ?? '',
+          aliqISS:    t.issAliquot    ?? '',
+          issCode:    t.issCode       ?? '',
           aliqIBS:    t.ibsAliquot    ?? '',
+          ibsCode:    t.ibsCode       ?? '',
           aliqCBS:    t.cbsAliquot    ?? '',
+          cbsCode:    t.cbsCode       ?? '',
         });
       },
       error: () => { /* fornecedor sem impostos: mantém o formulário como está */ },
@@ -187,10 +223,17 @@ export class TaxesNewPage implements OnInit {
       cofinsAliquot:   Number(v.aliqCOFINS)            || 0,
       cofinsCode:      v.cofinsCode                    ?? '',
       inssAliquot:     Number(v.aliqINSS)              || 0,
+      inssCode:        v.inssCode                      ?? '',
       csllAliquot:     Number(v.aliqCSLL)              || 0,
+      csllCode:        v.csllCode                      ?? '',
+      issAliquot:      Number(v.aliqISS)               || 0,
+      issCode:         v.issCode                       ?? '',
       ibsAliquot:      Number(v.aliqIBS)               || 0,
+      ibsCode:         v.ibsCode                       ?? '',
       cbsAliquot:      Number(v.aliqCBS)               || 0,
-      services:        this.services,
+      cbsCode:         v.cbsCode                       ?? '',
+      status:          'Active',
+      services:        this.normalizeServices(this.services),
     };
 
     this.svc.save(payload).subscribe({

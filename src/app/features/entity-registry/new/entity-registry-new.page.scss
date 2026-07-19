@@ -128,6 +128,22 @@
     height: 24px;
     color: var(--text-secondary);
   }
+
+  &--done {
+    border-style: solid;
+    border-color: var(--brand-orange);
+    background: #FFF7ED;
+  }
+
+  .dropzone__text { font-size: 13px; color: var(--text-secondary); }
+  .dropzone__file {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-orange);
+    padding: 0 12px;
+    text-align: center;
+    word-break: break-all;
+  }
 }
 
 .mt-24 { margin-top: 24px; }

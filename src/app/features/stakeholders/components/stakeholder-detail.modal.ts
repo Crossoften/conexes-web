@@ -227,12 +227,12 @@ export class StakeholderDetailModalComponent implements OnChanges {
       csllAliquot:          tax?.csllAliquot          ?? 0,
       ibsAliquot:           tax?.ibsAliquot           ?? 0,
       cbsAliquot:           tax?.cbsAliquot           ?? 0,
-      serviceName:          tax?.serviceName          ?? '',
-      serviceDescription:   tax?.serviceDescription   ?? '',
-      serviceExternalCode:  tax?.serviceExternalCode  ?? '',
-      serviceGrantorOrgan:  tax?.serviceGrantorOrgan  ?? '',
-      serviceHasRetention:  tax?.serviceHasRetention  ?? false,
-      serviceAccessorOrgan: tax?.serviceAccessorOrgan ?? '',
+      serviceName:          tax?.services?.[0]?.name          ?? '',
+      serviceDescription:   tax?.services?.[0]?.description   ?? '',
+      serviceExternalCode:  tax?.services?.[0]?.externalCode  ?? '',
+      serviceGrantorOrgan:  tax?.services?.[0]?.grantorOrgan  ?? '',
+      serviceHasRetention:  tax?.services?.[0]?.hasRetention  ?? false,
+      serviceAccessorOrgan: tax?.services?.[0]?.accessorOrgan ?? '',
     });
   }
 
@@ -467,12 +467,17 @@ export class StakeholderDetailModalComponent implements OnChanges {
         csllAliquot:          v.csllAliquot          ?? 0,
         ibsAliquot:           v.ibsAliquot           ?? 0,
         cbsAliquot:           v.cbsAliquot           ?? 0,
-        serviceName:          v.serviceName          ?? '',
-        serviceDescription:   v.serviceDescription   ?? '',
-        serviceExternalCode:  v.serviceExternalCode  ?? '',
-        serviceGrantorOrgan:  v.serviceGrantorOrgan  ?? '',
-        serviceHasRetention:  v.serviceHasRetention  ?? false,
-        serviceAccessorOrgan: v.serviceAccessorOrgan ?? '',
+        // Contrato novo: serviço vinculado vai no array `services` (não mais flat service*).
+        services: v.serviceName?.trim()
+          ? [{
+              name:          v.serviceName.trim(),
+              description:   v.serviceDescription   ?? '',
+              externalCode:  v.serviceExternalCode  ?? '',
+              grantorOrgan:  v.serviceGrantorOrgan  ?? '',
+              hasRetention:  v.serviceHasRetention  ?? false,
+              accessorOrgan: v.serviceAccessorOrgan ?? '',
+            }]
+          : [],
       },
     };
 

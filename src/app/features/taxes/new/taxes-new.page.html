@@ -115,9 +115,21 @@
 
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % INSS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqINSS"></div>
+                <div class="form-group"><label>Cód. INSS</label><input type="text" class="form-control" placeholder="Código" formControlName="inssCode"></div>
                 <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCSLL"></div>
+                <div class="form-group"><label>Cód. CSLL</label><input type="text" class="form-control" placeholder="Código" formControlName="csllCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % ISS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqISS"></div>
+                <div class="form-group"><label>Cód. ISS</label><input type="text" class="form-control" placeholder="Código" formControlName="issCode"></div>
                 <div class="form-group"><label>Alíquota % IBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIBS"></div>
+                <div class="form-group"><label>Cód. IBS</label><input type="text" class="form-control" placeholder="Código" formControlName="ibsCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Alíquota % CBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCBS"></div>
+                <div class="form-group"><label>Cód. CBS</label><input type="text" class="form-control" placeholder="Código" formControlName="cbsCode"></div>
               </div>
 
             </div>
@@ -163,14 +175,40 @@
                   [(ngModel)]="newService.concessionLink" [ngModelOptions]="{ standalone: true }">
               </div>
               <div class="form-group">
-                <label>ID Centro de Custo</label>
-                <input type="text" class="form-control" placeholder="0"
-                  [(ngModel)]="newService.costCenterId" [ngModelOptions]="{ standalone: true }">
+                <label>Centro de Custo</label>
+                <div class="select-wrap">
+                  <select class="form-control" [(ngModel)]="newService.costCenterId" [ngModelOptions]="{ standalone: true }">
+                    <option [ngValue]="null">Selecione</option>
+                    @for (o of costCenters(); track o.id) {
+                      <option [ngValue]="o.id">{{ o.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
               <div class="form-group">
-                <label>ID Projeto</label>
-                <input type="text" class="form-control" placeholder="0"
-                  [(ngModel)]="newService.projectId" [ngModelOptions]="{ standalone: true }">
+                <label>Projeto</label>
+                <div class="select-wrap">
+                  <select class="form-control" [(ngModel)]="newService.projectId" [ngModelOptions]="{ standalone: true }">
+                    <option [ngValue]="null">Selecione</option>
+                    @for (o of projects(); track o.id) {
+                      <option [ngValue]="o.id">{{ o.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Atividade</label>
+                <div class="select-wrap">
+                  <select class="form-control" [(ngModel)]="newService.activityId" [ngModelOptions]="{ standalone: true }">
+                    <option [ngValue]="null">Selecione</option>
+                    @for (o of activities(); track o.id) {
+                      <option [ngValue]="o.id">{{ o.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
             </div>
 
