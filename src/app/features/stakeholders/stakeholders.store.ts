@@ -68,6 +68,7 @@ export class StakeholdersStore {
 
     const { page, pageSize } = this.state().pagination;
     const { search, status, personType } = this.state().filters;
+    const { column, direction }          = this.state().sort;
 
     const filters: StakeholderFilters = {
       take: pageSize,
@@ -77,11 +78,14 @@ export class StakeholdersStore {
     if (search)     filters.name       = search;
     if (status)     filters.status     = status;
     if (personType) filters.personType = personType;
+    // FE-S3: ordenação server-side.
+    if (column && direction) { filters.sort = column; filters.order = direction; }
 
     this.svc.getAll(filters).subscribe({
       next: res => {
         const items = Array.isArray(res) ? res : (res as any).data ?? [];
-        const total = Array.isArray(res) ? items.length : (res as any).total ?? items.length;
+        // FE-S1: envelope { data, count, pages } (tolerante a total/length legados).
+        const total = Array.isArray(res) ? items.length : ((res as any).count ?? (res as any).total ?? items.length);
         this.state.update(s => ({ ...s, items, total, loading: false }));
       },
       error: err => {
@@ -146,22 +150,13 @@ export class StakeholdersStore {
     this.load();
   }
 
+  // FE-S3: ordenação server-side — alterna a direção e recarrega (não reordena a página em memória).
   setSort(column: string): void {
     this.state.update(s => {
       const direction = s.sort.column === column && s.sort.direction === 'asc' ? 'desc' : 'asc';
-      return { ...s, sort: { column, direction } };
+      return { ...s, sort: { column, direction }, pagination: { ...s.pagination, page: 1 } };
     });
-    this.state.update(s => {
-      const { column, direction } = s.sort;
-      const sorted = [...s.items].sort((a, b) => {
-        const aVal = (a as any)[column] ?? '';
-        const bVal = (b as any)[column] ?? '';
-        return direction === 'asc'
-          ? String(aVal).localeCompare(String(bVal))
-          : String(bVal).localeCompare(String(aVal));
-      });
-      return { ...s, items: sorted };
-    });
+    this.load();
   }
 
   toggleRow(id: number): void {
