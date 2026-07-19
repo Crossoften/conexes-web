@@ -1,0 +1,207 @@
+diff --git a/src/app/features/stakeholders/stakeholders-list.page.html b/src/app/features/stakeholders/stakeholders-list.page.html
+index 3eb90e2..1542ec2 100644
+--- a/src/app/features/stakeholders/stakeholders-list.page.html
++++ b/src/app/features/stakeholders/stakeholders-list.page.html
+@@ -18,8 +18,12 @@
+       <div class="vision-group">
+         <label>Selecione a visão</label>
+         <div class="select-wrap">
+-          <select class="select-vision">
+-            <option>Fornecedores</option>
++          <select class="select-vision"
++            [value]="store.filters().view"
++            (change)="onViewChange($any($event.target).value)">
++            @for (opt of viewOptions; track opt.value) {
++              <option [value]="opt.value">{{ opt.label }}</option>
++            }
+           </select>
+           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+         </div>
+@@ -59,6 +63,17 @@
+           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+         </div>
+ 
++        <div class="select-wrap">
++          <select class="select select--pill"
++            [value]="store.filters().type"
++            (change)="onTypeChange($any($event.target).value)">
++            @for (opt of typeOptions(); track opt.value) {
++              <option [value]="opt.value">{{ opt.label }}</option>
++            }
++          </select>
++          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++        </div>
++
+         <button class="btn-outline btn-pill"
+           [disabled]="store.exporting()"
+           (click)="exportExcel()">
+@@ -158,7 +173,12 @@
+                 <td class="td td--mono">{{ item.code || ('#' + item.id) }}</td>
+                 <td class="td">{{ item.personType }}</td>
+                 <td class="td td--mono">{{ item.document }}</td>
+-                <td class="td td--name" style="color: var(--text-secondary);">{{ item.name }}</td>
++                <td class="td td--name" style="color: var(--text-secondary);">
++                  {{ item.name }}
++                  @if (item.tradeName) {
++                    <span style="display:block;font-size:12px;color:var(--text-muted);">{{ item.tradeName }}</span>
++                  }
++                </td>
+                 <td class="td">
+                   @if (item.status === 'Active') {
+                     <span class="status-badge status-badge--success">
+diff --git a/src/app/features/stakeholders/stakeholders-list.page.ts b/src/app/features/stakeholders/stakeholders-list.page.ts
+index 9bda7b8..3bd3f40 100644
+--- a/src/app/features/stakeholders/stakeholders-list.page.ts
++++ b/src/app/features/stakeholders/stakeholders-list.page.ts
+@@ -11,7 +11,11 @@ import {
+   StakeholderListItem,
+   StakeholderPayload,
+   StakeholderStatus,
++  StakeholderType,
++  StakeholderView,
+   PersonType,
++  VIEW_TYPES,
++  STAKEHOLDER_TYPE_LABELS,
+ } from './stakeholders.model';
+ 
+ @Component({
+@@ -42,6 +46,20 @@ export class StakeholdersPage implements OnInit {
+     { label: 'Outro',            value: 'Other' },
+   ];
+ 
++  // FE-S2: visões (Fornecedores/Clientes) e filtro de tipo dependente da visão.
++  readonly viewOptions = [
++    { label: 'Fornecedores', value: 'suppliers' },
++    { label: 'Clientes',     value: 'clients'   },
++  ];
++
++  readonly typeOptions = computed(() => {
++    const view = this.store.filters().view;
++    return [
++      { label: 'Todos os tipos', value: '' },
++      ...VIEW_TYPES[view].map(t => ({ label: STAKEHOLDER_TYPE_LABELS[t], value: t })),
++    ];
++  });
++
+   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
+ 
+   // ── Paginação ─────────────────────────────────────────────────────────────
+@@ -89,6 +107,14 @@ export class StakeholdersPage implements OnInit {
+     this.store.setPersonType(value as PersonType | '');
+   }
+ 
++  onViewChange(value: string): void {
++    this.store.setView(value as StakeholderView);
++  }
++
++  onTypeChange(value: string): void {
++    this.store.setType(value as StakeholderType | '');
++  }
++
+   // ── Export ────────────────────────────────────────────────────────────────
+ 
+   exportExcel(): void {
+diff --git a/src/app/features/stakeholders/stakeholders.model.ts b/src/app/features/stakeholders/stakeholders.model.ts
+index d7ff1e7..2d1c99e 100644
+--- a/src/app/features/stakeholders/stakeholders.model.ts
++++ b/src/app/features/stakeholders/stakeholders.model.ts
+@@ -146,6 +146,7 @@ export interface StakeholderListItem {
+   personType: PersonType;
+   document:   string;
+   name:       string;
++  tradeName?: string;               // FE-S2: nome fantasia (StakeholderListItemDto)
+   status:     StakeholderStatus;
+   type:       StakeholderType;
+ }
+@@ -161,6 +162,7 @@ export interface StakeholderFilters {
+   document?:   string;
+   personType?: PersonType | '';
+   status?:     StakeholderStatus | '';
++  type?:       string;              // FE-S2: um ou mais tipos separados por vírgula
+   sort?:       string;              // FE-S3: ordenação server-side (ex: name, code, status)
+   order?:      'asc' | 'desc';
+   take?:       number;
+diff --git a/src/app/features/stakeholders/stakeholders.service.ts b/src/app/features/stakeholders/stakeholders.service.ts
+index b3794f8..7ce2516 100644
+--- a/src/app/features/stakeholders/stakeholders.service.ts
++++ b/src/app/features/stakeholders/stakeholders.service.ts
+@@ -25,6 +25,7 @@ export class StakeholdersService {
+     if (filters.document)      params = params.set('document',   filters.document);
+     if (filters.personType)    params = params.set('personType', filters.personType);
+     if (filters.status)        params = params.set('status',     filters.status);
++    if (filters.type)          params = params.set('type',       filters.type);
+     if (filters.sort)          params = params.set('sort',       filters.sort);
+     if (filters.order)         params = params.set('order',      filters.order);
+     if (filters.take != null)  params = params.set('take',       filters.take);
+diff --git a/src/app/features/stakeholders/stakeholders.store.ts b/src/app/features/stakeholders/stakeholders.store.ts
+index b42aa7a..62c4db0 100644
+--- a/src/app/features/stakeholders/stakeholders.store.ts
++++ b/src/app/features/stakeholders/stakeholders.store.ts
+@@ -5,7 +5,10 @@ import {
+   StakeholderFilters,
+   StakeholderListItem,
+   StakeholderStatus,
++  StakeholderType,
++  StakeholderView,
+   PersonType,
++  VIEW_TYPES,
+ } from './stakeholders.model';
+ 
+ interface State {
+@@ -15,7 +18,8 @@ interface State {
+   error:          string | null;
+   exporting:      boolean;
+   exportError:    string | null;
+-  filters:        { search: string; status: StakeholderStatus | ''; personType: PersonType | '' };
++  // FE-S2: view (Fornecedores/Clientes) define o grupo de tipos; type (opcional) refina para um único tipo.
++  filters:        { search: string; status: StakeholderStatus | ''; personType: PersonType | ''; view: StakeholderView; type: StakeholderType | '' };
+   sort:           { column: string; direction: 'asc' | 'desc' | '' };
+   pagination:     { page: number; pageSize: number };
+   selectedIds:    Set<number>;
+@@ -32,7 +36,7 @@ export class StakeholdersStore {
+     error:       null,
+     exporting:   false,
+     exportError: null,
+-    filters:     { search: '', status: '', personType: '' },
++    filters:     { search: '', status: '', personType: '', view: 'suppliers', type: '' },
+     sort:        { column: '', direction: '' },
+     pagination:  { page: 1, pageSize: 10 },
+     selectedIds: new Set(),
+@@ -67,7 +71,7 @@ export class StakeholdersStore {
+     this.state.update(s => ({ ...s, loading: true, error: null }));
+ 
+     const { page, pageSize } = this.state().pagination;
+-    const { search, status, personType } = this.state().filters;
++    const { search, status, personType, view, type } = this.state().filters;
+     const { column, direction }          = this.state().sort;
+ 
+     const filters: StakeholderFilters = {
+@@ -78,6 +82,9 @@ export class StakeholdersStore {
+     if (search)     filters.name       = search;
+     if (status)     filters.status     = status;
+     if (personType) filters.personType = personType;
++    // FE-S2: um tipo específico refina; senão, envia o grupo da visão (Fornecedores/Clientes).
++    const types = type ? [type] : VIEW_TYPES[view];
++    if (types?.length) filters.type = types.join(',');
+     // FE-S3: ordenação server-side.
+     if (column && direction) { filters.sort = column; filters.order = direction; }
+ 
+@@ -140,6 +147,18 @@ export class StakeholdersStore {
+     this.load();
+   }
+ 
++  // FE-S2: troca a visão (Fornecedores/Clientes) e zera o filtro de tipo específico.
++  setView(view: StakeholderView): void {
++    this.state.update(s => ({ ...s, filters: { ...s.filters, view, type: '' }, pagination: { ...s.pagination, page: 1 } }));
++    this.load();
++  }
++
++  // FE-S2: refina para um tipo específico dentro da visão ('' = todos os tipos da visão).
++  setType(type: StakeholderType | ''): void {
++    this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
++    this.load();
++  }
++
+   setPage(page: number): void {
+     this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } }));
+     this.load();

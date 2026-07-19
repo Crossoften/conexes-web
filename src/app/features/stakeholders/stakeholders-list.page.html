@@ -18,8 +18,12 @@
       <div class="vision-group">
         <label>Selecione a visão</label>
         <div class="select-wrap">
-          <select class="select-vision">
-            <option>Fornecedores</option>
+          <select class="select-vision"
+            [value]="store.filters().view"
+            (change)="onViewChange($any($event.target).value)">
+            @for (opt of viewOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -53,6 +57,17 @@
             [value]="store.filters().personType"
             (change)="onPersonTypeChange($any($event.target).value)">
             @for (opt of personTypeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <div class="select-wrap">
+          <select class="select select--pill"
+            [value]="store.filters().type"
+            (change)="onTypeChange($any($event.target).value)">
+            @for (opt of typeOptions(); track opt.value) {
               <option [value]="opt.value">{{ opt.label }}</option>
             }
           </select>
@@ -158,7 +173,12 @@
                 <td class="td td--mono">{{ item.code || ('#' + item.id) }}</td>
                 <td class="td">{{ item.personType }}</td>
                 <td class="td td--mono">{{ item.document }}</td>
-                <td class="td td--name" style="color: var(--text-secondary);">{{ item.name }}</td>
+                <td class="td td--name" style="color: var(--text-secondary);">
+                  {{ item.name }}
+                  @if (item.tradeName) {
+                    <span style="display:block;font-size:12px;color:var(--text-muted);">{{ item.tradeName }}</span>
+                  }
+                </td>
                 <td class="td">
                   @if (item.status === 'Active') {
                     <span class="status-badge status-badge--success">

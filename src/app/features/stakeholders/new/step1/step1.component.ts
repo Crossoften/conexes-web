@@ -24,6 +24,11 @@ export class Step1Component {
 
   get f() { return (this.form() as any).controls; }
 
+  /** FE-S6: clientes (Customer/Donor/SupportedProject) têm endereço de faturamento. */
+  get isClient(): boolean {
+    return ['Customer', 'Donor', 'SupportedProject'].includes(this.f['type']?.value);
+  }
+
   isInvalid(field: string): boolean {
     const ctrl = this.f[field];
     return ctrl?.invalid && ctrl?.touched;

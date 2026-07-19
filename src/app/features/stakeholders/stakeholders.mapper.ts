@@ -8,6 +8,7 @@ import {
   AccountType,
   PixType,
   PaymentMethod,
+  CLIENT_TYPES,
 } from './stakeholders.model';
 
 // ── Enums válidos do back ─────────────────────────────────────────────────────
@@ -73,6 +74,36 @@ function buildAddress(s1: any): StakeholderAddress[] {
     district,
     city,
     state,
+    isBilling: false,
+  }];
+}
+
+/**
+ * FE-S6: endereço de faturamento (só clientes). Mesmo critério de bloco completo;
+ * marcado com isBilling=true. Só entra quando o tipo é cliente e o bloco está completo.
+ */
+function buildBillingAddress(s1: any, type: StakeholderType): StakeholderAddress[] {
+  if (!CLIENT_TYPES.includes(type)) return [];
+
+  const zipCode  = s1.billingZipCode?.trim()    ?? '';
+  const street   = s1.billingAddress?.trim()    ?? '';
+  const number   = s1.billingNum?.trim()        ?? '';
+  const district = s1.billingDistrict?.trim()   ?? '';
+  const city     = s1.billingCity?.trim()       ?? '';
+  const state    = s1.billingState?.trim()      ?? '';
+
+  const complete = !!(zipCode && street && number && district && city && state);
+  if (!complete) return [];
+
+  return [{
+    zipCode,
+    street,
+    number,
+    complement: s1.billingComplement?.trim() ?? '',
+    district,
+    city,
+    state,
+    isBilling: true,
   }];
 }
 
@@ -133,10 +164,12 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
   const s2 = formValue.step2 ?? {};
   const s3 = formValue.step3 ?? {};
 
+  // type deve ser um enum válido — se o usuário digitou texto livre, usa 'Other'
+  const type = validEnum(s1.type, VALID_TYPES, 'Other');
+
   return {
     code:     s1.code?.trim()     ?? '',
-    // type deve ser um enum válido — se o usuário digitou texto livre, usa 'Other'
-    type:     validEnum(s1.type, VALID_TYPES, 'Other'),
+    type,
     personType:            s1.personType     || 'PJ',
     document:              s1.document?.trim()       ?? '',
     name:                  s1.name?.trim()           ?? '',
@@ -152,7 +185,7 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
     standardApportionment: s1.apportionDefault?.trim() ?? '',
     accountId: s1.accountingAccount ? Number(s1.accountingAccount) : 0,
 
-    addresses: buildAddress(s1),
+    addresses: [...buildAddress(s1), ...buildBillingAddress(s1, type)],
     bankData:  buildBankData(s1),
 
     riskClassification: {

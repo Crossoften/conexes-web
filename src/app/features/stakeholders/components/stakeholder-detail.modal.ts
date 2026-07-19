@@ -64,6 +64,15 @@ export class StakeholderDetailModalComponent implements OnChanges {
     addrCity:       [''],
     addrState:      [''],
 
+    // FE-S6: endereço de faturamento (exclusivo de clientes)
+    billZipCode:    [''],
+    billStreet:     [''],
+    billNumber:     [''],
+    billComplement: [''],
+    billDistrict:   [''],
+    billCity:       [''],
+    billState:      [''],
+
     // Dados bancários [0]
     bankAccountName:     [''],
     bankAccountDocument: [''],
@@ -129,7 +138,9 @@ export class StakeholderDetailModalComponent implements OnChanges {
   }
 
   private patchForm(s: Stakeholder): void {
-    const addr    = s.addresses?.[0];
+    // FE-S6: separa endereço principal do de faturamento (isBilling).
+    const addr    = s.addresses?.find(a => !a.isBilling) ?? s.addresses?.[0];
+    const bill    = s.addresses?.find(a => a.isBilling);
     const bank    = s.bankData?.[0];
     const contact = s.contacts?.[0];
     const risk    = s.riskClassification;
@@ -163,6 +174,14 @@ export class StakeholderDetailModalComponent implements OnChanges {
       addrDistrict:   addr?.district   ?? '',
       addrCity:       addr?.city       ?? '',
       addrState:      addr?.state      ?? '',
+
+      billZipCode:    bill?.zipCode    ?? '',
+      billStreet:     bill?.street     ?? '',
+      billNumber:     bill?.number     ?? '',
+      billComplement: bill?.complement ?? '',
+      billDistrict:   bill?.district   ?? '',
+      billCity:       bill?.city       ?? '',
+      billState:      bill?.state      ?? '',
 
       bankAccountName:     bank?.accountName     ?? '',
       bankAccountDocument: bank?.accountDocument ?? '',
@@ -235,7 +254,40 @@ export class StakeholderDetailModalComponent implements OnChanges {
   }
 
   get primaryAddress() {
-    return this.stakeholder?.addresses?.[0] ?? null;
+    return this.stakeholder?.addresses?.find(a => !a.isBilling) ?? this.stakeholder?.addresses?.[0] ?? null;
+  }
+
+  /** FE-S6: clientes (Customer/Donor/SupportedProject) têm endereço de faturamento. */
+  get isClient(): boolean {
+    return ['Customer', 'Donor', 'SupportedProject'].includes(this.form.getRawValue().type as string);
+  }
+
+  /** FE-S6: monta o endereço principal (isBilling=false) + faturamento (isBilling=true) quando cliente e completo. */
+  private buildAddresses(v: any) {
+    const main = {
+      zipCode:    v.addrZipCode    ?? '',
+      street:     v.addrStreet     ?? '',
+      number:     v.addrNumber     ?? '',
+      complement: v.addrComplement ?? '',
+      district:   v.addrDistrict   ?? '',
+      city:       v.addrCity       ?? '',
+      state:      v.addrState      ?? '',
+      isBilling:  false,
+    };
+    const billComplete = !!(v.billZipCode && v.billStreet && v.billNumber && v.billDistrict && v.billCity && v.billState);
+    if (this.isClient && billComplete) {
+      return [main, {
+        zipCode:    v.billZipCode,
+        street:     v.billStreet,
+        number:     v.billNumber,
+        complement: v.billComplement ?? '',
+        district:   v.billDistrict,
+        city:       v.billCity,
+        state:      v.billState,
+        isBilling:  true,
+      }];
+    }
+    return [main];
   }
 
   get fullAddress(): string {
@@ -381,15 +433,7 @@ export class StakeholderDetailModalComponent implements OnChanges {
       standardApportionment: v.standardApportionment,
       accountId:             v.accountId,
 
-      addresses: [{
-        zipCode:    v.addrZipCode    ?? '',
-        street:     v.addrStreet     ?? '',
-        number:     v.addrNumber     ?? '',
-        complement: v.addrComplement ?? '',
-        district:   v.addrDistrict   ?? '',
-        city:       v.addrCity       ?? '',
-        state:      v.addrState      ?? '',
-      }],
+      addresses: this.buildAddresses(v),
 
       bankData,
       contacts,
