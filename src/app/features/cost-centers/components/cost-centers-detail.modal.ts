@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, sign
 import { NgClass, SlicePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, LinkedAccount, resolveEntityType } from '../cost-centers.model';
+import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, LinkedAccount, resolveEntityType, ENTITY_KINDS } from '../cost-centers.model';
 import { CostCentersService } from '../cost-centers.service';
 import { environment } from '../../../../environments/environment';
 
@@ -62,6 +62,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     restrictInterest:    [false],
     budgetRestriction:   [false],
     costCenterId:        [null],
+    parentProjectId:     [null],
     status:              ['Active'],
   });
 
@@ -71,13 +72,20 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     let loaded = 0;
     const checkDone = () => { if (++loaded >= 2) this.loadingLists.set(false); };
 
-    this.http.get<AccountPlanItem[]>(`${environment.apiUrl}/v1/account-plan`).subscribe({
-      next: items => { this.accountPlans.set(items); checkDone(); },
+    // Ambos os endpoints devolvem o envelope { data, count, pages } — lemos `data`
+    // de forma tolerante. `take` alto no account-plan para trazer todas as contas
+    // (senão o dropdown fica limitado à 1ª página).
+    this.http.get<AccountPlanItem[] | { data?: AccountPlanItem[] }>(
+      `${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } },
+    ).subscribe({
+      next: res => { this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
     });
 
-    this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
-      next: items => { this.entities.set(items); checkDone(); },
+    this.http.get<EntityItem[] | { data?: EntityItem[] }>(
+      `${environment.apiUrl}/v1/institutional/entities`, { params: { take: '1000' } },
+    ).subscribe({
+      next: res => { this.entities.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
     });
   }
@@ -104,6 +112,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       restrictInterest:    !!c.restrictInterestFine,
       budgetRestriction:   !!c.restrictBudget,
       costCenterId:        c.costCenterId        ?? null,
+      parentProjectId:     c.parentProjectId     ?? null,
       status:              c.status              ?? 'Active',
     });
     this.linkedAccounts = c.linkedAccounts ? [...c.linkedAccounts] : [];
@@ -182,6 +191,8 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       code:                 v.projectCode         ?? '',
       name:                 v.projectTitle        ?? '',
       type:                 v.projectType         ?? '',
+      // entityKind canônico substitui a detecção frágil por texto em `type`.
+      entityKind:           ENTITY_KINDS.includes(v.projectType) ? v.projectType : undefined,
       description:          v.categoryDescription ?? '',
       status:               (v.status as CostCenterStatus) ?? 'Active',
       accountingCode:       v.accountingCode       ?? '',
@@ -191,6 +202,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       restrictInterestFine: !!v.restrictInterest,
       restrictBudget:       !!v.budgetRestriction,
       costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
+      parentProjectId:      v.parentProjectId ? Number(v.parentProjectId) : null,
       linkedAccounts:       this.linkedAccounts,
     };
 

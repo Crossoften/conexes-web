@@ -1,6 +1,6 @@
 // src/app/features/cost-centers/cost-centers.model.ts
 
-export type CostCenterStatus = 'Active' | 'Inactive';
+export type CostCenterStatus = 'Active' | 'Inactive' | 'Pending';
 
 // ── Sub-modelos ───────────────────────────────────────────────────────────────
 
@@ -33,6 +33,7 @@ export interface CostCenter {
   title?:               string;   // projetos retornam title
   type:                 string;
   _entityType?:         'cost_center' | 'project'; // indicador autoritativo do back (qual tabela)
+  entityKind?:          string;   // canônico do back: centro_de_custo | projeto | atividade
   description:          string;
   status:               CostCenterStatus;
   accountingCode:       string;
@@ -42,6 +43,7 @@ export interface CostCenter {
   restrictInterestFine: boolean;
   restrictBudget:       boolean;
   costCenterId:         number | null;
+  parentProjectId?:     number | null; // projeto pai (nível Atividade)
   linkedAccounts:       LinkedAccount[];
   groups?:              CostCenterGroup[];
   _children?:           CostCenter[]; // subníveis (projetos) montados no Front para a expansão
@@ -55,6 +57,7 @@ export interface CostCenterPayload {
   code:                 string;
   name:                 string;
   type:                 string;
+  entityKind?:          string;        // canônico: centro_de_custo | projeto | atividade
   description:          string;
   status:               CostCenterStatus;
   accountingCode:       string;
@@ -64,8 +67,12 @@ export interface CostCenterPayload {
   restrictInterestFine: boolean;
   restrictBudget:       boolean;
   costCenterId:         number | null;
+  parentProjectId?:     number | null; // projeto pai (apenas Atividade)
   linkedAccounts:       LinkedAccount[];
 }
+
+// Valores canônicos aceitos em `entityKind`.
+export const ENTITY_KINDS = ['centro_de_custo', 'projeto', 'atividade'] as const;
 
 // ── Filtros para listagem server-side ─────────────────────────────────────────
 
@@ -91,8 +98,9 @@ export interface StatusConfig {
 }
 
 export const COST_CENTER_STATUS_CONFIG: Record<CostCenterStatus, StatusConfig> = {
-  Active:   { label: 'Ativo',   variant: 'success' },
-  Inactive: { label: 'Inativo', variant: 'danger'  },
+  Active:   { label: 'Ativo',    variant: 'success' },
+  Inactive: { label: 'Inativo',  variant: 'danger'  },
+  Pending:  { label: 'Pendente', variant: 'neutral' },
 };
 
 // Rótulos do Tipo. Valores canônicos: centro_de_custo | projeto | atividade.

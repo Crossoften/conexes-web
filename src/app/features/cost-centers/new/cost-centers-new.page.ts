@@ -4,7 +4,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { CostCentersService } from '../cost-centers.service';
-import { CostCenterPayload, LinkedAccount } from '../cost-centers.model';
+import { CostCenterPayload, LinkedAccount, ENTITY_KINDS } from '../cost-centers.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 
@@ -59,6 +59,7 @@ export class CostCentersNewPage implements OnInit {
     restrictInterest:    [false],
     budgetRestriction:   [false],
     costCenterId:        [null],
+    parentProjectId:     [null],
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -66,8 +67,17 @@ export class CostCentersNewPage implements OnInit {
   ngOnInit(): void {
     // "Adicionar Subnível": abre já vinculado a um pai (ex.: projeto dentro de um CC).
     const qp       = this.route.snapshot.queryParamMap;
-    const parentId = qp.get('parentId');
-    if (parentId) {
+    const parentId        = qp.get('parentId');
+    const parentProjectId = qp.get('parentProjectId');
+    if (parentProjectId) {
+      // Subnível Atividade: vinculado ao Projeto pai via parentProjectId.
+      this.form.patchValue({
+        projectType:     qp.get('type') ?? 'atividade',
+        parentProjectId: Number(parentProjectId),
+      });
+      this.parentName.set(qp.get('parentName'));
+    } else if (parentId) {
+      // Subnível Projeto: vinculado ao Centro de Custo pai via costCenterId.
       this.form.patchValue({
         projectType:  qp.get('type') ?? 'projeto',
         costCenterId: Number(parentId),
@@ -78,13 +88,20 @@ export class CostCentersNewPage implements OnInit {
     let loaded = 0;
     const checkDone = () => { if (++loaded >= 2) this.loadingLists.set(false); };
 
-    this.http.get<AccountPlanItem[]>(`${environment.apiUrl}/v1/account-plan`).subscribe({
-      next: items => { this.accountPlans.set(items); checkDone(); },
+    // Ambos os endpoints devolvem o envelope { data, count, pages } — lemos `data`
+    // de forma tolerante. `take` alto no account-plan para trazer todas as contas
+    // (senão o dropdown fica limitado à 1ª página).
+    this.http.get<AccountPlanItem[] | { data?: AccountPlanItem[] }>(
+      `${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } },
+    ).subscribe({
+      next: res => { this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
     });
 
-    this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
-      next: items => { this.entities.set(items); checkDone(); },
+    this.http.get<EntityItem[] | { data?: EntityItem[] }>(
+      `${environment.apiUrl}/v1/institutional/entities`, { params: { take: '1000' } },
+    ).subscribe({
+      next: res => { this.entities.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
     });
   }
@@ -135,6 +152,8 @@ export class CostCentersNewPage implements OnInit {
       code:                v.projectCode         ?? '',
       name:                v.projectTitle        ?? '',
       type:                v.projectType         ?? '',
+      // entityKind canônico substitui a detecção frágil por texto em `type`.
+      entityKind:          ENTITY_KINDS.includes(v.projectType) ? v.projectType : undefined,
       description:         v.categoryDescription ?? '',
       status:              'Active',
       accountingCode:      v.accountingCode      ?? '',
@@ -144,6 +163,7 @@ export class CostCentersNewPage implements OnInit {
       restrictInterestFine: !!v.restrictInterest,
       restrictBudget:       !!v.budgetRestriction,
       costCenterId:         v.costCenterId ? Number(v.costCenterId) : null,
+      parentProjectId:      v.parentProjectId ? Number(v.parentProjectId) : null,
       linkedAccounts:       this.linkedAccounts,
     };
 

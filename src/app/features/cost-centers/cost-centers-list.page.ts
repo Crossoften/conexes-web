@@ -101,8 +101,12 @@ export class CostCentersListPage implements OnInit {
     this.selectedItem.set(null);
   }
 
-  onModalSaved(updated: CostCenter): void {
-    this.store.updateItem(updated);
+  onModalSaved(_updated: CostCenter): void {
+    // Recarrega do servidor (fonte da verdade) em vez de aplicar patch client-side:
+    // a resposta do PATCH nem sempre traz a relação de hierarquia (costCenterId /
+    // parentProjectId / _entityType) completa, o que reclassificava o registro
+    // editado e o duplicava/deslocava na árvore. O reload mantém a expansão atual.
+    this.store.load();
     this.showModal.set(false);
     this.selectedItem.set(null);
   }
