@@ -32,11 +32,20 @@ export class ApprovalTiersListPage implements OnInit {
     { label: 'Inativo',            value: 'Inactive' },
   ];
 
+  // AL-7: filtro de tipo (server-side).
+  readonly typeOptions = [
+    { label: 'Todos os tipos', value: ''           },
+    { label: 'Compras',        value: 'COMPRAS'    },
+    { label: 'Financeiro',     value: 'FINANCEIRO' },
+  ];
+
   readonly pageSizeOptions = [10, 25, 50];
 
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
-  );
+  /** AL-6: aprovador de destino selecionado no modal de transferência. */
+  transferUserId = 0;
+
+  // AL-7: total de páginas vem do back (server-side).
+  readonly totalPages = computed(() => this.store.totalPages());
 
   readonly pageNumbers = computed((): (number | '...')[] => {
     const total   = this.totalPages();
@@ -65,6 +74,12 @@ export class ApprovalTiersListPage implements OnInit {
 
   onExport(): void {
     this.store.exportExcel();
+  }
+
+  /** AL-6: abre o modal de transferência zerando o aprovador de destino. */
+  onOpenTransfer(item: ApprovalTier): void {
+    this.transferUserId = 0;
+    this.store.openTransfer(item);
   }
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;

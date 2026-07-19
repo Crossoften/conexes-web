@@ -377,3 +377,68 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+
+// ── AL-6: Modal de transferência de aprovador ──
+.transfer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  text-align: left;
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+  }
+  .req { color: var(--brand-danger, #EF4444); margin-left: 2px; }
+
+  .select-wrap { position: relative; display: flex; align-items: center; width: 100%; }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 16px;
+    padding-right: 40px;
+    border: 1px solid var(--surface-border-mid, #D1D5DB);
+    border-radius: 24px;
+    font-size: 13.5px;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background: var(--surface-primary);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color var(--transition, .2s ease), box-shadow var(--transition, .2s ease);
+
+    &:focus {
+      border-color: var(--brand-orange, #F97316);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, .1);
+    }
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--brand-danger, #EF4444);
+  }
+}
+
+.btn-transfer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 22px;
+  background: var(--brand-orange, #F97316);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background var(--transition), transform 100ms;
+
+  &:hover:not(:disabled) { background: #EA6B0A; transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}

@@ -17,6 +17,9 @@ export interface ApprovalTier {
   purchaseRole?: ApprovalPurchaseRole | string;   // só COMPRAS
   userId:        number;
   status?:       ApprovalTierStatus;
+  costCenterId?: number;             // escopo — só COMPRAS
+  projectId?:    number;             // escopo — só COMPRAS
+  activityId?:   number;             // escopo — só COMPRAS
   createdAt?:    string;
   updatedAt?:    string;
 }
@@ -32,6 +35,15 @@ export interface ApprovalTierPayload {
   maxValue:      number;
   purchaseRole?: string;             // obrigatório em COMPRAS; omitido em FINANCEIRO
   userId:        number;
+  costCenterId?: number;
+  projectId?:    number;
+  activityId?:   number;
+}
+
+/** Item genérico de lookup (centro de custo / projeto / atividade). */
+export interface ApprovalScopeOption {
+  id:   number;
+  name: string;
 }
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────

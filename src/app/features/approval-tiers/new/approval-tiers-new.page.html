@@ -125,6 +125,41 @@
 
           </div>
 
+          @if (isCompras) {
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Centro de custo</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="costCenterId">
+                    <option value="">Todos (opcional)</option>
+                    @for (o of costCenters(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Projeto</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="projectId">
+                    <option value="">Todos (opcional)</option>
+                    @for (o of projects(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Atividade</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="activityId">
+                    <option value="">Todas (opcional)</option>
+                    @for (o of activities(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+          }
+
         </div>
 
       </form>
