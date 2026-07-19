@@ -82,6 +82,7 @@ export interface StakeholderTaxesAndServices {
   serviceTitle:         string;
   operationNature:      string;
   totalRetentions:      number;
+  manualAliquots?:      boolean;   // FE-S5: alíquotas manuais (contrato novo)
   irfAliquot:           number;
   irfCode:              string;
   pisAliquot:           number;
@@ -91,9 +92,15 @@ export interface StakeholderTaxesAndServices {
   cofinsAliquot:        number;
   cofinsCode:           string;
   inssAliquot:          number;
+  inssCode?:            string;    // FE-S5
   csllAliquot:          number;
+  csllCode?:            string;    // FE-S5
+  issAliquot?:          number;    // FE-S5 (ISS não existia no contrato antigo)
+  issCode?:             string;    // FE-S5
   ibsAliquot:           number;
+  ibsCode?:             string;    // FE-S5
   cbsAliquot:           number;
+  cbsCode?:             string;    // FE-S5
   serviceName:          string;
   serviceDescription:   string;
   serviceExternalCode:  string;
@@ -154,38 +161,39 @@ export interface StakeholderFilters {
   document?:   string;
   personType?: PersonType | '';
   status?:     StakeholderStatus | '';
+  sort?:       string;              // FE-S3: ordenação server-side (ex: name, code, status)
+  order?:      'asc' | 'desc';
   take?:       number;
   skip?:       number;
 }
 
 // ── Resposta paginada ─────────────────────────────────────────────────────────
+// FE-S1: envelope oficial do back (ResponseFindAllStakeholderDto) = { data, count, pages }.
 
 export interface StakeholderListResponse {
   data:  StakeholderListItem[];
-  total: number;
+  count: number;
+  pages: number;
 }
 
 // ── Dados da Receita Federal (endpoint /cnpj/:cnpj) ──────────────────────────
-// Mapeie apenas os campos que o back retorna; adicione mais conforme necessário.
+// FE-S4: espelha o CnpjLookupResponseDto do back (só estes campos existem).
 
 export interface CnpjData {
-  cnpj:                 string;
-  razaoSocial:          string;   // → name / tradeName
-  nomeFantasia:         string;   // → tradeName
-  email:                string;
-  telefone:             string;   // → phone
-  naturezaJuridica:     string;   // → legalNature
-  atividadePrincipal:   string;   // → mainActivity
-  atividadeSecundaria?: string;   // → secondaryActivity
-  inscricaoEstadual?:   string;   // → stateRegistration
-  logradouro?:          string;   // → addresses[0].street
-  numero?:              string;   // → addresses[0].number
-  complemento?:         string;   // → addresses[0].complement
-  bairro?:              string;   // → addresses[0].district
-  municipio?:           string;   // → addresses[0].city
-  uf?:                  string;   // → addresses[0].state
-  cep?:                 string;   // → addresses[0].zipCode
-  situacao?:            string;   // pode mapear p/ status se útil
+  cnpj:                string;
+  razaoSocial?:        string;   // → name
+  nomeFantasia?:       string;   // (sem campo de destino no form hoje)
+  logradouro?:         string;   // → addresses[0].street
+  numero?:             string;   // → addresses[0].number
+  complemento?:        string;   // → addresses[0].complement
+  bairro?:             string;   // → addresses[0].district
+  municipio?:          string;   // → addresses[0].city
+  uf?:                 string;   // → addresses[0].state
+  cep?:                string;   // → addresses[0].zipCode
+  email?:              string;
+  telefone?:           string;   // → phone
+  situacaoCadastral?:  string;   // situação cadastral na Receita
+  atividadePrincipal?: string;   // → mainActivity
 }
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────

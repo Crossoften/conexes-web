@@ -1,0 +1,28 @@
+diff --git a/src/app/features/stakeholders/stakeholders.model.ts b/src/app/features/stakeholders/stakeholders.model.ts
+index 5f3d8f7..1173206 100644
+--- a/src/app/features/stakeholders/stakeholders.model.ts
++++ b/src/app/features/stakeholders/stakeholders.model.ts
+@@ -82,6 +82,7 @@ export interface StakeholderTaxesAndServices {
+   serviceTitle:         string;
+   operationNature:      string;
+   totalRetentions:      number;
++  manualAliquots?:      boolean;   // FE-S5: alíquotas manuais (contrato novo)
+   irfAliquot:           number;
+   irfCode:              string;
+   pisAliquot:           number;
+@@ -91,9 +92,15 @@ export interface StakeholderTaxesAndServices {
+   cofinsAliquot:        number;
+   cofinsCode:           string;
+   inssAliquot:          number;
++  inssCode?:            string;    // FE-S5
+   csllAliquot:          number;
++  csllCode?:            string;    // FE-S5
++  issAliquot?:          number;    // FE-S5 (ISS não existia no contrato antigo)
++  issCode?:             string;    // FE-S5
+   ibsAliquot:           number;
++  ibsCode?:             string;    // FE-S5
+   cbsAliquot:           number;
++  cbsCode?:             string;    // FE-S5
+   serviceName:          string;
+   serviceDescription:   string;
+   serviceExternalCode:  string;
