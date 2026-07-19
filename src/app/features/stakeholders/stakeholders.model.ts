@@ -41,7 +41,11 @@ export interface StakeholderAddress {
   district:   string;
   city:       string;
   state:      string;
+  isBilling?: boolean;   // FE-S6: endereço de faturamento (exclusivo de clientes)
 }
+
+// FE-S6: tipos considerados "cliente" (têm endereço de faturamento).
+export const CLIENT_TYPES: StakeholderType[] = ['Customer', 'Donor', 'SupportedProject'];
 
 export interface StakeholderBankData {
   accountName:     string;
@@ -146,6 +150,7 @@ export interface StakeholderListItem {
   personType: PersonType;
   document:   string;
   name:       string;
+  tradeName?: string;               // FE-S2: nome fantasia (StakeholderListItemDto)
   status:     StakeholderStatus;
   type:       StakeholderType;
 }
@@ -161,6 +166,7 @@ export interface StakeholderFilters {
   document?:   string;
   personType?: PersonType | '';
   status?:     StakeholderStatus | '';
+  type?:       string;              // FE-S2: um ou mais tipos separados por vírgula
   sort?:       string;              // FE-S3: ordenação server-side (ex: name, code, status)
   order?:      'asc' | 'desc';
   take?:       number;

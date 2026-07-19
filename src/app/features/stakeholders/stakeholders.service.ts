@@ -25,6 +25,7 @@ export class StakeholdersService {
     if (filters.document)      params = params.set('document',   filters.document);
     if (filters.personType)    params = params.set('personType', filters.personType);
     if (filters.status)        params = params.set('status',     filters.status);
+    if (filters.type)          params = params.set('type',       filters.type);
     if (filters.sort)          params = params.set('sort',       filters.sort);
     if (filters.order)         params = params.set('order',      filters.order);
     if (filters.take != null)  params = params.set('take',       filters.take);

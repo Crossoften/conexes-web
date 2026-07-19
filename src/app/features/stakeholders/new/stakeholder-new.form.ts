@@ -24,6 +24,16 @@ export function buildStakeholderForm() {
     district:    [''],
     city:        [''],
     state:       [''],
+
+    // FE-S6: endereço de faturamento (exclusivo de clientes)
+    billingZipCode:    [''],
+    billingAddress:    [''],
+    billingNum:        [''],
+    billingComplement: [''],
+    billingDistrict:   [''],
+    billingCity:       [''],
+    billingState:      [''],
+
     phone:       [''],
     mobile:      [''],
     email:       [''],

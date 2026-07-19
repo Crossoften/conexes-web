@@ -5,7 +5,10 @@ import {
   StakeholderFilters,
   StakeholderListItem,
   StakeholderStatus,
+  StakeholderType,
+  StakeholderView,
   PersonType,
+  VIEW_TYPES,
 } from './stakeholders.model';
 
 interface State {
@@ -15,7 +18,8 @@ interface State {
   error:          string | null;
   exporting:      boolean;
   exportError:    string | null;
-  filters:        { search: string; status: StakeholderStatus | ''; personType: PersonType | '' };
+  // FE-S2: view (Fornecedores/Clientes) define o grupo de tipos; type (opcional) refina para um único tipo.
+  filters:        { search: string; status: StakeholderStatus | ''; personType: PersonType | ''; view: StakeholderView; type: StakeholderType | '' };
   sort:           { column: string; direction: 'asc' | 'desc' | '' };
   pagination:     { page: number; pageSize: number };
   selectedIds:    Set<number>;
@@ -32,7 +36,7 @@ export class StakeholdersStore {
     error:       null,
     exporting:   false,
     exportError: null,
-    filters:     { search: '', status: '', personType: '' },
+    filters:     { search: '', status: '', personType: '', view: 'suppliers', type: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -67,7 +71,7 @@ export class StakeholdersStore {
     this.state.update(s => ({ ...s, loading: true, error: null }));
 
     const { page, pageSize } = this.state().pagination;
-    const { search, status, personType } = this.state().filters;
+    const { search, status, personType, view, type } = this.state().filters;
     const { column, direction }          = this.state().sort;
 
     const filters: StakeholderFilters = {
@@ -78,6 +82,9 @@ export class StakeholdersStore {
     if (search)     filters.name       = search;
     if (status)     filters.status     = status;
     if (personType) filters.personType = personType;
+    // FE-S2: um tipo específico refina; senão, envia o grupo da visão (Fornecedores/Clientes).
+    const types = type ? [type] : VIEW_TYPES[view];
+    if (types?.length) filters.type = types.join(',');
     // FE-S3: ordenação server-side.
     if (column && direction) { filters.sort = column; filters.order = direction; }
 
@@ -137,6 +144,18 @@ export class StakeholdersStore {
 
   setPersonType(personType: PersonType | ''): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, personType }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  // FE-S2: troca a visão (Fornecedores/Clientes) e zera o filtro de tipo específico.
+  setView(view: StakeholderView): void {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, view, type: '' }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  // FE-S2: refina para um tipo específico dentro da visão ('' = todos os tipos da visão).
+  setType(type: StakeholderType | ''): void {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
     this.load();
   }
 
