@@ -219,12 +219,17 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
       csllAliquot:         Number(s3.aliqCSLL)           || 0,
       ibsAliquot:          Number(s3.aliqIBS)            || 0,
       cbsAliquot:          Number(s3.aliqCBS)            || 0,
-      serviceName:         s3.serviceName?.trim()        ?? '',
-      serviceDescription:  s3.serviceDesc?.trim()        ?? '',
-      serviceExternalCode: s3.serviceExtCode?.trim()     ?? '',
-      serviceGrantorOrgan: s3.serviceGrantor?.trim()     ?? '',
-      serviceHasRetention: !!s3.serviceRedemption,
-      serviceAccessorOrgan: s3.serviceLinked?.trim()     ?? '',
+      // Contrato novo: serviço vinculado vai no array `services` (não mais flat service*).
+      services: s3.serviceName?.trim()
+        ? [{
+            name:          s3.serviceName.trim(),
+            description:   s3.serviceDesc?.trim()      ?? '',
+            externalCode:  s3.serviceExtCode?.trim()   ?? '',
+            grantorOrgan:  s3.serviceGrantor?.trim()   ?? '',
+            hasRetention:  !!s3.serviceRedemption,
+            accessorOrgan: s3.serviceLinked?.trim()    ?? '',
+          }]
+        : [],
     },
   };
 

@@ -5,6 +5,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import {
   EntityRegistry,
   EntityRegistryPayload,
+  ENTITY_STATUS_OPTIONS,
 } from '../entity-registry.model';
 
 @Component({
@@ -28,16 +29,20 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
   protected activeTab: 'geral' | 'contador' = 'geral';
   protected showRequiredWarning = false;
 
+  protected readonly statusOptions = ENTITY_STATUS_OPTIONS;
+
   protected readonly form = this.fb.group({
     cnpj:                  ['', Validators.required],
     stateRegistration:     [''],
     constitutionDate:      [''],
     legalName:             ['', Validators.required],
     tradeName:             ['', Validators.required],
+    status:                ['Active'],
     zipCode:               ['', Validators.required],
     address:               ['', Validators.required],
     number:                ['', Validators.required],
     complement:            [''],
+    district:              [''],
     city:                  ['', Validators.required],
     state:                 ['', Validators.required],
     mainPhone:             ['', Validators.required],
@@ -62,6 +67,10 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
     if (this.entity) {
       this.form.patchValue(this.entity as any);
     }
+  }
+
+  protected statusLabel(v: string | undefined): string {
+    return this.statusOptions.find(o => o.value === v)?.label ?? (v || '—');
   }
 
   onClose(): void {
@@ -99,7 +108,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
     const raw = this.form.value;
     const onlyNumbers = (v: string | undefined) => v ? v.replace(/\D/g, '') : '';
 
-    const payload: Partial<EntityRegistryPayload> = {
+    const payload = {
       ...raw,
       cnpj:                  onlyNumbers(raw.cnpj),
       zipCode:               onlyNumbers(raw.zipCode),
@@ -109,7 +118,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
       accountantZipCode:     onlyNumbers(raw.accountantZipCode),
       accountantPhone:       onlyNumbers(raw.accountantPhone),
       accountantOfficePhone: onlyNumbers(raw.accountantOfficePhone),
-    };
+    } as Partial<EntityRegistryPayload>;
 
     this.saved.emit(payload);
   }

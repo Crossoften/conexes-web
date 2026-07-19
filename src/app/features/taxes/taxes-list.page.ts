@@ -23,6 +23,7 @@ export class TaxesListPage implements OnInit {
     { label: 'Selecione o status', value: ''         },
     { label: 'Ativo',              value: 'Active'   },
     { label: 'Inativo',            value: 'Inactive' },
+    { label: 'Pendente',           value: 'Pending'  },
   ];
 
   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];

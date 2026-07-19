@@ -1,0 +1,248 @@
+diff --git a/src/app/features/entity-registry/components/entity-registry-detail.modal.html b/src/app/features/entity-registry/components/entity-registry-detail.modal.html
+index d43bde0..cc88130 100644
+--- a/src/app/features/entity-registry/components/entity-registry-detail.modal.html
++++ b/src/app/features/entity-registry/components/entity-registry-detail.modal.html
+@@ -98,6 +98,10 @@
+                   <span class="info-label">Nome Fantasia</span>
+                   <span class="info-value">{{ entity.tradeName || '—' }}</span>
+                 </div>
++                <div class="info-item col-span-2">
++                  <span class="info-label">Status</span>
++                  <span class="info-value">{{ statusLabel(entity.status) }}</span>
++                </div>
+ 
+                 <div class="info-item">
+                   <span class="info-label">CEP</span>
+@@ -116,6 +120,10 @@
+                   <span class="info-label">Complemento</span>
+                   <span class="info-value">{{ entity.complement || '—' }}</span>
+                 </div>
++                <div class="info-item">
++                  <span class="info-label">Bairro</span>
++                  <span class="info-value">{{ entity.district || '—' }}</span>
++                </div>
+                 <div class="info-item">
+                   <span class="info-label">Cidade</span>
+                   <span class="info-value">{{ entity.city || '—' }}</span>
+@@ -237,7 +245,7 @@
+                   </div>
+                 </div>
+ 
+-                <div class="form-row grid-cols-2">
++                <div class="form-row grid-cols-3">
+                   <div class="form-group">
+                     <label>Razão Social<span class="req">*</span></label>
+                     <input type="text" class="form-control" formControlName="legalName" placeholder="Digite aqui...">
+@@ -246,6 +254,17 @@
+                     <label>Nome Fantasia<span class="req">*</span></label>
+                     <input type="text" class="form-control" formControlName="tradeName" placeholder="Digite aqui...">
+                   </div>
++                  <div class="form-group">
++                    <label>Status</label>
++                    <div class="select-wrap">
++                      <select class="form-control" formControlName="status">
++                        @for (opt of statusOptions; track opt.value) {
++                          <option [value]="opt.value">{{ opt.label }}</option>
++                        }
++                      </select>
++                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                    </div>
++                  </div>
+                 </div>
+ 
+                 <div class="form-row grid-cols-4">
+@@ -267,7 +286,11 @@
+                   </div>
+                 </div>
+ 
+-                <div class="form-row grid-cols-2">
++                <div class="form-row grid-cols-3">
++                  <div class="form-group">
++                    <label>Bairro</label>
++                    <input type="text" class="form-control" formControlName="district" placeholder="Digite o bairro...">
++                  </div>
+                   <div class="form-group">
+                     <label>Cidade<span class="req">*</span></label>
+                     <input type="text" class="form-control" formControlName="city" placeholder="Digite a cidade...">
+diff --git a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+index 7a6d6f0..8c2bf23 100644
+--- a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
++++ b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+@@ -5,6 +5,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
+ import {
+   EntityRegistry,
+   EntityRegistryPayload,
++  ENTITY_STATUS_OPTIONS,
+ } from '../entity-registry.model';
+ 
+ @Component({
+@@ -28,16 +29,20 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
+   protected activeTab: 'geral' | 'contador' = 'geral';
+   protected showRequiredWarning = false;
+ 
++  protected readonly statusOptions = ENTITY_STATUS_OPTIONS;
++
+   protected readonly form = this.fb.group({
+     cnpj:                  ['', Validators.required],
+     stateRegistration:     [''],
+     constitutionDate:      [''],
+     legalName:             ['', Validators.required],
+     tradeName:             ['', Validators.required],
++    status:                ['Active'],
+     zipCode:               ['', Validators.required],
+     address:               ['', Validators.required],
+     number:                ['', Validators.required],
+     complement:            [''],
++    district:              [''],
+     city:                  ['', Validators.required],
+     state:                 ['', Validators.required],
+     mainPhone:             ['', Validators.required],
+@@ -64,6 +69,10 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
+     }
+   }
+ 
++  protected statusLabel(v: string | undefined): string {
++    return this.statusOptions.find(o => o.value === v)?.label ?? (v || '—');
++  }
++
+   onClose(): void {
+     this.mode = 'view';
+     this.activeTab = 'geral';
+diff --git a/src/app/features/entity-registry/entity-registry.model.ts b/src/app/features/entity-registry/entity-registry.model.ts
+index a269ad3..ab69fe3 100644
+--- a/src/app/features/entity-registry/entity-registry.model.ts
++++ b/src/app/features/entity-registry/entity-registry.model.ts
+@@ -4,17 +4,28 @@
+ // no contrato `/v1/institutional/entities` — removidos do front até o Back definir
+ // (ver B-EN-04). PF/PJ não se aplica a entidade institucional (é sempre PJ/CNPJ).
+ 
++// Status da entidade (o back passou a expor este campo).
++export type EntityStatus = 'Active' | 'Pending' | 'Inactive';
++
++export const ENTITY_STATUS_OPTIONS: { label: string; value: EntityStatus }[] = [
++  { label: 'Ativo',    value: 'Active'   },
++  { label: 'Pendente', value: 'Pending'  },
++  { label: 'Inativo',  value: 'Inactive' },
++];
++
+ // ── Payload de criação / edição (POST e PATCH) ────────────────────────────
+ export interface EntityRegistryPayload {
+   cnpj:                  string;
+   legalName:             string;
+   tradeName:             string;
++  status?:               EntityStatus;
+   stateRegistration?:    string;
+   constitutionDate?:     string;
+   zipCode:               string;
+   address:               string;
+   number:                string;
+   complement?:           string;
++  district?:             string;   // Bairro
+   city:                  string;
+   state:                 string;
+   mainPhone:             string;
+diff --git a/src/app/features/entity-registry/entity-registry.service.ts b/src/app/features/entity-registry/entity-registry.service.ts
+index 60a9071..e6a3b2f 100644
+--- a/src/app/features/entity-registry/entity-registry.service.ts
++++ b/src/app/features/entity-registry/entity-registry.service.ts
+@@ -1,7 +1,7 @@
+ // src/app/features/entity-registry/entity-registry.service.ts
+ import { Injectable, inject } from '@angular/core';
+ import { HttpClient } from '@angular/common/http';
+-import { Observable } from 'rxjs';
++import { Observable, map } from 'rxjs';
+ import { environment } from '../../../environments/environment';
+ import {
+   EntityRegistry,
+@@ -14,9 +14,11 @@ export class EntityRegistryService {
+   private readonly http = inject(HttpClient);
+   private readonly baseUrl = `${environment.apiUrl}/v1/institutional/entities`;
+ 
+-  /** GET /v1/institutional/entities — lista resumida */
++  /** GET /v1/institutional/entities — lista resumida (envelope { data } tolerante) */
+   getAll(): Observable<EntityRegistryListItem[]> {
+-    return this.http.get<EntityRegistryListItem[]>(this.baseUrl);
++    return this.http
++      .get<EntityRegistryListItem[] | { data?: EntityRegistryListItem[] }>(this.baseUrl)
++      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
+   }
+ 
+   /** GET /v1/institutional/entities/:id — detalhe completo */
+diff --git a/src/app/features/entity-registry/new/entity-registry-new.page.html b/src/app/features/entity-registry/new/entity-registry-new.page.html
+index a8c59ff..ddece82 100644
+--- a/src/app/features/entity-registry/new/entity-registry-new.page.html
++++ b/src/app/features/entity-registry/new/entity-registry-new.page.html
+@@ -28,7 +28,7 @@
+             </div>
+           </div>
+ 
+-          <div class="form-row grid-cols-2">
++          <div class="form-row grid-cols-3">
+             <div class="form-group">
+               <label>Razão Social<span class="req">*</span></label>
+               <input type="text" class="form-control" formControlName="legalName" placeholder="Digite aqui...">
+@@ -37,6 +37,17 @@
+               <label>Nome Fantasia<span class="req">*</span></label>
+               <input type="text" class="form-control" formControlName="tradeName" placeholder="Digite aqui...">
+             </div>
++            <div class="form-group">
++              <label>Status</label>
++              <div class="select-wrap">
++                <select class="form-control" formControlName="status">
++                  @for (opt of statusOptions; track opt.value) {
++                    <option [value]="opt.value">{{ opt.label }}</option>
++                  }
++                </select>
++                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++              </div>
++            </div>
+           </div>
+ 
+           <div class="form-row grid-cols-4">
+@@ -58,7 +69,11 @@
+             </div>
+           </div>
+ 
+-          <div class="form-row grid-cols-2">
++          <div class="form-row grid-cols-3">
++            <div class="form-group">
++              <label>Bairro</label>
++              <input type="text" class="form-control" formControlName="district" placeholder="Digite o bairro...">
++            </div>
+             <div class="form-group">
+               <label>Cidade<span class="req">*</span></label>
+               <input type="text" class="form-control" formControlName="city" placeholder="Digite a cidade...">
+diff --git a/src/app/features/entity-registry/new/entity-registry-new.page.ts b/src/app/features/entity-registry/new/entity-registry-new.page.ts
+index 6135360..56523ef 100644
+--- a/src/app/features/entity-registry/new/entity-registry-new.page.ts
++++ b/src/app/features/entity-registry/new/entity-registry-new.page.ts
+@@ -4,7 +4,7 @@ import { NonNullableFormBuilder, Validators, ReactiveFormsModule } from '@angula
+ import { Router, RouterLink } from '@angular/router';
+ import { NgClass, NgIf } from '@angular/common';
+ import { EntityRegistryStore } from '../entity-registry.store';
+-import { EntityRegistryPayload } from '../entity-registry.model';
++import { EntityRegistryPayload, ENTITY_STATUS_OPTIONS } from '../entity-registry.model';
+ 
+ @Component({
+   selector: 'app-entity-registry-new',
+@@ -25,16 +25,20 @@ export class EntityRegistryNewPage {
+     'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+   ];
+ 
++  protected readonly statusOptions = ENTITY_STATUS_OPTIONS;
++
+   protected readonly form = this.fb.group({
+     cnpj:                  ['', Validators.required],
+     stateRegistration:     [''],
+     constitutionDate:      [''],
+     legalName:             ['', Validators.required],
+     tradeName:             ['', Validators.required],
++    status:                ['Active'],
+     zipCode:               ['', Validators.required],
+     address:               ['', Validators.required],
+     number:                ['', Validators.required],
+     complement:            [''],
++    district:              [''],
+     city:                  ['', Validators.required],
+     state:                 ['', Validators.required],
+     mainPhone:             ['', Validators.required],
