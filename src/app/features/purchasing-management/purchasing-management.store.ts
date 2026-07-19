@@ -11,6 +11,7 @@ import {
   ApprovalLimit,
 } from '../purchases/purchases.model';
 import { Observable } from 'rxjs';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items:       PurchasingReq[];
@@ -47,7 +48,8 @@ function toRow(r: PurchaseRequest): PurchasingReq {
 
 @Injectable()
 export class PurchasingManagementStore {
-  private svc = inject(PurchasesService);
+  private svc    = inject(PurchasesService);
+  private notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items:       [],
@@ -164,8 +166,10 @@ export class PurchasingManagementStore {
       next: () => { this.actionSubmitting.set(false); this.closeAction(); this.load(); },
       error: err => {
         this.actionSubmitting.set(false);
-        const msg = err?.error?.message ?? 'Erro ao executar a ação.';
-        onError?.(Array.isArray(msg) ? msg.join(', ') : msg);
+        const raw = err?.error?.message ?? 'Erro ao executar a ação.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
       },
     });
   }
