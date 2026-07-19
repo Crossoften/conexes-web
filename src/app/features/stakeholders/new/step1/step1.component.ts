@@ -40,13 +40,13 @@ export class Step1Component {
 
     this.svc.getCnpjData(digits).subscribe({
       next: data => {
+        // FE-S4: só preenche os campos que o CnpjLookupResponseDto do back realmente retorna.
+        // naturezaJuridica / atividadeSecundaria / inscricaoEstadual não existem no contrato
+        // — legalNature / secondActivity / stateReg ficam para preenchimento manual.
         this.f['name']?.setValue(data.razaoSocial          ?? '');
         this.f['email']?.setValue(data.email               ?? '');
         this.f['phone']?.setValue(data.telefone            ?? '');
-        this.f['legalNature']?.setValue(data.naturezaJuridica    ?? '');
         this.f['mainActivity']?.setValue(data.atividadePrincipal  ?? '');
-        this.f['secondActivity']?.setValue(data.atividadeSecundaria ?? '');
-        this.f['stateReg']?.setValue(data.inscricaoEstadual  ?? '');
         if (data.cep)         this.f['zipCode']?.setValue(data.cep);
         if (data.logradouro)  this.f['address']?.setValue(data.logradouro);
         if (data.numero)      this.f['addressNum']?.setValue(data.numero);
