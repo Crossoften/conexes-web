@@ -202,6 +202,24 @@ export interface CnpjData {
   atividadePrincipal?: string;   // → mainActivity
 }
 
+// ── Importação em lote (FE-S7) ────────────────────────────────────────────────
+
+export interface ImportError {
+  row:     number;
+  field?:  string;
+  message: string;
+}
+
+export interface ImportBatchSummary {
+  batchId:    number;
+  fileName:   string;
+  total:      number;
+  success:    number;
+  failed:     number;
+  errors:     ImportError[];
+  createdAt?: string;
+}
+
 // ── Labels e configs de UI ────────────────────────────────────────────────────
 
 export interface StatusConfig {

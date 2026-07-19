@@ -2,11 +2,12 @@
 
 export type AccountStatus = 'Active' | 'Inactive';
 
-// Tipo de Conta (doc): Sintética / Analítica
-export type AccountType   = 'Sintética' | 'Analítica';
+// FE-PC-1: valores canônicos do back são SEM acento (Swagger).
+// Tipo de Conta: Sintetica / Analitica
+export type AccountType   = 'Sintetica' | 'Analitica';
 
-// Tipo da Categoria (doc): Entrada / Saída / Totalizadora
-export type CategoryType  = 'Entrada' | 'Saída' | 'Totalizadora';
+// Tipo da Categoria: Entrada / Saida / Totalizadora
+export type CategoryType  = 'Entrada' | 'Saida' | 'Totalizadora';
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
@@ -64,15 +65,28 @@ export const ACCOUNT_STATUS_CONFIG: Record<AccountStatus, StatusConfig> = {
   Inactive: { label: 'Inativo', variant: 'danger'  },
 };
 
-// Mapa de exibição do Tipo de Conta. Inclui valores canônicos (doc) e
+// Mapa de exibição do Tipo de Conta. Chaves = valores canônicos (sem acento) +
 // variantes legadas já gravadas, para exibir rótulo amigável mesmo em dados antigos.
 export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  // canônico (back)
+  Sintetica: 'Sintética',
+  Analitica: 'Analítica',
+  // acentuado (legado / display)
   'Sintética': 'Sintética',
   'Analítica': 'Analítica',
-  // legado
+  // outras variantes legadas
   SINTETICA: 'Sintética',
   ANALITICA: 'Analítica',
   S: 'Sintética',
   A: 'Analítica',
   T: 'Totalizadora',
+};
+
+// FE-PC-1: rótulos do Tipo da Categoria (canônico sem acento + legado acentuado).
+export const CATEGORY_TYPE_LABELS: Record<string, string> = {
+  Entrada:      'Entrada',
+  Saida:        'Saída',
+  Totalizadora: 'Totalizadora',
+  // legado acentuado
+  'Saída':      'Saída',
 };

@@ -66,6 +66,7 @@ function buildAddress(s1: any): StakeholderAddress[] {
   const complete = !!(zipCode && street && number && district && city && state);
   if (!complete) return [];
 
+  // B-13: não enviar isBilling no endereço principal — só o de faturamento (clientes) leva isBilling=true.
   return [{
     zipCode,
     street,
@@ -74,7 +75,6 @@ function buildAddress(s1: any): StakeholderAddress[] {
     district,
     city,
     state,
-    isBilling: false,
   }];
 }
 
@@ -167,11 +167,12 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
   // type deve ser um enum válido — se o usuário digitou texto livre, usa 'Other'
   const type = validEnum(s1.type, VALID_TYPES, 'Other');
 
-  return {
+  const payload: StakeholderPayload = {
     code:     s1.code?.trim()     ?? '',
     type,
     personType:            s1.personType     || 'PJ',
-    document:              s1.document?.trim()       ?? '',
+    // B-13: enviar o documento só com dígitos (o back grava/valida sem máscara).
+    document:              (s1.document ?? '').replace(/\D/g, ''),
     name:                  s1.name?.trim()           ?? '',
     tradeName:             s1.tradeName?.trim()      ?? '',
     email:                 s1.email?.trim()          ?? '',
@@ -226,4 +227,8 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
       serviceAccessorOrgan: s3.serviceLinked?.trim()     ?? '',
     },
   };
+
+  // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).
+  if (!payload.accountId) delete (payload as { accountId?: number }).accountId;
+  return payload;
 }

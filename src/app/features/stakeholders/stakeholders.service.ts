@@ -9,6 +9,7 @@ import {
   StakeholderListResponse,
   StakeholderPayload,
   CnpjData,
+  ImportBatchSummary,
 } from './stakeholders.model';
 
 @Injectable({ providedIn: 'root' })
@@ -73,5 +74,31 @@ export class StakeholdersService {
   getCnpjData(cnpj: string): Observable<CnpjData> {
     const clean = cnpj.replace(/\D/g, '');
     return this.http.get<CnpjData>(`${this.base}/cnpj/${clean}`);
+  }
+
+  // ── Importação em lote (FE-S7) ────────────────────────────────────────────
+  /** Baixa a planilha-modelo (.xlsx). */
+  downloadImportTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/import/template`, { responseType: 'blob' });
+  }
+
+  /** Envia a planilha e retorna o resumo do lote (sucesso/falhas/erros por linha). */
+  importFile(file: File): Observable<ImportBatchSummary> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<ImportBatchSummary>(`${this.base}/import`, fd);
+  }
+
+  /** Lista o histórico de lotes de importação. */
+  getImportBatches(params: { take?: number; skip?: number } = {}): Observable<ImportBatchSummary[] | { data: ImportBatchSummary[] }> {
+    let p = new HttpParams();
+    if (params.take != null) p = p.set('take', params.take);
+    if (params.skip != null) p = p.set('skip', params.skip);
+    return this.http.get<ImportBatchSummary[] | { data: ImportBatchSummary[] }>(`${this.base}/import/batches`, { params: p });
+  }
+
+  /** Detalhe de um lote (inclui erros por linha). */
+  getImportBatch(id: number): Observable<ImportBatchSummary> {
+    return this.http.get<ImportBatchSummary>(`${this.base}/import/batches/${id}`);
   }
 }

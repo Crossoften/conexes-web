@@ -262,8 +262,9 @@ export class StakeholderDetailModalComponent implements OnChanges {
     return ['Customer', 'Donor', 'SupportedProject'].includes(this.form.getRawValue().type as string);
   }
 
-  /** FE-S6: monta o endereço principal (isBilling=false) + faturamento (isBilling=true) quando cliente e completo. */
+  /** FE-S6: endereço principal (sem isBilling) + faturamento (isBilling=true) quando cliente e completo. */
   private buildAddresses(v: any) {
+    // B-13: não enviar isBilling no endereço principal — só o de faturamento leva a flag.
     const main = {
       zipCode:    v.addrZipCode    ?? '',
       street:     v.addrStreet     ?? '',
@@ -272,7 +273,6 @@ export class StakeholderDetailModalComponent implements OnChanges {
       district:   v.addrDistrict   ?? '',
       city:       v.addrCity       ?? '',
       state:      v.addrState      ?? '',
-      isBilling:  false,
     };
     const billComplete = !!(v.billZipCode && v.billStreet && v.billNumber && v.billDistrict && v.billCity && v.billState);
     if (this.isClient && billComplete) {
@@ -419,7 +419,8 @@ export class StakeholderDetailModalComponent implements OnChanges {
       code:                  v.code,
       type:                  v.type as any,
       personType:            v.personType as any,
-      document:              v.document,
+      // B-13: documento só com dígitos (o back grava/valida sem máscara).
+      document:              (v.document ?? '').replace(/\D/g, ''),
       name:                  v.name,
       tradeName:             v.tradeName,
       email:                 v.email,
@@ -474,6 +475,9 @@ export class StakeholderDetailModalComponent implements OnChanges {
         serviceAccessorOrgan: v.serviceAccessorOrgan ?? '',
       },
     };
+
+    // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).
+    if (!payload.accountId) delete payload.accountId;
 
     this.saved.emit({ id: this.stakeholder.id, payload });
   }

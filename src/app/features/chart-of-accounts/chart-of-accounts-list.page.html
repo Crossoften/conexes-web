@@ -56,20 +56,9 @@
       </button>
     </div>
 
-    <div class="card-section card-section--tinted action-bar">
-      <button class="btn-action-mass">
-        <span class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></span>
-        Marcar todas as contas para orçamento
-      </button>
-      <button class="btn-action-mass">
-        <span class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></span>
-        Marcar todas as contas com transação
-      </button>
-      <button class="btn-action-mass">
-        <span class="checkbox"><input type="checkbox" class="checkbox__input"><span class="checkbox__box"></span></span>
-        Expandir todas as contas
-      </button>
-    </div>
+    <!-- FE-PC-3: action-bar (orçamento em lote + expandir todas) oculta por enquanto.
+         Orçamento depende do endpoint /budget-flag funcionar no back; "expandir todas"
+         e "com transação" pendem de definição. Expandir/recolher por linha segue ativo. -->
 
     <div class="table-wrap">
       <table class="table">
@@ -147,7 +136,7 @@
 
                 <td class="td td--mono">{{ item.code }}</td>
                 <td class="td td--name">{{ item.title }}</td>
-                <td class="td">{{ item.accountType }}</td>
+                <td class="td">{{ accountTypeLabel(item.accountType) }}</td>
                 <td class="td">{{ item.budgetManagement ? 'Sim' : 'Não' }}</td>
                 <td class="td">{{ item.description }}</td>
 
