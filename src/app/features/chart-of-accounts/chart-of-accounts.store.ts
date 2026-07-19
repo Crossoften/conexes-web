@@ -125,6 +125,23 @@ export const AccountsStore = signalStore(
         });
       },
 
+      // FE-PC-3: orçamento em lote — aplica no back e recarrega para refletir budgetManagement.
+      setBudgetFlag(mode: 'all' | 'with_transactions' | 'none') {
+        patchState(store, { loading: true, error: null });
+        svc.setBudgetFlag(mode).subscribe({
+          next: () => {
+            svc.getAll().subscribe({
+              next: items => patchState(store, { items, loading: false }),
+              error: () => patchState(store, { loading: false }),
+            });
+          },
+          error: err => patchState(store, {
+            loading: false,
+            error: err?.error?.message ?? 'Erro ao atualizar orçamento em lote.',
+          }),
+        });
+      },
+
       // ── Filters ──────────────────────────────────────────────────────────
 
       setSearch(search: string) {
@@ -187,6 +204,15 @@ export const AccountsStore = signalStore(
           const next = new Set(s.expanded);
           next.has(id) ? next.delete(id) : next.add(id);
           return { expanded: next };
+        });
+      },
+
+      // FE-PC-3: expandir/recolher todas as contas com filhos.
+      toggleExpandAll() {
+        patchState(store, s => {
+          const withChildren = s.items.filter(a => a.children && a.children.length > 0).map(a => String(a.id));
+          const allExpanded = withChildren.length > 0 && withChildren.every(id => s.expanded.has(id));
+          return { expanded: allExpanded ? new Set<string>() : new Set(withChildren) };
         });
       },
     };

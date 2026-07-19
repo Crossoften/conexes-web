@@ -1,0 +1,126 @@
+<!-- src/app/features/stakeholders/components/stakeholders-import.modal.html -->
+<div class="imp-overlay" (click)="onClose()">
+  <div class="imp-modal" (click)="$event.stopPropagation()">
+
+    <div class="imp-header">
+      <h2>Importação em lote</h2>
+      <button class="imp-close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="imp-tabs">
+      <button class="imp-tab" [class.active]="activeTab() === 'IMPORTAR'" (click)="setTab('IMPORTAR')">Importar</button>
+      <button class="imp-tab" [class.active]="activeTab() === 'LOTES'" (click)="setTab('LOTES')">Lotes de upload</button>
+    </div>
+
+    <div class="imp-body">
+
+      <!-- ══ IMPORTAR ══════════════════════════════════════════════════════════ -->
+      @if (activeTab() === 'IMPORTAR') {
+        <p class="imp-hint">Baixe a planilha-modelo, preencha os stakeholders e envie o arquivo (.xlsx).</p>
+
+        <div class="imp-row">
+          <button class="btn-outline" [disabled]="templateLoading()" (click)="downloadTemplate()">
+            @if (templateLoading()) { Baixando... } @else { Baixar modelo (.xlsx) }
+          </button>
+
+          <label class="btn-outline imp-file">
+            {{ selectedFile()?.name || 'Selecionar arquivo' }}
+            <input type="file" accept=".xlsx,.csv" hidden (change)="onFileSelected($event)">
+          </label>
+
+          <button class="btn-solid" [disabled]="!selectedFile() || uploading()" (click)="upload()">
+            @if (uploading()) { Enviando... } @else { Enviar }
+          </button>
+        </div>
+
+        @if (importError()) {
+          <p class="imp-error">{{ importError() }}</p>
+        }
+
+        @if (summary(); as s) {
+          <div class="imp-summary">
+            <div class="imp-stats">
+              <span class="imp-stat">Total: <strong>{{ s.total }}</strong></span>
+              <span class="imp-stat imp-stat--ok">Sucesso: <strong>{{ s.success }}</strong></span>
+              <span class="imp-stat imp-stat--fail">Falhas: <strong>{{ s.failed }}</strong></span>
+            </div>
+            @if (s.errors?.length) {
+              <table class="imp-table">
+                <thead><tr><th>Linha</th><th>Campo</th><th>Erro</th></tr></thead>
+                <tbody>
+                  @for (e of s.errors; track $index) {
+                    <tr><td>{{ e.row }}</td><td>{{ e.field || '—' }}</td><td>{{ e.message }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="imp-hint">Nenhum erro por linha.</p>
+            }
+          </div>
+        }
+      }
+
+      <!-- ══ LOTES ═════════════════════════════════════════════════════════════ -->
+      @if (activeTab() === 'LOTES') {
+        @if (batchesLoading()) {
+          <p class="imp-hint">Carregando lotes...</p>
+        } @else if (batchesError()) {
+          <p class="imp-error">{{ batchesError() }}</p>
+        } @else if (batches().length === 0) {
+          <p class="imp-hint">Nenhum lote de importação encontrado.</p>
+        } @else {
+          <table class="imp-table">
+            <thead><tr><th>#</th><th>Arquivo</th><th>Total</th><th>Sucesso</th><th>Falhas</th><th></th></tr></thead>
+            <tbody>
+              @for (b of batches(); track b.batchId) {
+                <tr>
+                  <td>{{ b.batchId }}</td>
+                  <td>{{ b.fileName }}</td>
+                  <td>{{ b.total }}</td>
+                  <td class="imp-stat--ok">{{ b.success }}</td>
+                  <td class="imp-stat--fail">{{ b.failed }}</td>
+                  <td><button class="btn-link" (click)="openBatch(b)">Ver erros</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (selectedBatch(); as b) {
+          <div class="imp-overlay imp-overlay--inner" (click)="closeBatch()">
+            <div class="imp-modal imp-modal--sm" (click)="$event.stopPropagation()">
+              <div class="imp-header">
+                <h2>Lote #{{ b.batchId }} — {{ b.fileName }}</h2>
+                <button class="imp-close" (click)="closeBatch()">
+                  <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="imp-body">
+                <div class="imp-stats">
+                  <span class="imp-stat">Total: <strong>{{ b.total }}</strong></span>
+                  <span class="imp-stat imp-stat--ok">Sucesso: <strong>{{ b.success }}</strong></span>
+                  <span class="imp-stat imp-stat--fail">Falhas: <strong>{{ b.failed }}</strong></span>
+                </div>
+                @if (b.errors?.length) {
+                  <table class="imp-table">
+                    <thead><tr><th>Linha</th><th>Campo</th><th>Erro</th></tr></thead>
+                    <tbody>
+                      @for (e of b.errors; track $index) {
+                        <tr><td>{{ e.row }}</td><td>{{ e.field || '—' }}</td><td>{{ e.message }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="imp-hint">Nenhum erro por linha.</p>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+    </div>
+  </div>
+</div>

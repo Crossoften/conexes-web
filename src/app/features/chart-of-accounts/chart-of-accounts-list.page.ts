@@ -6,7 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AccountsStore } from './chart-of-accounts.store';
 import { ChartOfAccountsService } from './chart-of-accounts.service';
 import { ChartOfAccountsDetailModalComponent } from './components/chart-of-accounts-detail.modal';
-import { Account, AccountStatus, AccountType, ACCOUNT_STATUS_CONFIG } from './chart-of-accounts.model';
+import { Account, AccountStatus, AccountType, ACCOUNT_STATUS_CONFIG, ACCOUNT_TYPE_LABELS } from './chart-of-accounts.model';
 
 @Component({
   selector: 'app-chart-of-accounts-list',
@@ -28,12 +28,17 @@ export class ChartOfAccountsListPage implements OnInit {
     { label: 'Inativo',            value: 'Inactive' },
   ];
 
-  // Filtro por Tipo de Conta (coluna "Tipo" = Sintética/Analítica, conforme doc).
+  // Filtro por Tipo de Conta (valores canônicos sem acento; rótulo acentuado).
   readonly typeOptions: { label: string; value: AccountType | '' }[] = [
-    { label: 'Selecione o tipo', value: ''          },
-    { label: 'Sintética',        value: 'Sintética' },
-    { label: 'Analítica',        value: 'Analítica' },
+    { label: 'Selecione o tipo', value: ''           },
+    { label: 'Sintética',        value: 'Sintetica'  },
+    { label: 'Analítica',        value: 'Analitica'  },
   ];
+
+  /** FE-PC-1: rótulo amigável do Tipo de Conta (dado canônico sem acento). */
+  accountTypeLabel(v: string): string {
+    return ACCOUNT_TYPE_LABELS[v] ?? v ?? '—';
+  }
 
   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
