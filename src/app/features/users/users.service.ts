@@ -70,10 +70,11 @@ export class UsersService {
 
   getUsers(filters?: UserFilters): Observable<PaginatedResponse<User>> {
     let params = new HttpParams();
-    if (filters?.skip  != null) params = params.set('skip',  filters.skip);
-    if (filters?.take  != null) params = params.set('take',  filters.take);
-    if (filters?.role)          params = params.set('role',  filters.role);
-    if (filters?.name)          params = params.set('name',  filters.name);
+    if (filters?.skip   != null) params = params.set('skip',   filters.skip);
+    if (filters?.take   != null) params = params.set('take',   filters.take);
+    if (filters?.role)           params = params.set('role',   filters.role);
+    if (filters?.name)           params = params.set('name',   filters.name);
+    if (filters?.status)         params = params.set('status', filters.status);
     return this.http.get<PaginatedResponse<User>>(this.baseUsers, { params });
   }
 
