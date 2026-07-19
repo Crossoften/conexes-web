@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, injec
 import { NgClass } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Account, AccountPayload, ACCOUNT_STATUS_CONFIG, ACCOUNT_TYPE_LABELS } from '../chart-of-accounts.model';
+import { Account, AccountPayload, ACCOUNT_STATUS_CONFIG, ACCOUNT_TYPE_LABELS, CATEGORY_TYPE_LABELS } from '../chart-of-accounts.model';
 import { ChartOfAccountsService } from '../chart-of-accounts.service';
 import { environment } from '../../../../environments/environment';
 
@@ -89,6 +89,11 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
   get accountTypeLabel(): string {
     if (!this.account) return '';
     return this.typeLabels[this.account.accountType] ?? this.account.accountType;
+  }
+
+  get categoryTypeLabel(): string {
+    if (!this.account) return '';
+    return CATEGORY_TYPE_LABELS[this.account.categoryType] ?? this.account.categoryType;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

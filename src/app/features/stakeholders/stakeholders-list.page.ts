@@ -1,11 +1,12 @@
 // src/app/features/stakeholders/stakeholders-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StakeholdersStore } from './stakeholders.store';
 import { StakeholdersService } from './stakeholders.service';
 import { StakeholderDetailModalComponent } from './components/stakeholder-detail.modal';
+import { StakeholdersImportModalComponent } from './components/stakeholders-import.modal';
 import {
   Stakeholder,
   StakeholderListItem,
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-stakeholders-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, StakeholderDetailModalComponent],
+  imports: [FormsModule, NgClass, RouterLink, StakeholderDetailModalComponent, StakeholdersImportModalComponent],
   providers: [StakeholdersStore],
   templateUrl: './stakeholders-list.page.html',
   styleUrl: './stakeholders-list.page.scss',
@@ -113,6 +114,21 @@ export class StakeholdersPage implements OnInit {
 
   onTypeChange(value: string): void {
     this.store.setType(value as StakeholderType | '');
+  }
+
+  // ── FE-S7: Importação em lote ─────────────────────────────────────────────
+  readonly importOpen = signal(false);
+  importTab: 'IMPORTAR' | 'LOTES' = 'IMPORTAR';
+
+  openImport(tab: 'IMPORTAR' | 'LOTES'): void {
+    this.importTab = tab;
+    this.importOpen.set(true);
+  }
+
+  closeImport(): void {
+    this.importOpen.set(false);
+    // recarrega a lista (a importação pode ter criado stakeholders novos)
+    this.store.load();
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
