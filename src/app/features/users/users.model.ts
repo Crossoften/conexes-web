@@ -5,11 +5,11 @@ export type UserRole = 'Master' | 'Admin' | 'Backoffice' | 'EntityManager' | 'Pr
 
 // ── Paginação ─────────────────────────────────────────────────────────────────
 
+// Envelope oficial das listagens do back: { data, count, pages }.
 export interface PaginatedResponse<T> {
   data:  T[];
-  total: number;
-  skip:  number;
-  take:  number;
+  count: number;
+  pages: number;
 }
 
 // ── Permissão de módulo (usada em user e em profile) ──────────────────────────
@@ -84,10 +84,11 @@ export interface EntityLite {
 }
 
 export interface UserFilters {
-  skip?:  number;
-  take?:  number;
-  role?:  string;
-  name?:  string;
+  skip?:   number;
+  take?:   number;
+  role?:   string;
+  name?:   string;
+  status?: string;   // filtro server-side (GET /v1/users aceita status)
 }
 
 export interface UserPayload {

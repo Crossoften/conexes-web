@@ -56,12 +56,8 @@ export class UsersStore {
   readonly usersPagination = computed(() => this.state().usersPagination);
   readonly usersFilters    = computed(() => this.state().usersFilters);
 
-  readonly pageItems = computed(() => {
-    const f = this.state().usersFilters;
-    let items = this.state().users;
-    if (f.status) items = items.filter(u => u.status === f.status);
-    return items;
-  });
+  // FE-U2: status agora é filtrado server-side (junto de name/role) — sem filtro client-side.
+  readonly pageItems = computed(() => this.state().users);
 
   readonly usersTotalPages = computed(() =>
     Math.max(1, Math.ceil(this.state().usersPagination.total / this.state().usersPagination.pageSize))
@@ -97,18 +93,18 @@ export class UsersStore {
   // ── Actions — Users ───────────────────────────────────────────────────────
 
   loadUsers(): void {
-    const { page, pageSize } = this.state().usersPagination;
-    const { name, role }     = this.state().usersFilters;
+    const { page, pageSize }   = this.state().usersPagination;
+    const { name, role, status } = this.state().usersFilters;
     const skip = (page - 1) * pageSize;
 
     this.state.update(s => ({ ...s, usersLoading: true, usersError: null }));
 
-    this.svc.getUsers({ skip, take: pageSize, name: name || undefined, role: role || undefined }).subscribe({
+    this.svc.getUsers({ skip, take: pageSize, name: name || undefined, role: role || undefined, status: status || undefined }).subscribe({
       next: res => this.state.update(s => ({
         ...s,
         users:           res.data  ?? (res as any),
         usersLoading:    false,
-        usersPagination: { ...s.usersPagination, total: res.total ?? (res as any)?.length ?? 0 },
+        usersPagination: { ...s.usersPagination, total: res.count ?? (res as any)?.total ?? (res as any)?.length ?? 0 },
       })),
       error: err => this.state.update(s => ({
         ...s,
@@ -144,7 +140,7 @@ export class UsersStore {
         ...s,
         profiles:           res.data ?? (res as any),
         profilesLoading:    false,
-        profilesPagination: { ...s.profilesPagination, total: res.total ?? (res as any)?.length ?? 0 },
+        profilesPagination: { ...s.profilesPagination, total: res.count ?? (res as any)?.total ?? (res as any)?.length ?? 0 },
       })),
       error: err => this.state.update(s => ({
         ...s,
@@ -195,7 +191,12 @@ export class UsersStore {
   }
 
   setUserStatus(status: string): void {
-    this.state.update(s => ({ ...s, usersFilters: { ...s.usersFilters, status } }));
+    this.state.update(s => ({
+      ...s,
+      usersFilters:    { ...s.usersFilters, status },
+      usersPagination: { ...s.usersPagination, page: 1 },
+    }));
+    this.loadUsers();
   }
 
   // ── Actions — Profiles filters ────────────────────────────────────────────
