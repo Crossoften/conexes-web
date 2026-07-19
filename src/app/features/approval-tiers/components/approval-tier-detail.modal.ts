@@ -2,7 +2,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { NgClass, CurrencyPipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ApprovalTier, ApprovalTierPayload, ApprovalTierType, APPROVAL_TIER_TYPE_LABELS } from '../approval-tiers.model';
+import { ApprovalTier, ApprovalTierPayload, ApprovalTierType, ApprovalScopeOption, APPROVAL_TIER_TYPE_LABELS } from '../approval-tiers.model';
 import { UserItem } from '../approval-tiers.store';
 
 interface LevelOption { value: string; label: string; }
@@ -17,6 +17,9 @@ interface LevelOption { value: string; label: string; }
 export class ApprovalTierDetailModalComponent implements OnChanges {
   @Input() tier:   ApprovalTier | null = null;
   @Input() users:  UserItem[]          = [];
+  @Input() costCenters: ApprovalScopeOption[] = [];
+  @Input() projects:    ApprovalScopeOption[] = [];
+  @Input() activities:  ApprovalScopeOption[] = [];
   @Input() mode:   'view' | 'edit'     = 'view';
   @Input() saving  = false;
   @Input() error:  string | null       = null;
@@ -51,6 +54,9 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
     tierLevel:    ['', Validators.required],
     minValue:     [0,  Validators.required],
     maxValue:     [0,  Validators.required],
+    costCenterId: [''],
+    projectId:    [''],
+    activityId:   [''],
   });
 
   get isCompras(): boolean { return this.form.get('type')?.value === 'COMPRAS'; }
@@ -80,6 +86,9 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
         tierLevel:    this.tier.isManagerTier ? 'manager' : (this.tier.level != null ? String(this.tier.level) : ''),
         minValue:     this.tier.minValue,
         maxValue:     this.tier.maxValue,
+        costCenterId: this.tier.costCenterId != null ? String(this.tier.costCenterId) : '',
+        projectId:    this.tier.projectId    != null ? String(this.tier.projectId)    : '',
+        activityId:   this.tier.activityId   != null ? String(this.tier.activityId)   : '',
       });
       this.applyTypeRules(type);
     }
@@ -144,6 +153,11 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
     if (v.tierLevel === 'manager') payload.isManagerTier = true;
     else if (v.tierLevel)          payload.level = Number(v.tierLevel);
     if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
+    if (v.type === 'COMPRAS') {
+      if (v.costCenterId) payload.costCenterId = Number(v.costCenterId);
+      if (v.projectId)    payload.projectId    = Number(v.projectId);
+      if (v.activityId)   payload.activityId   = Number(v.activityId);
+    }
 
     this.save.emit({ id: this.tier.id, payload });
   }
