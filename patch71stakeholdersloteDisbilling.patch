@@ -1,0 +1,326 @@
+diff --git a/src/app/features/stakeholders/components/stakeholder-detail.modal.html b/src/app/features/stakeholders/components/stakeholder-detail.modal.html
+index e2bbe2b..7472a36 100644
+--- a/src/app/features/stakeholders/components/stakeholder-detail.modal.html
++++ b/src/app/features/stakeholders/components/stakeholder-detail.modal.html
+@@ -328,6 +328,41 @@
+                 </div>
+               </div>
+ 
++              <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
++              @if (isClient) {
++                <h3 class="edit-section-title">Endereço de faturamento</h3>
++                <div class="edit-grid">
++                  <div class="field">
++                    <label class="field-label">CEP</label>
++                    <input class="input" type="text" formControlName="billZipCode">
++                  </div>
++                  <div class="field field--wide">
++                    <label class="field-label">Logradouro</label>
++                    <input class="input" type="text" formControlName="billStreet">
++                  </div>
++                  <div class="field">
++                    <label class="field-label">Número</label>
++                    <input class="input" type="text" formControlName="billNumber">
++                  </div>
++                  <div class="field">
++                    <label class="field-label">Complemento</label>
++                    <input class="input" type="text" formControlName="billComplement">
++                  </div>
++                  <div class="field">
++                    <label class="field-label">Bairro</label>
++                    <input class="input" type="text" formControlName="billDistrict">
++                  </div>
++                  <div class="field">
++                    <label class="field-label">Cidade</label>
++                    <input class="input" type="text" formControlName="billCity">
++                  </div>
++                  <div class="field">
++                    <label class="field-label">Estado</label>
++                    <input class="input" type="text" formControlName="billState">
++                  </div>
++                </div>
++              }
++
+               <h3 class="edit-section-title">Dados bancários</h3>
+               <div class="edit-grid">
+                 <div class="field">
+diff --git a/src/app/features/stakeholders/components/stakeholder-detail.modal.ts b/src/app/features/stakeholders/components/stakeholder-detail.modal.ts
+index f06cf76..9a735ab 100644
+--- a/src/app/features/stakeholders/components/stakeholder-detail.modal.ts
++++ b/src/app/features/stakeholders/components/stakeholder-detail.modal.ts
+@@ -64,6 +64,15 @@ export class StakeholderDetailModalComponent implements OnChanges {
+     addrCity:       [''],
+     addrState:      [''],
+ 
++    // FE-S6: endereço de faturamento (exclusivo de clientes)
++    billZipCode:    [''],
++    billStreet:     [''],
++    billNumber:     [''],
++    billComplement: [''],
++    billDistrict:   [''],
++    billCity:       [''],
++    billState:      [''],
++
+     // Dados bancários [0]
+     bankAccountName:     [''],
+     bankAccountDocument: [''],
+@@ -129,7 +138,9 @@ export class StakeholderDetailModalComponent implements OnChanges {
+   }
+ 
+   private patchForm(s: Stakeholder): void {
+-    const addr    = s.addresses?.[0];
++    // FE-S6: separa endereço principal do de faturamento (isBilling).
++    const addr    = s.addresses?.find(a => !a.isBilling) ?? s.addresses?.[0];
++    const bill    = s.addresses?.find(a => a.isBilling);
+     const bank    = s.bankData?.[0];
+     const contact = s.contacts?.[0];
+     const risk    = s.riskClassification;
+@@ -164,6 +175,14 @@ export class StakeholderDetailModalComponent implements OnChanges {
+       addrCity:       addr?.city       ?? '',
+       addrState:      addr?.state      ?? '',
+ 
++      billZipCode:    bill?.zipCode    ?? '',
++      billStreet:     bill?.street     ?? '',
++      billNumber:     bill?.number     ?? '',
++      billComplement: bill?.complement ?? '',
++      billDistrict:   bill?.district   ?? '',
++      billCity:       bill?.city       ?? '',
++      billState:      bill?.state      ?? '',
++
+       bankAccountName:     bank?.accountName     ?? '',
+       bankAccountDocument: bank?.accountDocument ?? '',
+       bank:                bank?.bank            ?? '',
+@@ -235,7 +254,40 @@ export class StakeholderDetailModalComponent implements OnChanges {
+   }
+ 
+   get primaryAddress() {
+-    return this.stakeholder?.addresses?.[0] ?? null;
++    return this.stakeholder?.addresses?.find(a => !a.isBilling) ?? this.stakeholder?.addresses?.[0] ?? null;
++  }
++
++  /** FE-S6: clientes (Customer/Donor/SupportedProject) têm endereço de faturamento. */
++  get isClient(): boolean {
++    return ['Customer', 'Donor', 'SupportedProject'].includes(this.form.getRawValue().type as string);
++  }
++
++  /** FE-S6: monta o endereço principal (isBilling=false) + faturamento (isBilling=true) quando cliente e completo. */
++  private buildAddresses(v: any) {
++    const main = {
++      zipCode:    v.addrZipCode    ?? '',
++      street:     v.addrStreet     ?? '',
++      number:     v.addrNumber     ?? '',
++      complement: v.addrComplement ?? '',
++      district:   v.addrDistrict   ?? '',
++      city:       v.addrCity       ?? '',
++      state:      v.addrState      ?? '',
++      isBilling:  false,
++    };
++    const billComplete = !!(v.billZipCode && v.billStreet && v.billNumber && v.billDistrict && v.billCity && v.billState);
++    if (this.isClient && billComplete) {
++      return [main, {
++        zipCode:    v.billZipCode,
++        street:     v.billStreet,
++        number:     v.billNumber,
++        complement: v.billComplement ?? '',
++        district:   v.billDistrict,
++        city:       v.billCity,
++        state:      v.billState,
++        isBilling:  true,
++      }];
++    }
++    return [main];
+   }
+ 
+   get fullAddress(): string {
+@@ -381,15 +433,7 @@ export class StakeholderDetailModalComponent implements OnChanges {
+       standardApportionment: v.standardApportionment,
+       accountId:             v.accountId,
+ 
+-      addresses: [{
+-        zipCode:    v.addrZipCode    ?? '',
+-        street:     v.addrStreet     ?? '',
+-        number:     v.addrNumber     ?? '',
+-        complement: v.addrComplement ?? '',
+-        district:   v.addrDistrict   ?? '',
+-        city:       v.addrCity       ?? '',
+-        state:      v.addrState      ?? '',
+-      }],
++      addresses: this.buildAddresses(v),
+ 
+       bankData,
+       contacts,
+diff --git a/src/app/features/stakeholders/new/stakeholder-new.form.ts b/src/app/features/stakeholders/new/stakeholder-new.form.ts
+index 2408245..4795328 100644
+--- a/src/app/features/stakeholders/new/stakeholder-new.form.ts
++++ b/src/app/features/stakeholders/new/stakeholder-new.form.ts
+@@ -24,6 +24,16 @@ export function buildStakeholderForm() {
+     district:    [''],
+     city:        [''],
+     state:       [''],
++
++    // FE-S6: endereço de faturamento (exclusivo de clientes)
++    billingZipCode:    [''],
++    billingAddress:    [''],
++    billingNum:        [''],
++    billingComplement: [''],
++    billingDistrict:   [''],
++    billingCity:       [''],
++    billingState:      [''],
++
+     phone:       [''],
+     mobile:      [''],
+     email:       [''],
+diff --git a/src/app/features/stakeholders/new/step1/step1.component.html b/src/app/features/stakeholders/new/step1/step1.component.html
+index 1c5aff7..eeeba37 100644
+--- a/src/app/features/stakeholders/new/step1/step1.component.html
++++ b/src/app/features/stakeholders/new/step1/step1.component.html
+@@ -130,6 +130,43 @@
+ 
+     </div>
+ 
++    <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
++    @if (isClient) {
++      <h4 class="subsection-title" style="margin:16px 0 8px;">Endereço de faturamento</h4>
++      <div class="form-row form-row--address">
++        <div class="field">
++          <label class="field-label">CEP</label>
++          <input class="input" type="text" placeholder="00000-000" formControlName="billingZipCode">
++        </div>
++        <div class="field">
++          <label class="field-label">Endereço</label>
++          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingAddress">
++        </div>
++        <div class="field">
++          <label class="field-label">Nro</label>
++          <input class="input" type="text" placeholder="Nro" formControlName="billingNum">
++        </div>
++        <div class="field">
++          <label class="field-label">Complemento</label>
++          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingComplement">
++        </div>
++      </div>
++      <div class="form-row form-row--3">
++        <div class="field">
++          <label class="field-label">Bairro</label>
++          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingDistrict">
++        </div>
++        <div class="field">
++          <label class="field-label">Cidade</label>
++          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingCity">
++        </div>
++        <div class="field">
++          <label class="field-label">UF</label>
++          <input class="input" type="text" placeholder="UF" maxlength="2" formControlName="billingState">
++        </div>
++      </div>
++    }
++
+     <!-- Linha 3: Telefone | Celular | E-mail -->
+     <div class="form-row form-row--3">
+ 
+diff --git a/src/app/features/stakeholders/new/step1/step1.component.ts b/src/app/features/stakeholders/new/step1/step1.component.ts
+index c8ff20a..ca2cb8a 100644
+--- a/src/app/features/stakeholders/new/step1/step1.component.ts
++++ b/src/app/features/stakeholders/new/step1/step1.component.ts
+@@ -24,6 +24,11 @@ export class Step1Component {
+ 
+   get f() { return (this.form() as any).controls; }
+ 
++  /** FE-S6: clientes (Customer/Donor/SupportedProject) têm endereço de faturamento. */
++  get isClient(): boolean {
++    return ['Customer', 'Donor', 'SupportedProject'].includes(this.f['type']?.value);
++  }
++
+   isInvalid(field: string): boolean {
+     const ctrl = this.f[field];
+     return ctrl?.invalid && ctrl?.touched;
+diff --git a/src/app/features/stakeholders/stakeholders.mapper.ts b/src/app/features/stakeholders/stakeholders.mapper.ts
+index 61439b3..2d9dfad 100644
+--- a/src/app/features/stakeholders/stakeholders.mapper.ts
++++ b/src/app/features/stakeholders/stakeholders.mapper.ts
+@@ -8,6 +8,7 @@ import {
+   AccountType,
+   PixType,
+   PaymentMethod,
++  CLIENT_TYPES,
+ } from './stakeholders.model';
+ 
+ // ── Enums válidos do back ─────────────────────────────────────────────────────
+@@ -73,6 +74,36 @@ function buildAddress(s1: any): StakeholderAddress[] {
+     district,
+     city,
+     state,
++    isBilling: false,
++  }];
++}
++
++/**
++ * FE-S6: endereço de faturamento (só clientes). Mesmo critério de bloco completo;
++ * marcado com isBilling=true. Só entra quando o tipo é cliente e o bloco está completo.
++ */
++function buildBillingAddress(s1: any, type: StakeholderType): StakeholderAddress[] {
++  if (!CLIENT_TYPES.includes(type)) return [];
++
++  const zipCode  = s1.billingZipCode?.trim()    ?? '';
++  const street   = s1.billingAddress?.trim()    ?? '';
++  const number   = s1.billingNum?.trim()        ?? '';
++  const district = s1.billingDistrict?.trim()   ?? '';
++  const city     = s1.billingCity?.trim()       ?? '';
++  const state    = s1.billingState?.trim()      ?? '';
++
++  const complete = !!(zipCode && street && number && district && city && state);
++  if (!complete) return [];
++
++  return [{
++    zipCode,
++    street,
++    number,
++    complement: s1.billingComplement?.trim() ?? '',
++    district,
++    city,
++    state,
++    isBilling: true,
+   }];
+ }
+ 
+@@ -133,10 +164,12 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
+   const s2 = formValue.step2 ?? {};
+   const s3 = formValue.step3 ?? {};
+ 
++  // type deve ser um enum válido — se o usuário digitou texto livre, usa 'Other'
++  const type = validEnum(s1.type, VALID_TYPES, 'Other');
++
+   return {
+     code:     s1.code?.trim()     ?? '',
+-    // type deve ser um enum válido — se o usuário digitou texto livre, usa 'Other'
+-    type:     validEnum(s1.type, VALID_TYPES, 'Other'),
++    type,
+     personType:            s1.personType     || 'PJ',
+     document:              s1.document?.trim()       ?? '',
+     name:                  s1.name?.trim()           ?? '',
+@@ -152,7 +185,7 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
+     standardApportionment: s1.apportionDefault?.trim() ?? '',
+     accountId: s1.accountingAccount ? Number(s1.accountingAccount) : 0,
+ 
+-    addresses: buildAddress(s1),
++    addresses: [...buildAddress(s1), ...buildBillingAddress(s1, type)],
+     bankData:  buildBankData(s1),
+ 
+     riskClassification: {
+diff --git a/src/app/features/stakeholders/stakeholders.model.ts b/src/app/features/stakeholders/stakeholders.model.ts
+index 2d1c99e..8f401b6 100644
+--- a/src/app/features/stakeholders/stakeholders.model.ts
++++ b/src/app/features/stakeholders/stakeholders.model.ts
+@@ -41,8 +41,12 @@ export interface StakeholderAddress {
+   district:   string;
+   city:       string;
+   state:      string;
++  isBilling?: boolean;   // FE-S6: endereço de faturamento (exclusivo de clientes)
+ }
+ 
++// FE-S6: tipos considerados "cliente" (têm endereço de faturamento).
++export const CLIENT_TYPES: StakeholderType[] = ['Customer', 'Donor', 'SupportedProject'];
++
+ export interface StakeholderBankData {
+   accountName:     string;
+   accountDocument: string;

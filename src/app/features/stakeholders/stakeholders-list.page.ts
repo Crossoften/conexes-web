@@ -11,7 +11,11 @@ import {
   StakeholderListItem,
   StakeholderPayload,
   StakeholderStatus,
+  StakeholderType,
+  StakeholderView,
   PersonType,
+  VIEW_TYPES,
+  STAKEHOLDER_TYPE_LABELS,
 } from './stakeholders.model';
 
 @Component({
@@ -41,6 +45,20 @@ export class StakeholdersPage implements OnInit {
     { label: 'Pessoa Jurídica',  value: 'PJ'    },
     { label: 'Outro',            value: 'Other' },
   ];
+
+  // FE-S2: visões (Fornecedores/Clientes) e filtro de tipo dependente da visão.
+  readonly viewOptions = [
+    { label: 'Fornecedores', value: 'suppliers' },
+    { label: 'Clientes',     value: 'clients'   },
+  ];
+
+  readonly typeOptions = computed(() => {
+    const view = this.store.filters().view;
+    return [
+      { label: 'Todos os tipos', value: '' },
+      ...VIEW_TYPES[view].map(t => ({ label: STAKEHOLDER_TYPE_LABELS[t], value: t })),
+    ];
+  });
 
   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
@@ -87,6 +105,14 @@ export class StakeholdersPage implements OnInit {
 
   onPersonTypeChange(value: string): void {
     this.store.setPersonType(value as PersonType | '');
+  }
+
+  onViewChange(value: string): void {
+    this.store.setView(value as StakeholderView);
+  }
+
+  onTypeChange(value: string): void {
+    this.store.setType(value as StakeholderType | '');
   }
 
   // ── Export ────────────────────────────────────────────────────────────────

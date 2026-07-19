@@ -130,6 +130,43 @@
 
     </div>
 
+    <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
+    @if (isClient) {
+      <h4 class="subsection-title" style="margin:16px 0 8px;">Endereço de faturamento</h4>
+      <div class="form-row form-row--address">
+        <div class="field">
+          <label class="field-label">CEP</label>
+          <input class="input" type="text" placeholder="00000-000" formControlName="billingZipCode">
+        </div>
+        <div class="field">
+          <label class="field-label">Endereço</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingAddress">
+        </div>
+        <div class="field">
+          <label class="field-label">Nro</label>
+          <input class="input" type="text" placeholder="Nro" formControlName="billingNum">
+        </div>
+        <div class="field">
+          <label class="field-label">Complemento</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingComplement">
+        </div>
+      </div>
+      <div class="form-row form-row--3">
+        <div class="field">
+          <label class="field-label">Bairro</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingDistrict">
+        </div>
+        <div class="field">
+          <label class="field-label">Cidade</label>
+          <input class="input" type="text" placeholder="Digite aqui..." formControlName="billingCity">
+        </div>
+        <div class="field">
+          <label class="field-label">UF</label>
+          <input class="input" type="text" placeholder="UF" maxlength="2" formControlName="billingState">
+        </div>
+      </div>
+    }
+
     <!-- Linha 3: Telefone | Celular | E-mail -->
     <div class="form-row form-row--3">
 

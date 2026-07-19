@@ -328,6 +328,41 @@
                 </div>
               </div>
 
+              <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
+              @if (isClient) {
+                <h3 class="edit-section-title">Endereço de faturamento</h3>
+                <div class="edit-grid">
+                  <div class="field">
+                    <label class="field-label">CEP</label>
+                    <input class="input" type="text" formControlName="billZipCode">
+                  </div>
+                  <div class="field field--wide">
+                    <label class="field-label">Logradouro</label>
+                    <input class="input" type="text" formControlName="billStreet">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Número</label>
+                    <input class="input" type="text" formControlName="billNumber">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Complemento</label>
+                    <input class="input" type="text" formControlName="billComplement">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Bairro</label>
+                    <input class="input" type="text" formControlName="billDistrict">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Cidade</label>
+                    <input class="input" type="text" formControlName="billCity">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Estado</label>
+                    <input class="input" type="text" formControlName="billState">
+                  </div>
+                </div>
+              }
+
               <h3 class="edit-section-title">Dados bancários</h3>
               <div class="edit-grid">
                 <div class="field">
