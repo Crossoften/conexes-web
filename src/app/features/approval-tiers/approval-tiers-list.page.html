@@ -27,6 +27,17 @@
           </svg>
         </div>
 
+        <div class="select-wrap">
+          <select class="select select--pill"
+            [value]="store.filters().status"
+            (change)="store.setStatus($any($event.target).value)">
+            @for (opt of statusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
         <button class="btn-outline btn-pill"
           [disabled]="store.exporting()"
           (click)="onExport()">
@@ -61,6 +72,7 @@
                 <span class="checkbox__box"></span>
               </label>
             </th>
+            <th class="th th--sortable" (click)="store.setSort('type')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('type')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('level')">Nível <span class="sort-icon" [ngClass]="'sort--' + getSortState('level')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('purchaseRole')">Papel <span class="sort-icon" [ngClass]="'sort--' + getSortState('purchaseRole')"></span></th>
@@ -74,18 +86,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td colspan="8"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td colspan="9"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="8">
+              <td class="td--empty" colspan="9">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" colspan="8">
+              <td class="td--empty" colspan="9">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -101,9 +113,10 @@
                     <span class="checkbox__box"></span>
                   </label>
                 </td>
-                <td class="td td--mono">{{ item.level }}</td>
+                <td class="td">{{ typeLabel(item) }}</td>
+                <td class="td td--mono">{{ levelLabel(item) }}</td>
                 <td class="td td--name">{{ item.description }}</td>
-                <td class="td">{{ roleLabel(item.purchaseRole) }}</td>
+                <td class="td">{{ roleLabel(item) }}</td>
                 <td class="td">{{ store.getUserName(item.userId) }}</td>
                 <td class="td td--mono">{{ item.minValue | currency:'BRL' }}</td>
                 <td class="td td--mono">{{ item.maxValue | currency:'BRL' }}</td>

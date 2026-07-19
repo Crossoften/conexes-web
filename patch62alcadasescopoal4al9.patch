@@ -1,0 +1,381 @@
+diff --git a/src/app/features/approval-tiers/approval-tiers-list.page.html b/src/app/features/approval-tiers/approval-tiers-list.page.html
+index bff9d07..d1873cf 100644
+--- a/src/app/features/approval-tiers/approval-tiers-list.page.html
++++ b/src/app/features/approval-tiers/approval-tiers-list.page.html
+@@ -182,6 +182,9 @@
+   <app-approval-tier-detail-modal
+     [tier]="store.detailModal().tier"
+     [users]="store.users()"
++    [costCenters]="store.costCenters()"
++    [projects]="store.projects()"
++    [activities]="store.activities()"
+     [mode]="store.detailModal().mode"
+     [saving]="store.detailModal().saving"
+     [error]="store.detailModal().error"
+diff --git a/src/app/features/approval-tiers/approval-tiers.mock.ts b/src/app/features/approval-tiers/approval-tiers.mock.ts
+deleted file mode 100644
+index 9ff90bd..0000000
+--- a/src/app/features/approval-tiers/approval-tiers.mock.ts
++++ /dev/null
+@@ -1,18 +0,0 @@
+-// src/app/features/approval-tiers/approval-tiers.mock.ts
+-import { ApprovalTier } from './approval-tiers.model';
+-
+-export const APPROVAL_TIERS_MOCK: ApprovalTier[] = Array.from({ length: 25 }, (_, i) => {
+-  // Simula os níveis 1, 2 e 3 como na imagem
+-  let level = 3;
+-  if (i === 0) level = 1;
+-  else if (i === 1 || i === 2) level = 2;
+-
+-  return {
+-    id: `tier-${i + 1}`,
+-    level: level,
+-    description: 'EXEMPLO DESCRIÇÃO',
+-    approver: 'NOME APROVADOR',
+-    valueRange: '$$$ - $$$',
+-    status: i % 4 === 0 ? 'INACTIVE' : 'ACTIVE', // Status simulado para os filtros
+-  };
+-});
+\ No newline at end of file
+diff --git a/src/app/features/approval-tiers/approval-tiers.model.ts b/src/app/features/approval-tiers/approval-tiers.model.ts
+index 1af4b22..a0d9950 100644
+--- a/src/app/features/approval-tiers/approval-tiers.model.ts
++++ b/src/app/features/approval-tiers/approval-tiers.model.ts
+@@ -17,6 +17,9 @@ export interface ApprovalTier {
+   purchaseRole?: ApprovalPurchaseRole | string;   // só COMPRAS
+   userId:        number;
+   status?:       ApprovalTierStatus;
++  costCenterId?: number;             // escopo — só COMPRAS
++  projectId?:    number;             // escopo — só COMPRAS
++  activityId?:   number;             // escopo — só COMPRAS
+   createdAt?:    string;
+   updatedAt?:    string;
+ }
+@@ -32,6 +35,15 @@ export interface ApprovalTierPayload {
+   maxValue:      number;
+   purchaseRole?: string;             // obrigatório em COMPRAS; omitido em FINANCEIRO
+   userId:        number;
++  costCenterId?: number;
++  projectId?:    number;
++  activityId?:   number;
++}
++
++/** Item genérico de lookup (centro de custo / projeto / atividade). */
++export interface ApprovalScopeOption {
++  id:   number;
++  name: string;
+ }
+ 
+ // ── Labels e configs de UI ────────────────────────────────────────────────────
+diff --git a/src/app/features/approval-tiers/approval-tiers.service.ts b/src/app/features/approval-tiers/approval-tiers.service.ts
+index ffe49a1..7059ab6 100644
+--- a/src/app/features/approval-tiers/approval-tiers.service.ts
++++ b/src/app/features/approval-tiers/approval-tiers.service.ts
+@@ -1,9 +1,9 @@
+ // src/app/features/approval-tiers/approval-tiers.service.ts
+ import { Injectable, inject } from '@angular/core';
+ import { HttpClient } from '@angular/common/http';
+-import { Observable } from 'rxjs';
++import { Observable, map } from 'rxjs';
+ import { environment } from '../../../environments/environment';
+-import { ApprovalTier, ApprovalTierPayload } from './approval-tiers.model';
++import { ApprovalTier, ApprovalTierPayload, ApprovalScopeOption } from './approval-tiers.model';
+ 
+ export interface UserItem { id: number; name: string; email?: string; }
+ 
+@@ -61,4 +61,35 @@ export class ApprovalTiersService {
+     if (params?.take != null) queryParams['take'] = String(params.take);
+     return this.http.get<PaginatedResponse<UserItem> | UserItem[]>(this.usersBase, { params: queryParams });
+   }
++
++  // ── AL-4: lookups de escopo (centro de custo / projeto / atividade) ─────────
++  private projectsBase = `${environment.apiUrl}/v1/projects`;
++
++  getCostCenters(): Observable<ApprovalScopeOption[]> {
++    return this.scopeLookup({ type: 'centro_de_custo', take: '500' });
++  }
++
++  getProjects(): Observable<ApprovalScopeOption[]> {
++    return this.scopeLookup({ take: '500' });
++  }
++
++  getActivities(): Observable<ApprovalScopeOption[]> {
++    return this.scopeLookup({ kind: 'atividade', take: '500' });
++  }
++
++  private scopeLookup(params: Record<string, string>): Observable<ApprovalScopeOption[]> {
++    return this.http
++      .get<unknown>(this.projectsBase, { params })
++      .pipe(map(res => {
++        const rows: unknown[] = Array.isArray(res)
++          ? res
++          : ((res as { data?: unknown[] })?.data ?? []);
++        return rows
++          .map(r => {
++            const o = r as Record<string, unknown>;
++            return { id: Number(o['id']), name: String(o['name'] ?? o['title'] ?? o['id']) };
++          })
++          .filter(o => !isNaN(o.id));
++      }));
++  }
+ }
+\ No newline at end of file
+diff --git a/src/app/features/approval-tiers/approval-tiers.store.ts b/src/app/features/approval-tiers/approval-tiers.store.ts
+index 45859e1..4d9dc94 100644
+--- a/src/app/features/approval-tiers/approval-tiers.store.ts
++++ b/src/app/features/approval-tiers/approval-tiers.store.ts
+@@ -1,6 +1,6 @@
+ // src/app/features/approval-tiers/approval-tiers.store.ts
+ import { Injectable, computed, signal, inject } from '@angular/core';
+-import { ApprovalTier, ApprovalTierPayload } from './approval-tiers.model';
++import { ApprovalTier, ApprovalTierPayload, ApprovalScopeOption } from './approval-tiers.model';
+ import { ApprovalTiersService } from './approval-tiers.service';
+ 
+ export interface UserItem { id: number; name: string; email?: string; }
+@@ -8,6 +8,9 @@ export interface UserItem { id: number; name: string; email?: string; }
+ interface State {
+   items:       ApprovalTier[];
+   users:       UserItem[];
++  costCenters: ApprovalScopeOption[];
++  projects:    ApprovalScopeOption[];
++  activities:  ApprovalScopeOption[];
+   loading:     boolean;
+   error:       string | null;
+   filters:     { search: string; status: string };
+@@ -38,6 +41,9 @@ export class ApprovalTiersStore {
+   private readonly state = signal<State>({
+     items:       [],
+     users:       [],
++    costCenters: [],
++    projects:    [],
++    activities:  [],
+     loading:     false,
+     error:       null,
+     filters:     { search: '', status: '' },
+@@ -70,6 +76,9 @@ export class ApprovalTiersStore {
+   readonly pagination  = computed(() => this.state().pagination);
+   readonly selectedIds = computed(() => this.state().selectedIds);
+   readonly users       = computed(() => this.state().users);
++  readonly costCenters = computed(() => this.state().costCenters);
++  readonly projects    = computed(() => this.state().projects);
++  readonly activities  = computed(() => this.state().activities);
+   readonly detailModal = computed(() => this.state().detailModal);
+   readonly deleteModal = computed(() => this.state().deleteModal);
+   readonly exporting   = computed(() => this.state().exporting);
+@@ -170,6 +179,11 @@ export class ApprovalTiersStore {
+         tryFinish();
+       },
+     });
++
++    // AL-4: lookups de escopo (fire-and-forget; não bloqueiam a listagem).
++    this.svc.getCostCenters().subscribe({ next: c => this.state.update(s => ({ ...s, costCenters: c })), error: () => {} });
++    this.svc.getProjects().subscribe({   next: p => this.state.update(s => ({ ...s, projects: p })),    error: () => {} });
++    this.svc.getActivities().subscribe({ next: a => this.state.update(s => ({ ...s, activities: a })),  error: () => {} });
+   }
+ 
+   // ── Filters ───────────────────────────────────────────────────────────────
+diff --git a/src/app/features/approval-tiers/components/approval-tier-detail.modal.html b/src/app/features/approval-tiers/components/approval-tier-detail.modal.html
+index 3a031d7..911a7c0 100644
+--- a/src/app/features/approval-tiers/components/approval-tier-detail.modal.html
++++ b/src/app/features/approval-tiers/components/approval-tier-detail.modal.html
+@@ -162,6 +162,41 @@
+               </div>
+             </div>
+ 
++            @if (isCompras) {
++              <div class="form-row grid-cols-3">
++                <div class="form-group">
++                  <label class="form-label">Centro de custo</label>
++                  <div class="select-wrap">
++                    <select class="form-control" formControlName="costCenterId">
++                      <option value="">Todos (opcional)</option>
++                      @for (o of costCenters; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                    </select>
++                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                  </div>
++                </div>
++                <div class="form-group">
++                  <label class="form-label">Projeto</label>
++                  <div class="select-wrap">
++                    <select class="form-control" formControlName="projectId">
++                      <option value="">Todos (opcional)</option>
++                      @for (o of projects; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                    </select>
++                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                  </div>
++                </div>
++                <div class="form-group">
++                  <label class="form-label">Atividade</label>
++                  <div class="select-wrap">
++                    <select class="form-control" formControlName="activityId">
++                      <option value="">Todas (opcional)</option>
++                      @for (o of activities; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                    </select>
++                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                  </div>
++                </div>
++              </div>
++            }
++
+           </div>
+         </form>
+       }
+diff --git a/src/app/features/approval-tiers/components/approval-tier-detail.modal.ts b/src/app/features/approval-tiers/components/approval-tier-detail.modal.ts
+index 7df9083..079ef5c 100644
+--- a/src/app/features/approval-tiers/components/approval-tier-detail.modal.ts
++++ b/src/app/features/approval-tiers/components/approval-tier-detail.modal.ts
+@@ -2,7 +2,7 @@
+ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
+ import { NgClass, CurrencyPipe } from '@angular/common';
+ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+-import { ApprovalTier, ApprovalTierPayload, ApprovalTierType, APPROVAL_TIER_TYPE_LABELS } from '../approval-tiers.model';
++import { ApprovalTier, ApprovalTierPayload, ApprovalTierType, ApprovalScopeOption, APPROVAL_TIER_TYPE_LABELS } from '../approval-tiers.model';
+ import { UserItem } from '../approval-tiers.store';
+ 
+ interface LevelOption { value: string; label: string; }
+@@ -17,6 +17,9 @@ interface LevelOption { value: string; label: string; }
+ export class ApprovalTierDetailModalComponent implements OnChanges {
+   @Input() tier:   ApprovalTier | null = null;
+   @Input() users:  UserItem[]          = [];
++  @Input() costCenters: ApprovalScopeOption[] = [];
++  @Input() projects:    ApprovalScopeOption[] = [];
++  @Input() activities:  ApprovalScopeOption[] = [];
+   @Input() mode:   'view' | 'edit'     = 'view';
+   @Input() saving  = false;
+   @Input() error:  string | null       = null;
+@@ -51,6 +54,9 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
+     tierLevel:    ['', Validators.required],
+     minValue:     [0,  Validators.required],
+     maxValue:     [0,  Validators.required],
++    costCenterId: [''],
++    projectId:    [''],
++    activityId:   [''],
+   });
+ 
+   get isCompras(): boolean { return this.form.get('type')?.value === 'COMPRAS'; }
+@@ -80,6 +86,9 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
+         tierLevel:    this.tier.isManagerTier ? 'manager' : (this.tier.level != null ? String(this.tier.level) : ''),
+         minValue:     this.tier.minValue,
+         maxValue:     this.tier.maxValue,
++        costCenterId: this.tier.costCenterId != null ? String(this.tier.costCenterId) : '',
++        projectId:    this.tier.projectId    != null ? String(this.tier.projectId)    : '',
++        activityId:   this.tier.activityId   != null ? String(this.tier.activityId)   : '',
+       });
+       this.applyTypeRules(type);
+     }
+@@ -144,6 +153,11 @@ export class ApprovalTierDetailModalComponent implements OnChanges {
+     if (v.tierLevel === 'manager') payload.isManagerTier = true;
+     else if (v.tierLevel)          payload.level = Number(v.tierLevel);
+     if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
++    if (v.type === 'COMPRAS') {
++      if (v.costCenterId) payload.costCenterId = Number(v.costCenterId);
++      if (v.projectId)    payload.projectId    = Number(v.projectId);
++      if (v.activityId)   payload.activityId   = Number(v.activityId);
++    }
+ 
+     this.save.emit({ id: this.tier.id, payload });
+   }
+diff --git a/src/app/features/approval-tiers/new/approval-tiers-new.page.html b/src/app/features/approval-tiers/new/approval-tiers-new.page.html
+index 797623a..716e3fd 100644
+--- a/src/app/features/approval-tiers/new/approval-tiers-new.page.html
++++ b/src/app/features/approval-tiers/new/approval-tiers-new.page.html
+@@ -125,6 +125,41 @@
+ 
+           </div>
+ 
++          @if (isCompras) {
++            <div class="form-row grid-cols-3">
++              <div class="form-group">
++                <label>Centro de custo</label>
++                <div class="select-wrap">
++                  <select class="form-control" formControlName="costCenterId">
++                    <option value="">Todos (opcional)</option>
++                    @for (o of costCenters(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                  </select>
++                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                </div>
++              </div>
++              <div class="form-group">
++                <label>Projeto</label>
++                <div class="select-wrap">
++                  <select class="form-control" formControlName="projectId">
++                    <option value="">Todos (opcional)</option>
++                    @for (o of projects(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                  </select>
++                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                </div>
++              </div>
++              <div class="form-group">
++                <label>Atividade</label>
++                <div class="select-wrap">
++                  <select class="form-control" formControlName="activityId">
++                    <option value="">Todas (opcional)</option>
++                    @for (o of activities(); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
++                  </select>
++                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
++                </div>
++              </div>
++            </div>
++          }
++
+         </div>
+ 
+       </form>
+diff --git a/src/app/features/approval-tiers/new/approval-tiers-new.page.ts b/src/app/features/approval-tiers/new/approval-tiers-new.page.ts
+index 312de48..5a9046d 100644
+--- a/src/app/features/approval-tiers/new/approval-tiers-new.page.ts
++++ b/src/app/features/approval-tiers/new/approval-tiers-new.page.ts
+@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
+ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+ import { NgClass } from '@angular/common';
+ import { ApprovalTiersService } from '../approval-tiers.service';
+-import { ApprovalTierPayload, ApprovalTierType } from '../approval-tiers.model';
++import { ApprovalTierPayload, ApprovalTierType, ApprovalScopeOption } from '../approval-tiers.model';
+ 
+ interface UserItem { id: number; name: string; email?: string; }
+ interface LevelOption { value: string; label: string; }
+@@ -24,6 +24,9 @@ export class ApprovalTiersNewPage implements OnInit {
+   readonly loading      = signal(false);
+   readonly errorMsg     = signal<string | null>(null);
+   readonly users        = signal<UserItem[]>([]);
++  readonly costCenters  = signal<ApprovalScopeOption[]>([]);
++  readonly projects     = signal<ApprovalScopeOption[]>([]);
++  readonly activities   = signal<ApprovalScopeOption[]>([]);
+   readonly loadingLists = signal(true);
+ 
+   readonly purchaseRoleOptions = [
+@@ -49,6 +52,9 @@ export class ApprovalTiersNewPage implements OnInit {
+     tierLevel:    ['', Validators.required],
+     minValue:     ['', Validators.required],
+     maxValue:     ['', Validators.required],
++    costCenterId: [''],
++    projectId:    [''],
++    activityId:   [''],
+   });
+ 
+   /** Compras: papel de compra é obrigatório; Financeiro: campo não se aplica. */
+@@ -84,6 +90,11 @@ export class ApprovalTiersNewPage implements OnInit {
+       },
+       error: () => this.loadingLists.set(false),
+     });
++
++    // AL-4: lookups de escopo (opcionais, só COMPRAS).
++    this.svc.getCostCenters().subscribe({ next: c => this.costCenters.set(c), error: () => {} });
++    this.svc.getProjects().subscribe({   next: p => this.projects.set(p),    error: () => {} });
++    this.svc.getActivities().subscribe({ next: a => this.activities.set(a),  error: () => {} });
+   }
+ 
+   // ── Handlers ─────────────────────────────────────────────────────────────
+@@ -132,6 +143,12 @@ export class ApprovalTiersNewPage implements OnInit {
+     else if (v.tierLevel)          payload.level = Number(v.tierLevel);
+     // Papel de compra só em COMPRAS (o back ignora em FINANCEIRO).
+     if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
++    // Escopo (opcional) só em COMPRAS.
++    if (v.type === 'COMPRAS') {
++      if (v.costCenterId) payload.costCenterId = Number(v.costCenterId);
++      if (v.projectId)    payload.projectId    = Number(v.projectId);
++      if (v.activityId)   payload.activityId   = Number(v.activityId);
++    }
+ 
+     this.svc.create(payload).subscribe({
+       next: () => {
