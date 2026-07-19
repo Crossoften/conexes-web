@@ -36,15 +36,6 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
-      <button class="btn-outline btn-pill">
-        Exportar
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <polyline points="9 15 12 18 15 15"></polyline>
-        </svg>
-      </button>
     </div>
 
     <div class="table-wrap">
@@ -55,7 +46,6 @@
             <th class="th th--sortable" (click)="store.setSort('typeId')">Tipo/ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('typeId')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('title')">Titulo <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('costCenter')">Centro de custo <span class="sort-icon" [ngClass]="'sort--' + getSortState('costCenter')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('group')">Grupo <span class="sort-icon" [ngClass]="'sort--' + getSortState('group')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('requester')">Requisitante <span class="sort-icon" [ngClass]="'sort--' + getSortState('requester')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('stage')">Etapa <span class="sort-icon" [ngClass]="'sort--' + getSortState('stage')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('reqDate')">Data Requisição/<br>Entrega <span class="sort-icon" [ngClass]="'sort--' + getSortState('reqDate')"></span></th>
@@ -65,9 +55,9 @@
         </thead>
         <tbody>
           @if (store.loading()) {
-            <tr><td class="td td--state" colspan="10">Carregando requisições…</td></tr>
+            <tr><td class="td td--state" colspan="9">Carregando requisições…</td></tr>
           } @else if (store.error()) {
-            <tr><td class="td td--state td--error" colspan="10">
+            <tr><td class="td td--state td--error" colspan="9">
               {{ store.error() }}
               <button type="button" class="link-retry" (click)="store.load()">Tentar novamente</button>
             </td></tr>
@@ -78,7 +68,6 @@
               <td class="td td--mono">{{ item.typeId }}</td>
               <td class="td td--name">{{ item.title }}</td>
               <td class="td">{{ item.costCenter }}</td>
-              <td class="td">{{ item.group }}</td>
               <td class="td">{{ item.requester }}</td>
               <td class="td">{{ item.stage }}</td>
               
@@ -123,7 +112,7 @@
             </tr>
           } @empty {
             @if (!store.loading() && !store.error()) {
-              <tr><td class="td td--state" colspan="10">Nenhuma requisição encontrada.</td></tr>
+              <tr><td class="td td--state" colspan="9">Nenhuma requisição encontrada.</td></tr>
             }
           }
         </tbody>
@@ -161,6 +150,7 @@
       [request]="act.request"
       [kind]="act.kind"
       [users]="store.users()"
+      [approvalLimits]="store.approvalLimits()"
       [submitting]="store.actionSubmitting()"
       (close)="store.closeAction()"
       (confirm)="onActionConfirm($event)">

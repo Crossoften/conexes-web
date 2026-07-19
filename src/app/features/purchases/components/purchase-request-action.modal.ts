@@ -7,6 +7,7 @@ import {
   PurchaseActionKind,
   PurchaseActionResult,
   ApproverLevel,
+  ApprovalLimit,
 } from '../purchases.model';
 
 interface ActionConfig {
@@ -33,6 +34,13 @@ const ACTION_CONFIG: Record<PurchaseActionKind, ActionConfig> = {
     subtitle: 'Requisição a ser reprovada.',
     warning: 'Ao reprovar, a requisição retorna ao requisitante para ajustes. Informe o motivo da reprovação abaixo.',
     reasonLabel: 'Motivo da reprovação',
+    reasonRequired: true,
+  },
+  'request-changes': {
+    title: 'Solicitar ajustes',
+    subtitle: 'Requisição a ser devolvida para ajustes.',
+    warning: 'A requisição volta ao requisitante como "Aguardando ajustes"; ele poderá editar e reenviar. Descreva o que precisa ser ajustado.',
+    reasonLabel: 'O que precisa ser ajustado',
     reasonRequired: true,
   },
   restart: {
@@ -75,6 +83,7 @@ export class PurchaseRequestActionModalComponent implements OnChanges {
   @Input() request: PurchaseRequest | null = null;
   @Input() kind: PurchaseActionKind = 'cancel';
   @Input() users: PurchaseRef[] = [];
+  @Input() approvalLimits: ApprovalLimit[] = [];
   @Input() submitting = false;
 
   @Output() close   = new EventEmitter<void>();
@@ -94,6 +103,28 @@ export class PurchaseRequestActionModalComponent implements OnChanges {
 
   get config(): ActionConfig {
     return ACTION_CONFIG[this.kind];
+  }
+
+  /**
+   * FE-4 — aprovadores elegíveis por nível: `RequestSupervisor` cuja faixa de alçada
+   * (minValue..maxValue) comporta o valor estimado da requisição. Nome resolvido pelo
+   * lookup de usuários; se o usuário não estiver no lookup, cai no fallback pelo id.
+   */
+  eligibleApprovers(level: number): PurchaseRef[] {
+    // Sem alçadas carregadas → não filtra (mantém o modal utilizável; o back valida).
+    if (this.approvalLimits.length === 0) return this.users;
+    const value = this.request?.estimatedValue ?? 0;
+    const ids = this.approvalLimits
+      .filter(l =>
+        l.level === level &&
+        l.purchaseRole === 'RequestSupervisor' &&
+        value >= (l.minValue ?? 0) &&
+        value <= (l.maxValue ?? Number.MAX_SAFE_INTEGER),
+      )
+      .map(l => l.userId);
+
+    const unique = Array.from(new Set(ids));
+    return unique.map(id => this.users.find(u => u.id === id) ?? { id, name: `Usuário #${id}` });
   }
 
   /** Etapas anteriores disponíveis para "mover" (1..currentStage-1; fallback 1..5). */

@@ -1,5 +1,5 @@
 // src/app/features/quotations/quotations-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,12 +8,14 @@ import { Quotation, REQ_STATUS_CONFIG } from './quotations.model';
 import { PurchaseRequestStatus, PurchaseActionKind, PurchaseActionResult } from '../purchases/purchases.model';
 import { PurchaseRequestDetailModalComponent } from '../purchases/components/purchase-request-detail.modal';
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
+import { PurchaseQuotationsModalComponent } from '../purchases/components/purchase-quotations.modal';
+import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',
@@ -44,6 +46,8 @@ export class QuotationsListPage {
     );
   });
   readonly canReject = this.canApprove;
+  // Solicitar ajustes (FE-6): mesmos perfis/etapas do aprovar/reprovar (Etapa 2/4).
+  readonly canRequestChanges = this.canApprove;
 
   // Cancelar: ação administrativa exclusiva do Gestor (nas etapas onde já aparecia).
   readonly canCancel = computed(() =>
@@ -53,9 +57,23 @@ export class QuotationsListPage {
   // Enviar para aprovação (Etapa 1 → 2): disponível a todos os perfis na Etapa 1.
   readonly canSubmit = this.routeStage === 0;
 
-  // Consultar/Duplicar/Excel disponíveis a todos, conforme a etapa.
+  // Concluir (Etapa 5 → 6): FE-9.
+  readonly canComplete = this.routeStage === 4;
+
+  // Exportar para cotação (Etapa 3 → gera cotação): FE-5b.
+  readonly canExportQuotation = this.routeStage === 2;
+
+  // Cotações (FE-7): botão nas Etapas 3 (registrar) e 4 (aprovar/reprovar propostas).
+  readonly canQuotations        = this.routeStage === 2 || this.routeStage === 3;
+  readonly canRegisterQuotation = this.routeStage === 2;   // Etapa 3
+
+  // Adjudicação (FE-8): Etapa 4, exige papel de aprovação (Supervisor de Compras / Gestor).
+  readonly canAward = computed(() => this.routeStage === 3 && this.canApprove());
+
+  // Consultar/Duplicar/Excel/PDF disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
   readonly canExcel  = this.routeStage === 0 || this.routeStage === 2;
+  readonly canPdf    = true;                                           // FE-12: consulta em qualquer etapa
   readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
   readonly canEdit   = this.routeStage === 0;                          // Etapa 1
 
@@ -121,10 +139,35 @@ export class QuotationsListPage {
   submit(item: Quotation)  { this.store.submit(item.apiId); }
   approve(item: Quotation) { this.store.approve(item.apiId); }
   reject(item: Quotation)  { this.store.openAction('reject', item.apiId); }
+  requestChanges(item: Quotation) { this.store.openAction('request-changes', item.apiId); }
   cancel(item: Quotation)  { this.store.openAction('cancel', item.apiId); }
+  complete(item: Quotation) { this.store.complete(item.apiId); }
+  exportToQuotation(item: Quotation) { this.store.exportToQuotation(item.apiId); }
+  openQuotations(item: Quotation) { this.store.openQuotations(item); }
+  openAward(item: Quotation) { this.store.openAward(item); }
   copy(item: Quotation)    { this.store.copy(item.apiId); }
   excel(item: Quotation)   { this.store.exportExcel(item.apiId); }
+  pdf(item: Quotation)     { this.store.exportPdf(item.apiId); }
   remove(item: Quotation)  { this.store.remove(item.apiId); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
+
+  // ── Menu "⋮" de ações secundárias (Excel, PDF, Cancelar, Excluir) ───────────
+  readonly hasRowMenu = computed(() => this.canExcel || this.canPdf || this.canCancel() || this.canDelete);
+
+  readonly menuOpenId = signal<string | null>(null);
+  readonly menuPos    = signal<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  @HostListener('document:click')
+  @HostListener('window:scroll')
+  @HostListener('window:resize')
+  closeMenu() { this.menuOpenId.set(null); }
+
+  toggleMenu(id: string, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.menuOpenId() === id) { this.menuOpenId.set(null); return; }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.menuPos.set({ top: rect.bottom + 6, left: Math.max(8, rect.right - 200) });
+    this.menuOpenId.set(id);
+  }
 }

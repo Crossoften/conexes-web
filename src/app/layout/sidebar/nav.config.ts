@@ -65,6 +65,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Dashboard',     route: '/purchasing-dashboard' },
       { label: 'Cotações',      route: '/quotations' },
       { label: 'Gerenciamento', route: '/purchasing-management' },
+      { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
       { label: 'Relatórios',    route: '/purchasing-reports' },
     ],

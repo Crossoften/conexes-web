@@ -239,6 +239,16 @@ textarea.form-control { resize: vertical; }
 
 .wp-narrow { max-width: 240px; }
 
+.wp-upload {
+  display: flex; align-items: center; gap: 10px;
+  border: 1.5px dashed #BFDBFE; background: #F8FAFC;
+  border-radius: 8px; padding: 12px 14px; cursor: pointer;
+  font-size: 13px; color: #4B5563;
+  transition: background-color .2s, border-color .2s;
+  &:hover { background: #EFF6FF; border-color: #93C5FD; }
+  svg { color: var(--text-primary, #111827); opacity: .7; }
+}
+
 .wp-table-label {
   font-size: 12px;
   font-weight: 700;

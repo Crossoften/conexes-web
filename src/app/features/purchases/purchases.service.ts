@@ -29,6 +29,10 @@ import {
   SetApproversPayload,
   ChangeBuyerPayload,
   PurchaseRequestActionLog,
+  AwardPayload,
+  PurchaseOrder,
+  PurchaseOrderListParams,
+  ApprovalLimit,
 } from './purchases.model';
 
 @Injectable({ providedIn: 'root' })
@@ -98,6 +102,11 @@ export class PurchasesService {
     return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/reject`, { reason });
   }
 
+  /** FE-6: solicitar ajustes ao requisitante (Etapa 2) → status AwaitingAdjustment. */
+  requestChanges(id: number, reason?: string): Observable<PurchaseRequest> {
+    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/request-changes`, { reason });
+  }
+
   cancelRequest(id: number, reason: string): Observable<PurchaseRequest> {
     return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/cancel`, { reason });
   }
@@ -119,7 +128,11 @@ export class PurchasesService {
   }
 
   getRequestActionHistory(id: number): Observable<PurchaseRequestActionLog[]> {
-    return this.http.get<PurchaseRequestActionLog[]>(`${this.base}/requests/${id}/history`);
+    // O Swagger define a resposta como array puro, mas normalizamos também o
+    // envelope { data: [...] } para não engolir o histórico caso o back mude o shape.
+    return this.http
+      .get<PurchaseRequestActionLog[] | { data?: PurchaseRequestActionLog[] }>(`${this.base}/requests/${id}/history`)
+      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
   }
 
   /** Lookup de usuários (para selects de comprador / aprovadores). */
@@ -129,6 +142,17 @@ export class PurchasesService {
 
   getProjectsLookup(): Observable<PurchaseRef[]> {
     return this.lookup('/v1/projects', 'name');
+  }
+
+  /** FE-13: Centro de Custo (campo distinto de Projeto na requisição). */
+  getCostCentersLookup(): Observable<PurchaseRef[]> {
+    const params = new HttpParams().set('take', '500').set('type', 'centro_de_custo');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/projects`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows.map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']) }));
+      }));
   }
 
   getAccountPlansLookup(): Observable<PurchaseRef[]> {
@@ -141,6 +165,19 @@ export class PurchasesService {
 
   getDeliveryLocationsLookup(): Observable<PurchaseRef[]> {
     return this.lookup('/v1/delivery-locations', 'name');
+  }
+
+  /** FE-7: fornecedores (stakeholders) para o select de cotação. */
+  getSuppliersLookup(): Observable<PurchaseRef[]> {
+    return this.lookup('/v1/stakeholders', 'name');
+  }
+
+  /** FE-4: alçadas de aprovação — para filtrar aprovadores por nível/faixa. */
+  getApprovalLimits(): Observable<ApprovalLimit[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<ApprovalLimit> | ApprovalLimit[]>(`${environment.apiUrl}/v1/approval-limits`, { params })
+      .pipe(map(res => (Array.isArray(res) ? res : res.data ?? [])));
   }
 
   /** Lookup genérico: mapeia qualquer listagem para { id, name } (rótulo por nameKey). */
@@ -171,6 +208,16 @@ export class PurchasesService {
 
   generateRequestExcel(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/requests/${id}/excel`, { responseType: 'blob' });
+  }
+
+  /** FE-12: exportar a requisição em PDF (Blob, gerado no back). */
+  generateRequestPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/requests/${id}/pdf`, { responseType: 'blob' });
+  }
+
+  /** FE-8: adjudicação (Etapa 4) — by_supplier (1 pedido) ou by_item (N pedidos). */
+  award(id: number, payload: AwardPayload): Observable<PurchaseRequest> {
+    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/award`, payload);
   }
 
   // ── Anexos da requisição ──────────────────────────────────────────────────────
@@ -207,6 +254,23 @@ export class PurchasesService {
 
   rejectQuotation(id: number): Observable<PurchaseQuotation> {
     return this.http.patch<PurchaseQuotation>(`${this.base}/quotations/${id}/reject`, {});
+  }
+
+  // ── Pedidos de Compra (Etapas 5/6) ────────────────────────────────────────────
+
+  getOrders(params: PurchaseOrderListParams = {}): Observable<Page<PurchaseOrder>> {
+    let httpParams = new HttpParams();
+    if (params.requestId != null) httpParams = httpParams.set('requestId', String(params.requestId));
+    if (params.status)            httpParams = httpParams.set('status', params.status);
+    if (params.skip != null)      httpParams = httpParams.set('skip', String(params.skip));
+    if (params.take != null)      httpParams = httpParams.set('take', String(params.take));
+    return this.http
+      .get<RawListEnvelope<PurchaseOrder> | PurchaseOrder[]>(`${this.base}/orders`, { params: httpParams })
+      .pipe(map(toPage));
+  }
+
+  getOrderById(id: number): Observable<PurchaseOrder> {
+    return this.http.get<PurchaseOrder>(`${this.base}/orders/${id}`);
   }
 
   // ── Contratos ─────────────────────────────────────────────────────────────────

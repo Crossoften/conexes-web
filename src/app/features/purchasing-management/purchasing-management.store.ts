@@ -8,6 +8,7 @@ import {
   PurchaseRef,
   PurchaseActionKind,
   PurchaseActionResult,
+  ApprovalLimit,
 } from '../purchases/purchases.model';
 import { Observable } from 'rxjs';
 
@@ -120,11 +121,16 @@ export class PurchasingManagementStore {
   // ── Modais de ação (cancelar / reiniciar / mover / comprador / aprovadores) ──
   readonly action           = signal<{ kind: PurchaseActionKind; request: PurchaseRequest } | null>(null);
   readonly users            = signal<PurchaseRef[]>([]);
+  readonly approvalLimits   = signal<ApprovalLimit[]>([]);   // FE-4
   readonly actionSubmitting = signal(false);
 
   openAction(kind: PurchaseActionKind, apiId: number): void {
     if ((kind === 'buyer' || kind === 'approvers') && this.users().length === 0) {
       this.svc.getUsersLookup().subscribe({ next: u => this.users.set(u), error: () => {} });
+    }
+    // FE-4: alçadas para filtrar os aprovadores por nível/faixa.
+    if (kind === 'approvers' && this.approvalLimits().length === 0) {
+      this.svc.getApprovalLimits().subscribe({ next: l => this.approvalLimits.set(l), error: () => {} });
     }
     this.svc.getRequestById(apiId).subscribe({
       next: req => this.action.set({ kind, request: req }),
@@ -145,8 +151,9 @@ export class PurchasingManagementStore {
 
     let obs: Observable<PurchaseRequest>;
     switch (result.kind) {
-      case 'cancel':    obs = this.svc.cancelRequest(id, result.reason ?? ''); break;
-      case 'reject':    obs = this.svc.rejectRequest(id, result.reason); break;
+      case 'cancel':          obs = this.svc.cancelRequest(id, result.reason ?? ''); break;
+      case 'reject':          obs = this.svc.rejectRequest(id, result.reason); break;
+      case 'request-changes': obs = this.svc.requestChanges(id, result.reason); break;
       case 'restart':   obs = this.svc.restartRequest(id, result.reason); break;
       case 'move':      obs = this.svc.moveRequest(id, result.stage ?? 1, result.reason); break;
       case 'buyer':     obs = this.svc.changeBuyer(id, { buyerId: result.buyerId ?? 0, reason: result.reason }); break;
