@@ -1,11 +1,13 @@
 // src/app/features/bank-accounts/components/bank-account-detail.modal.ts
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, signal } from '@angular/core';
-import { NgClass, DecimalPipe } from '@angular/common';
+import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
   BankAccount,
   Bank,
   BANK_ACCOUNT_TYPE_LABELS,
+  BANK_ACCOUNT_STATUS_CONFIG,
+  BANK_ACCOUNT_STATUS_OPTIONS,
   BankAccountPayload,
 } from '../bank-accounts.model';
 
@@ -14,7 +16,7 @@ type ModalTab = 'GERAIS' | 'PARAMS' | 'BOLETO';
 @Component({
   selector: 'app-bank-account-detail-modal',
   standalone: true,
-  imports: [NgClass, ReactiveFormsModule, DecimalPipe],
+  imports: [NgClass, ReactiveFormsModule, DecimalPipe, DatePipe],
   templateUrl: './bank-account-detail.modal.html',
   styleUrl: './bank-account-detail.modal.scss',
 })
@@ -32,7 +34,9 @@ export class BankAccountDetailModalComponent implements OnChanges {
 
   activeTab: ModalTab = 'GERAIS';
 
-  readonly typeLabels   = BANK_ACCOUNT_TYPE_LABELS;
+  readonly typeLabels     = BANK_ACCOUNT_TYPE_LABELS;
+  readonly statusConfig   = BANK_ACCOUNT_STATUS_CONFIG;
+  readonly statusOptions  = BANK_ACCOUNT_STATUS_OPTIONS;
 
   form: FormGroup;
 
@@ -45,7 +49,9 @@ export class BankAccountDetailModalComponent implements OnChanges {
       this.form.patchValue({
         banco:                    this.account.bankId,
         tipoConta:                this.account.accountType,
-        dataAbertura:             this.account.openDate,
+        status:                   this.account.status,
+        // input type=date exige yyyy-MM-dd — fatiamos o ISO (evita input vazio).
+        dataAbertura:             this.account.openDate?.substring(0, 10) ?? '',
         apelidoConta:             this.account.nickname,
         agenciaDigito:            this.account.agency,
         numeroContaDigito:        this.account.account,
@@ -130,6 +136,7 @@ export class BankAccountDetailModalComponent implements OnChanges {
       entityId:          this.account.entityId,
       payingSourceId:    this.account.payingSourceId,
       accountType:       v.tipoConta                        || this.account.accountType,
+      status:            v.status                           ?? this.account.status,
       openDate:          v.dataAbertura                     ?? this.account.openDate,
       nickname:          v.apelidoConta                     ?? this.account.nickname,
       agency:            v.agenciaDigito                    ?? this.account.agency,
@@ -166,6 +173,7 @@ export class BankAccountDetailModalComponent implements OnChanges {
     return this.fb.group({
       banco:                   ['', Validators.required],
       tipoConta:               ['', Validators.required],
+      status:                  ['Active'],
       dataAbertura:            ['', Validators.required],
       apelidoConta:            ['', Validators.required],
       agenciaDigito:           ['', Validators.required],

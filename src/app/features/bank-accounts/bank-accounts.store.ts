@@ -9,7 +9,7 @@ interface State {
   loading:     boolean;
   error:       string | null;
   activeTab:   BankAccountTab;
-  filters:     { search: string; type: string };
+  filters:     { search: string; type: string; status: string };
   sort:        { column: string; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
   selectedIds: Set<string>;
@@ -58,7 +58,7 @@ export class BankAccountsStore {
     loading:     false,
     error:       null,
     activeTab:   'ACCOUNTS',
-    filters:     { search: '', type: '' },
+    filters:     { search: '', type: '', status: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -121,7 +121,9 @@ export class BankAccountsStore {
       const term = f.search.toLowerCase();
       result = result.filter(item =>
         tab === 'ACCOUNTS'
-          ? (item.nickname?.toLowerCase().includes(term) || item.code?.includes(f.search))
+          ? (item.nickname?.toLowerCase().includes(term)
+              || item.bankName?.toLowerCase().includes(term)
+              || item.account?.includes(f.search))
           : (item.name?.toLowerCase().includes(term)    || item.code?.includes(f.search))
       );
     }
@@ -130,6 +132,11 @@ export class BankAccountsStore {
       result = result.filter(item =>
         tab === 'ACCOUNTS' ? item.accountType === f.type : item.type === f.type
       );
+    }
+
+    // Status só existe nas contas.
+    if (f.status && tab === 'ACCOUNTS') {
+      result = result.filter(item => item.status === f.status);
     }
 
     return result;
@@ -208,7 +215,7 @@ export class BankAccountsStore {
       ...s,
       activeTab:   tab,
       selectedIds: new Set(),
-      filters:     { search: '', type: '' },
+      filters:     { search: '', type: '', status: '' },
       pagination:  { ...s.pagination, page: 1 },
     }));
   }
@@ -219,6 +226,10 @@ export class BankAccountsStore {
 
   setType(type: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
+  }
+
+  setStatus(status: string): void {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   // ── Pagination ────────────────────────────────────────────────────────────

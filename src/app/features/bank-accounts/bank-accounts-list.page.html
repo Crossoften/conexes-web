@@ -55,6 +55,19 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
+      @if (store.activeTab() === 'ACCOUNTS') {
+        <div class="select-wrap">
+          <select class="select select--pill"
+            [value]="store.filters().status"
+            (change)="store.setStatus($any($event.target).value)">
+            @for (opt of statusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      }
+
       <button class="btn-outline btn-pill">
         Exportar
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -81,7 +94,6 @@
                   <span class="checkbox__box"></span>
                 </label>
               </th>
-              <th class="th th--sortable" (click)="store.setSort('code')">Cod <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('nickname')">Apelido <span class="sort-icon" [ngClass]="'sort--' + getSortState('nickname')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('agency')">Agência <span class="sort-icon" [ngClass]="'sort--' + getSortState('agency')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('account')">Conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('account')"></span></th>
@@ -89,6 +101,7 @@
               <th class="th th--sortable" (click)="store.setSort('initialBalance')">Saldo inicial <span class="sort-icon" [ngClass]="'sort--' + getSortState('initialBalance')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('openDate')">Data Abertura <span class="sort-icon" [ngClass]="'sort--' + getSortState('openDate')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('bankName')">Banco <span class="sort-icon" [ngClass]="'sort--' + getSortState('bankName')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
               <th class="th th--center">Ações</th>
             </tr>
           } @else {
@@ -139,19 +152,25 @@
                     <span class="checkbox__box"></span>
                   </label>
                 </td>
-                <td class="td td--mono">{{ item.code }}</td>
                 <td class="td td--name">{{ item.nickname }}</td>
                 <td class="td td--mono">{{ item.agency }}</td>
                 <td class="td td--mono">{{ item.account }}</td>
                 <td class="td">{{ item.accountType }}</td>
                 <td class="td">{{ item.initialBalance }}</td>
                 <td class="td td--dates">
-                  <span class="date-line">{{ item.openDate }}</span>
-                  @if (item.closingDate) {
-                    <span class="date-line date-line--muted">{{ item.closingDate }}</span>
+                  <span class="date-line">{{ item.openDate | date:'dd/MM/yyyy':'UTC' }}</span>
+                  @if (item.closeDate) {
+                    <span class="date-line date-line--muted">{{ item.closeDate | date:'dd/MM/yyyy':'UTC' }}</span>
                   }
                 </td>
                 <td class="td">{{ item.bankName || '—' }}</td>
+                <td class="td">
+                  @if (statusConfig[item.status]; as cfg) {
+                    <span class="status-badge status-badge--{{ cfg.variant }}">{{ cfg.label }}</span>
+                  } @else {
+                    {{ item.status || '—' }}
+                  }
+                </td>
                 <td class="td td--center">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar" (click)="store.openViewAccount(item)">

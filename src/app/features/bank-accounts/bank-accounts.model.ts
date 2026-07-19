@@ -1,22 +1,23 @@
 // src/app/features/bank-accounts/bank-accounts.model.ts
 
-// Obs.: `status` NÃO existe no contrato `/v1/institutional/bank-accounts` (nem no
-// DTO nem na resposta documentada) — removido do front até o Back definir (B-BK-02).
 export type BankAccountTab    = 'ACCOUNTS' | 'BANKS';
 export type BankAccountType   = 'Checking' | 'Savings' | 'Salary' | 'Payment';
+// O back passou a expor `status` nas CONTAS (não nos bancos).
+export type BankAccountStatus = 'Active' | 'Pending' | 'Inactive';
 
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface BankAccount {
   id:             number;
-  code:           string;
+  code?:          string;   // contas não têm `code` na resposta (bancos têm)
   nickname:       string;
   agency:         string;
   account:        string;
   accountType:    BankAccountType | string;
+  status:         BankAccountStatus;
   initialBalance: number;
   openDate:       string;
-  closingDate?:   string;
+  closeDate?:     string;   // nome do campo na resposta (era closingDate)
   bankName?:      string;
   bankId:         number;
   entityId:       number;
@@ -58,10 +59,11 @@ export interface BankAccountPayload {
   agency:            string;
   account:           string;
   accountType:       BankAccountType;
+  status?:           BankAccountStatus;
   nickname:          string;
   initialBalance:    number;
   openDate:          string;
-  payingSourceId:    number;
+  payingSourceId?:   number;   // opcional: se omitido, o back assume a entidade dona
   phone:             string;
   cellPhone:         string;
   contactEmail:      string;
@@ -106,3 +108,15 @@ export const BANK_ACCOUNT_TYPE_LABELS: Record<BankAccountType, string> = {
   Salary:   'Conta Salário',
   Payment:  'Conta Pagamento',
 };
+
+export const BANK_ACCOUNT_STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
+  Active:   { label: 'Ativo',    variant: 'success' },
+  Pending:  { label: 'Pendente', variant: 'neutral' },
+  Inactive: { label: 'Inativo',  variant: 'danger'  },
+};
+
+export const BANK_ACCOUNT_STATUS_OPTIONS: { label: string; value: BankAccountStatus }[] = [
+  { label: 'Ativo',    value: 'Active'   },
+  { label: 'Pendente', value: 'Pending'  },
+  { label: 'Inativo',  value: 'Inactive' },
+];

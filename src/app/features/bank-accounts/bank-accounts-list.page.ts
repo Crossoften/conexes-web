@@ -1,16 +1,16 @@
 // src/app/features/bank-accounts/bank-accounts-list.page.ts
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BankAccountsStore } from './bank-accounts.store';
-import { BankPayload, BankAccountPayload } from './bank-accounts.model';
+import { BankPayload, BankAccountPayload, BANK_ACCOUNT_STATUS_CONFIG } from './bank-accounts.model';
 import { BankAccountDetailModalComponent } from './components/bank-account-detail.modal';
 
 @Component({
   selector: 'app-bank-accounts-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, BankAccountDetailModalComponent],
+  imports: [FormsModule, NgClass, DatePipe, RouterLink, BankAccountDetailModalComponent],
   providers: [BankAccountsStore],
   templateUrl: './bank-accounts-list.page.html',
   styleUrl: './bank-accounts-list.page.scss',
@@ -25,6 +25,15 @@ export class BankAccountsListPage implements OnInit {
     { label: 'Conta Salário',    value: 'Salary'   },
     { label: 'Conta Pagamento',  value: 'Payment'  },
   ];
+
+  readonly statusOptions: { label: string; value: string }[] = [
+    { label: 'Todos os status', value: ''         },
+    { label: 'Ativo',           value: 'Active'   },
+    { label: 'Pendente',        value: 'Pending'  },
+    { label: 'Inativo',         value: 'Inactive' },
+  ];
+
+  readonly statusConfig = BANK_ACCOUNT_STATUS_CONFIG;
 
   readonly pageSizeOptions = [10, 25, 50];
 

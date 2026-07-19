@@ -67,8 +67,14 @@
             </div>
             <div class="info-grid">
               <div class="info-item">
-                <span class="info-label">Código</span>
-                <span class="info-value mono">{{ account?.code || '—' }}</span>
+                <span class="info-label">Status</span>
+                <span class="info-value">
+                  @if (account && statusConfig[account.status]; as cfg) {
+                    <span class="status-badge status-badge--{{ cfg.variant }}">{{ cfg.label }}</span>
+                  } @else {
+                    {{ account?.status || '—' }}
+                  }
+                </span>
               </div>
               <div class="info-item">
                 <span class="info-label">Apelido</span>
@@ -88,12 +94,12 @@
               </div>
               <div class="info-item">
                 <span class="info-label">Data de abertura</span>
-                <span class="info-value">{{ account?.openDate || '—' }}</span>
+                <span class="info-value">{{ (account?.openDate | date:'dd/MM/yyyy':'UTC') || '—' }}</span>
               </div>
-              @if (account?.closingDate) {
+              @if (account?.closeDate) {
                 <div class="info-item">
                   <span class="info-label">Data de encerramento</span>
-                  <span class="info-value">{{ account?.closingDate }}</span>
+                  <span class="info-value">{{ account?.closeDate | date:'dd/MM/yyyy':'UTC' }}</span>
                 </div>
               }
               <div class="info-item col-span-2">
@@ -198,7 +204,7 @@
 
           @if (activeTab === 'GERAIS') {
             <div class="form-grid">
-              <div class="form-row grid-cols-2">
+              <div class="form-row grid-cols-3">
                 <div class="form-group">
                   <label class="form-label">Banco <span class="req">*</span></label>
                   <div class="select-wrap">
@@ -222,6 +228,17 @@
                       <option value="Savings">Conta Poupança</option>
                       <option value="Salary">Conta Salário</option>
                       <option value="Payment">Conta Pagamento</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Status</label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="status">
+                      @for (opt of statusOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
