@@ -28,9 +28,10 @@ export interface DashboardMetric {
 }
 
 export const REQUISITION_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
-  Draft:             'Rascunho',
-  AwaitingApproval:  'Aguardando aprovação',
-  Quotation:         'Cotação',
+  Draft:              'Rascunho',
+  AwaitingApproval:   'Aguardando aprovação',
+  AwaitingAdjustment: 'Aguardando ajustes',
+  Quotation:          'Cotação',
   QuotationApproval: 'Cotação em aprovação',
   Order:             'Pedido',
   Completed:         'Concluído',
@@ -39,9 +40,10 @@ export const REQUISITION_STATUS_LABELS: Record<PurchaseRequestStatus, string> = 
 };
 
 export const REQUISITION_STATUS_COLORS: Record<PurchaseRequestStatus, string> = {
-  Draft:             '#F97316',
-  AwaitingApproval:  '#3B82F6',
-  Quotation:         '#EAB308',
+  Draft:              '#F97316',
+  AwaitingApproval:   '#3B82F6',
+  AwaitingAdjustment: '#F59E0B',
+  Quotation:          '#EAB308',
   QuotationApproval: '#6366F1',
   Order:             '#8B5CF6',
   Completed:         '#22C55E',

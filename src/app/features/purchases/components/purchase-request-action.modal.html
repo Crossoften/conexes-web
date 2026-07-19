@@ -58,8 +58,11 @@
               <label class="field-label">Aprovador Nível {{ lvl }}<span class="req" [class.hidden]="lvl !== 1">*</span></label>
               <select class="field-input" [formControlName]="'approver' + lvl">
                 <option value="">Selecione</option>
-                @for (u of users; track u.id) { <option [value]="u.id">{{ u.name }}</option> }
+                @for (u of eligibleApprovers(lvl); track u.id) { <option [value]="u.id">{{ u.name }}</option> }
               </select>
+              @if (eligibleApprovers(lvl).length === 0) {
+                <span class="field-hint">Sem aprovador com alçada para este valor neste nível.</span>
+              }
             </div>
           }
         </div>

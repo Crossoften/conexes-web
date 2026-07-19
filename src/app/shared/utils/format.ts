@@ -13,3 +13,10 @@ export function formatBRL(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return '—';
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+/** Data ISO (yyyy-mm-dd…) → `dd/mm/aaaa`. Vazio/ inválido → travessão. */
+export function formatDateBR(value: string | null | undefined): string {
+  if (!value) return '—';
+  const m = String(value).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
+}

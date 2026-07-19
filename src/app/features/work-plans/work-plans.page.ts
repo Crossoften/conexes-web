@@ -1,9 +1,16 @@
 // src/app/features/work-plans/work-plans.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { WorkPlansStore } from './work-plans.store';
-import { WORK_PLAN_STATUS_CONFIG } from './work-plans.model';
+import { WORK_PLAN_STATUS_CONFIG, WorkPlanStatus } from './work-plans.model';
+import { AuthService } from '../../core/auth/auth.service';
+import { NotificationService } from '../../shared/services/notification.service';
+
+/** Papéis globais autorizados a aprovar/alterar status (proposta → plano ativo). */
+const STATUS_ROLES = ['Master', 'Admin'];
+
+interface StatusAction { label: string; target: WorkPlanStatus; danger?: boolean; }
 
 @Component({
   selector: 'app-work-plans',
@@ -14,9 +21,68 @@ import { WORK_PLAN_STATUS_CONFIG } from './work-plans.model';
   styleUrl: './work-plans.page.scss',
 })
 export class WorkPlansPage implements OnInit {
-  readonly store = inject(WorkPlansStore);
+  readonly store  = inject(WorkPlansStore);
+  private  router = inject(Router);
+  private  auth   = inject(AuthService);
+  private  notify = inject(NotificationService);
 
   readonly statusConfig = WORK_PLAN_STATUS_CONFIG;
+
+  // ── Menu de ações (⋯) ─────────────────────────────────────────────────────
+  readonly openMenuId = signal<number | null>(null);
+  readonly menuPos    = signal<{ top: number; right: number } | null>(null);
+
+  /** Só Admin/Master alteram status (o back também gateia com 403). */
+  readonly canChangeStatus = computed(() => STATUS_ROLES.includes(this.auth.user()?.role ?? ''));
+
+  toggleMenu(id: number, event: Event): void {
+    event.stopPropagation();
+    if (this.openMenuId() === id) { this.closeMenu(); return; }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.menuPos.set({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    this.openMenuId.set(id);
+  }
+
+  closeMenu(): void {
+    this.openMenuId.set(null);
+    this.menuPos.set(null);
+  }
+
+  /** Transições de status disponíveis conforme o status atual. */
+  statusActions(status: WorkPlanStatus | ''): StatusAction[] {
+    const acts: StatusAction[] = [];
+    if (status === 'Draft')            acts.push({ label: 'Enviar para aprovação', target: 'AwaitingApproval' });
+    if (status === 'AwaitingApproval') { acts.push({ label: 'Aprovar / Ativar', target: 'Active' }); acts.push({ label: 'Recusar', target: 'Draft' }); }
+    if (status === 'Active')           acts.push({ label: 'Concluir', target: 'Completed' });
+    if (status && status !== 'Completed' && status !== 'Cancelled') acts.push({ label: 'Cancelar', target: 'Cancelled', danger: true });
+    return acts;
+  }
+
+  onView(id: number): void {
+    this.closeMenu();
+    this.router.navigate(['/work-plans', id, 'view']);
+  }
+
+  onEdit(id: number): void {
+    this.closeMenu();
+    this.router.navigate(['/work-plans', id, 'edit']);
+  }
+
+  onChangeStatus(id: number, target: WorkPlanStatus): void {
+    this.closeMenu();
+    if (!this.canChangeStatus()) {
+      this.notify.error('Alteração de status restrita: exige autorização de um superior (Admin/Master).');
+      return;
+    }
+    if (target === 'Cancelled' && !window.confirm('Cancelar este plano de trabalho?')) return;
+    this.store.changeStatus(id, target);
+  }
+
+  onDelete(id: number): void {
+    this.closeMenu();
+    if (!window.confirm('Excluir este plano de trabalho? Esta ação não pode ser desfeita.')) return;
+    this.store.delete(id);
+  }
 
   readonly pageSizeOptions = [10, 25, 50];
 

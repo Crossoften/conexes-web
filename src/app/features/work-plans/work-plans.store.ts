@@ -4,10 +4,11 @@ import {
   WorkPlanListItem,
   WorkPlanRow,
   WorkPlanDashboard,
+  WorkPlanStatus,
 } from './work-plans.model';
 import { WorkPlansService } from './work-plans.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { formatBRL } from '../../shared/utils/format';
+import { formatBRL, formatDateBR } from '../../shared/utils/format';
 
 type TabType = 'dashboard' | 'proposals' | 'active-plans';
 
@@ -195,6 +196,25 @@ export class WorkPlansStore {
     });
   }
 
+  /** Muda o status do plano (fluxo proposta → plano ativo). */
+  changeStatus(id: number, status: WorkPlanStatus, onSuccess?: () => void, onError?: (msg: string) => void): void {
+    this.svc.updateStatus(id, status).subscribe({
+      next: () => {
+        this.load();
+        this.notify.success('Status do plano atualizado.');
+        onSuccess?.();
+      },
+      error: err => {
+        const raw = err?.status === 403
+          ? 'Alteração de status restrita: exige autorização de um superior (Admin/Master).'
+          : err?.error?.message ?? 'Erro ao alterar o status.';
+        const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+        this.notify.error(msg);
+        onError?.(msg);
+      },
+    });
+  }
+
   exportExcel(): void {
     this.svc.exportExcel().subscribe({
       next: blob => {
@@ -219,12 +239,24 @@ export class WorkPlansStore {
       id:            p.id,
       title:         p.title ?? '—',
       agency:        p.grantor?.legalName ?? p.grantor?.tradeName ?? '—',
-      startDate:     p.startDate ?? '—',
+      startDate:     formatDateBR(p.startDate),
       transferValue: p.repassValue != null ? formatBRL(p.repassValue) : '—',
-      team:          '—',
+      team:          this.teamCount(p.teamWorkContent),
+      // "Valor recebido" não existe no plano (sem campo no back) — pendência B-PT-01.
       receivedValue: '—',
       type:          p.instrumentType ?? '—',
       status:        p.status ?? '',
     };
+  }
+
+  /** Contagem de membros da equipe a partir do JSON-in-string `teamWorkContent`. */
+  private teamCount(raw: string | null | undefined): string {
+    if (!raw) return '—';
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) && arr.length ? String(arr.length) : '—';
+    } catch {
+      return '—';
+    }
   }
 }

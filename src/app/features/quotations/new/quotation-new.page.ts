@@ -36,6 +36,7 @@ export class QuotationNewPage {
   // Lookups
   readonly users            = signal<PurchaseRef[]>([]);
   readonly projects         = signal<PurchaseRef[]>([]);
+  readonly costCenters      = signal<PurchaseRef[]>([]);
   readonly accountPlans     = signal<PurchaseRef[]>([]);
   readonly contracts        = signal<PurchaseRef[]>([]);
   readonly products         = signal<PurchaseRef[]>([]);
@@ -55,6 +56,7 @@ export class QuotationNewPage {
     commercialConditions:  [''],
     payingSource:          [''],
     projectId:             [''],
+    costCenterId:          [''],
     accountPlanId:         [''],
     uniqueSupplier:        [false],
     supplierCount:         [''],
@@ -88,6 +90,7 @@ export class QuotationNewPage {
   private loadLookups(): void {
     this.svc.getUsersLookup().subscribe({ next: v => this.users.set(v), error: () => {} });
     this.svc.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
+    this.svc.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
     this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v), error: () => {} });
     this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
@@ -119,6 +122,7 @@ export class QuotationNewPage {
       commercialConditions:  r.commercialConditions ?? '',
       payingSource:          r.payingSource ?? '',
       projectId:             r.projectId != null ? String(r.projectId) : '',
+      costCenterId:          r.costCenterId != null ? String(r.costCenterId) : '',
       accountPlanId:         r.accountPlanId != null ? String(r.accountPlanId) : '',
       uniqueSupplier:        r.uniqueSupplier ?? false,
       supplierCount:         r.supplierCount != null ? String(r.supplierCount) : '',
@@ -215,6 +219,7 @@ export class QuotationNewPage {
       commercialConditions:  v.commercialConditions || undefined,
       payingSource:          v.payingSource || undefined,
       projectId:             this.num(v.projectId),
+      costCenterId:          this.num(v.costCenterId),
       accountPlanId:         this.num(v.accountPlanId),
       uniqueSupplier:        v.uniqueSupplier,
       supplierCount:         this.num(v.supplierCount),

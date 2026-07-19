@@ -127,6 +127,7 @@
 
   &--check { width: 48px; text-align: center; }
   &--right { text-align: right; }
+  &--center { text-align: center; }
   &--sortable { cursor: pointer; &:hover { background: #F3F0FF; color: var(--brand-purple); } }
 }
 
@@ -161,6 +162,7 @@
   &--mono  { font-family: var(--font-mono, monospace); font-size: 12.5px; color: var(--text-muted); }
   &--name  { color: var(--text-primary); font-weight: 500; }
   &--right { text-align: right; }
+  &--center { text-align: center; }
   &--date  { white-space: nowrap; }
   &--empty { padding: 64px 12px; text-align: center; }
 }
@@ -226,7 +228,22 @@
 }
 
 // ── Ícones de ação ────────────────────────────
-.action-icons { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.action-icons { display: flex; align-items: center; justify-content: center; gap: 2px; }
+
+.menu-wrap { position: relative; display: inline-flex; }
+.row-menu {
+  position: fixed; z-index: 1200;
+  min-width: 190px; background: #fff; border: 1px solid var(--surface-border, #EEF0F5);
+  border-radius: 12px; box-shadow: 0 12px 24px -6px rgba(0,0,0,.14); padding: 6px;
+  display: flex; flex-direction: column;
+  button {
+    text-align: left; background: transparent; border: none; cursor: pointer;
+    padding: 9px 12px; border-radius: 8px; font-size: 13.5px; font-family: var(--font-body);
+    color: var(--text-secondary, #4B5563); transition: all .15s;
+    &:hover { background: var(--brand-purple-light, #F5F3FF); color: var(--brand-purple, #6366F1); }
+  }
+  &__danger:hover { background: #FEE2E2 !important; color: #DC2626 !important; }
+}
 
 .icon-btn {
   width: 28px;
@@ -287,6 +304,7 @@
 // ── Variações de ícone de ação (aprovar/reprovar) ──
 .icon-btn--ok:hover     { background: #DCFCE7; color: #15803D; }
 .icon-btn--danger:hover { background: #FEE2E2; color: #DC2626; }
+.icon-btn--warn:hover   { background: #FEF3C7; color: #B45309; }
 
 .link-retry {
   margin-top: 8px; background: none; border: none; color: var(--brand-purple);

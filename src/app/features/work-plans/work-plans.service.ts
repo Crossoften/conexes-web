@@ -13,6 +13,7 @@ import {
   WorkPlanRef,
   WorkPlanDetail,
   CreateWorkPlanPayload,
+  WorkPlanStatus,
 } from './work-plans.model';
 
 export interface WorkPlanListParams {
@@ -50,6 +51,11 @@ export class WorkPlansService {
 
   update(id: number, payload: CreateWorkPlanPayload): Observable<{ id: number }> {
     return this.http.patch<{ id: number }>(`${this.base}/${id}`, payload);
+  }
+
+  /** Muda só o status (fluxo proposta → plano ativo). PATCH parcial. */
+  updateStatus(id: number, status: WorkPlanStatus): Observable<{ id: number }> {
+    return this.http.patch<{ id: number }>(`${this.base}/${id}`, { status });
   }
 
   exportPdf(id: number): Observable<Blob> {

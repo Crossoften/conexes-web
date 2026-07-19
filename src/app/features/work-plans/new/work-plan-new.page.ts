@@ -10,6 +10,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, AbstractControl, Validators } from '@angular/forms';
 import { WorkPlansService } from '../work-plans.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { UploadService } from '../../../shared/services/upload.service';
 import { formatBRL } from '../../../shared/utils/format';
 import {
   WorkPlanRef,
@@ -63,6 +64,10 @@ export class WorkPlanNewPage implements OnInit {
   private route  = inject(ActivatedRoute);
   private svc    = inject(WorkPlansService);
   private notify = inject(NotificationService);
+  private upload = inject(UploadService);
+
+  /** UIDs de blocos Meta com upload de logo em andamento. */
+  readonly goalLogoUploading = signal<Set<number>>(new Set());
 
   readonly groups   = BLOCK_GROUPS;
   readonly grantors = signal<WorkPlanRef[]>([]);
@@ -228,6 +233,7 @@ export class WorkPlanNewPage implements OnInit {
           verificationMeans: [''],
           quantitativeMeta:  [''],
           networkAction:     ['Nao'],
+          logoUrl:           [''],
           executionSteps:    this.fb.array([this.newStep()]),
         });
       case 'app-detailed':
@@ -285,6 +291,28 @@ export class WorkPlanNewPage implements OnInit {
 
   addStep(uid: number): void        { this.steps(uid).push(this.newStep()); }
   removeStep(uid: number, i: number): void { this.steps(uid).removeAt(i); }
+
+  // ── Logotipo da Meta (goals[].logoUrl) ──────────────────────────────────────
+  goalLogoUrl(uid: number): string      { return this.formOf(uid).get('logoUrl')?.value ?? ''; }
+  isGoalLogoUploading(uid: number): boolean { return this.goalLogoUploading().has(uid); }
+
+  onGoalLogoSelected(event: Event, uid: number): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.goalLogoUploading.update(s => new Set(s).add(uid));
+    this.upload.uploadOneFile(file).subscribe({
+      next: res => {
+        this.formOf(uid).get('logoUrl')?.setValue(res.fileUrl);
+        this.goalLogoUploading.update(s => { const n = new Set(s); n.delete(uid); return n; });
+        this.notify.success('Logotipo da meta enviado.');
+      },
+      error: () => {
+        this.goalLogoUploading.update(s => { const n = new Set(s); n.delete(uid); return n; });
+        this.notify.error('Erro ao enviar o logotipo.');
+      },
+    });
+  }
 
   addAppItem(uid: number): void     { this.appItems(uid).push(this.newAppItem()); }
   removeAppItem(uid: number, i: number): void { this.appItems(uid).removeAt(i); }
@@ -423,6 +451,7 @@ export class WorkPlanNewPage implements OnInit {
         verificationMeans: this.str(g.verificationMeans),
         quantitativeMeta:  g.quantitativeMeta != null ? String(g.quantitativeMeta) : '',
         networkAction:     g.networkAction ? 'Sim' : 'Nao',
+        logoUrl:           this.str(g.logoUrl),
       });
       const steps = this.parseJson(g.executionSteps);
       if (steps.length) {
@@ -586,6 +615,7 @@ export class WorkPlanNewPage implements OnInit {
             quantitativeMeta:  toNumber(v.quantitativeMeta),
             networkAction:     v.networkAction === 'Sim',
             executionSteps:    steps.length ? JSON.stringify(steps) : '',
+            logoUrl:           v.logoUrl || undefined,
           }) as WorkPlanGoalPayload;
           payload.goals = [...(payload.goals ?? []), goal];
           break;

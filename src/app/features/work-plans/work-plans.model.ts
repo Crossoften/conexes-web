@@ -35,13 +35,14 @@ export interface WorkPlanDashboard {
 // ── Item da listagem (GET /v1/work-plans) ─────────────────────────────────────
 
 export interface WorkPlanListItem {
-  id:              number;
-  title:           string | null;
-  instrumentType:  string | null;
-  status:          WorkPlanStatus;
-  startDate:       string | null;
-  repassValue:     number | null;
-  grantor?:        { legalName?: string; tradeName?: string } | null;
+  id:               number;
+  title:            string | null;
+  instrumentType:   string | null;
+  status:           WorkPlanStatus;
+  startDate:        string | null;
+  repassValue:      number | null;
+  teamWorkContent?: string | null;   // JSON-in-string dos membros (→ coluna Equipe)
+  grantor?:         { legalName?: string; tradeName?: string } | null;
 }
 
 /** ViewModel de linha da tabela (valores já formatados). */

@@ -1,0 +1,60 @@
+<!-- src/app/features/purchasing-orders/components/order-detail.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-text">
+        <h2>{{ code }}</h2>
+        <p>Detalhes do pedido de compra.</p>
+      </div>
+      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      @if (loading) {
+        <p class="modal-loading">Carregando pedido…</p>
+      } @else if (order) {
+
+        <div class="info-box">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Nº do pedido</span><span class="info-value">{{ fmtText(order.number) }}</span></div>
+            <div class="info-item"><span class="info-label">Requisição de origem</span><span class="info-value">{{ order.purchaseRequestId != null ? 'REQ-#' + order.purchaseRequestId : '—' }}</span></div>
+            <div class="info-item"><span class="info-label">Fornecedor</span><span class="info-value">{{ fmtText(order.supplier?.name) }}</span></div>
+            <div class="info-item"><span class="info-label">Valor total</span><span class="info-value">{{ fmtCurrency(order.totalValue) }}</span></div>
+            <div class="info-item">
+              <span class="info-label">Status</span>
+              <span class="info-value"><span class="o-badge o-badge--{{ statusVariant(order.status) }}">{{ statusLabel(order.status) }}</span></span>
+            </div>
+            <div class="info-item"><span class="info-label">Data</span><span class="info-value">{{ fmtDate(order.createdAt) }}</span></div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Itens</h3>
+        <div class="items-wrap">
+          <table class="items-table">
+            <thead>
+              <tr><th>Item</th><th>Qtd.</th><th>Unidade</th><th class="right">Valor unit. final</th></tr>
+            </thead>
+            <tbody>
+              @for (it of order.items ?? []; track it.id) {
+                <tr>
+                  <td>{{ it.name }}</td>
+                  <td>{{ it.quantity }}</td>
+                  <td>{{ fmtText(it.unit) }}</td>
+                  <td class="right">{{ it.finalUnitValue != null ? fmtCurrency(it.finalUnitValue) : (it.estimatedUnitValue != null ? fmtCurrency(it.estimatedUnitValue) : '—') }}</td>
+                </tr>
+              } @empty {
+                <tr><td class="empty" colspan="4">Nenhum item neste pedido.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+      } @else {
+        <p class="modal-loading">Pedido não encontrado.</p>
+      }
+    </div>
+  </div>
+</div>
