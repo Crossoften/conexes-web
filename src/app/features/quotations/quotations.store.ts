@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Quotation } from './quotations.model';
 import { PurchasesService } from '../purchases/purchases.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import {
   PurchaseRequest,
   PurchaseRequestStatus,
@@ -48,7 +49,14 @@ function toRow(r: PurchaseRequest): Quotation {
 
 @Injectable()
 export class QuotationsStore {
-  private svc = inject(PurchasesService);
+  private svc    = inject(PurchasesService);
+  private notify = inject(NotificationService);
+
+  /** Extrai a mensagem de erro do back (array ou string) para o toast. */
+  private errMsg(err: unknown, fallback = 'Não foi possível concluir a ação.'): string {
+    const m = (err as { error?: { message?: string | string[] } })?.error?.message ?? fallback;
+    return Array.isArray(m) ? m.join(', ') : m;
+  }
 
   private readonly state = signal<State>({
     items:      [],
@@ -249,29 +257,30 @@ export class QuotationsStore {
       next: () => { this.actionSubmitting.set(false); this.closeAction(); this.reload(); },
       error: err => {
         this.actionSubmitting.set(false);
-        const msg = err?.error?.message ?? 'Erro ao executar a ação.';
-        onError?.(Array.isArray(msg) ? msg.join(', ') : msg);
+        const msg = this.errMsg(err, 'Erro ao executar a ação.');
+        this.notify.error(msg);
+        onError?.(msg);
       },
     });
   }
 
   /** Etapa 1 → 2: envia a requisição para aprovação. */
   submit(apiId: number): void {
-    this.svc.submitRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.submitRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
   approve(apiId: number): void {
-    this.svc.approveRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.approveRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
   /** Etapa 3: exportar a requisição aprovada para cotação (FE-5b). */
   exportToQuotation(apiId: number): void {
-    this.svc.exportRequestToQuotation(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.exportRequestToQuotation(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
   /** Etapa 5 → 6: concluir o pedido. */
   complete(apiId: number): void {
-    this.svc.completeRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.completeRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
   /** Exportar a requisição em PDF (gerado no back). */
@@ -290,7 +299,7 @@ export class QuotationsStore {
   }
 
   copy(apiId: number): void {
-    this.svc.copyRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.copyRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
   exportExcel(apiId: number): void {
@@ -308,6 +317,6 @@ export class QuotationsStore {
   }
 
   remove(apiId: number): void {
-    this.svc.deleteRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+    this.svc.deleteRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 }

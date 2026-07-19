@@ -172,12 +172,17 @@ export class PurchasesService {
     return this.lookup('/v1/stakeholders', 'name');
   }
 
-  /** FE-4: alçadas de aprovação — para filtrar aprovadores por nível/faixa. */
+  /** FE-4: alçadas de COMPRAS — para filtrar aprovadores por nível/faixa. */
   getApprovalLimits(): Observable<ApprovalLimit[]> {
-    const params = new HttpParams().set('take', '500');
+    // type=COMPRAS: as alçadas financeiras (FINANCEIRO) não valem para aprovação de requisição.
+    const params = new HttpParams().set('take', '500').set('type', 'COMPRAS');
     return this.http
       .get<RawListEnvelope<ApprovalLimit> | ApprovalLimit[]>(`${environment.apiUrl}/v1/approval-limits`, { params })
-      .pipe(map(res => (Array.isArray(res) ? res : res.data ?? [])));
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        // Defesa extra: mesmo com o filtro do back, mantém só as de COMPRAS.
+        return rows.filter(l => !l.type || l.type === 'COMPRAS');
+      }));
   }
 
   /** Lookup genérico: mapeia qualquer listagem para { id, name } (rótulo por nameKey). */

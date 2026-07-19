@@ -7,8 +7,8 @@
   <div class="card">
 
     <div class="card-header">
-      <h2 class="card-title">Alçadas de autorização de pagamento – Financeiro</h2>
-      <p class="card-subtitle">Dados da alçada de pagamento.</p>
+      <h2 class="card-title">Dados da alçada de aprovação</h2>
+      <p class="card-subtitle">Alçadas de Compras (aprovação de requisições) ou Financeiro (autorização de pagamento).</p>
     </div>
 
     <div class="card-body">
@@ -19,6 +19,20 @@
         }
 
         <div class="form-grid">
+
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Tipo de alçada <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="type">
+                  @for (opt of typeOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
 
           <div class="form-row grid-cols-2">
 
@@ -59,11 +73,9 @@
                 <select class="form-control" formControlName="tierLevel"
                   [class.is-invalid]="form.get('tierLevel')?.invalid && form.get('tierLevel')?.touched">
                   <option value="">Selecione</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
+                  @for (opt of levelOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -72,22 +84,24 @@
               }
             </div>
 
-            <div class="form-group">
-              <label>Papel de compra <span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="purchaseRole"
-                  [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
-                  <option value="">Selecione</option>
-                  @for (opt of purchaseRoleOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            @if (isCompras) {
+              <div class="form-group">
+                <label>Papel de compra <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="purchaseRole"
+                    [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
+                    <option value="">Selecione</option>
+                    @for (opt of purchaseRoleOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                @if (form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched) {
+                  <span class="field-error">Campo obrigatório</span>
+                }
               </div>
-              @if (form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched) {
-                <span class="field-error">Campo obrigatório</span>
-              }
-            </div>
+            }
 
             <div class="form-group">
               <label>Valor mínimo <span class="req">*</span></label>

@@ -156,6 +156,10 @@
                   <input class="input" type="text" formControlName="surname">
                 </div>
                 <div class="field">
+                  <label class="field-label">Usuário (login)</label>
+                  <input class="input" type="text" formControlName="username">
+                </div>
+                <div class="field">
                   <label class="field-label">CPF</label>
                   <input class="input" type="text" formControlName="document">
                 </div>
@@ -192,6 +196,30 @@
                     <select class="select" formControlName="status">
                       @for (opt of statusOptions; track opt.value) {
                         <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Empresa / Entidade</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="entityId">
+                      <option [ngValue]="null">Nenhuma</option>
+                      @for (e of entities(); track e.id) {
+                        <option [ngValue]="e.id">{{ entityLabel(e) }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Perfil de permissão</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="permissionProfileId">
+                      <option [ngValue]="null">Nenhum</option>
+                      @for (p of profiles(); track p.id) {
+                        <option [ngValue]="p.id">{{ p.name }}</option>
                       }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

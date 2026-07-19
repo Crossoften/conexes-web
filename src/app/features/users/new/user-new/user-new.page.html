@@ -41,6 +41,26 @@
             </div>
           </div>
 
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Usuário (login)</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..."
+                formControlName="username">
+            </div>
+            <div class="form-group">
+              <label>Empresa / Entidade</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="entityId">
+                  <option [ngValue]="null">Nenhuma (opcional)</option>
+                  @for (e of entities(); track e.id) {
+                    <option [value]="e.id">{{ entityLabel(e) }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
           <div class="form-row grid-cols-3">
             <div class="form-group">
               <label>Cargo</label>
@@ -82,26 +102,22 @@
               </div>
             </div>
             <div class="form-group">
-              <label>Senha <span class="req">*</span></label>
-              <input type="password" class="form-control" placeholder="Mínimo 6 caracteres"
-                formControlName="password"
-                [class.is-invalid]="form.get('password')?.invalid && form.get('password')?.touched">
-              @if (form.get('password')?.errors?.['minlength'] && form.get('password')?.touched) {
-                <span class="field-error">Mínimo de 6 caracteres</span>
-              }
+              <label>Senha</label>
+              <input type="password" class="form-control" placeholder="Deixe em branco para gerar automaticamente"
+                formControlName="password">
+              <span class="field-hint">Se em branco, o sistema gera uma senha e envia por e-mail ao usuário.</span>
             </div>
           </div>
 
           <div class="form-row grid-cols-1">
             <div class="form-group">
-              <label>Perfil de permissão <span class="req">*</span></label>
+              <label>Perfil de permissão</label>
               @if (profilesLoading()) {
                 <input class="form-control" disabled placeholder="Carregando perfis...">
               } @else {
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="permissionProfileId"
-                    [class.is-invalid]="form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched">
-                    <option [ngValue]="null">Selecione o perfil</option>
+                  <select class="form-control" formControlName="permissionProfileId">
+                    <option [ngValue]="null">Nenhum perfil (opcional)</option>
                     @for (p of profiles(); track p.id) {
                       <option [value]="p.id">{{ p.name }}</option>
                     }
@@ -109,10 +125,39 @@
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               }
-              @if (form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched) {
-                <span class="field-error">É obrigatório selecionar uma configuração de permissões do usuário.</span>
-              }
               <span class="field-hint">As permissões de módulo serão herdadas do perfil selecionado.</span>
+            </div>
+          </div>
+
+          <!-- US-4: permissões diretas (opcional) — complementam o perfil -->
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Permissões de módulo (opcional)</label>
+              <div class="table-wrap">
+                <table class="perm-table">
+                  <thead>
+                    <tr>
+                      <th>Módulo</th><th>Submenu</th>
+                      <th class="center">Visualização</th><th class="center">Inclusão</th>
+                      <th class="center">Edição</th><th class="center">Exclusão</th><th class="center">Ilimitado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (mod of modules; track mod.module + mod.subMenu; let i = $index) {
+                      <tr>
+                        <td class="bold">{{ mod.module }}</td>
+                        <td>{{ mod.subMenu }}</td>
+                        <td class="center"><input type="checkbox" [checked]="mod.canView"     (change)="togglePermission(i, 'canView')"></td>
+                        <td class="center"><input type="checkbox" [checked]="mod.canCreate"   (change)="togglePermission(i, 'canCreate')"></td>
+                        <td class="center"><input type="checkbox" [checked]="mod.canEdit"     (change)="togglePermission(i, 'canEdit')"></td>
+                        <td class="center"><input type="checkbox" [checked]="mod.canDelete"   (change)="togglePermission(i, 'canDelete')"></td>
+                        <td class="center"><input type="checkbox" [checked]="mod.isUnlimited" (change)="togglePermission(i, 'isUnlimited')"></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <span class="field-hint">Deixe tudo desmarcado para usar só o perfil. Marcações aqui definem permissões diretas do usuário.</span>
             </div>
           </div>
 

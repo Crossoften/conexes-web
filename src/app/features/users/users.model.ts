@@ -59,6 +59,7 @@ export interface User {
   id:                  number;
   name:                string;
   surname:             string;
+  username?:           string;   // login
   email:               string;
   document:            string;
   jobTitle:            string;
@@ -66,10 +67,20 @@ export interface User {
   phone:               string;
   role:                UserRole | string;
   status:              UserStatus;
+  entityId?:           number;   // empresa/entidade vinculada
   permissionProfileId?: number;
   modulePermissions:   ModulePermission[];
   createdAt?:          string;
   updatedAt?:          string;
+}
+
+/** Item resumido de entidade (/v1/institutional/entities) para o select. */
+export interface EntityLite {
+  id:         number;
+  legalName?: string;
+  tradeName?: string;
+  cnpj?:      string;
+  city?:      string;
 }
 
 export interface UserFilters {
@@ -82,14 +93,16 @@ export interface UserFilters {
 export interface UserPayload {
   name:                 string;
   surname:              string;
+  username?:            string;
   email:                string;
   document:             string;
   jobTitle:             string;
   area:                 string;
   phone:                string;
-  role:                 string;
+  role?:                string;
   status:               UserStatus;
-  password:             string;
+  password?:            string;
+  entityId?:            number;
   permissionProfileId?: number;
   modulePermissions?:   ModulePermission[];
 }
@@ -97,6 +110,7 @@ export interface UserPayload {
 export interface UserUpdatePayload {
   name?:                string;
   surname?:             string;
+  username?:            string;
   email?:               string;
   document?:            string;
   jobTitle?:            string;
@@ -105,6 +119,7 @@ export interface UserUpdatePayload {
   role?:                string;
   status?:              UserStatus;
   password?:            string;
+  entityId?:            number;
   permissionProfileId?: number;
   modulePermissions?:   ModulePermission[];
 }

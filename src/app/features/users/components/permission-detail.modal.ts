@@ -3,6 +3,7 @@ import { Component, input, output, inject, effect } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PermissionProfile, PermissionProfileUpdatePayload, ModulePermission, DEFAULT_MODULES } from '../users.model';
+import { UsersService } from '../users.service';
 
 @Component({
   selector: 'app-permission-detail-modal',
@@ -17,12 +18,15 @@ export class PermissionDetailModalComponent {
   readonly delete  = output<number>();
   readonly saved   = output<{ id: number; payload: Partial<PermissionProfileUpdatePayload> }>();
 
-  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly fb  = inject(NonNullableFormBuilder);
+  private readonly svc = inject(UsersService);
 
   mode: 'view' | 'edit' = 'view';
   activeTab: 'DADOS' | 'MODULOS' = 'DADOS';
 
-  modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+  /** US-7: base da matriz vinda do catálogo oficial (fallback = DEFAULT_MODULES). */
+  private catalogBase: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+  modules: ModulePermission[] = this.catalogBase.map(m => ({ ...m }));
 
   readonly form = this.fb.group({
     name:        ['', Validators.required],
@@ -30,10 +34,25 @@ export class PermissionDetailModalComponent {
   });
 
   constructor() {
+    this.svc.getModulesCatalog().subscribe({
+      next: c => { if (c.length) { this.catalogBase = c; const p = this.profile(); if (p) this.applyModules(p); } },
+      error: () => {},
+    });
     effect(() => {
       const p = this.profile();
       if (p) this.patchForm(p);
     });
+  }
+
+  private applyModules(p: PermissionProfile): void {
+    if (p.permissions?.length) {
+      this.modules = this.catalogBase.map(def => {
+        const found = p.permissions.find(x => x.module === def.module && (!def.subMenu || x.subMenu === def.subMenu));
+        return found ? { ...def, ...found } : { ...def };
+      });
+    } else {
+      this.modules = this.catalogBase.map(m => ({ ...m }));
+    }
   }
 
   private patchForm(p: PermissionProfile): void {
@@ -41,15 +60,7 @@ export class PermissionDetailModalComponent {
       name:        p.name        ?? '',
       description: p.description ?? '',
     });
-
-    if (p.permissions?.length) {
-      this.modules = DEFAULT_MODULES.map(def => {
-        const found = p.permissions.find(x => x.module === def.module);
-        return found ? { ...found } : { ...def };
-      });
-    } else {
-      this.modules = DEFAULT_MODULES.map(m => ({ ...m }));
-    }
+    this.applyModules(p);
   }
 
   setTab(tab: 'DADOS' | 'MODULOS'): void { this.activeTab = tab; }

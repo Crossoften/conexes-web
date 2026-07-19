@@ -4,9 +4,10 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { ApprovalTiersService } from '../approval-tiers.service';
-import { ApprovalTierPayload } from '../approval-tiers.model';
+import { ApprovalTierPayload, ApprovalTierType } from '../approval-tiers.model';
 
 interface UserItem { id: number; name: string; email?: string; }
+interface LevelOption { value: string; label: string; }
 
 @Component({
   selector: 'app-approval-tiers-new',
@@ -35,18 +36,42 @@ export class ApprovalTiersNewPage implements OnInit {
     { label: 'Gerente',               value: 'Manager'            },
   ];
 
+  readonly typeOptions = [
+    { label: 'Compras',    value: 'COMPRAS'    },
+    { label: 'Financeiro', value: 'FINANCEIRO' },
+  ];
+
   form: FormGroup = this.fb.group({
     description:  ['', Validators.required],
+    type:         ['COMPRAS', Validators.required],
     approver:     ['', Validators.required],
-    purchaseRole: ['', Validators.required],
+    purchaseRole: [''],
     tierLevel:    ['', Validators.required],
     minValue:     ['', Validators.required],
     maxValue:     ['', Validators.required],
   });
 
+  /** Compras: papel de compra é obrigatório; Financeiro: campo não se aplica. */
+  get isCompras(): boolean { return this.form.get('type')?.value === 'COMPRAS'; }
+
+  /** Níveis por tipo — COMPRAS 1-4; FINANCEIRO 1-5 + "Gestor" (isManagerTier). */
+  get levelOptions(): LevelOption[] {
+    if (this.isCompras) {
+      return [1, 2, 3, 4].map(n => ({ value: String(n), label: String(n) }));
+    }
+    return [
+      ...[1, 2, 3, 4, 5].map(n => ({ value: String(n), label: String(n) })),
+      { value: 'manager', label: 'Gestor' },
+    ];
+  }
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    // Papel de compra obrigatório só em COMPRAS; ao trocar o tipo, ajusta.
+    this.applyTypeRules(this.form.get('type')!.value);
+    this.form.get('type')!.valueChanges.subscribe(t => this.applyTypeRules(t));
+
     this.svc.getUsers().subscribe({
       next: (res: any) => {
         const list = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
@@ -63,8 +88,24 @@ export class ApprovalTiersNewPage implements OnInit {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
+  private applyTypeRules(type: ApprovalTierType | string): void {
+    const role  = this.form.get('purchaseRole')!;
+    const level = this.form.get('tierLevel')!;
+    if (type === 'COMPRAS') {
+      role.setValidators([Validators.required]);
+    } else {
+      role.clearValidators();
+      role.setValue('');
+    }
+    role.updateValueAndValidity({ emitEvent: false });
+    // Nível selecionado pode não existir no novo tipo (ex.: 5 ou "manager" ao virar COMPRAS).
+    const valid = this.levelOptions.some(o => o.value === level.value);
+    if (!valid) level.setValue('');
+  }
+
   resetForm(): void {
-    this.form.reset();
+    this.form.reset({ type: 'COMPRAS' });
+    this.applyTypeRules('COMPRAS');
     this.errorMsg.set(null);
   }
 
@@ -80,13 +121,17 @@ export class ApprovalTiersNewPage implements OnInit {
     const v = this.form.value;
 
     const payload: ApprovalTierPayload = {
-      description:  v.description   ?? '',
-      level:        Number(v.tierLevel)  || 1,
-      minValue:     Number(v.minValue)   || 0,
-      maxValue:     Number(v.maxValue)   || 0,
-      purchaseRole: v.purchaseRole   ?? 'Requester',
-      userId:       Number(v.approver)   || 0,
+      description: v.description ?? '',
+      type:        v.type as ApprovalTierType,
+      minValue:    Number(v.minValue) || 0,
+      maxValue:    Number(v.maxValue) || 0,
+      userId:      Number(v.approver) || 0,
     };
+    // Nível: "manager" (Gestor do Financeiro) → isManagerTier; senão, número.
+    if (v.tierLevel === 'manager') payload.isManagerTier = true;
+    else if (v.tierLevel)          payload.level = Number(v.tierLevel);
+    // Papel de compra só em COMPRAS (o back ignora em FINANCEIRO).
+    if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
 
     this.svc.create(payload).subscribe({
       next: () => {

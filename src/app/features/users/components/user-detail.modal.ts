@@ -1,12 +1,14 @@
 // src/app/features/users/components/user-detail.modal.ts
-import { Component, input, output, inject, effect } from '@angular/core';
+import { Component, input, output, inject, effect, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   User, UserUpdatePayload,
   ModulePermission, DEFAULT_MODULES,
   USER_STATUS_CONFIG, USER_ROLE_LABELS,
+  PermissionProfile, EntityLite,
 } from '../users.model';
+import { UsersService } from '../users.service';
 
 type ModalTab = 'DADOS' | 'PERMISSOES';
 
@@ -23,13 +25,21 @@ export class UserDetailModalComponent {
   readonly delete = output<number>();
   readonly saved  = output<{ id: number; payload: Partial<UserUpdatePayload> }>();
 
-  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly fb  = inject(NonNullableFormBuilder);
+  private readonly svc = inject(UsersService);
 
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'DADOS';
 
   readonly statusConfig = USER_STATUS_CONFIG;
   readonly roleLabels   = USER_ROLE_LABELS;
+
+  readonly profiles = signal<PermissionProfile[]>([]);
+  readonly entities = signal<EntityLite[]>([]);
+
+  entityLabel(e: EntityLite): string {
+    return e.tradeName || e.legalName || (e.cnpj ? `CNPJ ${e.cnpj}` : `Entidade #${e.id}`);
+  }
 
   readonly roleOptions = [
     { label: 'Master',              value: 'Master'             },
@@ -42,54 +52,74 @@ export class UserDetailModalComponent {
   ];
 
   readonly statusOptions = [
-    { label: 'Ativo',   value: 'Active'   },
-    { label: 'Inativo', value: 'Inactive' },
+    { label: 'Ativo',    value: 'Active'   },
+    { label: 'Pendente', value: 'Pending'  },
+    { label: 'Inativo',  value: 'Inactive' },
   ];
 
   modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
 
   readonly form = this.fb.group({
-    name:     ['', Validators.required],
-    surname:  ['', Validators.required],
-    email:    ['', [Validators.required, Validators.email]],
-    document: [''],
-    jobTitle: [''],
-    area:     [''],
-    phone:    [''],
-    role:     ['', Validators.required],
-    status:   [''],
-    password: [''],
+    name:                ['', Validators.required],
+    surname:             ['', Validators.required],
+    username:            [''],
+    email:               ['', [Validators.required, Validators.email]],
+    document:            [''],
+    jobTitle:            [''],
+    area:                [''],
+    phone:               [''],
+    role:                ['', Validators.required],
+    status:              [''],
+    password:            [''],
+    entityId:            this.fb.control<number | null>(null),
+    permissionProfileId: this.fb.control<number | null>(null),
   });
 
+  /** US-7: base da matriz vinda do catálogo oficial (fallback = DEFAULT_MODULES). */
+  private catalogBase: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+
   constructor() {
+    this.svc.getProfiles({ take: 100 }).subscribe({ next: r => this.profiles.set(r.data ?? (r as any)), error: () => {} });
+    this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
+    this.svc.getModulesCatalog().subscribe({
+      next: c => { if (c.length) { this.catalogBase = c; const u = this.user(); if (u) this.applyModules(u); } },
+      error: () => {},
+    });
     effect(() => {
       const u = this.user();
       if (u) this.patchForm(u);
     });
   }
 
-  private patchForm(u: User): void {
-    this.form.patchValue({
-      name:     u.name     ?? '',
-      surname:  u.surname  ?? '',
-      email:    u.email    ?? '',
-      document: u.document ?? '',
-      jobTitle: u.jobTitle ?? '',
-      area:     u.area     ?? '',
-      phone:    u.phone    ?? '',
-      role:     u.role     ?? '',
-      status:   u.status   ?? '',
-      password: '',
-    });
-
+  private applyModules(u: User): void {
     if (u.modulePermissions?.length) {
-      this.modules = DEFAULT_MODULES.map(def => {
-        const found = u.modulePermissions.find(p => p.module === def.module);
-        return found ? { ...found } : { ...def };
+      this.modules = this.catalogBase.map(def => {
+        const found = u.modulePermissions.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
+        return found ? { ...def, ...found } : { ...def };
       });
     } else {
-      this.modules = DEFAULT_MODULES.map(m => ({ ...m }));
+      this.modules = this.catalogBase.map(m => ({ ...m }));
     }
+  }
+
+  private patchForm(u: User): void {
+    this.form.patchValue({
+      name:                u.name     ?? '',
+      surname:             u.surname  ?? '',
+      username:            u.username ?? '',
+      email:               u.email    ?? '',
+      document:            u.document ?? '',
+      jobTitle:            u.jobTitle ?? '',
+      area:                u.area     ?? '',
+      phone:               u.phone    ?? '',
+      role:                u.role     ?? '',
+      status:              u.status   ?? '',
+      password:            '',
+      entityId:            u.entityId ?? null,
+      permissionProfileId: u.permissionProfileId ?? null,
+    });
+
+    this.applyModules(u);
   }
 
   // ── Accessors view ────────────────────────────────────────────────────────
@@ -146,6 +176,7 @@ export class UserDetailModalComponent {
     const payload: Partial<UserUpdatePayload> = {
       name:              v.name,
       surname:           v.surname,
+      username:          v.username   || undefined,
       email:             v.email,
       document:          v.document   || undefined,
       jobTitle:          v.jobTitle   || undefined,
@@ -157,6 +188,9 @@ export class UserDetailModalComponent {
     };
 
     if (v.password) payload.password = v.password;
+    if (v.entityId) payload.entityId = v.entityId;
+    // permissionProfileId: envia inclusive quando limpo? Só quando definido (US-3).
+    if (v.permissionProfileId) payload.permissionProfileId = v.permissionProfileId;
 
     this.saved.emit({ id: u.id, payload });
   }
