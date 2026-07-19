@@ -114,8 +114,9 @@ export class BankAccountNewPage implements OnInit {
     const payload: BankAccountPayload = {
       bankId:            Number(v.banco)           || 0,
       entityId:          Number(v.fontePagadora)   || 0,
-      payingSourceId:    Number(v.fontePagadora)   || 0,
+      // payingSourceId omitido: o back assume a entidade dona (a Fonte Pagadora selecionada).
       accountType:       v.tipoConta               || 'Checking',
+      status:            'Active',
       openDate:          v.dataAbertura            ?? '',
       nickname:          v.apelidoConta            ?? '',
       agency:            v.agenciaDigito           ?? '',
