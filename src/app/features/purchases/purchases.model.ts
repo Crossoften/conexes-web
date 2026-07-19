@@ -13,6 +13,7 @@ import { Page } from '../../shared/models/list-page.model';
 export type PurchaseRequestStatus =
   | 'Draft'
   | 'AwaitingApproval'
+  | 'AwaitingAdjustment'
   | 'Quotation'
   | 'QuotationApproval'
   | 'Order'
@@ -45,9 +46,10 @@ export interface PurchaseStatusConfig {
 }
 
 export const PURCHASE_REQUEST_STATUS_CONFIG: Record<PurchaseRequestStatus, PurchaseStatusConfig> = {
-  Draft:             { label: 'Rascunho',            variant: 'warning' },
-  AwaitingApproval:  { label: 'Aguardando aprovação', variant: 'neutral' },
-  Quotation:         { label: 'Cotação',             variant: 'neutral' },
+  Draft:              { label: 'Rascunho',             variant: 'warning' },
+  AwaitingApproval:   { label: 'Aguardando aprovação', variant: 'neutral' },
+  AwaitingAdjustment: { label: 'Aguardando ajustes',   variant: 'warning' },
+  Quotation:          { label: 'Cotação',              variant: 'neutral' },
   QuotationApproval: { label: 'Cotação em aprovação', variant: 'neutral' },
   Order:             { label: 'Pedido',              variant: 'success' },
   Completed:         { label: 'Concluído',           variant: 'success' },
@@ -299,6 +301,17 @@ export interface ApproverLevel {
   userId: number;
 }
 
+/** Alçada de aprovação (/v1/approval-limits) — amarra usuário × nível × faixa × papel. */
+export interface ApprovalLimit {
+  id?:          number;
+  description?: string;
+  level:        number;
+  minValue:     number;
+  maxValue:     number;
+  purchaseRole: string;   // ex.: 'RequestSupervisor'
+  userId:       number;
+}
+
 export interface SetApproversPayload {
   approvers: ApproverLevel[];
   reason?: string;
@@ -318,17 +331,21 @@ export interface ReasonPayload {
   reason?: string;
 }
 
-/** Item do log de ações de uma requisição (formato a confirmar no teste). */
+/** Item do log de ações de uma requisição (PurchaseRequestHistoryItemDto). */
 export interface PurchaseRequestActionLog {
   id: number;
   action?: string;
+  stage?: number;
   description?: string;
+  reason?: string;
+  /** Alterações — hoje o back envia snapshot, não diff (BE-1). */
+  changes?: unknown;
   user?: PurchaseRef | null;
   createdAt?: string;
 }
 
 /** Ações que abrem modal com formulário. */
-export type PurchaseActionKind = 'cancel' | 'reject' | 'restart' | 'move' | 'buyer' | 'approvers';
+export type PurchaseActionKind = 'cancel' | 'reject' | 'request-changes' | 'restart' | 'move' | 'buyer' | 'approvers';
 
 /** Resultado emitido pelo modal de ação (payload já montado por tipo). */
 export interface PurchaseActionResult {
@@ -337,6 +354,43 @@ export interface PurchaseActionResult {
   stage?: number;
   buyerId?: number;
   approvers?: ApproverLevel[];
+}
+
+// ── Adjudicação (Etapa 4 — /requests/{id}/award) ──────────────────────────────
+
+export type AwardMode = 'by_supplier' | 'by_item';
+
+export interface AwardSelection {
+  itemId:      number;
+  quotationId: number;
+}
+
+export interface AwardPayload {
+  mode:                 AwardMode;
+  selections?:          AwardSelection[]; // obrigatório em by_item
+  supplierQuotationId?: number;           // usado em by_supplier
+  reason?:              string;
+}
+
+// ── Pedido de Compra (Etapas 5/6 — /orders) ───────────────────────────────────
+
+export interface PurchaseOrder {
+  id:                 number;
+  purchaseRequestId?: number;
+  supplierId?:        number;
+  supplier?:          PurchaseRef | null;
+  number?:            string | null;
+  totalValue?:        number | null;
+  status?:            string | null;
+  items?:             PurchaseRequestItem[];
+  createdAt?:         string;
+}
+
+export interface PurchaseOrderListParams {
+  requestId?: number;
+  status?:    string;
+  skip?:      number;
+  take?:      number;
 }
 
 // ── Dashboard (formato real da API) ───────────────────────────────────────────

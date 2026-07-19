@@ -1,0 +1,83 @@
+<!-- src/app/features/purchasing-orders/purchasing-orders-list.page.html -->
+<div class="list-page">
+
+  <h2 class="section-title">Pedidos de Compra</h2>
+
+  <div class="card">
+
+    <div class="card-section filter-bar">
+      <div class="search-wrap">
+        <input class="search" type="text" placeholder="Buscar por nº, fornecedor ou requisição"
+          (input)="onSearch($any($event.target).value)" aria-label="Buscar">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th">Nº do pedido</th>
+            <th class="th">Requisição</th>
+            <th class="th">Fornecedor</th>
+            <th class="th th--right">Valor total</th>
+            <th class="th">Status</th>
+            <th class="th">Data</th>
+            <th class="th th--right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (store.loading()) {
+            <tr><td class="td td--state" colspan="7">Carregando pedidos…</td></tr>
+          } @else if (store.error()) {
+            <tr><td class="td td--state td--error" colspan="7">
+              {{ store.error() }}
+              <button type="button" class="link-retry" (click)="store.load()">Tentar novamente</button>
+            </td></tr>
+          } @else if (store.pageItems().length === 0) {
+            <tr><td class="td td--state" colspan="7">Nenhum pedido encontrado.</td></tr>
+          } @else {
+            @for (item of store.pageItems(); track item.id) {
+              <tr class="tr">
+                <td class="td td--mono">{{ item.number }}</td>
+                <td class="td td--mono">{{ item.requestRef }}</td>
+                <td class="td">{{ item.supplier }}</td>
+                <td class="td td--right">{{ item.totalValue }}</td>
+                <td class="td">
+                  <span class="o-badge o-badge--{{ statusVariant(item.status) }}">{{ statusLabel(item.status) }}</span>
+                </td>
+                <td class="td">{{ item.createdAt }}</td>
+                <td class="td td--right">
+                  <button class="icon-btn" title="Visualizar" (click)="view(item)">
+                    <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="pag-btn" [disabled]="store.pagination().page === 1" (click)="goToPage(store.pagination().page - 1)">‹</button>
+        @for (p of pageNumbers(); track p) {
+          <button class="pag-btn" [class.pag-btn--active]="p === store.pagination().page" (click)="goToPage(p)">{{ p }}</button>
+        }
+        <button class="pag-btn" [disabled]="store.pagination().page === totalPages()" (click)="goToPage(store.pagination().page + 1)">›</button>
+      </div>
+    }
+  </div>
+
+  @if (store.selected() || store.detailLoading()) {
+    <app-order-detail-modal
+      [order]="store.selected()"
+      [loading]="store.detailLoading()"
+      (close)="store.closeDetail()">
+    </app-order-detail-modal>
+  }
+</div>

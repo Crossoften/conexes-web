@@ -190,6 +190,27 @@ export class QuotationsStore {
 
   closeDetail(): void { this.selected.set(null); }
 
+  // ── Modal de cotações (FE-7) ────────────────────────────────────────────────
+  readonly quotationsFor = signal<{ id: number; code: string } | null>(null);
+
+  openQuotations(item: Quotation): void {
+    this.quotationsFor.set({ id: item.apiId, code: item.typeId });
+  }
+
+  closeQuotations(): void { this.quotationsFor.set(null); }
+
+  // ── Modal de adjudicação (FE-8) ─────────────────────────────────────────────
+  readonly awardFor = signal<{ id: number; code: string } | null>(null);
+
+  openAward(item: Quotation): void {
+    this.awardFor.set({ id: item.apiId, code: item.typeId });
+  }
+
+  closeAward(): void { this.awardFor.set(null); }
+
+  /** Após adjudicar, a requisição migra de etapa — recarrega a lista. */
+  onAwarded(): void { this.awardFor.set(null); this.reload(); }
+
   // ── Modais de ação + ações diretas ──────────────────────────────────────────
   readonly action           = signal<{ kind: PurchaseActionKind; request: PurchaseRequest } | null>(null);
   readonly users            = signal<PurchaseRef[]>([]);
@@ -215,8 +236,9 @@ export class QuotationsStore {
 
     let obs: Observable<PurchaseRequest>;
     switch (result.kind) {
-      case 'cancel':    obs = this.svc.cancelRequest(id, result.reason ?? ''); break;
-      case 'reject':    obs = this.svc.rejectRequest(id, result.reason); break;
+      case 'cancel':          obs = this.svc.cancelRequest(id, result.reason ?? ''); break;
+      case 'reject':          obs = this.svc.rejectRequest(id, result.reason); break;
+      case 'request-changes': obs = this.svc.requestChanges(id, result.reason); break;
       case 'restart':   obs = this.svc.restartRequest(id, result.reason); break;
       case 'move':      obs = this.svc.moveRequest(id, result.stage ?? 1, result.reason); break;
       case 'buyer':     obs = this.svc.changeBuyer(id, { buyerId: result.buyerId ?? 0, reason: result.reason }); break;
@@ -240,6 +262,31 @@ export class QuotationsStore {
 
   approve(apiId: number): void {
     this.svc.approveRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+  }
+
+  /** Etapa 3: exportar a requisição aprovada para cotação (FE-5b). */
+  exportToQuotation(apiId: number): void {
+    this.svc.exportRequestToQuotation(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+  }
+
+  /** Etapa 5 → 6: concluir o pedido. */
+  complete(apiId: number): void {
+    this.svc.completeRequest(apiId).subscribe({ next: () => this.reload(), error: () => {} });
+  }
+
+  /** Exportar a requisição em PDF (gerado no back). */
+  exportPdf(apiId: number): void {
+    this.svc.generateRequestPdf(apiId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `requisicao-${apiId}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {},
+    });
   }
 
   copy(apiId: number): void {

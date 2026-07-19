@@ -1,0 +1,130 @@
+<!-- src/app/features/purchases/components/purchase-quotations.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-text">
+        <h2>Cotações</h2>
+        <p>Propostas de fornecedores para a requisição {{ requestCode }}.</p>
+      </div>
+      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      @if (error()) {
+        <div class="modal-error"><p>{{ error() }}</p></div>
+      }
+
+      <!-- ── Ação: registrar proposta (Etapa 3) ─────────────────────────── -->
+      @if (canRegister) {
+        <div class="q-toolbar">
+          <button type="button" class="btn-primary" (click)="toggleForm()">
+            {{ showForm() ? 'Cancelar' : '+ Registrar proposta' }}
+          </button>
+        </div>
+
+        @if (showForm()) {
+          <form class="q-form" [formGroup]="form" (ngSubmit)="submit()">
+            <div class="q-grid">
+              <label class="field">
+                <span class="field-label">Fornecedor *</span>
+                <select class="field-input" formControlName="supplierId">
+                  <option [ngValue]="0">Selecione o fornecedor</option>
+                  @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Valor unitário *</span>
+                <input class="field-input" type="number" step="0.01" min="0" formControlName="unitValue">
+              </label>
+              <label class="field">
+                <span class="field-label">Valor total *</span>
+                <input class="field-input" type="number" step="0.01" min="0" formControlName="totalValue">
+              </label>
+              <label class="field">
+                <span class="field-label">Frete</span>
+                <input class="field-input" type="number" step="0.01" min="0" formControlName="freight">
+              </label>
+              <label class="field">
+                <span class="field-label">Desconto</span>
+                <input class="field-input" type="number" step="0.01" min="0" formControlName="discount">
+              </label>
+              <label class="field">
+                <span class="field-label">Prazo de entrega</span>
+                <input class="field-input" type="text" placeholder="ex.: 15 dias" formControlName="deliveryTime">
+              </label>
+              <label class="field field--wide">
+                <span class="field-label">Condições de pagamento</span>
+                <input class="field-input" type="text" formControlName="paymentConditions">
+              </label>
+              <label class="field field--wide">
+                <span class="field-label">Observação</span>
+                <input class="field-input" type="text" formControlName="observation">
+              </label>
+            </div>
+            <div class="q-form-actions">
+              <button type="submit" class="btn-primary" [disabled]="submitting()">
+                {{ submitting() ? 'Salvando…' : 'Salvar proposta' }}
+              </button>
+            </div>
+          </form>
+        }
+      }
+
+      <!-- ── Tabela de propostas ─────────────────────────────────────────── -->
+      @if (loading()) {
+        <p class="modal-loading">Carregando cotações…</p>
+      } @else if (quotations().length === 0) {
+        <p class="modal-loading">Nenhuma proposta registrada.</p>
+      } @else {
+        <div class="q-table-wrap">
+          <table class="q-table">
+            <thead>
+              <tr>
+                <th>Fornecedor</th>
+                <th class="right">Valor unit.</th>
+                <th class="right">Valor total</th>
+                <th class="right">Frete</th>
+                <th class="right">Desconto</th>
+                <th>Prazo</th>
+                <th>Condições</th>
+                <th>Status</th>
+                @if (canApproveQuote) { <th class="right">Ações</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @for (q of quotations(); track q.id) {
+                <tr>
+                  <td>{{ supplierName(q) }}</td>
+                  <td class="right">{{ fmtCurrency(q.unitValue) }}</td>
+                  <td class="right">{{ fmtCurrency(q.totalValue) }}</td>
+                  <td class="right">{{ q.freight != null ? fmtCurrency(q.freight) : '—' }}</td>
+                  <td class="right">{{ q.discount != null ? fmtCurrency(q.discount) : '—' }}</td>
+                  <td>{{ q.deliveryTime || '—' }}</td>
+                  <td>{{ q.paymentConditions || '—' }}</td>
+                  <td><span class="q-badge q-badge--{{ statusVariant(q.status) }}">{{ statusLabel(q.status) }}</span></td>
+                  @if (canApproveQuote) {
+                    <td class="right">
+                      @if (isPending(q)) {
+                        <button type="button" class="q-icon q-icon--ok" title="Aprovar" (click)="approve(q)">
+                          <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button type="button" class="q-icon q-icon--danger" title="Reprovar" (click)="reject(q)">
+                          <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        </button>
+                      } @else { <span class="q-muted">—</span> }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>

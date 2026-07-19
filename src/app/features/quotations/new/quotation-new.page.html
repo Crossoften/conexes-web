@@ -31,7 +31,8 @@
               <div class="form-group">
                 <label>Requisitante <span class="req">*</span></label>
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="requesterId">
+                  <select class="form-control" formControlName="requesterId"
+                    [class.is-invalid]="form.get('requesterId')?.invalid && form.get('requesterId')?.touched">
                     <option value="">Selecione</option>
                     @for (u of users(); track u.id) { <option [value]="u.id">{{ u.name }}</option> }
                   </select>
@@ -46,12 +47,12 @@
           <h3 class="section-title">Dados Gerais da Requisição</h3>
           <div class="form-grid mb-8">
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Título da Requisição <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title"></div>
+              <div class="form-group"><label>Título da Requisição <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="title" [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched"></div>
               <div class="form-group"><label>Tipo de Pedido</label><input type="text" class="form-control" placeholder="Ex: Compra de produto" formControlName="orderType"></div>
               <div class="form-group"><label>Valor Global Estimado (R$)</label><input type="number" step="0.01" class="form-control" placeholder="0,00" formControlName="estimatedValue"></div>
             </div>
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Data da Requisição <span class="req">*</span></label><input type="date" class="form-control" formControlName="requestDate"></div>
+              <div class="form-group"><label>Data da Requisição <span class="req">*</span></label><input type="date" class="form-control" formControlName="requestDate" [class.is-invalid]="form.get('requestDate')?.invalid && form.get('requestDate')?.touched"></div>
               <div class="form-group"><label>Data de Entrega Prevista</label><input type="date" class="form-control" formControlName="expectedDeliveryDate"></div>
             </div>
           </div>
@@ -59,8 +60,8 @@
           <h3 class="section-title">Descrição e Justificativa</h3>
           <div class="form-grid">
             <div class="form-row grid-cols-1">
-              <div class="form-group"><label>Descrição do Pedido <span class="req">*</span></label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="description"></textarea></div>
-              <div class="form-group"><label>Justificativa da Compra <span class="req">*</span></label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="justification"></textarea></div>
+              <div class="form-group"><label>Descrição do Pedido <span class="req">*</span></label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="description" [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched"></textarea></div>
+              <div class="form-group"><label>Justificativa da Compra <span class="req">*</span></label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="justification" [class.is-invalid]="form.get('justification')?.invalid && form.get('justification')?.touched"></textarea></div>
               <div class="form-group"><label>Obrigações da Contratada</label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="contractorObligations"></textarea></div>
               <div class="form-group"><label>Condições Comerciais</label><textarea class="form-control textarea" rows="3" placeholder="Digite aqui..." formControlName="commercialConditions"></textarea></div>
             </div>
@@ -75,11 +76,21 @@
             <div class="form-row grid-cols-3">
               <div class="form-group"><label>Fonte Pagadora</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="payingSource"></div>
               <div class="form-group">
-                <label>Projeto/Centro de Custos</label>
+                <label>Projeto</label>
                 <div class="select-wrap">
                   <select class="form-control" formControlName="projectId">
                     <option value="">Selecione</option>
                     @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Centro de Custo</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="costCenterId">
+                    <option value="">Selecione</option>
+                    @for (c of costCenters(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
@@ -156,13 +167,13 @@
                         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </div>
                     </div>
-                    <div class="form-group"><label>Nome do item <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name"></div>
+                    <div class="form-group"><label>Nome do item <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="item.get('name')?.invalid && item.get('name')?.touched"></div>
                     <div class="form-group"><label>Grupo</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="group"></div>
                   </div>
 
                   <div class="form-row grid-cols-3 mt-4">
-                    <div class="form-group"><label>Quantidade <span class="req">*</span></label><input type="number" class="form-control" placeholder="0" formControlName="quantity"></div>
-                    <div class="form-group"><label>Unidade <span class="req">*</span></label><input type="text" class="form-control" placeholder="Ex: UN" formControlName="unit"></div>
+                    <div class="form-group"><label>Quantidade <span class="req">*</span></label><input type="number" class="form-control" placeholder="0" formControlName="quantity" [class.is-invalid]="item.get('quantity')?.invalid && item.get('quantity')?.touched"></div>
+                    <div class="form-group"><label>Unidade <span class="req">*</span></label><input type="text" class="form-control" placeholder="Ex: UN" formControlName="unit" [class.is-invalid]="item.get('unit')?.invalid && item.get('unit')?.touched"></div>
                     <div class="form-group"><label>Valor unit. estimado (R$)</label><input type="number" step="0.01" class="form-control" placeholder="0,00" formControlName="estimatedUnitValue"></div>
                   </div>
 

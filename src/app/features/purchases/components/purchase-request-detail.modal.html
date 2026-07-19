@@ -34,6 +34,8 @@
         <button class="tab-btn" [class.active]="activeTab === 'FONTE'" (click)="setTab('FONTE')">Fonte, fornecedor e contrato</button>
         <button class="tab-btn" [class.active]="activeTab === 'ITENS'" (click)="setTab('ITENS')">Itens e serviços</button>
         <button class="tab-btn" [class.active]="activeTab === 'LOCAL'" (click)="setTab('LOCAL')">Local de entrega</button>
+        <button class="tab-btn" [class.active]="activeTab === 'ANEXOS'" (click)="setTab('ANEXOS')">Anexos</button>
+        <button class="tab-btn" [class.active]="activeTab === 'HISTORICO'" (click)="setTab('HISTORICO')">Histórico</button>
       </div>
 
       @if (loading) {
@@ -128,6 +130,82 @@
                 <div class="info-item"><span class="info-label">Número</span><span class="info-value">{{ fmtText(request.deliveryLocation?.number) }}</span></div>
               </div>
             </div>
+          }
+
+          <!-- ══ ANEXOS ════════════════════════════════════════════════════ -->
+          @if (activeTab === 'ANEXOS') {
+            <div class="anexos-head">
+              <h3 class="section-title">Anexos da requisição</h3>
+              <label class="anexos-upload" [class.is-disabled]="uploading()">
+                @if (uploading()) { <span>Enviando…</span> } @else { <span>+ Adicionar anexo</span> }
+                <input type="file" (change)="onUpload($event)" [disabled]="uploading()" hidden>
+              </label>
+            </div>
+
+            @if (filesError()) {
+              <div class="modal-error"><p>{{ filesError() }}</p></div>
+            }
+
+            @if (filesLoading()) {
+              <p class="modal-loading">Carregando anexos…</p>
+            } @else if (files().length === 0) {
+              <p class="modal-loading">Nenhum anexo cadastrado.</p>
+            } @else {
+              <ul class="anexos-list">
+                @for (f of files(); track f.id) {
+                  <li class="anexos-item">
+                    <a class="anexos-link" [href]="f.fileUrl" target="_blank" rel="noopener">
+                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span>{{ fileName(f) }}</span>
+                    </a>
+                    <button type="button" class="anexos-remove" title="Remover" (click)="removeFile(f.id)">
+                      <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M4 6h12M8 6V4h4v2M7 6v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          }
+
+          <!-- ══ HISTÓRICO ═════════════════════════════════════════════════ -->
+          @if (activeTab === 'HISTORICO') {
+            <h3 class="section-title">Histórico da requisição</h3>
+            @if (historyLoading()) {
+              <p class="modal-loading">Carregando histórico...</p>
+            } @else if (historyError()) {
+              <div class="modal-error">
+                <p>{{ historyError() }}</p>
+                <button type="button" class="link-retry" (click)="setTab('HISTORICO')">Tentar novamente</button>
+              </div>
+            } @else if (history().length === 0) {
+              <p class="modal-loading">Nenhuma movimentação registrada.</p>
+            } @else {
+              <div class="timeline">
+                @for (h of history(); track h.id) {
+                  <div class="timeline__item">
+                    <div class="timeline__dot"></div>
+                    <div class="timeline__body">
+                      <div class="timeline__head">
+                        <span class="timeline__action">{{ actionLabel(h.action) }}</span>
+                        @if (h.stage != null) { <span class="timeline__stage">Etapa {{ h.stage }}</span> }
+                        <span class="timeline__date">{{ fmtDateTime(h.createdAt) }}</span>
+                      </div>
+                      <div class="timeline__meta">
+                        <span>{{ fmtText(h.user?.name) }}</span>
+                        @if (h.reason) { <span class="timeline__reason">— {{ h.reason }}</span> }
+                      </div>
+                      @if (changeEntries(h.changes).length) {
+                        <ul class="timeline__changes">
+                          @for (c of changeEntries(h.changes); track c.label) {
+                            <li><span class="timeline__change-label">{{ c.label }}:</span> {{ c.value }}</li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           }
 
         </div>

@@ -1,0 +1,91 @@
+<!-- src/app/features/purchases/components/purchase-award.modal.html -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="header-text">
+        <h2>Adjudicação</h2>
+        <p>Selecione a(s) proposta(s) vencedora(s) da requisição {{ requestCode }} para gerar o(s) pedido(s).</p>
+      </div>
+      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      @if (error()) { <div class="modal-error"><p>{{ error() }}</p></div> }
+
+      @if (loading()) {
+        <p class="modal-loading">Carregando cotações…</p>
+      } @else if (eligible().length === 0) {
+        <p class="modal-loading">Nenhuma proposta elegível para adjudicação.</p>
+      } @else {
+
+        <!-- Modo -->
+        <div class="award-modes">
+          <label class="award-mode" [class.is-active]="mode === 'by_supplier'">
+            <input type="radio" name="mode" value="by_supplier" [(ngModel)]="mode">
+            <div>
+              <span class="award-mode-title">Por fornecedor</span>
+              <span class="award-mode-desc">Uma proposta para toda a requisição · gera 1 pedido</span>
+            </div>
+          </label>
+          <label class="award-mode" [class.is-active]="mode === 'by_item'">
+            <input type="radio" name="mode" value="by_item" [(ngModel)]="mode">
+            <div>
+              <span class="award-mode-title">Por item</span>
+              <span class="award-mode-desc">Uma proposta por item · gera N pedidos</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- by_supplier -->
+        @if (mode === 'by_supplier') {
+          <label class="field">
+            <span class="field-label">Proposta vencedora *</span>
+            <select class="field-input" [(ngModel)]="supplierQuotationId">
+              <option [ngValue]="0">Selecione a proposta</option>
+              @for (q of eligible(); track q.id) { <option [ngValue]="q.id">{{ quotationLabel(q) }}</option> }
+            </select>
+          </label>
+        }
+
+        <!-- by_item -->
+        @if (mode === 'by_item') {
+          @if (awardItems().length === 0) {
+            <p class="modal-loading">Esta requisição não possui itens.</p>
+          } @else {
+            <div class="award-items">
+              @for (it of awardItems(); track it.id) {
+                <div class="award-item">
+                  <div class="award-item-info">
+                    <span class="award-item-name">{{ it.name }}</span>
+                    <span class="award-item-qty">{{ it.quantity }} {{ it.unit }}</span>
+                  </div>
+                  <select class="field-input" [(ngModel)]="selections[it.id]" [ngModelOptions]="{ standalone: true }">
+                    <option [ngValue]="undefined">Selecione a proposta</option>
+                    @for (q of eligible(); track q.id) { <option [ngValue]="q.id">{{ quotationLabel(q) }}</option> }
+                  </select>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Justificativa opcional -->
+        <label class="field">
+          <span class="field-label">Justificativa (opcional)</span>
+          <textarea class="field-input field-textarea" rows="2" [(ngModel)]="reason" placeholder="Motivo da escolha"></textarea>
+        </label>
+
+        <div class="award-actions">
+          <button type="button" class="btn-ghost" (click)="onClose()">Cancelar</button>
+          <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+            {{ submitting() ? 'Adjudicando…' : 'Adjudicar e gerar pedido(s)' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
