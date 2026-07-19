@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { ApprovalTiersService } from '../approval-tiers.service';
-import { ApprovalTierPayload, ApprovalTierType } from '../approval-tiers.model';
+import { ApprovalTierPayload, ApprovalTierType, ApprovalScopeOption } from '../approval-tiers.model';
 
 interface UserItem { id: number; name: string; email?: string; }
 interface LevelOption { value: string; label: string; }
@@ -24,6 +24,9 @@ export class ApprovalTiersNewPage implements OnInit {
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
   readonly users        = signal<UserItem[]>([]);
+  readonly costCenters  = signal<ApprovalScopeOption[]>([]);
+  readonly projects     = signal<ApprovalScopeOption[]>([]);
+  readonly activities   = signal<ApprovalScopeOption[]>([]);
   readonly loadingLists = signal(true);
 
   readonly purchaseRoleOptions = [
@@ -49,6 +52,9 @@ export class ApprovalTiersNewPage implements OnInit {
     tierLevel:    ['', Validators.required],
     minValue:     ['', Validators.required],
     maxValue:     ['', Validators.required],
+    costCenterId: [''],
+    projectId:    [''],
+    activityId:   [''],
   });
 
   /** Compras: papel de compra é obrigatório; Financeiro: campo não se aplica. */
@@ -84,6 +90,11 @@ export class ApprovalTiersNewPage implements OnInit {
       },
       error: () => this.loadingLists.set(false),
     });
+
+    // AL-4: lookups de escopo (opcionais, só COMPRAS).
+    this.svc.getCostCenters().subscribe({ next: c => this.costCenters.set(c), error: () => {} });
+    this.svc.getProjects().subscribe({   next: p => this.projects.set(p),    error: () => {} });
+    this.svc.getActivities().subscribe({ next: a => this.activities.set(a),  error: () => {} });
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -132,6 +143,12 @@ export class ApprovalTiersNewPage implements OnInit {
     else if (v.tierLevel)          payload.level = Number(v.tierLevel);
     // Papel de compra só em COMPRAS (o back ignora em FINANCEIRO).
     if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
+    // Escopo (opcional) só em COMPRAS.
+    if (v.type === 'COMPRAS') {
+      if (v.costCenterId) payload.costCenterId = Number(v.costCenterId);
+      if (v.projectId)    payload.projectId    = Number(v.projectId);
+      if (v.activityId)   payload.activityId   = Number(v.activityId);
+    }
 
     this.svc.create(payload).subscribe({
       next: () => {
