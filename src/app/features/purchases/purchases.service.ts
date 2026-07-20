@@ -6,8 +6,9 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/auth/auth.service';
 import { RawListEnvelope, toPage } from '../../shared/utils/to-page';
 import {
   Page,
@@ -38,7 +39,41 @@ import {
 @Injectable({ providedIn: 'root' })
 export class PurchasesService {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private base = `${environment.apiUrl}/v1/purchases`;
+
+  /**
+   * Id do usuário logado DENTRO da tabela `/v1/users` (o ator da ação).
+   *
+   * O back passou a exigir `userId` no corpo das ações de requisição (histórico/auditoria)
+   * e o valida contra `/v1/users`. O id do `/my-self` está num espaço diferente e não bate
+   * (400 "Referência inválida: userId não corresponde a um registro existente"), então
+   * resolvemos o id real casando o e-mail do usuário logado com a listagem `/v1/users`.
+   * O resultado é memoizado para não repetir a busca a cada ação.
+   */
+  private actorUserId: number | null = null;
+
+  private resolveActorUserId(): Observable<number | undefined> {
+    if (this.actorUserId != null) return of(this.actorUserId);
+
+    const email = (this.auth.user()?.email ?? '').toLowerCase().trim();
+    const code  = (this.auth.user()?.code  ?? '').toLowerCase().trim();
+    if (!email && !code) return of(undefined);
+
+    const params = new HttpParams().set('take', '1000');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/users`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        const match =
+          (email && rows.find(r => String(r['email'] ?? '').toLowerCase().trim() === email)) ||
+          (code  && rows.find(r => String(r['code']  ?? '').toLowerCase().trim() === code)) ||
+          undefined;
+        const id = match ? Number(match['id']) : NaN;
+        this.actorUserId = Number.isFinite(id) && id > 0 ? id : null;
+        return this.actorUserId ?? undefined;
+      }));
+  }
 
   // ── Requisições ─────────────────────────────────────────────────────────────
 
@@ -99,32 +134,39 @@ export class PurchasesService {
   }
 
   rejectRequest(id: number, reason?: string): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/reject`, { reason });
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/reject`, { reason, userId })));
   }
 
   /** FE-6: solicitar ajustes ao requisitante (Etapa 2) → status AwaitingAdjustment. */
   requestChanges(id: number, reason?: string): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/request-changes`, { reason });
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/request-changes`, { reason, userId })));
   }
 
   cancelRequest(id: number, reason: string): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/cancel`, { reason });
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/cancel`, { reason, userId })));
   }
 
   restartRequest(id: number, reason?: string): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/restart`, { reason });
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/restart`, { reason, userId })));
   }
 
   moveRequest(id: number, stage: number, reason?: string): Observable<PurchaseRequest> {
-    return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/move`, { stage, reason });
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/move`, { stage, reason, userId })));
   }
 
   changeBuyer(id: number, payload: ChangeBuyerPayload): Observable<PurchaseRequest> {
-    return this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/buyer`, payload);
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/buyer`, { ...payload, userId })));
   }
 
   setApprovers(id: number, payload: SetApproversPayload): Observable<PurchaseRequest> {
-    return this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/approvers`, payload);
+    return this.resolveActorUserId().pipe(switchMap(userId =>
+      this.http.patch<PurchaseRequest>(`${this.base}/requests/${id}/approvers`, { ...payload, userId })));
   }
 
   getRequestActionHistory(id: number): Observable<PurchaseRequestActionLog[]> {

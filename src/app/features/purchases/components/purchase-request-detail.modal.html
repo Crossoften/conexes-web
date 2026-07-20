@@ -196,7 +196,7 @@
                       </div>
                       @if (changeEntries(h.changes).length) {
                         <ul class="timeline__changes">
-                          @for (c of changeEntries(h.changes); track c.label) {
+                          @for (c of changeEntries(h.changes); track $index) {
                             <li><span class="timeline__change-label">{{ c.label }}:</span> {{ c.value }}</li>
                           }
                         </ul>

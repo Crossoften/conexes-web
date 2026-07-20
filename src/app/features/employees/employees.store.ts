@@ -7,7 +7,7 @@ interface State {
   items:       Employee[];
   loading:     boolean;
   error:       string | null;
-  filters:     { search: string; type: string };
+  filters:     { search: string; type: string; status: string };
   sort:        { column: keyof Employee | ''; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
   selectedIds: Set<number>;
@@ -22,7 +22,7 @@ export class EmployeesStore {
     items:       [],
     loading:     false,
     error:       null,
-    filters:     { search: '', type: '' },
+    filters:     { search: '', type: '', status: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -52,6 +52,7 @@ export class EmployeesStore {
       );
     }
     if (f.type)   result = result.filter(item => item.responsibleType === f.type);
+    if (f.status) result = result.filter(item => item.status === f.status);
 
     return result;
   });
@@ -149,6 +150,10 @@ export class EmployeesStore {
 
   setType(type: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
+  }
+
+  setStatus(status: string): void {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   // ── Sort ──────────────────────────────────────────────────────────────────
