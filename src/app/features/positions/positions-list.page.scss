@@ -66,3 +66,16 @@
 .pagination__nav { display: flex; align-items: center; gap: 4px; }
 .pag-btn { min-width: 34px; height: 34px; padding: 0 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--surface-border-mid); background: var(--surface-primary); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition); &:hover:not(:disabled):not(.pag-btn--active) { border-color: var(--brand-purple-mid); color: var(--brand-purple); background: var(--brand-purple-light); } &--active { background: var(--brand-purple); border-color: var(--brand-purple); color: #fff; pointer-events: none; } &:disabled { opacity: .4; cursor: not-allowed; } }
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
+
+// ── Status badge ──────────────────────────────
+.status-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 50px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  &--success { background: #E6F4EA; color: #1E7E34; }
+  &--danger  { background: #FDECEC; color: #C0392B; }
+  &--neutral { background: #FEF3E0; color: #B8791C; }
+}
+
+// ── Ações (coluna) ────────────────────────────
+.td--actions { text-align: center; white-space: nowrap; }
+.icon-btn--danger:hover { background: #FEE2E2; color: #DC2626; }

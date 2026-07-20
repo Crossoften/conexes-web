@@ -1,15 +1,16 @@
 // src/app/features/positions/positions-list.page.ts
 import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PositionsStore } from './positions.store';
-import { Position } from './positions.model';
+import { PositionDetailModalComponent } from './components/position-detail.modal';
+import { Position, PositionPayload, POSITION_TYPE_LABELS, POSITION_PURPOSE_LABELS, POSITION_STATUS_CONFIG } from './positions.model';
 
 @Component({
   selector: 'app-positions-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, DatePipe, RouterLink, PositionDetailModalComponent],
   providers: [PositionsStore],
   templateUrl: './positions-list.page.html',
   styleUrl: './positions-list.page.scss',
@@ -17,12 +18,25 @@ import { Position } from './positions.model';
 export class PositionsListPage implements OnInit {
   readonly store = inject(PositionsStore);
 
+  readonly statusConfig = POSITION_STATUS_CONFIG;
+
+  // Valores canônicos do back (sem espaço/acento); rótulo amigável na exibição.
   readonly typeOptions = [
     { label: 'Selecione o tipo',  value: ''               },
-    { label: 'Corpo Diretivo',    value: 'Corpo Diretivo'  },
-    { label: 'Conselho Fiscal',   value: 'Conselho Fiscal' },
-    { label: 'Responsável',       value: 'Responsável'     },
+    { label: 'Corpo Diretivo',    value: 'CorpoDiretivo'  },
+    { label: 'Conselho Fiscal',   value: 'ConselhoFiscal' },
+    { label: 'Responsável',       value: 'Responsavel'    },
   ];
+
+  readonly statusOptions = [
+    { label: 'Todos os status', value: ''         },
+    { label: 'Ativo',           value: 'Active'   },
+    { label: 'Pendente',        value: 'Pending'  },
+    { label: 'Inativo',         value: 'Inactive' },
+  ];
+
+  typeLabel(v: string): string    { return POSITION_TYPE_LABELS[v] ?? v ?? '—'; }
+  purposeLabel(v: string): string { return POSITION_PURPOSE_LABELS[v] ?? v ?? '—'; }
 
   readonly pageSizeOptions = [10, 25, 50];
 
@@ -51,6 +65,25 @@ export class PositionsListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+
+  openDetail(item: Position): void {
+    this.store.openDetail(item);
+  }
+
+  onModalClose(): void {
+    this.store.closeDetail();
+  }
+
+  onModalSaved(payload: PositionPayload): void {
+    const selected = this.store.selected();
+    if (selected) this.store.update(selected.id, payload);
+  }
+
+  onModalDelete(id: number): void {
+    this.store.delete(id);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EmployeesStore } from './employees.store';
 import { EmployeeDetailModalComponent } from './components/employee-detail.modal';
-import { Employee, EmployeeUpdatePayload } from './employees.model';
+import { Employee, EmployeeUpdatePayload, EMPLOYEE_STATUS_CONFIG } from './employees.model';
 
 @Component({
   selector: 'app-employees-list',
@@ -20,9 +20,18 @@ export class EmployeesListPage implements OnInit {
 
   readonly typeOptions = [
     { label: 'Selecione o tipo', value: ''            },
-    { label: 'Colaborador',      value: 'COLABORADOR' },
-    { label: 'Dirigente',        value: 'DIRIGENTE'   },
+    { label: 'Colaborador',      value: 'Colaborador' },
+    { label: 'Dirigente',        value: 'Dirigente'   },
   ];
+
+  readonly statusOptions = [
+    { label: 'Todos os status', value: ''         },
+    { label: 'Ativo',           value: 'Active'   },
+    { label: 'Pendente',        value: 'Pending'  },
+    { label: 'Inativo',         value: 'Inactive' },
+  ];
+
+  readonly statusConfig = EMPLOYEE_STATUS_CONFIG;
 
   readonly pageSizeOptions = [10, 25, 50];
 

@@ -117,15 +117,25 @@ export class PositionsNewPage implements OnInit {
     this.errorMsg.set(null);
 
     const v = this.form.value;
+    // Datas: ISO 8601 completo quando há valor; null quando vazio (o back exige ISO).
+    const toIso = (d: unknown): string | null => {
+      const s = (d ?? '').toString().trim();
+      return s ? new Date(s).toISOString() : null;
+    };
 
     const payload: PositionPayload = {
       entityId:      Number(v.entidadeSelect) || 0,
-      electionDate:  v.dataEleicao            ?? '',
+      electionDate:  toIso(v.dataEleicao),
       type:          v.tipo                   ?? '',
       purpose:       v.finalidade             ?? '',
+      status:        'Active',
       description:   v.descricao              ?? '',
       tcespCertCode: v.codigoAudesp           ?? '',
-      members:       this.members,
+      members:       this.members.map(m => ({
+        collaboratorId: m.collaboratorId,
+        startDate:      toIso(m.startDate),
+        endDate:        toIso(m.endDate),
+      })),
     };
 
     this.svc.create(payload).subscribe({

@@ -1,13 +1,14 @@
 // src/app/features/positions/positions.store.ts
 import { Injectable, computed, signal, inject } from '@angular/core';
-import { Position } from './positions.model';
+import { Position, PositionPayload } from './positions.model';
 import { PositionsService } from './positions.service';
 
 interface State {
   items:      Position[];
   loading:    boolean;
   error:      string | null;
-  filters:    { search: string; type: string };
+  selected:   Position | null;
+  filters:    { search: string; type: string; status: string };
   sort:       { column: keyof Position | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
   selectedIds: Set<number>;
@@ -21,7 +22,8 @@ export class PositionsStore {
     items:      [],
     loading:    false,
     error:      null,
-    filters:    { search: '', type: '' },
+    selected:   null,
+    filters:    { search: '', type: '', status: '' },
     sort:       { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -31,6 +33,7 @@ export class PositionsStore {
 
   readonly loading     = computed(() => this.state().loading);
   readonly error       = computed(() => this.state().error);
+  readonly selected    = computed(() => this.state().selected);
   readonly filters     = computed(() => this.state().filters);
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
@@ -49,6 +52,7 @@ export class PositionsStore {
       );
     }
     if (f.type)   result = result.filter(item => item.type === f.type);
+    if (f.status) result = result.filter(item => item.status === f.status);
 
     return result;
   });
@@ -84,6 +88,56 @@ export class PositionsStore {
     });
   }
 
+  // ── Detalhe / Edição (modal) ──────────────────────────────────────────────
+
+  openDetail(item: Position): void {
+    this.state.update(s => ({ ...s, selected: item }));
+    // A listagem pode vir enxuta; busca o detalhe completo e atualiza o modal.
+    this.svc.getById(item.id).subscribe({
+      next: full => this.state.update(s =>
+        s.selected?.id === item.id ? { ...s, selected: full } : s),
+      error: () => { /* mantém os dados da lista */ },
+    });
+  }
+
+  closeDetail(): void {
+    this.state.update(s => ({ ...s, selected: null }));
+  }
+
+  update(id: number, payload: PositionPayload): void {
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.update(id, payload).subscribe({
+      next: updated => this.state.update(s => ({
+        ...s,
+        loading:  false,
+        selected: null,
+        items:    s.items.map(item => item.id === id ? updated : item),
+      })),
+      error: err => this.state.update(s => ({
+        ...s,
+        loading: false,
+        error: err?.error?.message ?? 'Erro ao atualizar corpo diretivo.',
+      })),
+    });
+  }
+
+  delete(id: number): void {
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.delete(id).subscribe({
+      next: () => this.state.update(s => ({
+        ...s,
+        loading:  false,
+        selected: null,
+        items:    s.items.filter(item => item.id !== id),
+      })),
+      error: err => this.state.update(s => ({
+        ...s,
+        loading: false,
+        error: err?.error?.message ?? 'Erro ao excluir corpo diretivo.',
+      })),
+    });
+  }
+
   // ── Filters ───────────────────────────────────────────────────────────────
 
   setSearch(search: string): void {
@@ -92,6 +146,10 @@ export class PositionsStore {
 
   setType(type: string): void {
     this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
+  }
+
+  setStatus(status: string): void {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } }));
   }
 
   // ── Sort ──────────────────────────────────────────────────────────────────
