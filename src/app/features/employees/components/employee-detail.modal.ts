@@ -1,9 +1,10 @@
 // src/app/features/employees/components/employee-detail.modal.ts
 import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
-import { NgClass, NgIf, DecimalPipe } from '@angular/common';
+import { NgClass, NgIf, DecimalPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Employee, EmployeeUpdatePayload } from '../employees.model';
+import { Employee, EmployeeUpdatePayload, EmployeeStatus, EmployeePayment, EMPLOYEE_STATUS_CONFIG, EMPLOYEE_STATUS_OPTIONS } from '../employees.model';
+import { EmployeesService } from '../employees.service';
 import { environment } from '../../../../environments/environment';
 
 type DetailTab = 'PARAMS' | 'BOLETO';
@@ -14,7 +15,7 @@ interface PositionItem { id: number; name: string; title?: string; }
 @Component({
   selector: 'app-employee-detail-modal',
   standalone: true,
-  imports: [NgClass, NgIf, DecimalPipe, ReactiveFormsModule],
+  imports: [NgClass, NgIf, DecimalPipe, DatePipe, ReactiveFormsModule],
   templateUrl: './employee-detail.modal.html',
   styleUrl: './employee-detail.modal.scss',
 })
@@ -28,6 +29,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
 
   private readonly fb   = inject(NonNullableFormBuilder);
   private readonly http = inject(HttpClient);
+  private readonly svc  = inject(EmployeesService);
 
   protected mode:      'view' | 'edit' = 'view';
   protected activeTab: DetailTab       = 'PARAMS';
@@ -35,6 +37,14 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   readonly entities     = signal<EntityItem[]>([]);
   readonly positions    = signal<PositionItem[]>([]);
   readonly loadingLists = signal(false);
+
+  readonly statusConfig  = EMPLOYEE_STATUS_CONFIG;
+  readonly statusOptions = EMPLOYEE_STATUS_OPTIONS;
+
+  // Pagamentos recebidos (GET /{id}/payments)
+  readonly payments        = signal<EmployeePayment[]>([]);
+  readonly paymentsLoading = signal(false);
+  private  loadedPaymentsFor: number | null = null;
 
   private readonly POSITIONS_FALLBACK: PositionItem[] = [
     { id: 1,  name: 'Diretor Executivo'          },
@@ -62,6 +72,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   protected readonly form = this.fb.group({
     entidade:           ['', Validators.required],
     nome:               ['', Validators.required],
+    status:             ['Active'],
     tipoResponsavel:    ['', Validators.required],
     cargo:              ['', Validators.required],
     formacao:           ['', Validators.required],
@@ -103,16 +114,20 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
 
   ngOnChanges(): void {
     if (this.employee) {
+      this.loadPayments(this.employee.id);
       this.form.patchValue({
         entidade:           String(this.employee.entityId ?? ''),
         nome:               this.employee.name               ?? '',
+        status:             this.employee.status             ?? 'Active',
         tipoResponsavel:    this.employee.responsibleType    ?? '',
         cargo:              String(this.employee.positionId  ?? ''),
         formacao:           this.employee.formation          ?? '',
         vinculo:            this.employee.linkType           ?? '',
         cargaHorariaMensal: String(this.employee.workingHours ?? ''),
-        dataAdmissao:       this.employee.startDate          ?? '',
-        dataDemissao:       this.employee.endDate            ?? '',
+        // input type=date exige yyyy-MM-dd — fatiamos o ISO (senão o campo fica vazio,
+        // invalida o form e a edição não salva os obrigatórios).
+        dataAdmissao:       this.employee.startDate?.substring(0, 10) ?? '',
+        dataDemissao:       this.employee.endDate?.substring(0, 10)   ?? '',
         cns:                this.employee.cns                ?? '',
         salario:            String(this.employee.salary      ?? ''),
         cpf:                this.employee.cpf                ?? '',
@@ -131,6 +146,18 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
         grossValue:         String(this.employee.grossValue  ?? ''),
       });
     }
+  }
+
+  // Carrega os pagamentos do colaborador uma vez por id (a listagem hidrata o modal
+  // com getById, que dispara ngOnChanges várias vezes — evitamos recarregar à toa).
+  private loadPayments(id: number): void {
+    if (this.loadedPaymentsFor === id) return;
+    this.loadedPaymentsFor = id;
+    this.paymentsLoading.set(true);
+    this.svc.getPayments(id).subscribe({
+      next: list => { this.payments.set(list); this.paymentsLoading.set(false); },
+      error: ()   => { this.payments.set([]); this.paymentsLoading.set(false); },
+    });
   }
 
   // ── Helpers de view ───────────────────────────────────────────────────────
@@ -177,6 +204,11 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
     }
 
     const v = this.form.value;
+    // Datas: ISO 8601 completo quando há valor; null quando vazio (o back rejeita '').
+    const toIso = (d: unknown): string | null => {
+      const s = (d ?? '').toString().trim();
+      return s ? new Date(s).toISOString() : null;
+    };
 
     const payload: EmployeeUpdatePayload = {
       entityId:           (v.entidade && v.entidade !== 'undefined') ? Number(v.entidade) : 0,
@@ -185,6 +217,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       email:              v.emailInstitucional  ?? '',
       phone:              v.telefone           ?? '',
       cellPhone:          v.celular            ?? '',
+      status:             v.status as EmployeeStatus,
       // `title` (cargo/título) não recebe o tipo — preserva o valor existente (B-CO-07).
       title:              this.employee?.title ?? '',
       responsibleType:    v.tipoResponsavel    ?? '',
@@ -192,8 +225,8 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       formation:          v.formacao           ?? '',
       linkType:           v.vinculo            ?? '',
       workingHours:       Number(v.cargaHorariaMensal) || 0,
-      startDate:          v.dataAdmissao       ?? '',
-      endDate:            v.dataDemissao       ?? '',
+      startDate:          toIso(v.dataAdmissao),
+      endDate:            toIso(v.dataDemissao),
       cns:                v.cns                ?? '',
       salary:             Number(v.salario)    || 0,
       professionalBoard:  v.orgaoClasse        ?? '',

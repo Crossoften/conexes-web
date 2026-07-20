@@ -1,6 +1,6 @@
 // src/app/features/purchases/components/purchase-request-detail.modal.ts
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
-import { PurchaseRequest, PurchaseRequestActionLog, PurchaseFile, PURCHASE_REQUEST_STATUS_CONFIG } from '../purchases.model';
+import { PurchaseRequest, PurchaseRequestActionLog, PurchaseFile, PurchaseRef, PURCHASE_REQUEST_STATUS_CONFIG } from '../purchases.model';
 import { PurchasesService } from '../purchases.service';
 import { UploadService } from '../../../shared/services/upload.service';
 
@@ -66,6 +66,12 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
   readonly historyError   = signal<string | null>(null);
   private  historyFor: number | null = null;
 
+  // Mapa id→nome de usuários, para resolver `buyerId`/`requesterId` no histórico.
+  private readonly users   = signal<Map<number, string>>(new Map());
+  private          usersLoaded = false;
+  /** Campos de `changes` cujo valor é um id de usuário (resolvido para nome). */
+  private static readonly USER_FIELDS = new Set(['buyerId', 'requesterId']);
+
   // ── Anexos (FE-10) ──────────────────────────────────────────────────────────
   readonly files        = signal<PurchaseFile[]>([]);
   readonly filesLoading = signal(false);
@@ -89,6 +95,18 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     // clique na aba — garante que a chamada aconteça e o resultado já esteja pronto.
     this.loadHistory();
     this.loadFiles();
+    this.loadUsers();
+  }
+
+  /** Carrega uma vez o lookup de usuários para resolver ids do histórico em nomes. */
+  private loadUsers(): void {
+    if (this.usersLoaded) return;
+    this.usersLoaded = true;
+    this.svc.getUsersLookup().subscribe({
+      next: (list: PurchaseRef[]) =>
+        this.users.set(new Map(list.map(u => [Number(u.id), u.name] as [number, string]))),
+      error: () => { this.usersLoaded = false; },  // permite nova tentativa
+    });
   }
 
   private loadHistory(): void {
@@ -219,20 +237,49 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     return ACTION_LABELS[action] ?? action.toLowerCase().replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
   }
 
-  /** Converte o objeto `changes` em pares legíveis (rótulo + valor). */
+  /** Converte `changes` em pares legíveis (rótulo + valor). */
   changeEntries(changes?: unknown): { label: string; value: string }[] {
-    if (!changes || typeof changes !== 'object') return [];
-    return Object.entries(changes as Record<string, unknown>).map(([key, val]) => ({
-      label: FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase()).trim(),
-      value: this.changeValue(key, val),
-    }));
+    if (!changes) return [];
+
+    // Formato atual do back: array de diffs { field, from, to } → "de → para".
+    if (Array.isArray(changes)) {
+      return changes
+        .filter((c): c is { field: string; from: unknown; to: unknown } =>
+          !!c && typeof c === 'object' && 'field' in c)
+        .map(c => ({
+          label: this.fieldLabel(c.field),
+          value: `${this.changeValue(c.field, c.from)} → ${this.changeValue(c.field, c.to)}`,
+        }));
+    }
+
+    // Formato legado: objeto plano { campo: valor }.
+    if (typeof changes === 'object') {
+      return Object.entries(changes as Record<string, unknown>).map(([key, val]) => ({
+        label: this.fieldLabel(key),
+        value: this.changeValue(key, val),
+      }));
+    }
+
+    return [];
+  }
+
+  private fieldLabel(key: string): string {
+    return FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase()).trim();
   }
 
   private changeValue(key: string, val: unknown): string {
     if (val === null || val === undefined || val === '') return '—';
     if (key === 'status') return this.statusConfig[val as keyof typeof this.statusConfig]?.label ?? String(val);
+    if (PurchaseRequestDetailModalComponent.USER_FIELDS.has(key)) return this.userName(val);
     if (typeof val === 'object') return JSON.stringify(val);
     return String(val);
+  }
+
+  /** Resolve um id de usuário em nome (fallback: "Usuário #id" enquanto o lookup não chega). */
+  private userName(val: unknown): string {
+    const id = Number(val);
+    if (!Number.isFinite(id) || id <= 0) return String(val);
+    return this.users().get(id) ?? `Usuário #${id}`;
   }
 
   fmtCurrency(value?: number | null): string {

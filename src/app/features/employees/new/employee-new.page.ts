@@ -155,6 +155,11 @@ export class EmployeeNewPage implements OnInit {
     this.errorMsg.set(null);
 
     const v = this.form.value;
+    // Datas: ISO 8601 completo quando há valor; null quando vazio (o back rejeita '').
+    const toIso = (d: unknown): string | null => {
+      const s = (d ?? '').toString().trim();
+      return s ? new Date(s).toISOString() : null;
+    };
 
     const payload: EmployeePayload = {
       entityId:           (v.entidade && v.entidade !== 'undefined') ? Number(v.entidade) : 0,
@@ -163,16 +168,17 @@ export class EmployeeNewPage implements OnInit {
       email:              v.emailInstitucional          ?? '',
       phone:              v.telefone                   ?? '',
       cellPhone:          v.celular                    ?? '',
+      status:             'Active',
       // `title` (cargo/título) não tem campo próprio no formulário e NÃO deve receber o
-      // tipo (COLABORADOR/DIRIGENTE) — enviado vazio até definir a fonte (B-CO-07).
+      // tipo (Colaborador/Dirigente) — enviado vazio até definir a fonte (B-CO-07).
       title:              '',
       responsibleType:    v.tipoResponsavel            ?? '',
       positionId:         Number(v.cargo)              || 0,
       formation:          v.formacao                   ?? '',
       linkType:           v.vinculo                    ?? '',
       workingHours:       Number(v.cargaHorariaMensal) || 0,
-      startDate:          v.dataAdmissao               ?? '',
-      endDate:            v.dataDemissao               ?? '',
+      startDate:          toIso(v.dataAdmissao),
+      endDate:            toIso(v.dataDemissao),
       cns:                v.cns                        ?? '',
       salary:             Number(v.salario)            || 0,
       professionalBoard:  v.orgaoClasse                ?? '',

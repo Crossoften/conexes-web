@@ -35,6 +35,17 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
+      <div class="select-wrap">
+        <select class="select select--pill"
+          [value]="store.filters().status"
+          (change)="store.setStatus($any($event.target).value)">
+          @for (opt of statusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
       <button class="btn-outline btn-pill">
         Exportar
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -65,6 +76,7 @@
             <th class="th th--sortable" (click)="store.setSort('title')">Cargo <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('responsibleType')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('responsibleType')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('entityId')">Entidade <span class="sort-icon" [ngClass]="'sort--' + getSortState('entityId')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -72,18 +84,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td colspan="7"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td colspan="8"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="7">
+              <td class="td--empty" colspan="8">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" colspan="7">
+              <td class="td--empty" colspan="8">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -104,6 +116,13 @@
                 <td class="td">{{ item.title }}</td>
                 <td class="td">{{ item.responsibleType }}</td>
                 <td class="td">{{ item.entityId }}</td>
+                <td class="td">
+                  @if (statusConfig[item.status]; as cfg) {
+                    <span class="status-badge status-badge--{{ cfg.variant }}">{{ cfg.label }}</span>
+                  } @else {
+                    {{ item.status || '—' }}
+                  }
+                </td>
                 <td class="td td--actions">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar" (click)="openDetail(item)">
