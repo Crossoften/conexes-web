@@ -2,7 +2,7 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Cadastro de plano de conta e categorias</h1>
+    <h1 class="page-title">Cadastro de Plano de Contas</h1>
   </div>
 
   <div class="card">
@@ -49,7 +49,7 @@
             </div>
 
             <div class="form-group">
-              <label>Categoria (Centro de Custo) <span class="req">*</span></label>
+              <label>Centro de Custo, Projeto ou Atividade <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="costCenter"
                   [class.is-invalid]="form.get('costCenter')?.invalid && form.get('costCenter')?.touched">
@@ -83,6 +83,21 @@
               <input type="text" class="form-control" placeholder="Digite aqui..."
                 formControlName="categoryTitle"
                 [class.is-invalid]="form.get('categoryTitle')?.invalid && form.get('categoryTitle')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Conta superior <span class="hint">(opcional — para subcontas de Totalizadora/Sintética)</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="parentId">
+                  <option [ngValue]="null">Nenhuma (conta raiz)</option>
+                  @for (p of parents; track p.id) {
+                    <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </div>
 

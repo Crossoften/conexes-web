@@ -3,9 +3,10 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, sign
 import { NgClass, NgIf, DecimalPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Employee, EmployeeUpdatePayload, EmployeeStatus, EmployeePayment, EMPLOYEE_STATUS_CONFIG, EMPLOYEE_STATUS_OPTIONS } from '../employees.model';
+import { Employee, EmployeeUpdatePayload, EmployeeStatus, EmployeePayment, EMPLOYEE_STATUS_CONFIG, EMPLOYEE_STATUS_OPTIONS, VINCULO_OPTIONS } from '../employees.model';
 import { EmployeesService } from '../employees.service';
 import { environment } from '../../../../environments/environment';
+import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/utils/format';
 
 type DetailTab = 'PARAMS' | 'BOLETO';
 
@@ -42,6 +43,13 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
 
   readonly statusConfig  = EMPLOYEE_STATUS_CONFIG;
   readonly statusOptions = EMPLOYEE_STATUS_OPTIONS;
+  readonly vinculoOptions = VINCULO_OPTIONS;
+
+  /** Preserva um "Vínculo" legado (fora da lista fixa) para não perdê-lo ao editar. */
+  get legacyVinculo(): string | null {
+    const v = this.employee?.linkType ?? '';
+    return v && !(VINCULO_OPTIONS as readonly string[]).includes(v) ? v : null;
+  }
 
   // Pagamentos recebidos (GET /{id}/payments)
   readonly payments        = signal<EmployeePayment[]>([]);
@@ -82,7 +90,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
     cargaHorariaMensal: ['', Validators.required],
     dataAdmissao:       ['', Validators.required],
     dataDemissao:       [''],
-    cns:                ['', Validators.required],
+    cns:                [''],   // opcional (7.5)
     salario:            ['', Validators.required],
     cpf:                ['', Validators.required],
     orgaoClasse:        [''],
@@ -133,7 +141,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
         dataAdmissao:       this.employee.startDate?.substring(0, 10) ?? '',
         dataDemissao:       this.employee.endDate?.substring(0, 10)   ?? '',
         cns:                this.employee.cns                ?? '',
-        salario:            String(this.employee.salary      ?? ''),
+        salario:            formatDecimalBR(this.employee.salary),
         cpf:                this.employee.cpf                ?? '',
         orgaoClasse:        this.employee.professionalBoard  ?? '',
         emailInstitucional: this.employee.institutionalEmail ?? '',
@@ -232,7 +240,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       startDate:          toIso(v.dataAdmissao),
       endDate:            toIso(v.dataDemissao),
       cns:                v.cns                ?? '',
-      salary:             Number(v.salario)    || 0,
+      salary:             parseDecimalBR(v.salario),
       professionalBoard:  v.orgaoClasse        ?? '',
       personalEmail:      v.emailPessoal       ?? '',
       institutionalEmail: v.emailInstitucional ?? '',
@@ -260,6 +268,13 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     input.value = masked;
     this.form.get('cpf')?.setValue(masked, { emitEvent: false });
+  }
+
+  /** Máscara de moeda BR (sem símbolo) no salário; o submit converte via parseDecimalBR. */
+  applyMoneyMask(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = maskMoney(input.value);
+    this.form.get('salario')?.setValue(input.value, { emitEvent: false });
   }
 
   applyCepMask(event: Event): void {

@@ -40,6 +40,8 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
   readonly errorMsg = signal<string | null>(null);
 
   projects: ProjectOption[] = [];
+  /** Contas candidatas a "pai" (Totalizadora/Sintética), exceto a própria. */
+  parents: Account[] = [];
 
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
@@ -70,6 +72,7 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
       if (this.mode === 'edit') {
         this.populateForm(this.account);
         this.loadProjects();
+        this.loadParents();
       }
     }
   }
@@ -131,6 +134,18 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
       });
   }
 
+  /** Contas que podem ser "conta superior" (Totalizadora/Sintética), exceto a própria. */
+  private loadParents(): void {
+    this.svc.getAll().subscribe({
+      next: list => {
+        this.parents = list.filter(a =>
+          a.id !== this.account?.id &&
+          (a.categoryType === 'Totalizadora' || a.accountType === 'Sintetica'));
+      },
+      error: () => { this.parents = []; },
+    });
+  }
+
   // ── Mode switching ────────────────────────────────────────────────────────
 
   enterEditMode(): void {
@@ -138,11 +153,17 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
     this.errorMsg.set(null);
     if (this.account) this.populateForm(this.account);
     this.loadProjects();
+    this.loadParents();
   }
 
   cancelEdit(): void {
-    this.mode = 'view';
     this.errorMsg.set(null);
+    // Aberto direto em edição (botão "Editar" da lista) → Cancelar volta à origem (fecha).
+    if (this.initialMode === 'edit') {
+      this.close.emit();
+      return;
+    }
+    this.mode = 'view';
     if (this.account) this.populateForm(this.account);
   }
 

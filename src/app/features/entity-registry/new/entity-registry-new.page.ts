@@ -6,6 +6,7 @@ import { NgClass, NgIf } from '@angular/common';
 import { EntityRegistryStore } from '../entity-registry.store';
 import { EntityRegistryService } from '../entity-registry.service';
 import { EntityRegistryPayload, ENTITY_STATUS_OPTIONS } from '../entity-registry.model';
+import { maskCnpj, maskPhone } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-entity-registry-new',
@@ -131,5 +132,18 @@ export class EntityRegistryNewPage {
 
     const ok = await this.store.createEntity(payload);
     if (ok) this.router.navigate(['/entity-registry']);
+  }
+
+  // ── Máscaras (o submit já envia só os dígitos via onlyNumbers) ─────────────
+  onCnpjInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCnpj(el.value);
+    this.form.get('cnpj')?.setValue(el.value, { emitEvent: false });
+  }
+
+  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone'): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskPhone(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
   }
 }

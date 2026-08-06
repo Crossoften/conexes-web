@@ -15,10 +15,10 @@
         </div>
         <div class="header-text">
           @if (mode === 'view') {
-            <h2>Conta: {{ account?.code || '—' }}</h2>
+            <h2>Conta: {{ account?.code || '—' }}{{ account?.title ? ' — ' + account?.title : '' }}</h2>
             <p>Acompanhe todas as informações cadastradas para a conta.</p>
           } @else {
-            <h2>Editar Conta: {{ account?.code || '—' }}</h2>
+            <h2>Editar Conta: {{ account?.code || '—' }}{{ account?.title ? ' — ' + account?.title : '' }}</h2>
             <p>Atualize as informações da conta abaixo.</p>
           }
         </div>
@@ -176,12 +176,27 @@
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Categoria (Centro de Custo) <span class="required">*</span></label>
+                  <label class="field-label">Centro de Custo, Projeto ou Atividade <span class="required">*</span></label>
                   <div class="select-wrap">
                     <select class="select" formControlName="costCenter">
                       <option value="">Selecione</option>
                       @for (p of projects; track p.id) {
                         <option [value]="p.id">{{ p.name }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Conta superior <span class="field-hint">(opcional)</span></label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="parentId">
+                      <option [ngValue]="null">Nenhuma (conta raiz)</option>
+                      @for (p of parents; track p.id) {
+                        <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
                       }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none">

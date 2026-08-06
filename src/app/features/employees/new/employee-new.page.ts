@@ -5,8 +5,9 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { EmployeesService } from '../employees.service';
-import { EmployeePayload } from '../employees.model';
+import { EmployeePayload, VINCULO_OPTIONS } from '../employees.model';
 import { environment } from '../../../../environments/environment';
+import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
 type EmployeeTab = 'PARAMS' | 'BOLETO';
 
@@ -31,6 +32,7 @@ export class EmployeeNewPage implements OnInit {
   readonly entities     = signal<EntityItem[]>([]);
   readonly positions    = signal<PositionItem[]>([]);
   readonly loadingLists = signal(true);
+  readonly vinculoOptions = VINCULO_OPTIONS;
 
   activeTab: EmployeeTab = 'PARAMS';
 
@@ -64,11 +66,11 @@ export class EmployeeNewPage implements OnInit {
     tipoResponsavel:    ['', Validators.required],
     cargo:              ['', Validators.required],
     formacao:           ['', Validators.required],
-    vinculo:            ['', Validators.required],
+    vinculo:            ['', Validators.required],   // select fixo (VINCULO_OPTIONS)
     cargaHorariaMensal: ['', Validators.required],
     dataAdmissao:       ['', Validators.required],
     dataDemissao:       [''],
-    cns:                ['', Validators.required],
+    cns:                [''],   // opcional (7.5)
     salario:            ['', Validators.required],
     cpf:                ['', Validators.required],
     orgaoClasse:        [''],
@@ -111,6 +113,13 @@ export class EmployeeNewPage implements OnInit {
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     input.value = masked;
     this.form.get('cpf')?.setValue(masked, { emitEvent: false });
+  }
+
+  /** Máscara de moeda BR (sem símbolo) no salário; o submit converte via parseDecimalBR. */
+  applyMoneyMask(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = maskMoney(input.value);
+    this.form.get('salario')?.setValue(input.value, { emitEvent: false });
   }
 
   applyCepMask(event: Event): void {
@@ -180,7 +189,7 @@ export class EmployeeNewPage implements OnInit {
       startDate:          toIso(v.dataAdmissao),
       endDate:            toIso(v.dataDemissao),
       cns:                v.cns                        ?? '',
-      salary:             Number(v.salario)            || 0,
+      salary:             parseDecimalBR(v.salario),
       professionalBoard:  v.orgaoClasse                ?? '',
       personalEmail:      v.emailPessoal               ?? '',
       institutionalEmail: v.emailInstitucional         ?? '',

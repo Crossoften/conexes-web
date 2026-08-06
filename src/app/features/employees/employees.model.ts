@@ -102,3 +102,11 @@ export interface EmployeePayment {
   date:       string;   // data do pagamento
   value:      number;   // valor
 }
+/** Opções fixas de "Vínculo" (linkType) do colaborador. */
+export const VINCULO_OPTIONS = [
+  'Prestador de Serviço (PJ)',
+  'Prestador de Serviço (PF)',
+  'CLT',
+  'Voluntariado',
+  'Estágio',
+] as const;
