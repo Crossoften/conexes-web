@@ -219,17 +219,20 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
       csllAliquot:         Number(s3.aliqCSLL)           || 0,
       ibsAliquot:          Number(s3.aliqIBS)            || 0,
       cbsAliquot:          Number(s3.aliqCBS)            || 0,
-      // Contrato novo: serviço vinculado vai no array `services` (não mais flat service*).
-      services: s3.serviceName?.trim()
-        ? [{
-            name:          s3.serviceName.trim(),
-            description:   s3.serviceDesc?.trim()      ?? '',
-            externalCode:  s3.serviceExtCode?.trim()   ?? '',
-            grantorOrgan:  s3.serviceGrantor?.trim()   ?? '',
-            hasRetention:  !!s3.serviceRedemption,
-            accessorOrgan: s3.serviceLinked?.trim()    ?? '',
-          }]
-        : [],
+      // 5.2: lista de serviços (array) + um "novo serviço" preenchido não adicionado.
+      services: [
+        ...(s3.services ?? []),
+        ...(s3.serviceName?.trim()
+          ? [{
+              name:          s3.serviceName.trim(),
+              description:   s3.serviceDesc?.trim()      ?? '',
+              externalCode:  s3.serviceExtCode?.trim()   ?? '',
+              grantorOrgan:  s3.serviceGrantor?.trim()   ?? '',
+              hasRetention:  !!s3.serviceRedemption,
+              accessorOrgan: s3.serviceLinked?.trim()    ?? '',
+            }]
+          : []),
+      ],
     },
   };
 

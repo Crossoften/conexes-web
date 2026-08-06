@@ -9,6 +9,7 @@ import { Step2Component } from './step2/step2.component';
 import { Step3Component } from './step3/step3.component';
 import { StakeholdersService } from '../stakeholders.service';
 import { mapFormToPayload } from '../stakeholders.mapper';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 export const WIZARD_STEPS = [
   { label: 'Etapa 1 - Dados gerais',           shortLabel: 'Etapa 1 - Dados gerais'           },
@@ -26,6 +27,7 @@ export const WIZARD_STEPS = [
 export class StakeholderNewPage {
   private router = inject(Router);
   private svc    = inject(StakeholdersService);
+  private notify = inject(NotificationService);
 
   readonly form  = buildStakeholderForm();
   readonly steps = WIZARD_STEPS;
@@ -71,7 +73,7 @@ export class StakeholderNewPage {
     // Salva localmente enquanto não há endpoint de rascunho no back
     const draft = JSON.stringify(this.form.value);
     localStorage.setItem('stakeholder_draft', draft);
-    console.info('[StakeholderNew] Rascunho salvo no localStorage.');
+    this.notify.success('Rascunho salvo.');
   }
 
   private submit(): void {

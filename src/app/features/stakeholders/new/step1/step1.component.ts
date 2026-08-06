@@ -1,10 +1,14 @@
 // src/app/features/stakeholders/new/step1/step1.component.ts
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { StakeholdersService } from '../../stakeholders.service';
+import { environment } from '../../../../../environments/environment';
 
 type Step1Tab = 'rateio' | 'bancario';
+
+interface AccountPlanOption { id: number; code: string; title: string; }
 
 @Component({
   selector: 'app-step1',
@@ -13,14 +17,26 @@ type Step1Tab = 'rateio' | 'bancario';
   templateUrl: './step1.component.html',
   styleUrl: './step1.component.scss',
 })
-export class Step1Component {
+export class Step1Component implements OnInit {
   form = input.required<AbstractControl>();
 
-  private svc = inject(StakeholdersService);
+  private svc  = inject(StakeholdersService);
+  private http = inject(HttpClient);
 
-  activeTab   = signal<Step1Tab>('rateio');
-  cnpjLoading = signal(false);
-  cnpjError   = signal<string | null>(null);
+  activeTab    = signal<Step1Tab>('rateio');
+  cnpjLoading  = signal(false);
+  cnpjError    = signal<string | null>(null);
+  accountPlans = signal<AccountPlanOption[]>([]);
+
+  ngOnInit(): void {
+    // 5.1: conta contábil vira select do Plano de Contas (mostra código — título).
+    this.http
+      .get<{ data?: AccountPlanOption[] } | AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } })
+      .subscribe({
+        next: res => this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []),
+        error: ()  => this.accountPlans.set([]),
+      });
+  }
 
   get f() { return (this.form() as any).controls; }
 

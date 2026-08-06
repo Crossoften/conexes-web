@@ -1,15 +1,20 @@
 // src/app/features/stakeholders/components/stakeholder-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   Stakeholder,
   StakeholderPayload,
+  StakeholderService,
   STAKEHOLDER_STATUS_CONFIG,
   STAKEHOLDER_TYPE_LABELS,
 } from '../stakeholders.model';
+import { environment } from '../../../../environments/environment';
 
 type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
+
+interface AccountPlanOption { id: number; code: string; title: string; }
 
 @Component({
   selector: 'app-stakeholder-detail-modal',
@@ -18,21 +23,65 @@ type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
   templateUrl: './stakeholder-detail.modal.html',
   styleUrl: './stakeholder-detail.modal.scss',
 })
-export class StakeholderDetailModalComponent implements OnChanges {
+export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   @Input() stakeholder: Stakeholder | null = null;
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
   @Output() saved  = new EventEmitter<{ id: number; payload: Partial<StakeholderPayload> }>();
 
-  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly fb   = inject(NonNullableFormBuilder);
+  private readonly http = inject(HttpClient);
 
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'GERAIS';
   bankError: string | null = null;
 
-  readonly statusConfig = STAKEHOLDER_STATUS_CONFIG;
-  readonly typeLabels   = STAKEHOLDER_TYPE_LABELS;
+  readonly statusConfig  = STAKEHOLDER_STATUS_CONFIG;
+  readonly typeLabels    = STAKEHOLDER_TYPE_LABELS;
+  readonly accountPlans  = signal<AccountPlanOption[]>([]);
+
+  /** 5.2: lista de serviços do fornecedor (add/remove múltiplos). */
+  services: StakeholderService[] = [];
+
+  addService(): void {
+    const v = this.form.getRawValue();
+    const name = (v.serviceName ?? '').trim();
+    if (!name) return;
+    this.services = [...this.services, {
+      name,
+      description:   (v.serviceDescription  ?? '').trim(),
+      externalCode:  (v.serviceExternalCode ?? '').trim(),
+      grantorOrgan:  (v.serviceGrantorOrgan ?? '').trim(),
+      hasRetention:  !!v.serviceHasRetention,
+      accessorOrgan: (v.serviceAccessorOrgan ?? '').trim(),
+    }];
+    this.form.patchValue({
+      serviceName: '', serviceDescription: '', serviceExternalCode: '',
+      serviceGrantorOrgan: '', serviceHasRetention: false, serviceAccessorOrgan: '',
+    });
+  }
+
+  removeService(index: number): void {
+    this.services = this.services.filter((_, i) => i !== index);
+  }
+
+  ngOnInit(): void {
+    // 5.1: conta contábil vira select do Plano de Contas (mostra código — título).
+    this.http
+      .get<{ data?: AccountPlanOption[] } | AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } })
+      .subscribe({
+        next: res => this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []),
+        error: ()  => this.accountPlans.set([]),
+      });
+  }
+
+  /** Rótulo "código — título" da conta contábil vinculada (para exibição). */
+  accountPlanLabel(id: number | null | undefined): string {
+    if (!id) return '—';
+    const p = this.accountPlans().find(a => a.id === Number(id));
+    return p ? `${p.code} — ${p.title}` : String(id);
+  }
 
   // ── Formulário ────────────────────────────────────────────────────────────
 
@@ -227,13 +276,15 @@ export class StakeholderDetailModalComponent implements OnChanges {
       csllAliquot:          tax?.csllAliquot          ?? 0,
       ibsAliquot:           tax?.ibsAliquot           ?? 0,
       cbsAliquot:           tax?.cbsAliquot           ?? 0,
-      serviceName:          tax?.services?.[0]?.name          ?? '',
-      serviceDescription:   tax?.services?.[0]?.description   ?? '',
-      serviceExternalCode:  tax?.services?.[0]?.externalCode  ?? '',
-      serviceGrantorOrgan:  tax?.services?.[0]?.grantorOrgan  ?? '',
-      serviceHasRetention:  tax?.services?.[0]?.hasRetention  ?? false,
-      serviceAccessorOrgan: tax?.services?.[0]?.accessorOrgan ?? '',
+      // 5.2: campos de "novo serviço" começam vazios; a lista existente vai em `services`.
+      serviceName:          '',
+      serviceDescription:   '',
+      serviceExternalCode:  '',
+      serviceGrantorOrgan:  '',
+      serviceHasRetention:  false,
+      serviceAccessorOrgan: '',
     });
+    this.services = [...(tax?.services ?? [])];
   }
 
   // ── Accessors para modo view ───────────────────────────────────────────────
@@ -467,17 +518,20 @@ export class StakeholderDetailModalComponent implements OnChanges {
         csllAliquot:          v.csllAliquot          ?? 0,
         ibsAliquot:           v.ibsAliquot           ?? 0,
         cbsAliquot:           v.cbsAliquot           ?? 0,
-        // Contrato novo: serviço vinculado vai no array `services` (não mais flat service*).
-        services: v.serviceName?.trim()
-          ? [{
-              name:          v.serviceName.trim(),
-              description:   v.serviceDescription   ?? '',
-              externalCode:  v.serviceExternalCode  ?? '',
-              grantorOrgan:  v.serviceGrantorOrgan  ?? '',
-              hasRetention:  v.serviceHasRetention  ?? false,
-              accessorOrgan: v.serviceAccessorOrgan ?? '',
-            }]
-          : [],
+        // 5.2: envia a lista completa; inclui um "novo serviço" preenchido não adicionado.
+        services: [
+          ...this.services,
+          ...(v.serviceName?.trim()
+            ? [{
+                name:          v.serviceName.trim(),
+                description:   v.serviceDescription   ?? '',
+                externalCode:  v.serviceExternalCode  ?? '',
+                grantorOrgan:  v.serviceGrantorOrgan  ?? '',
+                hasRetention:  !!v.serviceHasRetention,
+                accessorOrgan: v.serviceAccessorOrgan ?? '',
+              }]
+            : []),
+        ],
       },
     };
 

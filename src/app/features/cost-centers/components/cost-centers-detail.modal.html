@@ -140,7 +140,8 @@
 
                 <div class="field">
                   <label class="field-label">Código <span class="required">*</span></label>
-                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="projectCode"
+                  <input class="input" type="text" placeholder="Ex.: 1.1.2" inputmode="decimal" formControlName="projectCode"
+                    (input)="onCodeInput($event)"
                     [class.ng-invalid]="form.get('projectCode')?.invalid && form.get('projectCode')?.touched">
                 </div>
 
