@@ -1,5 +1,5 @@
 // src/app/features/agencies/components/agencies-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
 import { NgClass, NgIf } from '@angular/common';
 import { NonNullableFormBuilder, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -20,9 +20,11 @@ import { UploadService } from '../../../shared/services/upload.service';
   templateUrl: './agencies-detail.modal.html',
   styleUrl: './agencies-detail.modal.scss',
 })
-export class AgencyDetailModalComponent implements OnChanges {
+export class AgencyDetailModalComponent implements OnChanges, OnInit {
   @Input() agency:  Agency | null = null;
   @Input() loading  = false;
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  @Input() initialMode: 'view' | 'edit' = 'view';
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
@@ -90,6 +92,10 @@ export class AgencyDetailModalComponent implements OnChanges {
     if (!value) return '';
     const d = new Date(value);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  ngOnInit(): void {
+    this.mode = this.initialMode;
   }
 
   ngOnChanges(): void {

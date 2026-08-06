@@ -1,5 +1,5 @@
 // src/app/features/employees/employees-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -64,7 +64,10 @@ export class EmployeesListPage implements OnInit {
 
   // ── Modal ─────────────────────────────────────────────────────────────────
 
-  openDetail(item: Employee): void {
+  readonly modalMode = signal<'view' | 'edit'>('view');
+
+  openDetail(item: Employee, mode: 'view' | 'edit' = 'view'): void {
+    this.modalMode.set(mode);
     this.store.openDetail(item);
   }
 

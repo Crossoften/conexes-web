@@ -24,6 +24,7 @@ export class CostCentersListPage implements OnInit {
   // ── Modal ─────────────────────────────────────────────────────────────────
   readonly selectedItem  = signal<CostCenter | null>(null);
   readonly showModal     = signal(false);
+  readonly modalMode     = signal<'view' | 'edit'>('view');
 
   // ── Export ────────────────────────────────────────────────────────────────
   readonly exporting = signal(false);
@@ -87,11 +88,13 @@ export class CostCentersListPage implements OnInit {
   // ── Modal handlers ────────────────────────────────────────────────────────
 
   onView(item: CostCenter): void {
+    this.modalMode.set('view');
     this.selectedItem.set(item);
     this.showModal.set(true);
   }
 
   onEdit(item: CostCenter): void {
+    this.modalMode.set('edit');
     this.selectedItem.set(item);
     this.showModal.set(true);
   }

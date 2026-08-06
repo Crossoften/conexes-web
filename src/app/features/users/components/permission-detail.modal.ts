@@ -1,5 +1,5 @@
 // src/app/features/users/components/permission-detail.modal.ts
-import { Component, input, output, inject, effect } from '@angular/core';
+import { Component, input, output, inject, effect, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PermissionProfile, PermissionProfileUpdatePayload, ModulePermission, DEFAULT_MODULES } from '../users.model';
@@ -12,8 +12,10 @@ import { UsersService } from '../users.service';
   templateUrl: './permission-detail.modal.html',
   styleUrl: './permission-detail.modal.scss',
 })
-export class PermissionDetailModalComponent {
+export class PermissionDetailModalComponent implements OnInit {
   readonly profile = input<PermissionProfile | null>(null);
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  readonly initialMode = input<'view' | 'edit'>('view');
   readonly close   = output<void>();
   readonly delete  = output<number>();
   readonly saved   = output<{ id: number; payload: Partial<PermissionProfileUpdatePayload> }>();
@@ -42,6 +44,10 @@ export class PermissionDetailModalComponent {
       const p = this.profile();
       if (p) this.patchForm(p);
     });
+  }
+
+  ngOnInit(): void {
+    this.mode = this.initialMode();
   }
 
   private applyModules(p: PermissionProfile): void {

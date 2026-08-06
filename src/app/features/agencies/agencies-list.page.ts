@@ -23,6 +23,7 @@ export class AgenciesListPage implements OnInit {
   readonly selectedAgency = signal<Agency | null>(null);
   readonly showModal      = signal(false);
   readonly modalLoading   = signal(false);
+  readonly modalMode      = signal<'view' | 'edit'>('view');
 
   readonly statusOptions = [
     { label: 'Selecione o status', value: ''         },
@@ -86,17 +87,18 @@ export class AgenciesListPage implements OnInit {
   // ── Modal handlers ────────────────────────────────────────────────────────
 
   onView(item: Agency): void {
-    this.openModal(item);
+    this.openModal(item, 'view');
   }
 
   onEdit(item: Agency): void {
-    this.openModal(item);
+    this.openModal(item, 'edit');
   }
 
   /** Abre o modal com o item da lista (para o header) e, em seguida, carrega o
    *  registro completo via GET /{id} — a projeção da listagem pode não trazer
    *  todos os campos (ex.: CEP e Número). */
-  private openModal(item: Agency): void {
+  private openModal(item: Agency, mode: 'view' | 'edit' = 'view'): void {
+    this.modalMode.set(mode);
     this.selectedAgency.set(item);
     this.showModal.set(true);
     this.modalLoading.set(true);
