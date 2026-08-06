@@ -55,7 +55,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
 
   form: FormGroup = this.fb.group({
     projectType:         ['', Validators.required],
-    projectCode:         ['', Validators.required],
+    projectCode:         ['', [Validators.required, Validators.pattern(/^[0-9.]+$/)]],
     projectTitle:        ['', Validators.required],
     accountingCode:      [''],
     payingSource:        [''],
@@ -121,6 +121,14 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   }
 
   // ── Contas vinculadas ─────────────────────────────────────────────────────
+
+  /** Código define a hierarquia (1, 1.1, 1.2) → só dígitos e ponto. */
+  onCodeInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    const cleaned = el.value.replace(/[^0-9.]/g, '');
+    el.value = cleaned;
+    this.form.get('projectCode')?.setValue(cleaned, { emitEvent: false });
+  }
 
   addLinkedAccount(): void {
     if (!this.selectedLinkedAccount) return;

@@ -540,3 +540,24 @@
     svg { color: #EF4444; }
   }
 }
+// ── Serviços (lista dinâmica — 5.2) ───────────────────────────────
+.linked-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.linked-list__item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: #FAFAFE; border: 1px solid var(--surface-border-mid, #E5E7EB); border-radius: 10px;
+}
+.linked-list__account { font-size: 14px; font-weight: 600; color: var(--text-primary, #111827); flex: 1; }
+.linked-list__origin  { font-size: 12.5px; color: var(--text-secondary, #6B7280); }
+.icon-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: var(--text-muted, #9CA3AF);
+  border-radius: 6px; transition: all .15s;
+  &:hover { background: #FEE2E2; color: #DC2626; }
+}
+.btn-add-service {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+  border: 1.5px dashed var(--brand-purple-mid, #A5B4FC); color: var(--brand-purple, #6366F1);
+  background: var(--brand-purple-light, #EEF2FF); border-radius: 8px;
+  font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .15s;
+  &:hover { background: #E0E7FF; }
+}

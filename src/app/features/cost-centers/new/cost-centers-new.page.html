@@ -43,7 +43,8 @@
 
             <div class="form-group">
               <label>Código do Projeto/Centro de Custos <span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="projectCode"
+              <input type="text" class="form-control" placeholder="Ex.: 1.1.2" inputmode="decimal" formControlName="projectCode"
+                (input)="onCodeInput($event)"
                 [class.is-invalid]="form.get('projectCode')?.invalid && form.get('projectCode')?.touched">
             </div>
 

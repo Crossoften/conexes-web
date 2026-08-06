@@ -251,7 +251,15 @@
         </div>
         <div class="field">
           <label class="field-label">Conta contábil</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="accountingAccount">
+          <div class="select-wrap">
+            <select class="select" formControlName="accountingAccount">
+              <option value="">Selecione</option>
+              @for (p of accountPlans(); track p.id) {
+                <option [value]="p.id">{{ p.code }} — {{ p.title }}</option>
+              }
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </div>
       </div>
     </div>

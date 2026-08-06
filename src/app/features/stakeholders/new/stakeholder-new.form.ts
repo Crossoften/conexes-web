@@ -1,6 +1,7 @@
 // src/app/features/stakeholders/new/stakeholder-new.form.ts
 import { inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { StakeholderService } from '../stakeholders.model';
 
 export function buildStakeholderForm() {
   const fb = inject(FormBuilder);
@@ -98,12 +99,14 @@ export function buildStakeholderForm() {
     aliqISS:    [''], codISS:    [''],
     aliqIBS:    [''], codIBS:    [''],
     aliqCBS:    [''], codCBS:    [''],
+    // Campos de "novo serviço" (draft) + a lista de serviços adicionados (5.2).
     serviceName:       [''],
     serviceDesc:       [''],
     serviceExtCode:    [''],
     serviceGrantor:    [''],
-    serviceRedemption: [''],
+    serviceRedemption: [false],
     serviceLinked:     [''],
+    services:          [[] as StakeholderService[]],
   });
 
   return fb.group({ step1, step2, step3 });

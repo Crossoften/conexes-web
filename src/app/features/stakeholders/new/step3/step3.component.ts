@@ -1,6 +1,7 @@
 // src/app/features/stakeholders/new/step3/step3.component.ts
 import { Component, input, signal } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { StakeholderService } from '../../stakeholders.model';
 
 type Step3Tab = 'contato' | 'impostos';
 
@@ -20,6 +21,35 @@ export class Step3Component {
   isInvalid(field: string): boolean {
     const ctrl = this.f[field];
     return ctrl?.invalid && ctrl?.touched;
+  }
+
+  // ── Serviços (lista dinâmica — 5.2) ────────────────────────────────────────
+  get servicesList(): StakeholderService[] {
+    return this.f['services']?.value ?? [];
+  }
+
+  addService(): void {
+    const name = (this.f['serviceName']?.value ?? '').trim();
+    if (!name) return;
+    const item: StakeholderService = {
+      name,
+      description:   (this.f['serviceDesc']?.value    ?? '').trim(),
+      externalCode:  (this.f['serviceExtCode']?.value ?? '').trim(),
+      grantorOrgan:  (this.f['serviceGrantor']?.value ?? '').trim(),
+      hasRetention:  !!this.f['serviceRedemption']?.value,
+      accessorOrgan: (this.f['serviceLinked']?.value  ?? '').trim(),
+    };
+    this.f['services']?.setValue([...this.servicesList, item]);
+    this.f['serviceName']?.setValue('');
+    this.f['serviceDesc']?.setValue('');
+    this.f['serviceExtCode']?.setValue('');
+    this.f['serviceGrantor']?.setValue('');
+    this.f['serviceRedemption']?.setValue(false);
+    this.f['serviceLinked']?.setValue('');
+  }
+
+  removeService(index: number): void {
+    this.f['services']?.setValue(this.servicesList.filter((_, i) => i !== index));
   }
 
   /** Telefone: (00) 00000-0000 */
