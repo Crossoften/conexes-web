@@ -243,6 +243,7 @@
 @if (showModal() && selectedItem()) {
   <app-cost-centers-detail-modal
     [item]="selectedItem()"
+    [initialMode]="modalMode()"
     (close)="onModalClose()"
     (saved)="onModalSaved($event)"
     (deleted)="onModalDeleted($event)">

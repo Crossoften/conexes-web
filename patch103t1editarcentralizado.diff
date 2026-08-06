@@ -1,0 +1,424 @@
+diff --git a/src/app/features/agencies/agencies-list.page.html b/src/app/features/agencies/agencies-list.page.html
+index 745a6c4..299464e 100644
+--- a/src/app/features/agencies/agencies-list.page.html
++++ b/src/app/features/agencies/agencies-list.page.html
+@@ -192,6 +192,7 @@
+   *ngIf="showModal()"
+   [agency]="selectedAgency()"
+   [loading]="modalLoading()"
++  [initialMode]="modalMode()"
+   (close)="onCloseModal()"
+   (saved)="onSaved($event)"
+   (delete)="onDeactivate($event)">
+diff --git a/src/app/features/agencies/agencies-list.page.ts b/src/app/features/agencies/agencies-list.page.ts
+index a6809d1..014a643 100644
+--- a/src/app/features/agencies/agencies-list.page.ts
++++ b/src/app/features/agencies/agencies-list.page.ts
+@@ -23,6 +23,7 @@ export class AgenciesListPage implements OnInit {
+   readonly selectedAgency = signal<Agency | null>(null);
+   readonly showModal      = signal(false);
+   readonly modalLoading   = signal(false);
++  readonly modalMode      = signal<'view' | 'edit'>('view');
+ 
+   readonly statusOptions = [
+     { label: 'Selecione o status', value: ''         },
+@@ -86,17 +87,18 @@ export class AgenciesListPage implements OnInit {
+   // ── Modal handlers ────────────────────────────────────────────────────────
+ 
+   onView(item: Agency): void {
+-    this.openModal(item);
++    this.openModal(item, 'view');
+   }
+ 
+   onEdit(item: Agency): void {
+-    this.openModal(item);
++    this.openModal(item, 'edit');
+   }
+ 
+   /** Abre o modal com o item da lista (para o header) e, em seguida, carrega o
+    *  registro completo via GET /{id} — a projeção da listagem pode não trazer
+    *  todos os campos (ex.: CEP e Número). */
+-  private openModal(item: Agency): void {
++  private openModal(item: Agency, mode: 'view' | 'edit' = 'view'): void {
++    this.modalMode.set(mode);
+     this.selectedAgency.set(item);
+     this.showModal.set(true);
+     this.modalLoading.set(true);
+diff --git a/src/app/features/agencies/components/agencies-detail.modal.ts b/src/app/features/agencies/components/agencies-detail.modal.ts
+index 5004b3d..99e6db9 100644
+--- a/src/app/features/agencies/components/agencies-detail.modal.ts
++++ b/src/app/features/agencies/components/agencies-detail.modal.ts
+@@ -1,5 +1,5 @@
+ // src/app/features/agencies/components/agencies-detail.modal.ts
+-import { Component, EventEmitter, Input, Output, OnChanges, inject, signal } from '@angular/core';
++import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
+ import { NgClass, NgIf } from '@angular/common';
+ import { NonNullableFormBuilder, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+ import {
+@@ -20,9 +20,11 @@ import { UploadService } from '../../../shared/services/upload.service';
+   templateUrl: './agencies-detail.modal.html',
+   styleUrl: './agencies-detail.modal.scss',
+ })
+-export class AgencyDetailModalComponent implements OnChanges {
++export class AgencyDetailModalComponent implements OnChanges, OnInit {
+   @Input() agency:  Agency | null = null;
+   @Input() loading  = false;
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  @Input() initialMode: 'view' | 'edit' = 'view';
+ 
+   @Output() close  = new EventEmitter<void>();
+   @Output() delete = new EventEmitter<number>();
+@@ -92,6 +94,10 @@ export class AgencyDetailModalComponent implements OnChanges {
+     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+   }
+ 
++  ngOnInit(): void {
++    this.mode = this.initialMode;
++  }
++
+   ngOnChanges(): void {
+     if (this.agency) {
+       this.form.patchValue({
+diff --git a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+index 4f35ab1..cc470d1 100644
+--- a/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
++++ b/src/app/features/cost-centers/components/cost-centers-detail.modal.ts
+@@ -28,6 +28,8 @@ interface EntityItem {
+ })
+ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
+   @Input()  item: CostCenter | null = null;
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  @Input()  initialMode: 'view' | 'edit' = 'view';
+ 
+   @Output() close   = new EventEmitter<void>();
+   @Output() deleted = new EventEmitter<number>();
+@@ -85,7 +87,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
+   ngOnChanges(): void {
+     if (this.item) {
+       this.patchForm(this.item);
+-      this.mode = 'view';
++      this.mode = this.initialMode;
+       this.errorMsg.set(null);
+     }
+   }
+diff --git a/src/app/features/cost-centers/cost-centers-list.page.html b/src/app/features/cost-centers/cost-centers-list.page.html
+index a84276b..75056d8 100644
+--- a/src/app/features/cost-centers/cost-centers-list.page.html
++++ b/src/app/features/cost-centers/cost-centers-list.page.html
+@@ -243,6 +243,7 @@
+ @if (showModal() && selectedItem()) {
+   <app-cost-centers-detail-modal
+     [item]="selectedItem()"
++    [initialMode]="modalMode()"
+     (close)="onModalClose()"
+     (saved)="onModalSaved($event)"
+     (deleted)="onModalDeleted($event)">
+diff --git a/src/app/features/cost-centers/cost-centers-list.page.ts b/src/app/features/cost-centers/cost-centers-list.page.ts
+index 5835f55..ea3396d 100644
+--- a/src/app/features/cost-centers/cost-centers-list.page.ts
++++ b/src/app/features/cost-centers/cost-centers-list.page.ts
+@@ -24,6 +24,7 @@ export class CostCentersListPage implements OnInit {
+   // ── Modal ─────────────────────────────────────────────────────────────────
+   readonly selectedItem  = signal<CostCenter | null>(null);
+   readonly showModal     = signal(false);
++  readonly modalMode     = signal<'view' | 'edit'>('view');
+ 
+   // ── Export ────────────────────────────────────────────────────────────────
+   readonly exporting = signal(false);
+@@ -87,11 +88,13 @@ export class CostCentersListPage implements OnInit {
+   // ── Modal handlers ────────────────────────────────────────────────────────
+ 
+   onView(item: CostCenter): void {
++    this.modalMode.set('view');
+     this.selectedItem.set(item);
+     this.showModal.set(true);
+   }
+ 
+   onEdit(item: CostCenter): void {
++    this.modalMode.set('edit');
+     this.selectedItem.set(item);
+     this.showModal.set(true);
+   }
+diff --git a/src/app/features/employees/components/employee-detail.modal.ts b/src/app/features/employees/components/employee-detail.modal.ts
+index b53c0e6..2031358 100644
+--- a/src/app/features/employees/components/employee-detail.modal.ts
++++ b/src/app/features/employees/components/employee-detail.modal.ts
+@@ -21,6 +21,8 @@ interface PositionItem { id: number; name: string; title?: string; }
+ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
+   @Input() employee: Employee | null = null;
+   @Input() loading = false;
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  @Input() initialMode: 'view' | 'edit' = 'view';
+ 
+   @Output() close  = new EventEmitter<void>();
+   @Output() delete = new EventEmitter<number>();
+@@ -90,6 +92,8 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
+   // ── Lifecycle ─────────────────────────────────────────────────────────────
+ 
+   ngOnInit(): void {
++    this.mode = this.initialMode;
++
+     // Cargos: lista fixa por ora. GET /v1/positions ainda não existe (B-CO-02) — chamá-lo
+     // retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
+     this.positions.set(this.POSITIONS_FALLBACK);
+diff --git a/src/app/features/employees/employees-list.page.html b/src/app/features/employees/employees-list.page.html
+index 15af15d..df91f7a 100644
+--- a/src/app/features/employees/employees-list.page.html
++++ b/src/app/features/employees/employees-list.page.html
+@@ -112,7 +112,7 @@
+                         <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                       </svg>
+                     </button>
+-                    <button class="icon-btn" title="Editar" (click)="openDetail(item)">
++                    <button class="icon-btn" title="Editar" (click)="openDetail(item, 'edit')">
+                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                         <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg>
+@@ -173,6 +173,7 @@
+   *ngIf="store.selected()"
+   [employee]="store.selected()"
+   [loading]="store.loading()"
++  [initialMode]="modalMode()"
+   (close)="onModalClose()"
+   (saved)="onModalSaved($event)"
+   (delete)="onModalDelete($event)">
+diff --git a/src/app/features/employees/employees-list.page.ts b/src/app/features/employees/employees-list.page.ts
+index 3c60bcd..74467bd 100644
+--- a/src/app/features/employees/employees-list.page.ts
++++ b/src/app/features/employees/employees-list.page.ts
+@@ -1,5 +1,5 @@
+ // src/app/features/employees/employees-list.page.ts
+-import { Component, inject, computed, OnInit } from '@angular/core';
++import { Component, inject, computed, signal, OnInit } from '@angular/core';
+ import { FormsModule } from '@angular/forms';
+ import { NgClass, NgIf } from '@angular/common';
+ import { RouterLink } from '@angular/router';
+@@ -55,7 +55,10 @@ export class EmployeesListPage implements OnInit {
+ 
+   // ── Modal ─────────────────────────────────────────────────────────────────
+ 
+-  openDetail(item: Employee): void {
++  readonly modalMode = signal<'view' | 'edit'>('view');
++
++  openDetail(item: Employee, mode: 'view' | 'edit' = 'view'): void {
++    this.modalMode.set(mode);
+     this.store.openDetail(item);
+   }
+ 
+diff --git a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+index 7a6d6f0..9217e44 100644
+--- a/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
++++ b/src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+@@ -1,5 +1,5 @@
+ // src/app/features/entity-registry/components/entity-registry-detail.modal.ts
+-import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
++import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject } from '@angular/core';
+ import { NgClass, NgIf } from '@angular/common';
+ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+ import {
+@@ -14,9 +14,11 @@ import {
+   templateUrl: './entity-registry-detail.modal.html',
+   styleUrl: './entity-registry-detail.modal.scss',
+ })
+-export class EntityRegistryDetailModalComponent implements OnChanges {
++export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
+   @Input() entity:  EntityRegistry | null = null;
+   @Input() loading  = false;
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  @Input() initialMode: 'view' | 'edit' = 'view';
+ 
+   @Output() close  = new EventEmitter<void>();
+   @Output() delete = new EventEmitter<number>();
+@@ -58,6 +60,10 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
+     accountantOfficePhone: ['', Validators.required],
+   });
+ 
++  ngOnInit(): void {
++    this.mode = this.initialMode;
++  }
++
+   ngOnChanges(): void {
+     if (this.entity) {
+       this.form.patchValue(this.entity as any);
+diff --git a/src/app/features/entity-registry/entity-registry-list.page.html b/src/app/features/entity-registry/entity-registry-list.page.html
+index 6fb2d3b..52da580 100644
+--- a/src/app/features/entity-registry/entity-registry-list.page.html
++++ b/src/app/features/entity-registry/entity-registry-list.page.html
+@@ -103,7 +103,7 @@
+                         <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                       </svg>
+                     </button>
+-                    <button class="icon-btn" title="Editar" (click)="openModal(item)">
++                    <button class="icon-btn" title="Editar" (click)="openModal(item, 'edit')">
+                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                         <path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg>
+@@ -176,6 +176,7 @@
+   <app-entity-registry-detail-modal
+     [entity]="selectedEntity()"
+     [loading]="modalLoading()"
++    [initialMode]="modalMode()"
+     (close)="closeModal()"
+     (delete)="onDelete($event)"
+     (saved)="onSaved($any($event))"
+diff --git a/src/app/features/entity-registry/entity-registry-list.page.ts b/src/app/features/entity-registry/entity-registry-list.page.ts
+index ae25f17..41dba58 100644
+--- a/src/app/features/entity-registry/entity-registry-list.page.ts
++++ b/src/app/features/entity-registry/entity-registry-list.page.ts
+@@ -25,6 +25,7 @@ export class EntityRegistryListPage implements OnInit {
+   protected readonly selectedEntity  = signal<EntityRegistry | null>(null);
+   protected readonly showModal       = signal(false);
+   protected readonly modalLoading    = signal(false);
++  protected readonly modalMode       = signal<'view' | 'edit'>('view');
+ 
+   // ── Opções ────────────────────────────────────────────────────────────────
+   protected readonly pageSizeOptions = [5, 10, 20, 50];
+@@ -72,7 +73,8 @@ export class EntityRegistryListPage implements OnInit {
+   }
+ 
+   // ── Modal ─────────────────────────────────────────────────────────────────
+-  protected async openModal(item: EntityRegistryListItem): Promise<void> {
++  protected async openModal(item: EntityRegistryListItem, mode: 'view' | 'edit' = 'view'): Promise<void> {
++    this.modalMode.set(mode);
+     this.modalLoading.set(true);
+     this.showModal.set(true);
+     const entity = await this.store.getEntityById(item.id);
+diff --git a/src/app/features/users/components/permission-detail.modal.ts b/src/app/features/users/components/permission-detail.modal.ts
+index 754e0e2..fc8c567 100644
+--- a/src/app/features/users/components/permission-detail.modal.ts
++++ b/src/app/features/users/components/permission-detail.modal.ts
+@@ -1,5 +1,5 @@
+ // src/app/features/users/components/permission-detail.modal.ts
+-import { Component, input, output, inject, effect } from '@angular/core';
++import { Component, input, output, inject, effect, OnInit } from '@angular/core';
+ import { NgClass } from '@angular/common';
+ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+ import { PermissionProfile, PermissionProfileUpdatePayload, ModulePermission, DEFAULT_MODULES } from '../users.model';
+@@ -12,8 +12,10 @@ import { UsersService } from '../users.service';
+   templateUrl: './permission-detail.modal.html',
+   styleUrl: './permission-detail.modal.scss',
+ })
+-export class PermissionDetailModalComponent {
++export class PermissionDetailModalComponent implements OnInit {
+   readonly profile = input<PermissionProfile | null>(null);
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  readonly initialMode = input<'view' | 'edit'>('view');
+   readonly close   = output<void>();
+   readonly delete  = output<number>();
+   readonly saved   = output<{ id: number; payload: Partial<PermissionProfileUpdatePayload> }>();
+@@ -44,6 +46,10 @@ export class PermissionDetailModalComponent {
+     });
+   }
+ 
++  ngOnInit(): void {
++    this.mode = this.initialMode();
++  }
++
+   private applyModules(p: PermissionProfile): void {
+     if (p.permissions?.length) {
+       this.modules = this.catalogBase.map(def => {
+diff --git a/src/app/features/users/components/user-detail.modal.ts b/src/app/features/users/components/user-detail.modal.ts
+index 830ee2e..422cb35 100644
+--- a/src/app/features/users/components/user-detail.modal.ts
++++ b/src/app/features/users/components/user-detail.modal.ts
+@@ -1,5 +1,5 @@
+ // src/app/features/users/components/user-detail.modal.ts
+-import { Component, input, output, inject, effect, signal } from '@angular/core';
++import { Component, input, output, inject, effect, signal, OnInit } from '@angular/core';
+ import { NgClass } from '@angular/common';
+ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+ import {
+@@ -19,8 +19,10 @@ type ModalTab = 'DADOS' | 'PERMISSOES';
+   templateUrl: './user-detail.modal.html',
+   styleUrl: './user-detail.modal.scss',
+ })
+-export class UserDetailModalComponent {
++export class UserDetailModalComponent implements OnInit {
+   readonly user   = input<User | null>(null);
++  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
++  readonly initialMode = input<'view' | 'edit'>('view');
+   readonly close  = output<void>();
+   readonly delete = output<number>();
+   readonly saved  = output<{ id: number; payload: Partial<UserUpdatePayload> }>();
+@@ -91,6 +93,10 @@ export class UserDetailModalComponent {
+     });
+   }
+ 
++  ngOnInit(): void {
++    this.mode = this.initialMode();
++  }
++
+   private applyModules(u: User): void {
+     if (u.modulePermissions?.length) {
+       this.modules = this.catalogBase.map(def => {
+diff --git a/src/app/features/users/users-list.page.html b/src/app/features/users/users-list.page.html
+index 4d9608b..82e2a21 100644
+--- a/src/app/features/users/users-list.page.html
++++ b/src/app/features/users/users-list.page.html
+@@ -125,7 +125,7 @@
+                       <button class="icon-btn" title="Visualizar" (click)="openUser(item)">
+                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                       </button>
+-                      <button class="icon-btn" title="Editar" (click)="openUser(item)">
++                      <button class="icon-btn" title="Editar" (click)="openUser(item, 'edit')">
+                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                       </button>
+                       <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onUserDeleted(item.id)">
+@@ -223,7 +223,7 @@
+                       <button class="icon-btn" title="Visualizar / Editar" (click)="openProfile(item)">
+                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                       </button>
+-                      <button class="icon-btn" title="Editar" (click)="openProfile(item)">
++                      <button class="icon-btn" title="Editar" (click)="openProfile(item, 'edit')">
+                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                       </button>
+                       <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onProfileDeleted(item.id)">
+@@ -276,6 +276,7 @@
+   @if (selectedUser()) {
+     <app-user-detail-modal
+       [user]="selectedUser()"
++      [initialMode]="userMode()"
+       (close)="closeUserModal()"
+       (delete)="onUserDeleted($event)"
+       (saved)="onUserSaved($event)">
+@@ -285,6 +286,7 @@
+   @if (selectedProfile()) {
+     <app-permission-detail-modal
+       [profile]="selectedProfile()"
++      [initialMode]="profileMode()"
+       (close)="closeProfileModal()"
+       (delete)="onProfileDeleted($event)"
+       (saved)="onProfileSaved($event)">
+diff --git a/src/app/features/users/users-list.page.ts b/src/app/features/users/users-list.page.ts
+index 349a595..4de7b55 100644
+--- a/src/app/features/users/users-list.page.ts
++++ b/src/app/features/users/users-list.page.ts
+@@ -23,6 +23,8 @@ export class UsersListPage implements OnInit {
+ 
+   readonly selectedUser    = signal<User | null>(null);
+   readonly selectedProfile = signal<PermissionProfile | null>(null);
++  readonly userMode        = signal<'view' | 'edit'>('view');
++  readonly profileMode     = signal<'view' | 'edit'>('view');
+   readonly toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
+ 
+   readonly statusOptions = [
+@@ -73,7 +75,8 @@ export class UsersListPage implements OnInit {
+ 
+   // ── Modal — User ──────────────────────────────────────────────────────────
+ 
+-  openUser(user: User): void {
++  openUser(user: User, mode: 'view' | 'edit' = 'view'): void {
++    this.userMode.set(mode);
+     this.selectedUser.set(user);
+     // O findAll pode vir enxuto (sem modulePermissions); busca o detalhe completo.
+     this.svc.getUserById(user.id).subscribe({
+@@ -113,7 +116,8 @@ export class UsersListPage implements OnInit {
+ 
+   // ── Modal — Profile ───────────────────────────────────────────────────────
+ 
+-  openProfile(p: PermissionProfile): void {
++  openProfile(p: PermissionProfile, mode: 'view' | 'edit' = 'view'): void {
++    this.profileMode.set(mode);
+     this.selectedProfile.set(p);
+     // O findAll pode vir sem a matriz de permissões; busca o detalhe completo.
+     this.svc.getProfileById(p.id).subscribe({

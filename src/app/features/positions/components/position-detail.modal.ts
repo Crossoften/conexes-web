@@ -22,6 +22,8 @@ interface CollaboratorItem { id: number; name: string; }
 export class PositionDetailModalComponent implements OnChanges, OnInit {
   @Input() position: Position | null = null;
   @Input() loading = false;
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  @Input() initialMode: 'view' | 'edit' = 'view';
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
@@ -58,6 +60,8 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.mode = this.initialMode;
+
     this.loadingLists.set(true);
     let loaded = 0;
     const checkDone = () => { if (++loaded >= 2) this.loadingLists.set(false); };

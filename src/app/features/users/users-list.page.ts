@@ -23,6 +23,8 @@ export class UsersListPage implements OnInit {
 
   readonly selectedUser    = signal<User | null>(null);
   readonly selectedProfile = signal<PermissionProfile | null>(null);
+  readonly userMode        = signal<'view' | 'edit'>('view');
+  readonly profileMode     = signal<'view' | 'edit'>('view');
   readonly toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   readonly statusOptions = [
@@ -73,7 +75,8 @@ export class UsersListPage implements OnInit {
 
   // ── Modal — User ──────────────────────────────────────────────────────────
 
-  openUser(user: User): void {
+  openUser(user: User, mode: 'view' | 'edit' = 'view'): void {
+    this.userMode.set(mode);
     this.selectedUser.set(user);
     // O findAll pode vir enxuto (sem modulePermissions); busca o detalhe completo.
     this.svc.getUserById(user.id).subscribe({
@@ -113,7 +116,8 @@ export class UsersListPage implements OnInit {
 
   // ── Modal — Profile ───────────────────────────────────────────────────────
 
-  openProfile(p: PermissionProfile): void {
+  openProfile(p: PermissionProfile, mode: 'view' | 'edit' = 'view'): void {
+    this.profileMode.set(mode);
     this.selectedProfile.set(p);
     // O findAll pode vir sem a matriz de permissões; busca o detalhe completo.
     this.svc.getProfileById(p.id).subscribe({

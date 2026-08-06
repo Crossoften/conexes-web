@@ -1,5 +1,5 @@
 // src/app/features/entity-registry/components/entity-registry-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject } from '@angular/core';
 import { NgClass, NgIf } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -15,9 +15,11 @@ import {
   templateUrl: './entity-registry-detail.modal.html',
   styleUrl: './entity-registry-detail.modal.scss',
 })
-export class EntityRegistryDetailModalComponent implements OnChanges {
+export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
   @Input() entity:  EntityRegistry | null = null;
   @Input() loading  = false;
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  @Input() initialMode: 'view' | 'edit' = 'view';
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
@@ -62,6 +64,10 @@ export class EntityRegistryDetailModalComponent implements OnChanges {
     accountantOffice:      ['', Validators.required],
     accountantOfficePhone: ['', Validators.required],
   });
+
+  ngOnInit(): void {
+    this.mode = this.initialMode;
+  }
 
   ngOnChanges(): void {
     if (this.entity) {

@@ -22,6 +22,8 @@ interface PositionItem { id: number; name: string; title?: string; }
 export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   @Input() employee: Employee | null = null;
   @Input() loading = false;
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  @Input() initialMode: 'view' | 'edit' = 'view';
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
@@ -101,6 +103,8 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.mode = this.initialMode;
+
     // Cargos: lista fixa por ora. GET /v1/positions ainda não existe (B-CO-02) — chamá-lo
     // retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
     this.positions.set(this.POSITIONS_FALLBACK);

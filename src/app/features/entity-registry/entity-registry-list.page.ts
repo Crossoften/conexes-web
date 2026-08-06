@@ -25,6 +25,7 @@ export class EntityRegistryListPage implements OnInit {
   protected readonly selectedEntity  = signal<EntityRegistry | null>(null);
   protected readonly showModal       = signal(false);
   protected readonly modalLoading    = signal(false);
+  protected readonly modalMode       = signal<'view' | 'edit'>('view');
 
   // ── Opções ────────────────────────────────────────────────────────────────
   protected readonly pageSizeOptions = [5, 10, 20, 50];
@@ -72,7 +73,8 @@ export class EntityRegistryListPage implements OnInit {
   }
 
   // ── Modal ─────────────────────────────────────────────────────────────────
-  protected async openModal(item: EntityRegistryListItem): Promise<void> {
+  protected async openModal(item: EntityRegistryListItem, mode: 'view' | 'edit' = 'view'): Promise<void> {
+    this.modalMode.set(mode);
     this.modalLoading.set(true);
     this.showModal.set(true);
     const entity = await this.store.getEntityById(item.id);

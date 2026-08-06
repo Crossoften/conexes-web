@@ -28,6 +28,8 @@ interface EntityItem {
 })
 export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   @Input()  item: CostCenter | null = null;
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  @Input()  initialMode: 'view' | 'edit' = 'view';
 
   @Output() close   = new EventEmitter<void>();
   @Output() deleted = new EventEmitter<number>();
@@ -93,7 +95,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   ngOnChanges(): void {
     if (this.item) {
       this.patchForm(this.item);
-      this.mode = 'view';
+      this.mode = this.initialMode;
       this.errorMsg.set(null);
     }
   }
