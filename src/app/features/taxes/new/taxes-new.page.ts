@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } 
 import { NgClass } from '@angular/common';
 import { TaxesService } from '../taxes.service';
 import { TaxPayload, TaxService, ScopeOption } from '../taxes.model';
+import { parseDecimalBR } from '../../../shared/utils/format';
 
 type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -90,7 +91,7 @@ export class TaxesNewPage implements OnInit {
 
   computeTotal(): number {
     const v = this.form.getRawValue();
-    return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + (Number(v[k]) || 0), 0);
+    return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + parseDecimalBR(v[k]), 0);
   }
 
   ngOnInit(): void {
@@ -214,23 +215,23 @@ export class TaxesNewPage implements OnInit {
       operationNature: v.naturezaOperacao              ?? '',
       totalRetentions: this.computeTotal(),
       manualAliquots:  !!v.definirAliquotasManual,
-      irfAliquot:      Number(v.aliqIRRF)              || 0,
+      irfAliquot:      parseDecimalBR(v.aliqIRRF),
       irfCode:         v.irfCode                       ?? '',
-      pisAliquot:      Number(v.aliqPIS)               || 0,
+      pisAliquot:      parseDecimalBR(v.aliqPIS),
       pisCode:         v.pisCode                       ?? '',
-      pccAliquot:      Number(v.aliqPCC)               || 0,
+      pccAliquot:      parseDecimalBR(v.aliqPCC),
       pccCode:         v.pccCode                       ?? '',
-      cofinsAliquot:   Number(v.aliqCOFINS)            || 0,
+      cofinsAliquot:   parseDecimalBR(v.aliqCOFINS),
       cofinsCode:      v.cofinsCode                    ?? '',
-      inssAliquot:     Number(v.aliqINSS)              || 0,
+      inssAliquot:     parseDecimalBR(v.aliqINSS),
       inssCode:        v.inssCode                      ?? '',
-      csllAliquot:     Number(v.aliqCSLL)              || 0,
+      csllAliquot:     parseDecimalBR(v.aliqCSLL),
       csllCode:        v.csllCode                      ?? '',
-      issAliquot:      Number(v.aliqISS)               || 0,
+      issAliquot:      parseDecimalBR(v.aliqISS),
       issCode:         v.issCode                       ?? '',
-      ibsAliquot:      Number(v.aliqIBS)               || 0,
+      ibsAliquot:      parseDecimalBR(v.aliqIBS),
       ibsCode:         v.ibsCode                       ?? '',
-      cbsAliquot:      Number(v.aliqCBS)               || 0,
+      cbsAliquot:      parseDecimalBR(v.aliqCBS),
       cbsCode:         v.cbsCode                       ?? '',
       status:          'Active',
       services:        this.normalizeServices(this.services),

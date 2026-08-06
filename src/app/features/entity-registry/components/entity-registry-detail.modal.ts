@@ -7,6 +7,7 @@ import {
   EntityRegistryPayload,
   ENTITY_STATUS_OPTIONS,
 } from '../entity-registry.model';
+import { maskCnpj, maskPhone } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-entity-registry-detail-modal',
@@ -72,7 +73,26 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
   ngOnChanges(): void {
     if (this.entity) {
       this.form.patchValue(this.entity as any);
+      // Exibe os valores já mascarados ao abrir a edição.
+      this.form.patchValue({
+        cnpj:      maskCnpj(this.entity.cnpj),
+        mainPhone: maskPhone(this.entity.mainPhone),
+        cellPhone: maskPhone(this.entity.cellPhone),
+      }, { emitEvent: false });
     }
+  }
+
+  // ── Máscaras (o payload já envia só os dígitos via onlyNumbers no onSubmit) ──
+  onCnpjInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCnpj(el.value);
+    this.form.get('cnpj')?.setValue(el.value, { emitEvent: false });
+  }
+
+  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone'): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskPhone(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
   }
 
   protected statusLabel(v: string | undefined): string {

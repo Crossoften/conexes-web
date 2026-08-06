@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChartOfAccountsService } from '../chart-of-accounts.service';
-import { AccountPayload } from '../chart-of-accounts.model';
+import { AccountPayload, Account } from '../chart-of-accounts.model';
 import { environment } from '../../../../environments/environment';
 
 interface ProjectOption {
@@ -30,6 +30,8 @@ export class ChartOfAccountsNewPage implements OnInit {
   readonly errorMsg = signal<string | null>(null);
 
   projects: ProjectOption[] = [];
+  /** Contas candidatas a "pai" de uma subconta (Totalizadora/Sintética). */
+  parents: Account[] = [];
 
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
@@ -51,6 +53,15 @@ export class ChartOfAccountsNewPage implements OnInit {
 
   ngOnInit(): void {
     this.loadProjects();
+    this.loadParents();
+  }
+
+  /** Carrega as contas que podem ser "conta superior" (Totalizadora/Sintética). */
+  private loadParents(): void {
+    this.svc.getAll().subscribe({
+      next: list => { this.parents = list.filter(a => a.categoryType === 'Totalizadora' || a.accountType === 'Sintetica'); },
+      error: ()   => { this.parents = []; },
+    });
   }
 
   private loadProjects(): void {

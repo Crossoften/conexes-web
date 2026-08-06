@@ -248,7 +248,7 @@
 
             <div class="tab-container">
               <button type="button" class="tab-button" [class.active]="activeTab === 'PARAMS'" (click)="activeTab = 'PARAMS'">
-                Configurações de parâmetros
+                Dados do colaborador
               </button>
               <button type="button" class="tab-button" [class.active]="activeTab === 'BOLETO'" (click)="activeTab = 'BOLETO'">
                 Dados de pagamento
@@ -331,8 +331,19 @@
                   </div>
                   <div class="form-group">
                     <label>Vínculo <span class="req">*</span></label>
-                    <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="vinculo"
-                      [class.is-invalid]="form.get('vinculo')?.invalid && form.get('vinculo')?.touched">
+                    <div class="select-wrap">
+                      <select class="form-control" formControlName="vinculo"
+                        [class.is-invalid]="form.get('vinculo')?.invalid && form.get('vinculo')?.touched">
+                        <option value="">Selecione</option>
+                        @if (legacyVinculo) {
+                          <option [value]="legacyVinculo">{{ legacyVinculo }}</option>
+                        }
+                        @for (opt of vinculoOptions; track opt) {
+                          <option [value]="opt">{{ opt }}</option>
+                        }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label>Carga horária mensal <span class="req">*</span></label>
@@ -353,13 +364,14 @@
                     <input type="date" class="form-control" formControlName="dataDemissao">
                   </div>
                   <div class="form-group">
-                    <label>CNS <span class="req">*</span></label>
+                    <label>CNS</label>
                     <input type="text" class="form-control" placeholder="000000000000000" formControlName="cns"
                       [class.is-invalid]="form.get('cns')?.invalid && form.get('cns')?.touched">
                   </div>
                   <div class="form-group">
                     <label>Salário <span class="req">*</span></label>
                     <input type="text" class="form-control" placeholder="0,00" formControlName="salario"
+                      (input)="applyMoneyMask($event)"
                       [class.is-invalid]="form.get('salario')?.invalid && form.get('salario')?.touched">
                   </div>
                 </div>
