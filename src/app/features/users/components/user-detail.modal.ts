@@ -1,5 +1,5 @@
 // src/app/features/users/components/user-detail.modal.ts
-import { Component, input, output, inject, effect, signal } from '@angular/core';
+import { Component, input, output, inject, effect, signal, OnInit } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -19,8 +19,10 @@ type ModalTab = 'DADOS' | 'PERMISSOES';
   templateUrl: './user-detail.modal.html',
   styleUrl: './user-detail.modal.scss',
 })
-export class UserDetailModalComponent {
+export class UserDetailModalComponent implements OnInit {
   readonly user   = input<User | null>(null);
+  /** T1: quando 'edit', o modal abre já em edição (botão "Editar" da lista). */
+  readonly initialMode = input<'view' | 'edit'>('view');
   readonly close  = output<void>();
   readonly delete = output<number>();
   readonly saved  = output<{ id: number; payload: Partial<UserUpdatePayload> }>();
@@ -89,6 +91,10 @@ export class UserDetailModalComponent {
       const u = this.user();
       if (u) this.patchForm(u);
     });
+  }
+
+  ngOnInit(): void {
+    this.mode = this.initialMode();
   }
 
   private applyModules(u: User): void {

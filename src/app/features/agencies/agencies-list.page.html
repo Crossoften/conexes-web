@@ -192,6 +192,7 @@
   *ngIf="showModal()"
   [agency]="selectedAgency()"
   [loading]="modalLoading()"
+  [initialMode]="modalMode()"
   (close)="onCloseModal()"
   (saved)="onSaved($event)"
   (delete)="onDeactivate($event)">

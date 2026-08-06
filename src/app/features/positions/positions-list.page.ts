@@ -1,5 +1,5 @@
 // src/app/features/positions/positions-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -19,6 +19,7 @@ export class PositionsListPage implements OnInit {
   readonly store = inject(PositionsStore);
 
   readonly statusConfig = POSITION_STATUS_CONFIG;
+  readonly modalMode    = signal<'view' | 'edit'>('view');
 
   // Valores canônicos do back (sem espaço/acento); rótulo amigável na exibição.
   readonly typeOptions = [
@@ -69,7 +70,8 @@ export class PositionsListPage implements OnInit {
 
   // ── Modal ─────────────────────────────────────────────────────────────────
 
-  openDetail(item: Position): void {
+  openDetail(item: Position, mode: 'view' | 'edit' = 'view'): void {
+    this.modalMode.set(mode);
     this.store.openDetail(item);
   }
 
