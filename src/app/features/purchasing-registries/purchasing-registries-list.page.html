@@ -19,12 +19,6 @@
         <button class="tab-underline-btn" [class.active]="store.activeTab() === 'PRODUCTS'" (click)="store.setTab('PRODUCTS')">
           Produtos serviços
         </button>
-        <button class="tab-underline-btn" [class.active]="store.activeTab() === 'SUPPLIERS'" (click)="store.setTab('SUPPLIERS')">
-          Fornecedores
-        </button>
-        <button class="tab-underline-btn" [class.active]="store.activeTab() === 'COST_CENTERS'" (click)="store.setTab('COST_CENTERS')">
-          Centro de custo
-        </button>
         <button class="tab-underline-btn" [class.active]="store.activeTab() === 'LOCATIONS'" (click)="store.setTab('LOCATIONS')">
           Locais de entrega
         </button>
@@ -86,22 +80,6 @@
                 <th class="th th--center">Ações</th>
               </tr>
             }
-            @case ('SUPPLIERS') {
-              <tr>
-                <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
-                <th class="th th--sortable" (click)="store.setSort('cnpj')">CNPJ <span class="sort-icon" [ngClass]="'sort--' + getSortState('cnpj')"></span></th>
-                <th class="th th--sortable" (click)="store.setSort('legalName')">RAZÃO SOCIAL <span class="sort-icon" [ngClass]="'sort--' + getSortState('legalName')"></span></th>
-                <th class="th th--sortable" (click)="store.setSort('contact')">CONTATO <span class="sort-icon" [ngClass]="'sort--' + getSortState('contact')"></span></th>
-                <th class="th th--sortable" (click)="store.setSort('email')">E-MAIL <span class="sort-icon" [ngClass]="'sort--' + getSortState('email')"></span></th>
-              </tr>
-            }
-            @case ('COST_CENTERS') {
-              <tr>
-                <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
-                <th class="th th--sortable" (click)="store.setSort('name')">NOME <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span></th>
-                <th class="th th--sortable" (click)="store.setSort('address')">DESCRIÇÃO <span class="sort-icon" [ngClass]="'sort--' + getSortState('address')"></span></th>
-              </tr>
-            }
             @default {
               <tr>
                 <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
@@ -133,26 +111,6 @@
                       <button class="icon-btn" title="Excluir" (click)="removeProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                   </td>
-                </tr>
-              }
-            }
-            @case ('SUPPLIERS') {
-              @for (item of store.pageSuppliers(); track item.id) {
-                <tr class="tr">
-                  <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
-                  <td class="td td--mono">{{ item.cnpj }}</td>
-                  <td class="td">{{ item.legalName }}</td>
-                  <td class="td">{{ item.contact }}</td>
-                  <td class="td">{{ item.email }}</td>
-                </tr>
-              }
-            }
-            @case ('COST_CENTERS') {
-              @for (item of store.pageCostCenters(); track item.id) {
-                <tr class="tr">
-                  <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
-                  <td class="td td--mono">{{ item.name }}</td>
-                  <td class="td">{{ item.address }}</td>
                 </tr>
               }
             }

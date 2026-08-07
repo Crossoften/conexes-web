@@ -199,6 +199,14 @@
   padding: 24px 0;
 }
 
+.perms-profile {
+  font-size: 14px;
+  color: var(--text-secondary, #6B7280);
+  margin: 0 0 12px;
+
+  strong { color: var(--text-primary, #111827); font-weight: 600; }
+}
+
 // ── Bool badge ────────────────────────────────
 
 .bool-badge {

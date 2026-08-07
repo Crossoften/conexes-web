@@ -62,3 +62,38 @@ export interface EntityRegistryListItem {
   tradeName: string;
   city:      string;
 }
+
+// ── BK-16: Consulta CNPJ na Receita Federal (GET /entities/cnpj/:cnpj) ─────
+// Espelha o CnpjLookupResponseDto do back (mesmo shape usado nos stakeholders).
+export interface EntityCnpjLookup {
+  cnpj:                string;
+  razaoSocial?:        string;   // → legalName
+  nomeFantasia?:       string;   // → tradeName
+  logradouro?:         string;   // → address
+  numero?:             string;   // → number
+  complemento?:        string;   // → complement
+  bairro?:             string;   // → district
+  municipio?:          string;   // → city
+  uf?:                 string;   // → state
+  cep?:                string;   // → zipCode
+  email?:              string;   // → directorEmail
+  telefone?:           string;   // → mainPhone
+  situacaoCadastral?:  string;
+  atividadePrincipal?: string;
+}
+
+// ── BK-9: Histórico da entidade (GET /{id}/history) ───────────────────────
+// Shape não detalhado no Swagger — normalizado de forma tolerante no service.
+export interface EntityHistoryChange {
+  field: string;
+  from:  string;
+  to:    string;
+}
+
+export interface EntityHistoryEntry {
+  date:         string;
+  user?:        string;
+  action?:      string;
+  description?: string;
+  changes?:     EntityHistoryChange[];
+}

@@ -7,6 +7,8 @@ import { HttpClient } from '@angular/common/http';
 import { ChartOfAccountsService } from '../chart-of-accounts.service';
 import { AccountPayload, Account } from '../chart-of-accounts.model';
 import { environment } from '../../../../environments/environment';
+import { CostCenterCreateModalComponent } from '../../cost-centers/components/cost-center-create.modal';
+import { CostCenter } from '../../cost-centers/cost-centers.model';
 
 interface ProjectOption {
   id:   number;
@@ -16,7 +18,7 @@ interface ProjectOption {
 @Component({
   selector: 'app-chart-of-accounts-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CostCenterCreateModalComponent],
   templateUrl: './chart-of-accounts-new.page.html',
   styleUrl: './chart-of-accounts-new.page.scss',
 })
@@ -32,6 +34,9 @@ export class ChartOfAccountsNewPage implements OnInit {
   projects: ProjectOption[] = [];
   /** Contas candidatas a "pai" de uma subconta (Totalizadora/Sintética). */
   parents: Account[] = [];
+
+  /** B2: modal de criação inline de Centro de Custo. */
+  readonly showCcModal = signal(false);
 
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
@@ -74,6 +79,18 @@ export class ChartOfAccountsNewPage implements OnInit {
         next: res => { this.projects = (res.data ?? []).filter(p => p._entityType === 'cost_center'); },
         error: ()  => { this.projects = []; },
       });
+  }
+
+  // ── B2: criação inline de Centro de Custo ─────────────────────────────────
+
+  openCcModal(): void  { this.showCcModal.set(true); }
+  closeCcModal(): void { this.showCcModal.set(false); }
+
+  onCcCreated(cc: CostCenter): void {
+    const name = cc.name || cc.title || cc.code;
+    this.projects = [...this.projects, { id: cc.id, name }];
+    this.form.patchValue({ costCenter: cc.id });
+    this.showCcModal.set(false);
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────

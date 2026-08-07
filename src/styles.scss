@@ -52,3 +52,44 @@ img, svg {
   background: var(--brand-purple-light);
   border-radius: 3px;
 }
+
+/* §11.2: empty-state padrão para listagens.
+   Telas que já definem `.td--empty` no próprio SCSS continuam com o seu estilo
+   (a regra escopada do componente vence por especificidade); as demais herdam este. */
+.td--empty {
+  padding: 64px 16px;
+  text-align: center;
+}
+.empty-icon {
+  display: block;
+  margin: 0 auto 12px;
+  color: var(--text-muted, #9CA3AF);
+  opacity: .55;
+}
+.empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0 0 4px;
+}
+.empty-desc {
+  font-size: 13px;
+  color: var(--text-muted, #9CA3AF);
+}
+.empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 22px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--brand-orange, #F97316);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter .2s ease;
+}
+.empty-cta:hover { filter: brightness(1.05); }

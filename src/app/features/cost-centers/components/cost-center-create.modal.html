@@ -1,0 +1,163 @@
+<div class="cc-overlay" (click)="onClose()">
+  <div class="cc-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="cc-header">
+      <div>
+        <h2 class="cc-title">Novo Centro de Custo / Projeto</h2>
+        <p class="cc-subtitle">Crie o centro de custo sem sair do cadastro da conta.</p>
+      </div>
+      <button type="button" class="cc-close" (click)="onClose()" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="cc-body">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+        @if (errorMsg()) {
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+        }
+
+        <div class="form-grid">
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Tipo do Projeto/Centro de Custos <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="projectType"
+                  [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
+                  <option value="">Selecione</option>
+                  <option value="centro_de_custo">Centro de Custo</option>
+                  <option value="projeto">Projeto</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Código do Projeto/Centro de Custos <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Ex.: 1.1.2" inputmode="decimal" formControlName="projectCode"
+                (input)="onCodeInput($event)"
+                [class.is-invalid]="form.get('projectCode')?.invalid && form.get('projectCode')?.touched">
+            </div>
+
+            <div class="form-group">
+              <label>Título do Projeto/Centro de Custos <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="projectTitle"
+                [class.is-invalid]="form.get('projectTitle')?.invalid && form.get('projectTitle')?.touched">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Código Contábil</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="accountingCode">
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  @for (plan of accountPlans(); track plan.id) {
+                    <option [value]="plan.code">{{ plan.code }} — {{ plan.title }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Fonte Pagadora</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="payingSource">
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  @for (entity of entities(); track entity.id) {
+                    <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Data de Início</label>
+              <input type="date" class="form-control" formControlName="startDate">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Descrição da Categoria</label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="categoryDescription">
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-1 mt-2">
+            <label class="checkbox-inline">
+              <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="restrictInterest"><span class="checkbox__box"></span></div>
+              Restringir alocação de juros e multa
+            </label>
+          </div>
+
+          <div class="form-row grid-cols-1 mt-2">
+            <label class="checkbox-inline">
+              <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="budgetRestriction"><span class="checkbox__box"></span></div>
+              Restrição em orçamentos
+            </label>
+          </div>
+
+        </div>
+
+        <!-- Composição de contas vinculadas -->
+        <div class="linked-accounts-section">
+          <h3 class="section-title-sm">Composição de contas vinculadas</h3>
+          <div class="linked-box">
+            <div class="linked-box__label">Origem (Caixa)</div>
+            <div class="linked-box__input">
+              <div class="form-group">
+                <label>Selecionar conta</label>
+                <div class="select-wrap">
+                  <select class="form-control" [(ngModel)]="selectedLinkedAccount" [ngModelOptions]="{ standalone: true }">
+                    <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                    @for (plan of accountPlans(); track plan.id) {
+                      <option [value]="plan.id">{{ plan.code }} — {{ plan.title }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="linked-box__actions">
+              <button type="button" class="btn-square-outline" title="Adicionar" (click)="addLinkedAccount()">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          @if (linkedAccounts.length > 0) {
+            <div class="linked-list">
+              @for (linked of linkedAccounts; track $index) {
+                <div class="linked-list__item">
+                  <span class="linked-list__origin">{{ linked.origin }}</span>
+                  <span class="linked-list__account">{{ getAccountLabel(linked.accountPlanId) }}</span>
+                  <button type="button" class="icon-btn" title="Remover" (click)="removeLinkedAccount($index)">
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="cc-footer">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onClose()">Cancelar</button>
+      <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+        @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
+        @else { Salvar centro de custo }
+      </button>
+    </div>
+
+  </div>
+</div>

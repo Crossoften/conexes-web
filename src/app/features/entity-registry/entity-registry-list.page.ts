@@ -3,8 +3,10 @@ import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { EntityRegistryStore } from './entity-registry.store';
 import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { EntityRegistry, EntityRegistryListItem, EntityRegistryPayload } from './entity-registry.model';
+import { EntityRegistry, EntityRegistryListItem, EntityRegistryPayload, EntityHistoryEntry } from './entity-registry.model';
 import { EntityRegistryDetailModalComponent } from './components/entity-registry-detail.modal';
+import { EntityRegistryHistoryModalComponent } from './components/entity-registry-history.modal';
+import { EntityRegistryService } from './entity-registry.service';
 
 @Component({
   selector: 'app-entity-registry-list',
@@ -14,18 +16,26 @@ import { EntityRegistryDetailModalComponent } from './components/entity-registry
     NgClass,
     RouterLink,
     EntityRegistryDetailModalComponent,
+    EntityRegistryHistoryModalComponent,
   ],
   templateUrl: './entity-registry-list.page.html',
   styleUrls: ['./entity-registry-list.page.scss'],
 })
 export class EntityRegistryListPage implements OnInit {
   protected readonly store = inject(EntityRegistryStore);
+  private readonly svc = inject(EntityRegistryService);
 
   // ── Estado do modal ───────────────────────────────────────────────────────
   protected readonly selectedEntity  = signal<EntityRegistry | null>(null);
   protected readonly showModal       = signal(false);
   protected readonly modalLoading    = signal(false);
   protected readonly modalMode       = signal<'view' | 'edit'>('view');
+
+  // ── BK-9: histórico da entidade ───────────────────────────────────────────
+  protected readonly showHistory      = signal(false);
+  protected readonly historyLoading   = signal(false);
+  protected readonly historyEntries   = signal<EntityHistoryEntry[]>([]);
+  protected readonly historyEntityName = signal('');
 
   // ── Opções ────────────────────────────────────────────────────────────────
   protected readonly pageSizeOptions = [5, 10, 20, 50];
@@ -85,6 +95,23 @@ export class EntityRegistryListPage implements OnInit {
   protected closeModal(): void {
     this.showModal.set(false);
     this.selectedEntity.set(null);
+  }
+
+  // ── BK-9: Histórico ───────────────────────────────────────────────────────
+  protected openHistory(item: EntityRegistryListItem): void {
+    this.historyEntityName.set(item.legalName || item.tradeName || '');
+    this.historyEntries.set([]);
+    this.historyLoading.set(true);
+    this.showHistory.set(true);
+    this.svc.getHistory(item.id).subscribe({
+      next: entries => { this.historyEntries.set(entries); this.historyLoading.set(false); },
+      error: ()      => { this.historyEntries.set([]);      this.historyLoading.set(false); },
+    });
+  }
+
+  protected closeHistory(): void {
+    this.showHistory.set(false);
+    this.historyEntries.set([]);
   }
 
   protected async onSaved(payload: Partial<EntityRegistryPayload>): Promise<void> {

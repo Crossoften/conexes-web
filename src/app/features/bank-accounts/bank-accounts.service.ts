@@ -35,6 +35,11 @@ export class BankAccountsService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
+  /** BK-18: exporta as contas bancárias em Excel. */
+  exportAccountsExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
+  }
+
   // ── Bancos ────────────────────────────────────────────────────────────────
 
   getAllBanks(): Observable<Bank[]> {
@@ -57,6 +62,11 @@ export class BankAccountsService {
 
   deleteBank(id: number): Observable<void> {
     return this.http.delete<void>(`${this.banksBase}/${id}`);
+  }
+
+  /** BK-18: exporta os bancos em Excel. */
+  exportBanksExcel(): Observable<Blob> {
+    return this.http.get(`${this.banksBase}/export/excel`, { responseType: 'blob' });
   }
 
   // ── Entidades (para popular select Fonte Pagadora) ────────────────────────
