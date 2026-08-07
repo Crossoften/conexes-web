@@ -80,16 +80,21 @@ export class UserDetailModalComponent implements OnInit {
   /** US-7: base da matriz vinda do catálogo oficial (fallback = DEFAULT_MODULES). */
   private catalogBase: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
 
+  /** BK-2: marca que o usuário editou a matriz — bloqueia o re-patch por corrida. */
+  private matrixDirty = false;
+
   constructor() {
     this.svc.getProfiles({ take: 100 }).subscribe({ next: r => this.profiles.set(r.data ?? (r as any)), error: () => {} });
     this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
     this.svc.getModulesCatalog().subscribe({
-      next: c => { if (c.length) { this.catalogBase = c; const u = this.user(); if (u) this.applyModules(u); } },
+      // BK-2: se o usuário já editou a matriz, não reaplica (não apaga marcações).
+      next: c => { if (c.length) { this.catalogBase = c; const u = this.user(); if (u && !this.matrixDirty) this.applyModules(u); } },
       error: () => {},
     });
     effect(() => {
       const u = this.user();
-      if (u) this.patchForm(u);
+      // BK-2: absorve o detalhe completo enquanto o usuário não mexeu; depois protege a edição.
+      if (u && !this.form.dirty && !this.matrixDirty) this.patchForm(u);
     });
   }
 
@@ -126,6 +131,9 @@ export class UserDetailModalComponent implements OnInit {
     });
 
     this.applyModules(u);
+    // BK-2: estado "limpo" após carregar os dados oficiais.
+    this.form.markAsPristine();
+    this.matrixDirty = false;
   }
 
   // ── Accessors view ────────────────────────────────────────────────────────
@@ -140,6 +148,34 @@ export class UserDetailModalComponent implements OnInit {
 
   get roleLabel(): string {
     return this.roleLabels[this.user()?.role ?? ''] ?? this.user()?.role ?? '—';
+  }
+
+  // ── Permissões efetivas (BK-3 / §9.3) ─────────────────────────────────────
+  /** Nome do perfil de permissão vinculado (quando houver). */
+  get linkedProfileName(): string {
+    const u = this.user();
+    return u?.permissionProfile?.name
+        ?? this.profiles().find(p => p.id === u?.permissionProfileId)?.name
+        ?? '';
+  }
+
+  /**
+   * Matriz para a aba de visualização: usa as permissões **efetivas** (perfil +
+   * diretas) devolvidas pelo back. Cai de forma tolerante para as do perfil e,
+   * por fim, para as diretas — mesclando sempre sobre o catálogo para a tabela
+   * ficar completa.
+   */
+  get effectiveModules(): ModulePermission[] {
+    const u = this.user();
+    const source = (u?.effectivePermissions?.length ? u.effectivePermissions : null)
+                ?? (u?.permissionProfile?.permissions?.length ? u.permissionProfile.permissions : null)
+                ?? u?.modulePermissions
+                ?? [];
+    if (!source.length) return [];
+    return this.catalogBase.map(def => {
+      const found = source.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
+      return found ? { ...def, ...found } : { ...def };
+    });
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -167,6 +203,7 @@ export class UserDetailModalComponent implements OnInit {
 
   togglePermission(index: number, field: keyof Pick<ModulePermission, 'canView' | 'canCreate' | 'canEdit' | 'canDelete' | 'isUnlimited'>): void {
     this.modules[index] = { ...this.modules[index], [field]: !this.modules[index][field] };
+    this.matrixDirty = true;   // BK-2: protege a marcação de um re-patch tardio.
   }
 
   onSubmit(): void {

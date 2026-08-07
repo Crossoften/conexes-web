@@ -50,8 +50,6 @@ export class BankAccountNewPage implements OnInit {
     emailContato:      ['', [Validators.required, Validators.email]],
     contaContabil1:    [''],
     contato:           [''],
-    telefoneContato:   [''],
-    celularContato:    [''],
     tipoRecurso:       [''],
     contaContabil2:    [''],
     dadosDiferentes:   [false],

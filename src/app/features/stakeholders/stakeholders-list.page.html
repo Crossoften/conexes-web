@@ -157,7 +157,20 @@
           } @else if (store.error()) {
             <tr><td colspan="7" class="td td--empty td--error">{{ store.error() }}</td></tr>
           } @else if (store.items().length === 0) {
-            <tr><td colspan="7" class="td td--empty">Nenhum stakeholder encontrado.</td></tr>
+            <tr><td colspan="7" class="td td--empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" width="48" height="48" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              <p class="empty-title">Nenhum fornecedor cadastrado</p>
+              <span class="empty-desc">Cadastre o primeiro fornecedor ou ajuste os filtros aplicados.</span>
+              <div>
+                <a class="empty-cta" routerLink="new">
+                  <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  Cadastrar fornecedor
+                </a>
+              </div>
+            </td></tr>
           } @else {
             @for (item of store.items(); track item.id) {
               <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">

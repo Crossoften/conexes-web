@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BankAccountsStore } from './bank-accounts.store';
+import { BankAccountsService } from './bank-accounts.service';
 import { BankPayload, BankAccountPayload, BANK_ACCOUNT_STATUS_CONFIG } from './bank-accounts.model';
 import { BankAccountDetailModalComponent } from './components/bank-account-detail.modal';
 
@@ -17,6 +18,7 @@ import { BankAccountDetailModalComponent } from './components/bank-account-detai
 })
 export class BankAccountsListPage implements OnInit {
   readonly store = inject(BankAccountsStore);
+  private  svc   = inject(BankAccountsService);
 
   readonly typeOptions: { label: string; value: string }[] = [
     { label: 'Selecione o tipo', value: ''         },
@@ -91,6 +93,32 @@ export class BankAccountsListPage implements OnInit {
 
   onAccountSave(payload: BankAccountPayload): void {
     this.store.saveAccount(payload);
+  }
+
+  // ── Export (BK-18) ────────────────────────────────────────────────────────
+
+  readonly exporting = signal(false);
+
+  onExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+
+    const isAccounts = this.store.activeTab() === 'ACCOUNTS';
+    const request$   = isAccounts ? this.svc.exportAccountsExcel() : this.svc.exportBanksExcel();
+    const filename   = isAccounts ? 'contas-bancarias.xlsx' : 'bancos.xlsx';
+
+    request$.subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => { this.exporting.set(false); },
+    });
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────

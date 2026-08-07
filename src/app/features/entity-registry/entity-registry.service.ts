@@ -7,6 +7,9 @@ import {
   EntityRegistry,
   EntityRegistryListItem,
   EntityRegistryPayload,
+  EntityHistoryEntry,
+  EntityHistoryChange,
+  EntityCnpjLookup,
 } from './entity-registry.model';
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +42,67 @@ export class EntityRegistryService {
   /** DELETE /v1/institutional/entities/:id */
   remove(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  /** BK-16: GET /entities/cnpj/:cnpj — consulta na Receita Federal. */
+  getCnpjData(cnpj: string): Observable<EntityCnpjLookup> {
+    const clean = cnpj.replace(/\D/g, '');
+    return this.http.get<EntityCnpjLookup>(`${this.baseUrl}/cnpj/${clean}`);
+  }
+
+  /**
+   * BK-9: GET /v1/institutional/entities/:id/history — histórico de alterações.
+   * O Swagger não detalha o shape; normalizamos de forma tolerante (envelope
+   * `data`/array e nomes de campo alternativos para data/autor/ação/mudanças).
+   */
+  getHistory(id: number): Observable<EntityHistoryEntry[]> {
+    return this.http.get<unknown>(`${this.baseUrl}/${id}/history`).pipe(
+      map(res => {
+        const rows: unknown[] = Array.isArray(res)
+          ? res
+          : ((res as { data?: unknown[] })?.data ?? []);
+        return rows.map(r => this.normalizeHistoryEntry(r));
+      }),
+    );
+  }
+
+  private normalizeHistoryEntry(r: unknown): EntityHistoryEntry {
+    const o = (r ?? {}) as Record<string, unknown>;
+    const str = (...ks: string[]): string => {
+      for (const k of ks) { const v = o[k]; if (typeof v === 'string' && v) return v; }
+      return '';
+    };
+
+    const rawChanges = o['changes'] ?? o['diff'] ?? o['fields'] ?? o['changedFields'];
+    let changes: EntityHistoryChange[] | undefined;
+    if (Array.isArray(rawChanges)) {
+      changes = rawChanges.map(c => {
+        const co = (c ?? {}) as Record<string, unknown>;
+        const pick = (...ks: string[]): string => {
+          for (const k of ks) { const v = co[k]; if (v != null && v !== '') return String(v); }
+          return '';
+        };
+        return {
+          field: pick('field', 'name', 'property', 'key', 'label'),
+          from:  pick('from', 'oldValue', 'old', 'previous', 'before'),
+          to:    pick('to', 'newValue', 'new', 'current', 'after', 'value'),
+        };
+      }).filter(c => c.field || c.from || c.to);
+    }
+
+    // `user` pode vir como string OU objeto { id, name } — extraímos o nome.
+    const userRaw = o['user'] ?? o['author'] ?? o['changedBy'] ?? o['performedBy'] ?? o['actor'];
+    const user = typeof userRaw === 'string'
+      ? userRaw
+      : ((userRaw as Record<string, unknown>)?.['name'] ?? (userRaw as Record<string, unknown>)?.['userName'] ?? '') as string;
+
+    return {
+      date:        str('date', 'createdAt', 'timestamp', 'changedAt', 'updatedAt', 'when'),
+      user:        user || str('userName') || undefined,
+      action:      str('action', 'event', 'type', 'operation') || undefined,
+      description: str('description', 'message', 'detail', 'summary') || undefined,
+      changes:     changes?.length ? changes : undefined,
+    };
   }
 
   /**

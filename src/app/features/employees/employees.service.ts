@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Employee, EmployeePayload, EmployeeUpdatePayload, EmployeePayment } from './employees.model';
+import { Employee, EmployeePayload, EmployeeUpdatePayload, EmployeePayment, PositionOption } from './employees.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmployeesService {
@@ -16,6 +16,13 @@ export class EmployeesService {
 
   getById(id: number): Observable<Employee> {
     return this.http.get<Employee>(`${this.base}/${id}`);
+  }
+
+  /** BK-1: catálogo de cargos (GET /v1/positions). Envelope tolerante (data/array). */
+  getPositions(): Observable<PositionOption[]> {
+    return this.http
+      .get<PositionOption[] | { data?: PositionOption[] }>(`${environment.apiUrl}/v1/positions`)
+      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
   }
 
   create(payload: EmployeePayload): Observable<Employee> {

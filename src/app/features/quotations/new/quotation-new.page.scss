@@ -222,6 +222,8 @@
 }
 
 .footer-actions-right { display: flex; align-items: center; gap: 16px; }
+// §10.19: "Reiniciar" agrupado com "Voltar" à esquerda, longe do "Salvar".
+.footer-actions-left { display: flex; align-items: center; gap: 16px; }
 
 .btn-outline, .btn-solid {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px;

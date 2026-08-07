@@ -101,7 +101,10 @@
 
           @if (activeTab === 'PERMISSOES') {
             <div class="info-box">
-              @if (!user()?.modulePermissions?.length) {
+              @if (linkedProfileName) {
+                <p class="perms-profile">Perfil de permissão: <strong>{{ linkedProfileName }}</strong></p>
+              }
+              @if (!effectiveModules.length) {
                 <p class="empty-perms">Nenhuma permissão de módulo cadastrada.</p>
               } @else {
                 <div class="table-wrap">
@@ -118,7 +121,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (mod of user()?.modulePermissions; track mod.module) {
+                      @for (mod of effectiveModules; track mod.module) {
                         <tr class="tr">
                           <td class="td td--bold">{{ mod.module }}</td>
                           <td class="td">{{ mod.subMenu }}</td>

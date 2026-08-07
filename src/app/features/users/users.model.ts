@@ -70,6 +70,10 @@ export interface User {
   entityId?:           number;   // empresa/entidade vinculada
   permissionProfileId?: number;
   modulePermissions:   ModulePermission[];
+  /** BK-3: permissões efetivas (perfil + diretas), calculadas pelo back. */
+  effectivePermissions?: ModulePermission[];
+  /** BK-3: perfil de permissão vinculado (nome + matriz do perfil). */
+  permissionProfile?:  { id: number; name: string; description?: string; permissions?: ModulePermission[] };
   createdAt?:          string;
   updatedAt?:          string;
 }
