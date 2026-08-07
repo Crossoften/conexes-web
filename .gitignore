@@ -30,5 +30,7 @@ bazel-out/
 # System Files
 Thumbs.db
 
-# Environment (nunca commitar envs com secrets)
-src/environments/environment.prod.ts
+# Environment
+# environment.prod.ts é versionado (contém só a apiUrl pública, sem secrets),
+# para o build de produção funcionar após um clone limpo.
+# Se precisar de segredos no build, use variáveis de ambiente NÃO versionadas.
