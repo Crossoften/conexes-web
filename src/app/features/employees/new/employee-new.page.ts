@@ -5,14 +5,13 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { EmployeesService } from '../employees.service';
-import { EmployeePayload, VINCULO_OPTIONS } from '../employees.model';
+import { EmployeePayload, PositionOption, VINCULO_OPTIONS } from '../employees.model';
 import { environment } from '../../../../environments/environment';
 import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
 type EmployeeTab = 'PARAMS' | 'BOLETO';
 
 interface EntityItem   { id?: number; cnpj?: string; legalName: string; tradeName: string; }
-interface PositionItem { id: number; name: string; title?: string; }
 
 @Component({
   selector: 'app-employee-new',
@@ -30,35 +29,11 @@ export class EmployeeNewPage implements OnInit {
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
   readonly entities     = signal<EntityItem[]>([]);
-  readonly positions    = signal<PositionItem[]>([]);
+  readonly positions    = signal<PositionOption[]>([]);
   readonly loadingLists = signal(true);
   readonly vinculoOptions = VINCULO_OPTIONS;
 
   activeTab: EmployeeTab = 'PARAMS';
-
-  // Lista temporária — substituir quando GET /v1/positions estiver disponível
-  private readonly POSITIONS_FALLBACK: PositionItem[] = [
-    { id: 1,  name: 'Diretor Executivo'           },
-    { id: 2,  name: 'Diretor Financeiro'           },
-    { id: 3,  name: 'Diretor Administrativo'       },
-    { id: 4,  name: 'Coordenador de Projetos'      },
-    { id: 5,  name: 'Coordenador Financeiro'       },
-    { id: 6,  name: 'Analista Financeiro'          },
-    { id: 7,  name: 'Analista de Projetos'         },
-    { id: 8,  name: 'Assistente Administrativo'    },
-    { id: 9,  name: 'Assistente Financeiro'        },
-    { id: 10, name: 'Técnico de Contabilidade'     },
-    { id: 11, name: 'Contador'                     },
-    { id: 12, name: 'Advogado'                     },
-    { id: 13, name: 'Educador Social'              },
-    { id: 14, name: 'Psicólogo'                    },
-    { id: 15, name: 'Assistente Social'            },
-    { id: 16, name: 'Enfermeiro'                   },
-    { id: 17, name: 'Médico'                       },
-    { id: 18, name: 'Auxiliar de Serviços Gerais'  },
-    { id: 19, name: 'Motorista'                    },
-    { id: 20, name: 'Outros'                       },
-  ];
 
   form: FormGroup = this.fb.group({
     entidade:           ['', Validators.required],
@@ -91,9 +66,12 @@ export class EmployeeNewPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    // Cargos: lista fixa por ora. O endpoint GET /v1/positions ainda não existe (B-CO-02) —
-    // chamá-lo retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
-    this.positions.set(this.POSITIONS_FALLBACK);
+    // BK-1: cargos vêm do catálogo real (GET /v1/positions). Sem fallback de ids
+    // fixos — em erro fica vazio para nunca enviar um positionId inexistente.
+    this.svc.getPositions().subscribe({
+      next: items => this.positions.set(items),
+      error: ()    => this.positions.set([]),
+    });
 
     // Entidades: carrega do back
     this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
@@ -144,6 +122,12 @@ export class EmployeeNewPage implements OnInit {
     return /\d/.test(event.key) || event.key === 'Backspace' || event.key === 'Tab';
   }
 
+  /** BK-1: nome do cargo selecionado (do catálogo) para espelhar em `title`. */
+  private positionName(cargo: unknown): string {
+    const found = this.positions().find(p => p.id === Number(cargo));
+    return found ? (found.title || found.name) : '';
+  }
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   setTab(tab: EmployeeTab): void { this.activeTab = tab; }
@@ -178,9 +162,9 @@ export class EmployeeNewPage implements OnInit {
       phone:              v.telefone                   ?? '',
       cellPhone:          v.celular                    ?? '',
       status:             'Active',
-      // `title` (cargo/título) não tem campo próprio no formulário e NÃO deve receber o
-      // tipo (Colaborador/Dirigente) — enviado vazio até definir a fonte (B-CO-07).
-      title:              '',
+      // BK-1: `title` (rótulo do cargo, exibido na listagem) espelha o nome do
+      // cargo escolhido no catálogo `/v1/positions`.
+      title:              this.positionName(v.cargo),
       responsibleType:    v.tipoResponsavel            ?? '',
       positionId:         Number(v.cargo)              || 0,
       formation:          v.formacao                   ?? '',

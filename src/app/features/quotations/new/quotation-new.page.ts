@@ -10,6 +10,7 @@ import {
   CreatePurchaseRequestPayload,
   PurchaseRequestItemPayload,
 } from '../../purchases/purchases.model';
+import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/utils/format';
 
 type QuotationTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS';
 
@@ -59,6 +60,8 @@ export class QuotationNewPage {
     costCenterId:          [''],
     accountPlanId:         [''],
     uniqueSupplier:        [false],
+    exclusiveSupplier:     [false],
+    withoutSubsidy:        [false],
     supplierCount:         [''],
     contractId:            [''],
     deliveryLocationId:    [''],
@@ -72,6 +75,13 @@ export class QuotationNewPage {
   constructor() {
     this.loadLookups();
     if (this.editId != null) this.loadForEdit(this.editId);
+    // §10.4: em criação, "Data da Requisição" é automática (hoje), campo readonly.
+    else this.form.patchValue({ requestDate: this.todayInput() });
+  }
+
+  /** §10.4: data de hoje no formato do input date (YYYY-MM-DD). */
+  private todayInput(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private newItem(): FormGroup {
@@ -115,7 +125,7 @@ export class QuotationNewPage {
       orderType:             r.orderType ?? '',
       requestDate:           this.toDateInput(r.requestDate),
       expectedDeliveryDate:  this.toDateInput(r.expectedDeliveryDate),
-      estimatedValue:        r.estimatedValue != null ? String(r.estimatedValue) : '',
+      estimatedValue:        r.estimatedValue != null ? formatDecimalBR(r.estimatedValue) : '',
       description:           r.description ?? '',
       justification:         r.justification ?? '',
       contractorObligations: r.contractorObligations ?? '',
@@ -125,6 +135,8 @@ export class QuotationNewPage {
       costCenterId:          r.costCenterId != null ? String(r.costCenterId) : '',
       accountPlanId:         r.accountPlanId != null ? String(r.accountPlanId) : '',
       uniqueSupplier:        r.uniqueSupplier ?? false,
+      exclusiveSupplier:     r.exclusiveSupplier ?? false,
+      withoutSubsidy:        r.withoutSubsidy ?? false,
       supplierCount:         r.supplierCount != null ? String(r.supplierCount) : '',
       contractId:            r.contractId != null ? String(r.contractId) : '',
       deliveryLocationId:    r.deliveryLocationId != null ? String(r.deliveryLocationId) : '',
@@ -147,7 +159,7 @@ export class QuotationNewPage {
       unit:               [it.unit ?? '', Validators.required],
       group:              [it.group ?? ''],
       referenceLink:      [it.referenceLink ?? ''],
-      estimatedUnitValue: [it.estimatedUnitValue != null ? String(it.estimatedUnitValue) : ''],
+      estimatedUnitValue: [it.estimatedUnitValue != null ? formatDecimalBR(it.estimatedUnitValue) : ''],
       description:        [it.description ?? ''],
     });
   }
@@ -157,11 +169,46 @@ export class QuotationNewPage {
   addItem()                 { this.items.push(this.newItem()); }
   removeItem(index: number) { if (this.items.length > 1) this.items.removeAt(index); }
 
+  // BK-6: "Área Requisitante" puxa a área do usuário selecionado.
+  onRequesterChange(): void {
+    const id   = Number(this.form.get('requesterId')?.value);
+    const user = this.users().find(u => u.id === id);
+    this.form.get('area')?.setValue(user?.area ?? '');
+  }
+
+  // §10.18: máscara monetária BR no campo de nível do formulário.
+  onMoneyInput(event: Event, control: string): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskMoney(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  // §10.18: máscara monetária BR no "Valor unit. estimado" do item (FormArray).
+  onItemMoneyInput(event: Event, index: number): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskMoney(el.value);
+    (this.items.at(index) as FormGroup).get('estimatedUnitValue')?.setValue(el.value, { emitEvent: false });
+  }
+
+  // BK-6: ao escolher o produto, preenche Nome/Grupo/Unidade/Valor do item.
+  onItemProduct(index: number): void {
+    const item = this.items.at(index) as FormGroup;
+    const id   = Number(item.get('productId')?.value);
+    const prod = this.products().find(p => p.id === id);
+    if (!prod) return;
+    item.get('name')?.setValue(prod.name ?? '');
+    if (prod.group != null)    item.get('group')?.setValue(prod.group);
+    if (prod.unit != null)     item.get('unit')?.setValue(prod.unit);
+    if (prod.costBase != null) item.get('estimatedUnitValue')?.setValue(formatDecimalBR(prod.costBase));
+  }
+
   resetForm(): void {
     this.form.reset();
     this.items.clear();
     this.items.push(this.newItem());
     this.activeTab = 'DADOS';
+    // §10.4: reaplica a data automática após limpar o formulário.
+    if (this.editId == null) this.form.patchValue({ requestDate: this.todayInput() });
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -201,7 +248,7 @@ export class QuotationNewPage {
       unit:               String(it['unit'] ?? ''),
       group:              String(it['group'] ?? '') || undefined,
       referenceLink:      String(it['referenceLink'] ?? '') || undefined,
-      estimatedUnitValue: this.num(String(it['estimatedUnitValue'] ?? '')),
+      estimatedUnitValue: parseDecimalBR(String(it['estimatedUnitValue'] ?? '')) || undefined,
       description:        String(it['description'] ?? '') || undefined,
     }));
 
@@ -212,7 +259,7 @@ export class QuotationNewPage {
       orderType:             v.orderType || undefined,
       requestDate:           this.toIso(v.requestDate),
       expectedDeliveryDate:  this.toIso(v.expectedDeliveryDate),
-      estimatedValue:        this.num(v.estimatedValue),
+      estimatedValue:        parseDecimalBR(v.estimatedValue) || undefined,
       description:           v.description || undefined,
       justification:         v.justification || undefined,
       contractorObligations: v.contractorObligations || undefined,
@@ -222,6 +269,8 @@ export class QuotationNewPage {
       costCenterId:          this.num(v.costCenterId),
       accountPlanId:         this.num(v.accountPlanId),
       uniqueSupplier:        v.uniqueSupplier,
+      exclusiveSupplier:     v.exclusiveSupplier,
+      withoutSubsidy:        v.withoutSubsidy,
       supplierCount:         this.num(v.supplierCount),
       contractId:            this.num(v.contractId),
       deliveryLocationId:    this.num(v.deliveryLocationId),

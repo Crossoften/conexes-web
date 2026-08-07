@@ -69,11 +69,19 @@
 
 // ── Status badge ──────────────────────────────
 .status-badge {
-  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 50px;
-  font-size: 12px; font-weight: 600; white-space: nowrap;
-  &--success { background: #E6F4EA; color: #1E7E34; }
-  &--danger  { background: #FDECEC; color: #C0392B; }
-  &--neutral { background: #FEF3E0; color: #B8791C; }
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+
+  &--success { background: #DCFCE7; color: #15803D; border-color: #BBF7D0; }
+  &--danger  { background: #FEE2E2; color: #DC2626; border-color: #FECACA; }
+  &--neutral { background: #F3F4F6; color: #6B7280; border-color: #E5E7EB; }
 }
 
 // ── Ações (coluna) ────────────────────────────

@@ -508,3 +508,28 @@
   from { opacity: 0; transform: translateY(20px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+// B2: linha do select de Centro de Custo com botão "+" para criação inline.
+.cc-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .select-wrap { flex: 1; }
+}
+
+.cc-add-btn {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #F97316;
+  color: #F97316;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { background: #FFF7ED; }
+}

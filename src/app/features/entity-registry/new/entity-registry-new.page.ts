@@ -30,6 +30,10 @@ export class EntityRegistryNewPage {
   protected readonly logoFileName  = signal<string | null>(null);
   protected readonly uploadError   = signal<string | null>(null);
 
+  // BK-16: consulta CNPJ na Receita Federal.
+  protected readonly cnpjLoading = signal(false);
+  protected readonly cnpjError   = signal<string | null>(null);
+
   protected readonly ufOptions = [
     'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB',
     'PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
@@ -145,5 +149,39 @@ export class EntityRegistryNewPage {
     const el = event.target as HTMLInputElement;
     el.value = maskPhone(el.value);
     this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  // ── BK-16: busca na Receita ao completar o CNPJ ────────────────────────────
+  onCnpjBlur(): void {
+    const digits = (this.form.get('cnpj')?.value ?? '').replace(/\D/g, '');
+    if (digits.length !== 14) return;
+
+    this.cnpjLoading.set(true);
+    this.cnpjError.set(null);
+
+    this.svc.getCnpjData(digits).subscribe({
+      next: data => {
+        // Só sobrescreve o que a Receita devolver preenchido.
+        const set = (ctrl: string, value: string | undefined) => {
+          if (value) this.form.get(ctrl)?.setValue(value);
+        };
+        set('legalName',     data.razaoSocial);
+        set('tradeName',     data.nomeFantasia);
+        set('address',       data.logradouro);
+        set('number',        data.numero);
+        set('complement',    data.complemento);
+        set('district',      data.bairro);
+        set('city',          data.municipio);
+        set('state',         data.uf);
+        set('directorEmail', data.email);
+        if (data.cep)      this.form.get('zipCode')?.setValue(data.cep);
+        if (data.telefone) this.form.get('mainPhone')?.setValue(maskPhone(data.telefone));
+        this.cnpjLoading.set(false);
+      },
+      error: err => {
+        this.cnpjError.set(err?.error?.message ?? 'Não foi possível consultar o CNPJ.');
+        this.cnpjLoading.set(false);
+      },
+    });
   }
 }

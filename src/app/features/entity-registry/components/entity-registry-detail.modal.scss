@@ -405,6 +405,31 @@
   }
 }
 
+// ── Select (chevron) ──────────────────────────
+// Sem estas regras o SVG do chevron (sem width/height) renderiza gigante.
+
+.select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 40px;
+    width: 100%;
+  }
+}
+
+.select-chevron {
+  position: absolute;
+  right: 16px;
+  width: 16px;
+  height: 16px;
+  color: #6B7280;
+  pointer-events: none;
+}
+
 // ── Animações ─────────────────────────────────
 
 @keyframes fadeIn {

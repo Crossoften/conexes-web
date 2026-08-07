@@ -96,6 +96,27 @@ Fluxo 6 etapas. Patches 47–59 + 57b. Service único `purchases.service.ts`; `P
 
 ---
 
+## 20. Rodada "Consolidado de Pontos de Ajuste" (cliente — 04/08/2026)
+
+Auditoria dos ~70 pontos do cliente (§0–§13) nas 3 frentes (Cliente × Back × Front). **Status vivo em
+`docs/auditoria-frontend/status-ajustes-consolidado.md`** e demandas de back em
+`docs/auditoria-frontend/demandas-backend-consolidado-cliente.md`. Base commitada: **`8941b688`**.
+
+**Patches de front entregues nesta rodada (todos aplicados/commitados pelo usuário):**
+- **103/103b** — T1: "Editar" da lista abre já em edição (`@Input() initialMode`/`ngOnInit`) em Entidade, Centro de Custo, Colaboradores, Agências, Usuários, Perfis de Permissão + Corpo Diretivo. (Stakeholders ficou de fora: lista só tem "Ver".)
+- **104** — Máscaras: CNPJ/telefone (Entidade), salário (Colaborador), alíquota com vírgula incl. ISS (Impostos). Helpers reutilizáveis em `shared/utils/format.ts` (`maskCnpj/maskPhone/maskMoney/formatDecimalBR/parseDecimalBR`).
+- **105** — Colaborador: aba "Configurações de parâmetros"→"Dados do colaborador"; Vínculo vira select (`VINCULO_OPTIONS`); CNS opcional.
+- **106** — Plano de Contas UX: título, rótulo do campo, header do modal com nome, Cancelar volta à origem, "Conta superior" (`parentId`).
+- **107** — Centro de Custo: Código só números/pontos (pattern + strip no input).
+- **108** — Stakeholder: Conta contábil vira select do Plano de Contas (mostra `código — título`, resolve nome na view) + toast no "Salvar rascunho".
+- **109** — Stakeholder: **múltiplos serviços** (lista add/remove em step3 + modal; mapper monta `services[]`).
+
+**Lição de base reforçada:** ao empilhar patches não-commitados no mesmo módulo, aplicar o(s) anterior(es) no working tree + `git add` (index = base+anteriores), fazer as novas edições, `git diff` = só o lote novo. Ao "aplicou/commitou/pushei", fazer `git fetch` + `checkout` do novo HEAD e re-basear. HEADs desta rodada: 403d9a3 → 26a7250 → **8941b688**.
+
+**Bloqueadores que aguardam o back (conferir no Swagger novo):** BK-1 (`GET /v1/positions`), BK-2 (persistir permissões), BK-3 (permissões efetivas), BK-4/BK-6 (500 requisição + lookups completos), BK-5 (fornecedores/cotação), BK-C1 (Gestor bypass approve). Lista completa em `demandas-backend-consolidado-cliente.md`.
+
+---
+
 ## 19. Próximo passo
 **Todos os 9 módulos foram auditados/ajustados e concluídos.** Alçadas (patch-66) e Usuários (patch-67) fechados nesta sessão.
 Opções a combinar com o usuário:

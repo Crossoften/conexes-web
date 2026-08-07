@@ -6,6 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { Account, AccountPayload, ACCOUNT_STATUS_CONFIG, ACCOUNT_TYPE_LABELS, CATEGORY_TYPE_LABELS } from '../chart-of-accounts.model';
 import { ChartOfAccountsService } from '../chart-of-accounts.service';
 import { environment } from '../../../../environments/environment';
+import { CostCenterCreateModalComponent } from '../../cost-centers/components/cost-center-create.modal';
+import { CostCenter } from '../../cost-centers/cost-centers.model';
 
 interface ProjectOption {
   id:   number;
@@ -15,7 +17,7 @@ interface ProjectOption {
 @Component({
   selector: 'app-chart-of-accounts-detail-modal',
   standalone: true,
-  imports: [NgClass, ReactiveFormsModule],
+  imports: [NgClass, ReactiveFormsModule, CostCenterCreateModalComponent],
   templateUrl: './chart-of-accounts-detail.modal.html',
   styleUrl: './chart-of-accounts-detail.modal.scss',
 })
@@ -42,6 +44,9 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
   projects: ProjectOption[] = [];
   /** Contas candidatas a "pai" (Totalizadora/Sintética), exceto a própria. */
   parents: Account[] = [];
+
+  /** B2: modal de criação inline de Centro de Custo. */
+  readonly showCcModal = signal(false);
 
   form: FormGroup = this.fb.group({
     categoryType:   ['', Validators.required],
@@ -144,6 +149,18 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
       },
       error: () => { this.parents = []; },
     });
+  }
+
+  // ── B2: criação inline de Centro de Custo ─────────────────────────────────
+
+  openCcModal(): void  { this.showCcModal.set(true); }
+  closeCcModal(): void { this.showCcModal.set(false); }
+
+  onCcCreated(cc: CostCenter): void {
+    const name = cc.name || cc.title || cc.code;
+    this.projects = [...this.projects, { id: cc.id, name }];
+    this.form.patchValue({ costCenter: cc.id });
+    this.showCcModal.set(false);
   }
 
   // ── Mode switching ────────────────────────────────────────────────────────

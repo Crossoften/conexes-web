@@ -1,0 +1,67 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>Histórico</h2>
+          <p>{{ entityName || 'Alterações registradas para esta entidade.' }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+      @if (loading) {
+        <p class="hist-state">Carregando histórico…</p>
+      } @else if (!entries.length) {
+        <p class="hist-state">Sem histórico disponível.</p>
+      } @else {
+        <ul class="timeline">
+          @for (e of entries; track $index) {
+            <li class="timeline__item">
+              <span class="timeline__dot"></span>
+              <div class="timeline__content">
+                <div class="timeline__head">
+                  <span class="timeline__action">{{ actionLabel(e.action) }}</span>
+                  @if (e.date) { <span class="timeline__date">{{ e.date | date: 'dd/MM/yyyy HH:mm' }}</span> }
+                </div>
+                @if (e.user) { <p class="timeline__user">por {{ e.user }}</p> }
+                @if (e.description) { <p class="timeline__desc">{{ e.description }}</p> }
+                @if (e.changes?.length) {
+                  <ul class="changes">
+                    @for (c of e.changes; track $index) {
+                      <li class="changes__row">
+                        <span class="changes__field">{{ fieldLabel(c.field) }}</span>
+                        <span class="changes__from">{{ formatValue(c.field, c.from) }}</span>
+                        <span class="changes__arrow">→</span>
+                        <span class="changes__to">{{ formatValue(c.field, c.to) }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+  </div>
+</div>

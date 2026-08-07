@@ -8,6 +8,15 @@ export type EmployeeType   = 'Colaborador' | 'Dirigente';
 // O back passou a expor `status` no colaborador.
 export type EmployeeStatus = 'Active' | 'Pending' | 'Inactive';
 
+// BK-1: item do catálogo de cargos (GET /v1/positions). `title` é legado (compat
+// com o shape antigo); o back atual devolve `name` (+ `description`).
+export interface PositionOption {
+  id:           number;
+  name:         string;
+  title?:       string;
+  description?: string;
+}
+
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface Employee {

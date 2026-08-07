@@ -30,6 +30,9 @@ export class PermissionDetailModalComponent implements OnInit {
   private catalogBase: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
   modules: ModulePermission[] = this.catalogBase.map(m => ({ ...m }));
 
+  /** BK-2: marca que o usuário editou a matriz — bloqueia o re-patch por corrida. */
+  private matrixDirty = false;
+
   readonly form = this.fb.group({
     name:        ['', Validators.required],
     description: [''],
@@ -37,12 +40,14 @@ export class PermissionDetailModalComponent implements OnInit {
 
   constructor() {
     this.svc.getModulesCatalog().subscribe({
-      next: c => { if (c.length) { this.catalogBase = c; const p = this.profile(); if (p) this.applyModules(p); } },
+      // BK-2: se o usuário já editou a matriz, não reaplica (não apaga marcações).
+      next: c => { if (c.length) { this.catalogBase = c; const p = this.profile(); if (p && !this.matrixDirty) this.applyModules(p); } },
       error: () => {},
     });
     effect(() => {
       const p = this.profile();
-      if (p) this.patchForm(p);
+      // BK-2: absorve o detalhe completo enquanto o usuário não mexeu; depois protege a edição.
+      if (p && !this.form.dirty && !this.matrixDirty) this.patchForm(p);
     });
   }
 
@@ -67,6 +72,9 @@ export class PermissionDetailModalComponent implements OnInit {
       description: p.description ?? '',
     });
     this.applyModules(p);
+    // BK-2: estado "limpo" após carregar os dados oficiais.
+    this.form.markAsPristine();
+    this.matrixDirty = false;
   }
 
   setTab(tab: 'DADOS' | 'MODULOS'): void { this.activeTab = tab; }
@@ -92,6 +100,7 @@ export class PermissionDetailModalComponent implements OnInit {
 
   togglePermission(index: number, field: keyof Pick<ModulePermission, 'canView' | 'canCreate' | 'canEdit' | 'canDelete' | 'isUnlimited'>): void {
     this.modules[index] = { ...this.modules[index], [field]: !this.modules[index][field] };
+    this.matrixDirty = true;   // BK-2: protege a marcação de um re-patch tardio.
   }
 
   onSubmit(): void {

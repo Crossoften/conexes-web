@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, sign
 import { NgClass, NgIf, DecimalPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Employee, EmployeeUpdatePayload, EmployeeStatus, EmployeePayment, EMPLOYEE_STATUS_CONFIG, EMPLOYEE_STATUS_OPTIONS, VINCULO_OPTIONS } from '../employees.model';
+import { Employee, EmployeeUpdatePayload, EmployeeStatus, EmployeePayment, PositionOption, EMPLOYEE_STATUS_CONFIG, EMPLOYEE_STATUS_OPTIONS, VINCULO_OPTIONS } from '../employees.model';
 import { EmployeesService } from '../employees.service';
 import { environment } from '../../../../environments/environment';
 import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/utils/format';
@@ -11,7 +11,6 @@ import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/util
 type DetailTab = 'PARAMS' | 'BOLETO';
 
 interface EntityItem   { id?: number; cnpj?: string; legalName: string; tradeName: string; }
-interface PositionItem { id: number; name: string; title?: string; }
 
 @Component({
   selector: 'app-employee-detail-modal',
@@ -38,7 +37,7 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   protected activeTab: DetailTab       = 'PARAMS';
 
   readonly entities     = signal<EntityItem[]>([]);
-  readonly positions    = signal<PositionItem[]>([]);
+  readonly positions    = signal<PositionOption[]>([]);
   readonly loadingLists = signal(false);
 
   readonly statusConfig  = EMPLOYEE_STATUS_CONFIG;
@@ -55,29 +54,6 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   readonly payments        = signal<EmployeePayment[]>([]);
   readonly paymentsLoading = signal(false);
   private  loadedPaymentsFor: number | null = null;
-
-  private readonly POSITIONS_FALLBACK: PositionItem[] = [
-    { id: 1,  name: 'Diretor Executivo'          },
-    { id: 2,  name: 'Diretor Financeiro'          },
-    { id: 3,  name: 'Diretor Administrativo'      },
-    { id: 4,  name: 'Coordenador de Projetos'     },
-    { id: 5,  name: 'Coordenador Financeiro'      },
-    { id: 6,  name: 'Analista Financeiro'         },
-    { id: 7,  name: 'Analista de Projetos'        },
-    { id: 8,  name: 'Assistente Administrativo'   },
-    { id: 9,  name: 'Assistente Financeiro'       },
-    { id: 10, name: 'Técnico de Contabilidade'    },
-    { id: 11, name: 'Contador'                    },
-    { id: 12, name: 'Advogado'                    },
-    { id: 13, name: 'Educador Social'             },
-    { id: 14, name: 'Psicólogo'                   },
-    { id: 15, name: 'Assistente Social'           },
-    { id: 16, name: 'Enfermeiro'                  },
-    { id: 17, name: 'Médico'                      },
-    { id: 18, name: 'Auxiliar de Serviços Gerais' },
-    { id: 19, name: 'Motorista'                   },
-    { id: 20, name: 'Outros'                      },
-  ];
 
   protected readonly form = this.fb.group({
     entidade:           ['', Validators.required],
@@ -113,9 +89,11 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   ngOnInit(): void {
     this.mode = this.initialMode;
 
-    // Cargos: lista fixa por ora. GET /v1/positions ainda não existe (B-CO-02) — chamá-lo
-    // retornava 404. Religar quando o Back expuser o catálogo de cargos (F-CO-03).
-    this.positions.set(this.POSITIONS_FALLBACK);
+    // BK-1: cargos do catálogo real (GET /v1/positions). Sem fallback de ids fixos.
+    this.svc.getPositions().subscribe({
+      next: items => this.positions.set(items),
+      error: ()    => this.positions.set([]),
+    });
 
     this.loadingLists.set(true);
     this.http.get<EntityItem[]>(`${environment.apiUrl}/v1/institutional/entities`).subscribe({
@@ -186,6 +164,12 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
     return found ? (found.title || found.name) : String(this.employee.positionId);
   }
 
+  /** BK-1: nome do cargo escolhido no form (do catálogo) para espelhar em `title`. */
+  private selectedPositionName(cargo: unknown): string {
+    const found = this.positions().find(p => p.id === Number(cargo));
+    return found ? (found.title || found.name) : '';
+  }
+
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -230,8 +214,9 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
       phone:              v.telefone           ?? '',
       cellPhone:          v.celular            ?? '',
       status:             v.status as EmployeeStatus,
-      // `title` (cargo/título) não recebe o tipo — preserva o valor existente (B-CO-07).
-      title:              this.employee?.title ?? '',
+      // BK-1: `title` (rótulo do cargo na listagem) espelha o cargo escolhido no
+      // catálogo; se não achar, mantém o valor legado para não perder dado.
+      title:              this.selectedPositionName(v.cargo) || (this.employee?.title ?? ''),
       responsibleType:    v.tipoResponsavel    ?? '',
       positionId:         Number(v.cargo)      || 0,
       formation:          v.formacao           ?? '',

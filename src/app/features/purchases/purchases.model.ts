@@ -64,6 +64,10 @@ export interface PurchaseRef {
   name: string;
   email?: string | null;
   area?: string | null;
+  // BK-6: campos extras do produto/serviço para auto-preencher o item.
+  group?: string | null;
+  unit?: string | null;
+  costBase?: number | null;
 }
 
 // ── Item da requisição ────────────────────────────────────────────────────────
