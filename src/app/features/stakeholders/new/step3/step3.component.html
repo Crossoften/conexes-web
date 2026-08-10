@@ -70,12 +70,7 @@
       <div class="form-row form-row--2">
         <div class="field">
           <label class="field-label">Código de Classificação do Serviço</label>
-          <div class="select-wrap">
-            <select class="select" formControlName="serviceClassCode">
-              <option value="">Selecione</option>
-            </select>
-            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
+          <input class="input" type="text" placeholder="Digite o código..." formControlName="serviceClassCode">
         </div>
         <div class="field">
           <label class="field-label">Título do Serviço</label>
@@ -116,12 +111,7 @@
               </div>
               <div class="field">
                 <label class="field-label">{{ item.codLabel }}</label>
-                <div class="select-wrap">
-                  <select class="select select--sm" [formControlName]="item.cod">
-                    <option value="">Sem código</option>
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
+                <input class="input" type="text" placeholder="Código" [formControlName]="item.cod">
               </div>
             }
           </div>

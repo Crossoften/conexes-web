@@ -38,6 +38,11 @@ export class TaxesService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
+  /** FUNC-004: exporta os impostos/serviços em Excel. */
+  exportExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
+  }
+
   // ── Stakeholders ──────────────────────────────────────────────────────────
 
   getStakeholders(): Observable<any> {

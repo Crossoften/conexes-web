@@ -228,6 +228,19 @@
   transition: background var(--transition), transform var(--transition);
 }
 
+// NAV-001: selo "Em breve" nos filhos sem rota (desabilitados).
+.nav-child__badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--brand-orange-light);
+  color: var(--brand-orange);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 // ── Footer ──
 .sidebar__footer {
   padding: 12px 10px;

@@ -61,6 +61,10 @@ export class PurchasingRegistriesService {
   deleteProduct(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/v1/products-services/${id}`);
   }
+  /** FUNC-004: exporta produtos e serviços em Excel. */
+  exportProductsExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/v1/products-services/export/excel`, { responseType: 'blob' });
+  }
 
   // ── Locais de entrega (CRUD) ────────────────────────────────────────────────
   listLocations(params: RegistryListParams = {}): Observable<Page<ApiDeliveryLocation>> {
