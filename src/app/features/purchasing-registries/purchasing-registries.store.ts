@@ -91,12 +91,25 @@ export class PurchasingRegistriesStore {
     return result;
   });
 
+  readonly sortedListItems = computed(() => {
+    const { column, direction } = this.sort();
+    const items = this.filteredListItems();
+    if (!column || !direction) return items;
+    return [...items].sort((a, b) => {
+      const va = (a as any)[column], vb = (b as any)[column];
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR', { numeric: true });
+      return direction === 'asc' ? cmp : -cmp;
+    });
+  });
+
   readonly filteredTotal = computed(() => this.filteredListItems().length);
 
   readonly pageItems = computed(() => {
     const { page, pageSize } = this.pagination();
     const start = (page - 1) * pageSize;
-    return this.filteredListItems().slice(start, start + pageSize);
+    return this.sortedListItems().slice(start, start + pageSize);
   });
 
   readonly pageProducts    = computed(() => this.activeTab() === 'PRODUCTS'     ? this.pageItems() as Product[]          : []);

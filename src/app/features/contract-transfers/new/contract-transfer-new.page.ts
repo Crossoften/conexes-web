@@ -475,8 +475,8 @@ export class ContractTransferNewPage implements OnInit {
     if (v.responsaveisFisc) responsibles.push({ type: 'Fiscalização', name: v.responsaveisFisc });
 
     const annexes: PartnershipAnnexPayload[] = [];
-    const a1 = { printDate: v.dataImpressaoAnexo1 || undefined, deadlineDate: v.dataLimite1 || undefined, validationType: v.tipoValidacao1 || undefined };
-    const a2 = { printDate: v.dataImpressaoAnexo2 || undefined, deadlineDate: v.dataLimite2 || undefined, validationType: v.tipoValidacao2 || undefined };
+    const a1 = { printDate: this.toIso(v.dataImpressaoAnexo1), deadlineDate: this.toIso(v.dataLimite1), validationType: v.tipoValidacao1 || undefined };
+    const a2 = { printDate: this.toIso(v.dataImpressaoAnexo2), deadlineDate: this.toIso(v.dataLimite2), validationType: v.tipoValidacao2 || undefined };
     if (a1.printDate || a1.deadlineDate || a1.validationType) annexes.push(a1);
     if (a2.printDate || a2.deadlineDate || a2.validationType) annexes.push(a2);
 
@@ -486,22 +486,9 @@ export class ContractTransferNewPage implements OnInit {
     const scheduleRows = (v.payables as { competency: string; dueDate: string; value: string }[])
       .filter(p => p.competency || p.value || p.dueDate);
 
-    // [DIAGNÓSTICO TEMPORÁRIO] — loga o que cada linha do cronograma tem no modelo.
-    // Abra o Console do navegador, reproduza e envie estas linhas "[cronograma]".
-    // eslint-disable-next-line no-console
-    console.log('[cronograma] payables (getRawValue) =', JSON.stringify(v.payables));
-    // eslint-disable-next-line no-console
-    console.log('[cronograma] avaliação =', scheduleRows.map(p => ({
-      competency: p.competency,
-      dueDateRaw: p.dueDate,
-      tipo:       typeof p.dueDate,
-      iso:        this.toIso(p.dueDate) ?? 'INVALIDO',
-    })));
-
     if (scheduleRows.some(p => !this.toIso(p.dueDate))) {
-      const dbg = scheduleRows.map((p, i) => `${i}:"${p.dueDate}"→${this.toIso(p.dueDate) ? 'ok' : 'X'}`).join('  ');
       this.activeTab = 'CONTAS';
-      this.notify.error('DEBUG cronograma — ' + dbg);
+      this.notify.error('Há linhas do cronograma com data de vencimento inválida. Use o formato dd/mm/aaaa.');
       return;
     }
 
@@ -515,9 +502,9 @@ export class ContractTransferNewPage implements OnInit {
     const payload: PartnershipPayload = {
       title:                 v.title,
       manager:               v.gestorParceria      || undefined,
-      startDate:             v.dataInicio          || undefined,
-      endDate:               v.dataTermino         || undefined,
-      signatureDate:         v.dataAssinatura      || undefined,
+      startDate:             this.toIso(v.dataInicio),
+      endDate:               this.toIso(v.dataTermino),
+      signatureDate:         this.toIso(v.dataAssinatura),
       adminProcessNumber:    v.nroProcessoAdmin    || undefined,
       termNumber:            v.nroTermo            || undefined,
       dispensationNumber:    v.nroDispensa         || undefined,

@@ -52,12 +52,25 @@ export class BudgetsStore {
     return result;
   });
 
+  readonly sortedItems = computed(() => {
+    const { column, direction } = this.sort();
+    const items = this.filteredItems();
+    if (!column || !direction) return items;
+    return [...items].sort((a, b) => {
+      const va = (a as any)[column], vb = (b as any)[column];
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR', { numeric: true });
+      return direction === 'asc' ? cmp : -cmp;
+    });
+  });
+
   readonly filteredTotal = computed(() => this.filteredItems().length);
 
   readonly pageItems = computed(() => {
     const { page, pageSize } = this.pagination();
     const start = (page - 1) * pageSize;
-    return this.filteredItems().slice(start, start + pageSize);
+    return this.sortedItems().slice(start, start + pageSize);
   });
 
   readonly allPageSelected = computed(() => {

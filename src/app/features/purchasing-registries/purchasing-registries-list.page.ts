@@ -1,8 +1,9 @@
 // src/app/features/purchasing-registries/purchasing-registries-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { PurchasingRegistriesStore } from './purchasing-registries.store';
+import { PurchasingRegistriesService } from './purchasing-registries.service';
 import { RegistryStatus, REGISTRY_STATUS_CONFIG, Product, DeliveryLocation } from './purchasing-registries.model';
 import { Router } from "@angular/router";
 
@@ -17,10 +18,31 @@ import { Router } from "@angular/router";
 export class PurchasingRegistriesListPage {
   readonly store = inject(PurchasingRegistriesStore);
   private  router = inject(Router);
+  private  svc    = inject(PurchasingRegistriesService);
   readonly statusConfig = REGISTRY_STATUS_CONFIG;
 
   constructor() {
     this.store.load();
+  }
+
+  // ── Export (FUNC-004) — só a aba PRODUCTS tem endpoint no back ──────────────
+  readonly exporting = signal(false);
+
+  onExport(): void {
+    if (this.exporting() || this.store.activeTab() !== 'PRODUCTS') return;
+    this.exporting.set(true);
+    this.svc.exportProductsExcel().subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = 'produtos-servicos.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false),
+    });
   }
 
   /** Rota do botão "Novo" conforme a aba (só Produtos e Locais têm cadastro aqui). */

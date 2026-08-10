@@ -1,9 +1,10 @@
 // src/app/features/taxes/taxes-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TaxesStore } from './taxes.store';
+import { TaxesService } from './taxes.service';
 import { Tax, TaxPayload, TAX_STATUS_CONFIG } from './taxes.model';
 import { TaxDetailModalComponent } from './components/tax-detail.modal';
 
@@ -17,7 +18,28 @@ import { TaxDetailModalComponent } from './components/tax-detail.modal';
 })
 export class TaxesListPage implements OnInit {
   readonly store        = inject(TaxesStore);
+  private  svc          = inject(TaxesService);
   readonly statusConfig = TAX_STATUS_CONFIG;
+
+  // ── Export (FUNC-004) ──────────────────────────────────────────────────────
+  readonly exporting = signal(false);
+
+  onExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.svc.exportExcel().subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = 'impostos.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false),
+    });
+  }
 
   readonly statusOptions = [
     { label: 'Selecione o status', value: ''         },

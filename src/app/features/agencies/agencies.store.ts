@@ -39,7 +39,18 @@ export class AgenciesStore {
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
-  readonly items       = computed(() => this.state().items);
+  readonly items       = computed(() => {
+    const { column, direction } = this.sort();
+    const items = this.state().items;
+    if (!column || !direction) return items;
+    return [...items].sort((a, b) => {
+      const va = (a as any)[column], vb = (b as any)[column];
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR', { numeric: true });
+      return direction === 'asc' ? cmp : -cmp;
+    });
+  });
   readonly total       = computed(() => this.state().total);
 
   readonly allPageSelected = computed(() => {
