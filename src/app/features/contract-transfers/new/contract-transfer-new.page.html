@@ -74,8 +74,8 @@
                 <label>Gestor da Parceria</label>
                 <input type="text" class="form-control" placeholder="Nome do gestor" formControlName="gestorParceria">
               </div>
-              <div class="form-group"><label>Data início</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataInicio"></div>
-              <div class="form-group"><label>Data término</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataTermino"></div>
+              <div class="form-group"><label>Data início</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataInicio" (input)="applyDateMask($event, form.get('dataInicio'))"></div>
+              <div class="form-group"><label>Data término</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataTermino" (input)="applyDateMask($event, form.get('dataTermino'))"></div>
             </div>
 
             <div class="form-row grid-cols-3">
@@ -92,21 +92,21 @@
             </div>
 
             <div class="form-row grid-cols-4">
-              <div class="form-group"><label>Data assinatura</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataAssinatura"></div>
+              <div class="form-group"><label>Data assinatura</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataAssinatura" (input)="applyDateMask($event, form.get('dataAssinatura'))"></div>
               <div class="form-group"><label>Nro processo administrativo</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="nroProcessoAdmin"></div>
               <div class="form-group"><label>Nro termo</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="nroTermo"></div>
               <div class="form-group"><label>Nro dispensa</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="nroDispensa"></div>
             </div>
 
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Data impressão do anexo</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataImpressaoAnexo1"></div>
-              <div class="form-group"><label>Data limite</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="dataLimite1"></div>
+              <div class="form-group"><label>Data impressão do anexo</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataImpressaoAnexo1" (input)="applyDateMask($event, form.get('dataImpressaoAnexo1'))"></div>
+              <div class="form-group"><label>Data limite</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataLimite1" (input)="applyDateMask($event, form.get('dataLimite1'))"></div>
               <div class="form-group"><label>Tipo de validação lançamento</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="tipoValidacao1"></div>
             </div>
 
             <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Data impressão do anexo</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataImpressaoAnexo2"></div>
-              <div class="form-group"><label>Data limite</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="dataLimite2"></div>
+              <div class="form-group"><label>Data impressão do anexo</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataImpressaoAnexo2" (input)="applyDateMask($event, form.get('dataImpressaoAnexo2'))"></div>
+              <div class="form-group"><label>Data limite</label><input type="text" class="form-control" placeholder="00/00/0000" formControlName="dataLimite2" (input)="applyDateMask($event, form.get('dataLimite2'))"></div>
               <div class="form-group"><label>Tipo de validação lançamento</label><input type="text" class="form-control" placeholder="Exemplo" formControlName="tipoValidacao2"></div>
             </div>
 

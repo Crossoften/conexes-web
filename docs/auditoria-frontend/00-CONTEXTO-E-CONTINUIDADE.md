@@ -117,6 +117,94 @@ Auditoria dos ~70 pontos do cliente (§0–§13) nas 3 frentes (Cliente × Back 
 
 ---
 
+## 21. Rodada Swagger novo + **Relatório de QA (08/08/2026)**
+
+### 21a. Patches entregues após o Consolidado (110–137, base `8941b688`)
+- **110** BK-3 permissões efetivas (Usuários) · **111** BK-C2 remove `userId` das ações de Compras (ator via JWT) · **112/113** BK-1 cargo real `GET /v1/positions` (+ `title` na listagem) · **114/114b** BK-9 Histórico da Entidade (modal timeline + humanização) · **115** BK-16 busca CNPJ na Entidade · **116** BK-18 export Banco/Conta · **118** BK-6 auto-preencher item+área · **119** BK-5 flags de fornecedor · **120/121** BK-2 blindar corrida do re-patch (Perfil + Usuário) · **123** B2 CC inline no Plano de Contas · **124** §6.2 contato duplicado Banco · **125** §10.4 data automática · **126** §10.18 monetário BR · **127** §10.19 reposiciona "Reiniciar" · **128** §10.16 remove abas Fornecedores/CC de Compras→Cadastros · **129/131** §11.2 empty-states (padrão global + 6 telas) · **130** UI status-badge Corpo Diretivo.
+- **Infra:** **132** versiona `environment.prod.ts` (destrava `ng build`) · **133** sincroniza `package-lock.json` (destrava `npm ci`) · restauração do `package.json` removido por engano num commit externo.
+- **QA (front puro, em andamento):** **134** SEG-001 (limpa sessão no 401 + bfcache `pageshow`) · **135** NAV-001 (desabilita itens de menu sem rota) · **136** CAD-002 (`String(category)`) · **137** CTR-001/VAL-001 (máscara+ISO nas datas da parceria).
+
+### 21b. Relatório de QA (08/08) — análise em `docs/auditoria-frontend/analise-qa-08-08-2026.md`
+20 chamados classificados front/back/ambos com `file:line`. Ordem de front puro combinada: **SEG-001 → NAV-001 → CAD-002 → CTR-001 → FIN-001 → FUNC-002 → FUNC-003 → UX-001/UX-002/FUNC-005 → FUNC-001/FUNC-004 (partes de front)**.
+
+### 21c. Cruzamento com o Swagger novo (o que muda para os itens de QA restantes)
+- **FIN-001 ✅ destravado:** `POST /v1/banking/transfers` (`CreateBankTransferDto`: `description, originAccountId, destinationAccountId, operationDate, amount, differentCreditDate:boolean, observation`). Origem/Destino = **contas bancárias** (`GET /v1/institutional/bank-accounts` → `BankAccountResponseDto{id, nickname, bankName, account, agency}`). "Crédito em data diferente" é **boolean (Sim/Não)**, não select de opções. `GET /v1/banking/transfers` lista. → front 100% implementável.
+- **FUNC-004 (export):** `/export/excel` EXISTE para **accounts-payable, accounts-receivable, budgets, products-services (purchasing-registries), tax-service (taxes)** → ligar os 5. **NÃO existe** para colaboradores, entidades, banking/transfers, governing-bodies (corpo diretivo) → 4 viram demanda de back.
+- **FUNC-001 (excluir):** `DELETE` existe para accounts-payable/receivable → ligar os 2 botões mortos. approval-tiers DELETE existe (falha = runtime).
+- **CAD-001:** `serviceClassCode` + códigos de imposto são **strings livres** no DTO (sem catálogo). `GET /v1/tax-service/operation-nature?q=` só auto-preenche por natureza da operação. → front: trocar os selects vazios por **texto**; catálogo = back opcional.
+- **CAD-003** (conta superior): sem mudança — depende de existir conta Totalizadora/Sintética nos dados (back/dados).
+- **CMP-001** (pedido não aparece): sem mudança — `GET /v1/purchases/orders` ok; ordem é gerada por `POST /requests/{id}/award`; se não aparece, back não persistiu (back).
+- **CAD-004** (senha por e-mail): `CreateUserManagementDto.password` "se omitida, gera e envia por e-mail" — entrega de e-mail é back.
+- **Confirmados/auditados:** produtos-serviços expõem `group/measure/costBase` (BK-6 ok); `/positions` CRUD (BK-1); `effectivePermissions`+`permissionProfile` (BK-3); `parentId` em account-plan; DELETE users/profiles; histórico da requisição (`/requests/{id}/history` com `user{id,name}`, `changes[{field,from,to}]`).
+
+### 21d. Novos módulos no Swagger (ainda sem front auditado nesta série)
+Banking (transfers/entries/reconciliation), Accounts Payable/Receivable, Budgets, Products/Services, Delivery Locations, Positions, Grantors, NFe.io, Portal Gerencial (admin-settings), No-Auth (forgot/verify/reset — fluxo de senha).
+
+---
+
+## 20. Rodada "Consolidado de Pontos de Ajuste" (cliente — 04/08/2026)
+
+Auditoria dos ~70 pontos do cliente (§0–§13) nas 3 frentes (Cliente × Back × Front). **Status vivo em
+`docs/auditoria-frontend/status-ajustes-consolidado.md`** e demandas de back em
+`docs/auditoria-frontend/demandas-backend-consolidado-cliente.md`. Base commitada: **`8941b688`**.
+
+**Patches de front entregues nesta rodada (todos aplicados/commitados pelo usuário):**
+- **103/103b** — T1: "Editar" da lista abre já em edição (`@Input() initialMode`/`ngOnInit`) em Entidade, Centro de Custo, Colaboradores, Agências, Usuários, Perfis de Permissão + Corpo Diretivo. (Stakeholders ficou de fora: lista só tem "Ver".)
+- **104** — Máscaras: CNPJ/telefone (Entidade), salário (Colaborador), alíquota com vírgula incl. ISS (Impostos). Helpers reutilizáveis em `shared/utils/format.ts` (`maskCnpj/maskPhone/maskMoney/formatDecimalBR/parseDecimalBR`).
+- **105** — Colaborador: aba "Configurações de parâmetros"→"Dados do colaborador"; Vínculo vira select (`VINCULO_OPTIONS`); CNS opcional.
+- **106** — Plano de Contas UX: título, rótulo do campo, header do modal com nome, Cancelar volta à origem, "Conta superior" (`parentId`).
+- **107** — Centro de Custo: Código só números/pontos (pattern + strip no input).
+- **108** — Stakeholder: Conta contábil vira select do Plano de Contas (mostra `código — título`, resolve nome na view) + toast no "Salvar rascunho".
+- **109** — Stakeholder: **múltiplos serviços** (lista add/remove em step3 + modal; mapper monta `services[]`).
+
+**Lição de base reforçada:** ao empilhar patches não-commitados no mesmo módulo, aplicar o(s) anterior(es) no working tree + `git add` (index = base+anteriores), fazer as novas edições, `git diff` = só o lote novo. Ao "aplicou/commitou/pushei", fazer `git fetch` + `checkout` do novo HEAD e re-basear. HEADs desta rodada: 403d9a3 → 26a7250 → **8941b688**.
+
+**Bloqueadores que aguardam o back (conferir no Swagger novo):** BK-1 (`GET /v1/positions`), BK-2 (persistir permissões), BK-3 (permissões efetivas), BK-4/BK-6 (500 requisição + lookups completos), BK-5 (fornecedores/cotação), BK-C1 (Gestor bypass approve). Lista completa em `demandas-backend-consolidado-cliente.md`.
+
+---
+
+## 21. Rodada Swagger novo + **Relatório de QA (08/08/2026)**
+
+### 21a. Patches entregues após o Consolidado (110–137, base `8941b688`)
+- **110** BK-3 permissões efetivas (Usuários) · **111** BK-C2 remove `userId` das ações de Compras (ator via JWT) · **112/113** BK-1 cargo real `GET /v1/positions` (+ `title` na listagem) · **114/114b** BK-9 Histórico da Entidade (modal timeline + humanização) · **115** BK-16 busca CNPJ na Entidade · **116** BK-18 export Banco/Conta · **118** BK-6 auto-preencher item+área · **119** BK-5 flags de fornecedor · **120/121** BK-2 blindar corrida do re-patch (Perfil + Usuário) · **123** B2 CC inline no Plano de Contas · **124** §6.2 contato duplicado Banco · **125** §10.4 data automática · **126** §10.18 monetário BR · **127** §10.19 reposiciona "Reiniciar" · **128** §10.16 remove abas Fornecedores/CC de Compras→Cadastros · **129/131** §11.2 empty-states (padrão global + 6 telas) · **130** UI status-badge Corpo Diretivo.
+- **Infra:** **132** versiona `environment.prod.ts` (destrava `ng build`) · **133** sincroniza `package-lock.json` (destrava `npm ci`) · restauração do `package.json` removido por engano num commit externo.
+- **QA (front puro, em andamento):** **134** SEG-001 (limpa sessão no 401 + bfcache `pageshow`) · **135** NAV-001 (desabilita itens de menu sem rota) · **136** CAD-002 (`String(category)`) · **137** CTR-001/VAL-001 (máscara+ISO nas datas da parceria).
+
+### 21b. Relatório de QA (08/08) — análise em `docs/auditoria-frontend/analise-qa-08-08-2026.md`
+20 chamados classificados front/back/ambos com `file:line`. Ordem de front puro combinada: **SEG-001 → NAV-001 → CAD-002 → CTR-001 → FIN-001 → FUNC-002 → FUNC-003 → UX-001/UX-002/FUNC-005 → FUNC-001/FUNC-004 (partes de front)**.
+
+### 21c. Cruzamento com o Swagger novo (o que muda para os itens de QA restantes)
+- **FIN-001 ✅ destravado:** `POST /v1/banking/transfers` (`CreateBankTransferDto`: `description, originAccountId, destinationAccountId, operationDate, amount, differentCreditDate:boolean, observation`). Origem/Destino = **contas bancárias** (`GET /v1/institutional/bank-accounts` → `BankAccountResponseDto{id, nickname, bankName, account, agency}`). "Crédito em data diferente" é **boolean (Sim/Não)**, não select de opções. `GET /v1/banking/transfers` lista. → front 100% implementável.
+- **FUNC-004 (export):** `/export/excel` EXISTE para **accounts-payable, accounts-receivable, budgets, products-services (purchasing-registries), tax-service (taxes)** → ligar os 5. **NÃO existe** para colaboradores, entidades, banking/transfers, governing-bodies (corpo diretivo) → 4 viram demanda de back.
+- **FUNC-001 (excluir):** `DELETE` existe para accounts-payable/receivable → ligar os 2 botões mortos. approval-tiers DELETE existe (falha = runtime).
+- **CAD-001:** `serviceClassCode` + códigos de imposto são **strings livres** no DTO (sem catálogo). `GET /v1/tax-service/operation-nature?q=` só auto-preenche por natureza da operação. → front: trocar os selects vazios por **texto**; catálogo = back opcional.
+- **CAD-003** (conta superior): sem mudança — depende de existir conta Totalizadora/Sintética nos dados (back/dados).
+- **CMP-001** (pedido não aparece): sem mudança — `GET /v1/purchases/orders` ok; ordem é gerada por `POST /requests/{id}/award`; se não aparece, back não persistiu (back).
+- **CAD-004** (senha por e-mail): `CreateUserManagementDto.password` "se omitida, gera e envia por e-mail" — entrega de e-mail é back.
+- **Confirmados/auditados:** produtos-serviços expõem `group/measure/costBase` (BK-6 ok); `/positions` CRUD (BK-1); `effectivePermissions`+`permissionProfile` (BK-3); `parentId` em account-plan; DELETE users/profiles; histórico da requisição (`/requests/{id}/history` com `user{id,name}`, `changes[{field,from,to}]`).
+
+### 21d. Novos módulos no Swagger (ainda sem front auditado nesta série)
+Banking (transfers/entries/reconciliation), Accounts Payable/Receivable, Budgets, Products/Services, Delivery Locations, Positions, Grantors, NFe.io, Portal Gerencial (admin-settings), No-Auth (forgot/verify/reset — fluxo de senha).
+
+### 21e. Continuação do QA — patches 138–144 + decisão de escopo
+
+- **138** FIN-001 formulário de transferência bancária (`POST /v1/banking/transfers`; origem/destino via `GET /v1/institutional/bank-accounts`; "crédito em data diferente" boolean; máscara money/data + ISO). *A **lista** de transferências segue mock → FIN-001b (Financeiro).*
+- **139** FUNC-002 ordenação em 10 stores (`sortedItems`/`sortedListItems` consumindo `sort()`; comparador numérico/`localeCompare pt-BR numeric`).
+- **140** UX-001 libera colar/atalhos/navegação nos campos numéricos (7 `onlyNumbers` idênticos: agencies new+modal, employees new+modal, users new, stakeholders step1+step3).
+- **141** UX-002 favicon aponta para `assets/images/logo-conexao.png` (fim do 404 em `favicon.ico` inexistente).
+- **142** FUNC-005 topo honesto: Buscar/Notificações `disabled`+"Em breve"; removida a bolinha falsa de não-lidas. → back BK-21 (notificações) / BK-22 (busca global).
+- **143** CAD-001 selects sem opções → `input` texto livre (classificação do serviço + códigos de imposto), nas telas de cadastro (`step3`) e edição (modal) de fornecedor. → back BK-14 (códigos imposto) / BK-23 (classificação serviço).
+- **144** FUNC-004 (parcial) liga export Excel de **Impostos** (`/v1/tax-service/export/excel`) e **Produtos/Serviços** (`/v1/products-services/export/excel`); botão de purchasing só ativo na aba Produtos (locations sem endpoint). → back BK-24 (exports faltantes).
+
+**Decisão de escopo do cliente (08/08):** **adiar todo o módulo Financeiro** para um pacote dedicado — mapeado, fora da fila atual. Afetados/adiados: **FUNC-003** (filtros stub + busca global do Financeiro), **FUNC-001** (2 botões de excluir mortos em accounts-payable/receivable), **FUNC-004** para accounts-payable/receivable/budgets/financial-transfers, **FIN-001b** (ligar a lista de transferências à API). Prioridade foi **tudo que não é Financeiro** primeiro.
+
+**Estado da fila QA (não-Financeiro de front puro):** ✅ **concluída** — SEG-001, NAV-001, CAD-002, CTR-001, FIN-001(form), FUNC-002, UX-001, UX-002, FUNC-005, CAD-001, FUNC-004(parcial: taxes+produtos). Restam: **Financeiro** (adiado) e **back-dependentes** (API-001, I18N-001, CAD-003, CAD-004, CMP-001, DASH-001, BK-21…24).
+
+### 21f. DevOps — conflito de dependências (`npm i` ERESOLVE)
+Ambiente do DevOps mostrou árvore Angular **fora de sincronia** (`@angular/animations`/`core` em 20.1.8 vs `compiler-cli` 20.3.27, `build-angular` 20.3.33) → `ERESOLVE`. Causa: `^20.0.0` flutuante resolvendo patches diferentes entre os pacotes do framework (que precisam ser **todos** a mesma versão). Working tree do front está **consistente** (framework 20.3.18 / tooling 20.3.23) e builda. Fix proposto: **fixar versões exatas** no `package.json` + lockfile alinhado + usar `npm ci`.
+
+---
+
 ## 19. Próximo passo
 **Todos os 9 módulos foram auditados/ajustados e concluídos.** Alçadas (patch-66) e Usuários (patch-67) fechados nesta sessão.
 Opções a combinar com o usuário:

@@ -86,11 +86,24 @@ export class TaxesStore {
     return result;
   });
 
+  readonly sortedItems = computed(() => {
+    const { column, direction } = this.sort();
+    const items = this.filteredItems();
+    if (!column || !direction) return items;
+    return [...items].sort((a, b) => {
+      const va = (a as any)[column], vb = (b as any)[column];
+      const cmp = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR', { numeric: true });
+      return direction === 'asc' ? cmp : -cmp;
+    });
+  });
+
   readonly filteredTotal = computed(() => this.filteredItems().length);
 
   readonly pageItems = computed(() => {
     const { page, pageSize } = this.pagination();
-    return this.filteredItems().slice((page - 1) * pageSize, page * pageSize);
+    return this.sortedItems().slice((page - 1) * pageSize, page * pageSize);
   });
 
   readonly allPageSelected = computed(() => {

@@ -14,3 +14,19 @@ export interface FinancialTransfer {
   status: TransferStatus;
   type: TransferType;
 }
+
+// ── FIN-001: cadastro de transferência (POST /v1/banking/transfers) ───────────
+export interface BankAccountOption {
+  id:    number;
+  label: string;
+}
+
+export interface CreateBankTransferPayload {
+  description:          string;
+  originAccountId:      number;
+  destinationAccountId: number;
+  operationDate:        string;   // ISO 8601
+  amount:              number;
+  differentCreditDate?: boolean;
+  observation?:        string;
+}

@@ -127,6 +127,10 @@ export class Step1Component implements OnInit {
   }
 
   onlyNumbers(event: KeyboardEvent): boolean {
-    return /\d/.test(event.key) || event.key === 'Backspace' || event.key === 'Tab';
+    // permite atalhos (colar/copiar/recortar/selecionar) e edição/navegação
+    if (event.ctrlKey || event.metaKey) return true;
+    const nav = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (nav.includes(event.key)) return true;
+    return /^\d$/.test(event.key);
   }
 }

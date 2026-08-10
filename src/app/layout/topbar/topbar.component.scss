@@ -61,10 +61,15 @@
   transition: background var(--transition), border-color var(--transition), color var(--transition);
   position: relative;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--nav-hover-bg);
     border-color: var(--brand-purple-mid);
     color: var(--brand-purple);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 }
 

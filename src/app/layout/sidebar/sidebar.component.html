@@ -82,6 +82,9 @@
                   [routerLink]="child.disabled ? null : child.route">
                   <span class="nav-child__dot" aria-hidden="true"></span>
                   {{ child.label }}
+                  @if (child.badge) {
+                    <span class="nav-child__badge">{{ child.badge }}</span>
+                  }
                 </a>
               }
             </div>

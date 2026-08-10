@@ -89,7 +89,7 @@ export class ChartOfAccountsNewPage implements OnInit {
   onCcCreated(cc: CostCenter): void {
     const name = cc.name || cc.title || cc.code;
     this.projects = [...this.projects, { id: cc.id, name }];
-    this.form.patchValue({ costCenter: cc.id });
+    this.form.patchValue({ costCenter: String(cc.id) });
     this.showCcModal.set(false);
   }
 
@@ -128,7 +128,7 @@ export class ChartOfAccountsNewPage implements OnInit {
     const payload: AccountPayload = {
       code:              v.categoryCode   ?? '',
       title:             v.categoryTitle  ?? '',
-      category:          v.costCenter     ?? '',
+      category:          String(v.costCenter ?? ''),   // CAD-002: back valida `category` como string
       categoryGroup:     v.categoryGroup  ?? '',
       categoryType:      v.categoryType   ?? '',
       accountType:       v.accountType    ?? '',
