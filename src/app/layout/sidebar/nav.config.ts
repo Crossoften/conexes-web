@@ -1,5 +1,7 @@
 // src/app/layout/sidebar/nav.config.ts
 
+import { PERMISSION_MODULES as M } from '../../core/auth/permission.model';
+
 export interface NavChild {
   label:     string;
   route:     string;
@@ -14,6 +16,8 @@ export interface NavItem {
   children?: NavChild[];
   disabled?: boolean;
   badge?:    string;
+  /** Módulo de permissão do grupo (para filtrar o menu por `canView`). */
+  module?:   string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -27,6 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Gestão de cadastros',
     icon:  'registration',
+    module: M.REGISTRATION,
     children: [
       { label: 'Stakeholders',          route: '/stakeholders' },
       { label: 'Plano de contas',       route: '/chart-of-accounts' },
@@ -40,6 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Entidades',
     icon:  'entities',
+    module: M.ENTITIES,
     children: [
       { label: 'Cadastro de entidades',        route: '/entity-registry' },
       { label: 'Contas bancárias e bancos',    route: '/bank-accounts' },
@@ -53,6 +59,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Contratos e parcerias',
     icon:  'contracts',
+    module: M.CONTRACTS,
     children: [
       { label: 'Cadastrar órgãos',       route: '/agencies' },
       { label: 'Plano de trabalho',      route: '/work-plans' },
@@ -62,6 +69,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Compras',
     icon:  'purchasing',
+    module: M.PURCHASING,
     children: [
       { label: 'Dashboard',     route: '/purchasing-dashboard' },
       { label: 'Cotações',      route: '/quotations' },
@@ -74,6 +82,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Financeiro',
     icon:  'financial',
+    module: M.FINANCIAL,
     children: [
       { label: 'Transferências e lançamentos', route: '/financial-transfers' },
       { label: 'Conciliação bancária',         route: '/bank-reconciliation' },
@@ -87,6 +96,7 @@ export const NAV_ITEMS: NavItem[] = [
     label:    'Prestação de contas',
     route:    '/accountability',
     icon:     'accountability',
+    module:   M.ACCOUNTABILITY,
     disabled: true,
     badge:    'Em breve',
   },

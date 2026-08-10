@@ -83,6 +83,9 @@ export class UserDetailModalComponent implements OnInit {
   /** BK-2: marca que o usuário editou a matriz — bloqueia o re-patch por corrida. */
   private matrixDirty = false;
 
+  /** Reflexo das permissões efetivas carregadas — base p/ decidir o envio de diretas. */
+  private permsBaseline: ModulePermission[] = [];
+
   constructor() {
     this.svc.getProfiles({ take: 100 }).subscribe({ next: r => this.profiles.set(r.data ?? (r as any)), error: () => {} });
     this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
@@ -102,15 +105,39 @@ export class UserDetailModalComponent implements OnInit {
     this.mode = this.initialMode();
   }
 
+  /** Fonte efetiva de permissões do usuário: efetivas → perfil → diretas. */
+  private effectiveSource(u: User): ModulePermission[] {
+    return (u.effectivePermissions?.length ? u.effectivePermissions : null)
+        ?? (u.permissionProfile?.permissions?.length ? u.permissionProfile.permissions : null)
+        ?? u.modulePermissions
+        ?? [];
+  }
+
+  /** Mescla a fonte de permissões sobre o catálogo (linhas completas). */
+  private mergeOntoCatalog(source: ModulePermission[]): ModulePermission[] {
+    return this.catalogBase.map(def => {
+      const found = source.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
+      return found ? { ...def, ...found } : { ...def };
+    });
+  }
+
   private applyModules(u: User): void {
-    if (u.modulePermissions?.length) {
-      this.modules = this.catalogBase.map(def => {
-        const found = u.modulePermissions.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
-        return found ? { ...def, ...found } : { ...def };
-      });
-    } else {
-      this.modules = this.catalogBase.map(m => ({ ...m }));
-    }
+    // A matriz de edição reflete as permissões efetivas do usuário (perfil + diretas),
+    // não só as diretas — assim a aba não vem vazia para quem herda de um perfil.
+    this.modules = this.mergeOntoCatalog(this.effectiveSource(u));
+    // Snapshot do reflexo — o submit só envia diretas se o admin editar a matriz.
+    this.permsBaseline = this.modules.map(m => ({ ...m }));
+  }
+
+  /** True se o admin alterou a matriz em relação ao reflexo carregado. */
+  private matrixDiffersFromBaseline(): boolean {
+    if (this.permsBaseline.length !== this.modules.length) return true;
+    return this.modules.some((m, i) => {
+      const b = this.permsBaseline[i];
+      return m.canView !== b.canView || m.canCreate !== b.canCreate ||
+             m.canEdit !== b.canEdit || m.canDelete !== b.canDelete ||
+             m.isUnlimited !== b.isUnlimited;
+    });
   }
 
   private patchForm(u: User): void {
@@ -167,15 +194,10 @@ export class UserDetailModalComponent implements OnInit {
    */
   get effectiveModules(): ModulePermission[] {
     const u = this.user();
-    const source = (u?.effectivePermissions?.length ? u.effectivePermissions : null)
-                ?? (u?.permissionProfile?.permissions?.length ? u.permissionProfile.permissions : null)
-                ?? u?.modulePermissions
-                ?? [];
+    if (!u) return [];
+    const source = this.effectiveSource(u);
     if (!source.length) return [];
-    return this.catalogBase.map(def => {
-      const found = source.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
-      return found ? { ...def, ...found } : { ...def };
-    });
+    return this.mergeOntoCatalog(source);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -227,8 +249,11 @@ export class UserDetailModalComponent implements OnInit {
       phone:             v.phone      || undefined,
       role:              v.role,
       status:            v.status     as any,
-      modulePermissions: this.modules,
     };
+
+    // US-4: envia permissões diretas apenas se o admin editou a matriz — o reflexo
+    // intocado do perfil não deve virar permissão direta.
+    if (this.matrixDiffersFromBaseline()) payload.modulePermissions = this.modules;
 
     if (v.password) payload.password = v.password;
     if (v.entityId) payload.entityId = v.entityId;

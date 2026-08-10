@@ -1,8 +1,9 @@
 // src/app/features/users/new/user-new/user-new.page.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { UsersService } from '../../users.service';
 import { PermissionProfile, EntityLite, ModulePermission, DEFAULT_MODULES } from '../../users.model';
 
@@ -13,7 +14,7 @@ import { PermissionProfile, EntityLite, ModulePermission, DEFAULT_MODULES } from
   templateUrl: './user-new.page.html',
   styleUrl: './user-new.page.scss',
 })
-export class UserNewPage implements OnInit {
+export class UserNewPage implements OnInit, OnDestroy {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
   private svc    = inject(UsersService);
@@ -26,6 +27,10 @@ export class UserNewPage implements OnInit {
 
   /** US-4 — matriz de permissões diretas (opcional; complementa o perfil). */
   modules: ModulePermission[] = DEFAULT_MODULES.map(m => ({ ...m }));
+
+  /** Snapshot das permissões vindas do perfil selecionado (para o submit só enviar diretas se o admin editar). */
+  private profileBaseline: ModulePermission[] | null = null;
+  private profileSub?: Subscription;
 
   entityLabel(e: EntityLite): string {
     return e.tradeName || e.legalName || (e.cnpj ? `CNPJ ${e.cnpj}` : `Entidade #${e.id}`);
@@ -71,6 +76,66 @@ export class UserNewPage implements OnInit {
     this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
     // US-7: matriz a partir do catálogo oficial (fallback interno = DEFAULT_MODULES).
     this.svc.getModulesCatalog().subscribe({ next: m => { if (m.length) this.modules = m; }, error: () => {} });
+
+    // Ao escolher um perfil, reflete as permissões dele na matriz abaixo.
+    this.profileSub = this.form.get('permissionProfileId')!.valueChanges.subscribe(id => {
+      this.onProfileChange(id);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.profileSub?.unsubscribe();
+  }
+
+  /** Carrega as permissões do perfil e reflete na matriz; ao limpar, zera a matriz. */
+  private onProfileChange(id: number | string | null): void {
+    const profileId = id ? +id : null;
+    if (!profileId) {
+      this.profileBaseline = null;
+      this.clearMatrix();
+      return;
+    }
+    this.svc.getProfileById(profileId).subscribe({
+      next: profile => this.applyProfilePermissions(profile.permissions ?? []),
+      error: ()      => { this.profileBaseline = null; this.clearMatrix(); },
+    });
+  }
+
+  /** Marca na matriz os flags de cada módulo conforme o perfil (casando por module+subMenu). */
+  private applyProfilePermissions(perms: ModulePermission[]): void {
+    const byKey = new Map(perms.map(p => [`${p.module}|${p.subMenu}`, p]));
+    this.modules = this.modules.map(m => {
+      const p = byKey.get(`${m.module}|${m.subMenu}`);
+      return {
+        ...m,
+        canView:     !!p?.canView,
+        canCreate:   !!p?.canCreate,
+        canEdit:     !!p?.canEdit,
+        canDelete:   !!p?.canDelete,
+        isUnlimited: !!p?.isUnlimited,
+      };
+    });
+    // Snapshot do reflexo — usado no submit para saber se o admin editou.
+    this.profileBaseline = this.modules.map(m => ({ ...m }));
+  }
+
+  /** Zera todos os flags da matriz (mantém as linhas do catálogo). */
+  private clearMatrix(): void {
+    this.modules = this.modules.map(m => ({
+      ...m, canView: false, canCreate: false, canEdit: false, canDelete: false, isUnlimited: false,
+    }));
+  }
+
+  /** True se o admin alterou a matriz em relação ao que veio do perfil. */
+  private matrixDiffersFromProfile(): boolean {
+    if (!this.profileBaseline) return this.hasDirectPermissions();
+    if (this.profileBaseline.length !== this.modules.length) return true;
+    return this.modules.some((m, i) => {
+      const b = this.profileBaseline![i];
+      return m.canView !== b.canView || m.canCreate !== b.canCreate ||
+             m.canEdit !== b.canEdit || m.canDelete !== b.canDelete ||
+             m.isUnlimited !== b.isUnlimited;
+    });
   }
 
   private loadProfiles(): void {
@@ -153,8 +218,9 @@ export class UserNewPage implements OnInit {
     if (v.permissionProfileId) {
       payload.permissionProfileId = +v.permissionProfileId;
     }
-    // US-4: só envia permissões diretas se alguma foi marcada (não sobrescreve o perfil à toa).
-    if (this.hasDirectPermissions()) {
+    // US-4: envia permissões diretas apenas se o admin editou a matriz.
+    // Se a matriz é só o reflexo intocado do perfil, não duplica (o perfil já concede).
+    if (this.matrixDiffersFromProfile()) {
       payload.modulePermissions = this.modules;
     }
 

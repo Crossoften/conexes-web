@@ -59,12 +59,17 @@ Estes destravaram front nesta rodada e já têm patch correspondente aplicado:
 | **BK-14** | Catálogo de **códigos de imposto** (IRRF, PCC, INSS, PIS, COFINS, CSLL, ISS) | ❌ | CAD-001. Hoje digitados a cada cadastro — front trocou os selects vazios por texto livre (patch-143). Quando existir catálogo, reverter texto→select. |
 | **BK-23** | Catálogo de **Código de Classificação do Serviço** | ❌ | CAD-001. `serviceClassCode` sem fonte no Swagger — front virou texto livre (patch-143). Expor listagem para virar select. |
 | **BK-24** | **Export Excel** faltante: `delivery-locations`, colaboradores, entidades, corpo diretivo, banking/transfers | ❌ | FUNC-004. Front ligou impostos + produtos/serviços (patch-144, endpoints já existiam). Restantes precisam de `/export/excel`. Financeiro (a pagar/receber/orçamentos) fica no pacote dedicado. |
+| **BK-25** | **Histórico da requisição — duplicação enxuta** | ⚠️ | A ação `COPY` grava o **snapshot inteiro** (~25 campos) no `changes`. Front passou a resumir (patch-148), mas o ideal é o back logar só `copiedFrom` (id de origem) em vez da entidade completa. |
 | **BK-15** | **Importações em massa** via planilha | ⚠️ parcial | `stakeholders /import` existe; faltam Plano de Contas, Produtos, Itens de requisição. |
 | **BK-17** | Flag **"Tipo de Recurso" (Público/Privado)** no banco | ⚠️ | `resourceType` aparece no DTO de bank-account — confirmar semântica Público/Privado. |
 | **BK-19** | **Matriz × filiais** (Entidade) | ❌ / ❓ decisão | Depende de decisão de produto + hierarquia/endpoint. |
 | **BK-20** | **Reaproveitar serviços/alíquotas** entre fornecedores | ⚠️ | `tax-service/operation-nature` com busca (parcial); definir fonte compartilhada. |
 | **BK-21** | **Notificações do usuário** (topo) — lista + contagem de não-lidas + marcar como lida | ❌ | FUNC-005. Front desabilitou o botão ("Em breve", patch-142). Sem endpoint no Swagger. |
 | **BK-22** | **Busca global** (topo) | ❌ | FUNC-005. Front desabilitou o botão ("Em breve", patch-142). Definir escopo (entidades/contratos/etc.) e endpoint. |
+| **BK-26** | **Enforcement de autorização (segurança)** | 🚨 **P0** | Hoje um usuário com permissão só de um módulo **consegue acessar e editar outros** — o servidor **não recusa** as chamadas. É preciso um **guard/policy por módulo + ação** em **todos** os endpoints, retornando **403** para não autorizados. Detalhes: `analise-permissoes-autorizacao.md`. |
+| **BK-27** | **`/my-self` expõe `effectivePermissions`** | ❌ | Para o front fazer o gating (esconder/desabilitar), o `my-self` precisa devolver as **permissões efetivas** do usuário logado (perfil + diretas). Hoje só devolve `role`/`purchaseRoles`. O front já lê o campo de forma tolerante (patch-152, modo permissivo). |
+| **BK-28** | **Compras — etapa × status conflados (bloqueia 5→6)** | ❌ **bug** | O back trata a **etapa 5** como se fosse o mesmo que o **status** — mas são coisas diferentes (status distintos). Ao tentar avançar da etapa 5 → 6, retorna **400 `"Somente pedidos em andamento podem ser concluídos"`**. A checagem de "concluir" está olhando o número da etapa em vez do status real do pedido → separar etapa (currentStage) de status e corrigir a condição da transição. |
+| **BK-29** | **Erro ao trocar senha na edição de usuário** | ❌ **bug** | Alterar a senha pela edição do usuário retorna erro. O **front já envia** `password` no `PATCH /v1/users/{id}` (o payload suporta o campo). O back precisa **aceitar/validar/hashear** o `password` no update — ou expor endpoint dedicado de troca de senha. *(Confirmar a mensagem exata do erro para fechar a causa.)* |
 
 ---
 
@@ -72,9 +77,9 @@ Estes destravaram front nesta rodada e já têm patch correspondente aplicado:
 
 | Prioridade | Itens |
 |---|---|
-| **P0 (bloqueia teste do cliente)** | BK-2 (persistência real do perfil), BK-4 (500 na requisição), BK-C1 (403 do Gestor) |
-| **P1** | BK-5 (validar cotações), BK-6 (`group/measure/costBase`), BK-8 (Fonte Pagadora), BK-10, BK-11, BK-C3 |
-| **P2** | BK-13, BK-14, BK-15, BK-17, BK-19, BK-20, BK-21, BK-22, BK-23, BK-24 |
+| **P0 (bloqueia teste do cliente)** | **BK-26 (enforcement de permissões — segurança)**, BK-2 (persistência real do perfil), BK-4 (500 na requisição), BK-C1 (403 do Gestor) |
+| **P1** | **BK-28 (etapa×status Compras)**, **BK-29 (troca de senha)**, BK-5 (validar cotações), BK-6 (`group/measure/costBase`), BK-8 (Fonte Pagadora), BK-10, BK-11, BK-C3 |
+| **P2** | BK-13, BK-14, BK-15, BK-17, BK-19, BK-20, BK-21, BK-22, BK-23, BK-24, BK-27 |
 | **✅ Validar (já entregue)** | BK-1, BK-3, BK-7, BK-9, BK-12, BK-16, BK-18, BK-C2 |
 
 > O front já está pronto para **todos** os itens da coluna "✅ Validar" e para os campos de BK-2/BK-5/BK-6.

@@ -5,6 +5,7 @@ import { NgClass } from '@angular/common';
 import { NAV_ITEMS, NavItem } from './nav.config';
 import { SidebarIconComponent } from './sidebar-icon.component';
 import { AuthService } from '../../core/auth/auth.service';
+import { PermissionService } from '../../core/auth/permission.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -18,7 +19,12 @@ export class SidebarComponent {
 
   private router = inject(Router);
   readonly auth  = inject(AuthService);
-  readonly navItems = NAV_ITEMS;
+  private  perm  = inject(PermissionService);
+
+  /** Menu filtrado por permissão de módulo (modo permissivo mostra tudo). */
+  get navItems(): NavItem[] {
+    return NAV_ITEMS.filter(item => !item.module || this.perm.canView(item.module));
+  }
 
   private openItem = signal<string | null>(this.getDefaultOpen());
 

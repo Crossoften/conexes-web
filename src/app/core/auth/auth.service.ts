@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ModulePermission } from './permission.model';
 
 // ── Contratos com o back-end ──────────────────────────────────────────────────
 
@@ -30,6 +31,9 @@ interface MySelfResponse {
   updatedAt:     string;
   /** Papéis de alçada de compras derivados de /approval-limits (Swagger). */
   purchaseRoles?: string[];
+  /** BK-27: permissões efetivas do usuário logado (quando o back expuser). */
+  effectivePermissions?: ModulePermission[];
+  permissions?:          ModulePermission[];
 }
 
 // ── Model interno do front ────────────────────────────────────────────────────
@@ -45,6 +49,8 @@ export interface AuthUser {
   avatar:        string | null;
   /** Papéis de alçada de compras (vazio quando o usuário não tem alçadas). */
   purchaseRoles: string[];
+  /** Permissões efetivas (vazio enquanto o back não expõe — modo permissivo). */
+  permissions:   ModulePermission[];
 }
 
 // ── Chaves do localStorage ────────────────────────────────────────────────────
@@ -103,10 +109,16 @@ export class AuthService {
       status:        me.status,
       avatar:        null,
       purchaseRoles: me.purchaseRoles ?? [],
+      permissions:   this.readPermissions(me),
     };
 
     this._user.set(user);
     localStorage.setItem(STORAGE_USER, JSON.stringify(user));
+  }
+
+  /** Lê as permissões efetivas do /my-self de forma tolerante (BK-27). */
+  private readPermissions(me: MySelfResponse): ModulePermission[] {
+    return me.effectivePermissions ?? me.permissions ?? [];
   }
 
   // ── Refresh do perfil (recarrega /my-self para sessões já abertas) ──────────
@@ -133,6 +145,7 @@ export class AuthService {
         status:        me.status,
         avatar:        current?.avatar ?? null,
         purchaseRoles: me.purchaseRoles ?? [],
+        permissions:   this.readPermissions(me),
       };
       this._user.set(user);
       localStorage.setItem(STORAGE_USER, JSON.stringify(user));
@@ -165,7 +178,12 @@ export class AuthService {
   private loadUserFromStorage(): AuthUser | null {
     try {
       const raw = localStorage.getItem(STORAGE_USER);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const u = JSON.parse(raw) as AuthUser;
+      // Sessões antigas podem não ter o campo — normaliza para o modo permissivo.
+      u.permissions   ??= [];
+      u.purchaseRoles ??= [];
+      return u;
     } catch {
       return null;
     }

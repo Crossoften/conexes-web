@@ -22,6 +22,7 @@ const ACTION_LABELS: Record<string, string> = {
   SET_APPROVERS:   'Aprovadores definidos',
   AWARD:           'Adjudicação',
   COMPLETE:        'Concluída',
+  COPY:            'Duplicada',
 };
 
 /** Rótulos amigáveis para os campos que aparecem em `changes`. */
@@ -29,11 +30,33 @@ const FIELD_LABELS: Record<string, string> = {
   status:       'Status',
   stage:        'Etapa',
   currentStage: 'Etapa',
+  etapa:        'Etapa',
   buyerId:      'Comprador',
   requesterId:  'Requisitante',
+  requester:    'Requisitante',
   title:        'Título',
   estimatedValue: 'Valor estimado',
   reason:       'Motivo',
+  copiedFrom:   'Duplicada da requisição',
+  area:         'Área',
+  items:        'Itens',
+  files:        'Anexos',
+  orders:       'Pedidos',
+  quotations:   'Cotações',
+  approvers:    'Aprovadores',
+  orderType:    'Tipo do pedido',
+  justification: 'Justificativa',
+  description:  'Descrição',
+  commercialConditions: 'Condições comerciais',
+  contractorObligations: 'Obrigações do contratante',
+  uniqueSupplier: 'Fornecedor único',
+  exclusiveSupplier: 'Fornecedor exclusivo',
+  withoutSubsidy: 'Sem subsídio',
+  supplierCount: 'Qtd. de fornecedores',
+  createdAt:    'Criado em',
+  updatedAt:    'Atualizado em',
+  requestDate:  'Data da requisição',
+  expectedDeliveryDate: 'Entrega prevista',
 };
 
 @Component({
@@ -271,8 +294,57 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     if (val === null || val === undefined || val === '') return '—';
     if (key === 'status') return this.statusConfig[val as keyof typeof this.statusConfig]?.label ?? String(val);
     if (PurchaseRequestDetailModalComponent.USER_FIELDS.has(key)) return this.userName(val);
-    if (typeof val === 'object') return JSON.stringify(val);
+
+    // Boolean → Sim/Não
+    if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
+
+    // Data ISO (por chave *At/*Date) → dd/mm/aaaa hh:mm
+    if (this.isDateValue(key, val)) return this.fmtDateTime(val as string);
+
+    // Arrays → "—" (vazio) ou "N item(ns)" (evita despejar JSON)
+    if (Array.isArray(val)) {
+      return val.length === 0 ? '—' : `${val.length} ${val.length === 1 ? 'item' : 'itens'}`;
+    }
+
+    // Objetos → nome/título, se houver; nunca JSON cru
+    if (typeof val === 'object') {
+      const o = val as Record<string, unknown>;
+      const name = o['name'] ?? o['title'] ?? o['description'];
+      return name != null && name !== '' ? String(name) : '—';
+    }
+
     return String(val);
+  }
+
+  /** Detecta valor de data (chave *At/*Date com string ISO). */
+  private isDateValue(key: string, val: unknown): boolean {
+    return typeof val === 'string' && /(At|Date)$/.test(key) && /^\d{4}-\d{2}-\d{2}T/.test(val);
+  }
+
+  /** Ação de duplicação? Evita despejar o snapshot inteiro no histórico. */
+  isCopyAction(action?: string | null): boolean {
+    return (action ?? '').toUpperCase() === 'COPY';
+  }
+
+  /** Resumo amigável da duplicação (em vez dos ~25 campos do snapshot). */
+  copySummary(changes?: unknown): string {
+    const src = this.copiedFromId(changes);
+    return src != null
+      ? `Requisição criada por duplicação da requisição #${src}.`
+      : 'Requisição criada por duplicação.';
+  }
+
+  private copiedFromId(changes: unknown): number | null {
+    if (!Array.isArray(changes)) return null;
+    for (const c of changes) {
+      if (c && typeof c === 'object' && 'field' in c &&
+          String((c as { field: unknown }).field).toLowerCase().replace(/[^a-z]/g, '') === 'copiedfrom') {
+        const raw = (c as { to?: unknown; from?: unknown }).to ?? (c as { from?: unknown }).from;
+        const n = Number(raw);
+        return Number.isFinite(n) && n > 0 ? n : null;
+      }
+    }
+    return null;
   }
 
   /** Resolve um id de usuário em nome (fallback: "Usuário #id" enquanto o lookup não chega). */
