@@ -83,3 +83,5 @@
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* Onda 4 — excluir */
+.icon-btn--danger:hover { background: var(--status-danger-bg, #FEE2E2); color: var(--status-danger-text, #991B1B); }

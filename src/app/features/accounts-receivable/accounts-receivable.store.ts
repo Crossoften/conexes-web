@@ -2,6 +2,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ReceivableAccount, SummaryCard, ReceivableFilters } from './accounts-receivable.model';
 import { AccountsReceivableService } from './accounts-receivable.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items: ReceivableAccount[];
@@ -24,6 +25,7 @@ const INITIAL_FILTERS: ReceivableFilters = {
 @Injectable()
 export class AccountsReceivableStore {
   private readonly svc = inject(AccountsReceivableService);
+  private readonly notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items: [],
@@ -135,6 +137,13 @@ export class AccountsReceivableStore {
       const allSelected = items.every(item => newSet.has(item.id));
       items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
       return { ...s, selectedIds: newSet };
+    });
+  }
+
+  deleteOne(id: string): void {
+    this.svc.delete(Number(id)).subscribe({
+      next: () => { this.notify.success('Conta a receber excluída.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir a conta a receber.'),
     });
   }
 }

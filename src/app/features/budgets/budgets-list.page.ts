@@ -65,4 +65,9 @@ export class BudgetsListPage implements OnInit {
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  onDelete(item: Budget) {
+    if (!confirm('Excluir este orçamento? Esta ação não pode ser desfeita.')) return;
+    this.store.deleteOne(item.id);
+  }
 }
