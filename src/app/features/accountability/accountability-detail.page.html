@@ -1,0 +1,77 @@
+<div class="page">
+  <a class="back-link" routerLink="/accountability">← Voltar para prestações</a>
+
+  @if (data(); as d) {
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">{{ d.title }}</h1>
+        <p class="subtitle">Parceria: <b>{{ d.partnership?.title || '—' }}</b> · Período: {{ date(d.periodStart) }} a {{ date(d.periodEnd) }}</p>
+      </div>
+      <div class="header-actions">
+        <span class="status-badge status-badge--lg" [ngClass]="'status-badge--' + statusConfig[d.status].variant">{{ statusConfig[d.status].label }}</span>
+        <button class="btn-outline" (click)="downloadReport()">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><path d="M10 3v9m0 0l-3-3m3 3l3-3M4 15h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Relatório PDF
+        </button>
+        <button class="btn-primary" [disabled]="!canApprove()" (click)="approve()" [title]="canApprove() ? '' : 'Valide todos os itens para aprovar'">Aprovar</button>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-card"><span class="summary-card__title summary-card__title--muted">Itens</span><span class="summary-card__value">{{ d.items.length }}</span></div>
+      <div class="summary-card"><span class="summary-card__title summary-card__title--muted">Validados</span><span class="summary-card__value">{{ validatedCount() }}</span></div>
+      <div class="summary-card"><span class="summary-card__title summary-card__title--muted">Valor total</span><span class="summary-card__value">{{ brl(total()) }}</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Pagamentos em análise</h2></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Pagamento</th>
+              <th class="th">Fornecedor</th>
+              <th class="th th--right">Valor</th>
+              <th class="th th--center">CND</th>
+              <th class="th th--center">Rubrica</th>
+              <th class="th">Situação</th>
+              <th class="th th--center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (it of d.items; track it.id) {
+              <tr class="tr">
+                <td class="td td--name">{{ it.payment?.description || ('Pagamento #' + it.payment?.id) }}</td>
+                <td class="td">{{ it.payment?.supplier || '—' }}</td>
+                <td class="td td--right td--mono">{{ brl(it.payment?.grossAmount) }}</td>
+                <td class="td td--center">{{ it.cndOk === true ? '✓' : (it.cndOk === false ? '✗' : '—') }}</td>
+                <td class="td td--center">{{ it.rubricaOk === true ? '✓' : (it.rubricaOk === false ? '✗' : '—') }}</td>
+                <td class="td">
+                  <span class="status-badge" [ngClass]="'status-badge--' + itemStatus[it.status].variant">{{ itemStatus[it.status].label }}</span>
+                  @if (it.status === 'Returned' && it.returnReason) { <div class="return-reason">{{ it.returnReason }}</div> }
+                </td>
+                <td class="td td--center">
+                  @if (d.status !== 'Approved') {
+                    <div class="row-actions">
+                      <button class="icon-btn icon-btn--success" title="Validar" aria-label="Validar item" (click)="validate(it.id)">
+                        <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <button class="icon-btn icon-btn--danger" title="Devolver" aria-label="Devolver item" (click)="returnItem(it.id)">
+                        <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><path d="M9 5L4 10l5 5M4 10h9a3 3 0 0 1 3 3v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                  } @else { <span class="muted">—</span> }
+                </td>
+              </tr>
+            }
+            @if (d.items.length === 0) {
+              <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">Nenhum pagamento validado do termo para prestar contas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else if (loading()) {
+    <p class="muted" style="padding:32px;">Carregando…</p>
+  }
+</div>
