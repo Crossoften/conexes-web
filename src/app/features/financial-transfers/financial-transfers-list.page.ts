@@ -75,4 +75,16 @@ export class FinancialTransfersListPage implements OnInit {
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  onDelete(item: FinancialTransfer) {
+    if (!confirm('Excluir este registro? Esta ação não pode ser desfeita.')) return;
+    this.store.deleteOne(item.id);
+  }
+
+  onDeleteSelected() {
+    const n = this.store.selectedCount();
+    if (!n) return;
+    if (!confirm(`Excluir ${n} registro(s) selecionado(s)? Esta ação não pode ser desfeita.`)) return;
+    this.store.deleteSelected();
+  }
 }

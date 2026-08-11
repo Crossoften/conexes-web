@@ -93,6 +93,10 @@ export class AccountsPayableListPage implements OnInit {
     this.store.copyOne(item.id);
   }
 
+  onSendToRemittance(item: PayableAccount) {
+    this.store.sendToRemittance(item.id);
+  }
+
   onDeleteSelected() {
     const n = this.store.selectedCount();
     if (!n) return;

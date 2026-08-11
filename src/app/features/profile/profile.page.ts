@@ -35,8 +35,9 @@ export class ProfileComponent implements OnInit {
   });
 
   readonly passwordForm = this.fb.group({
-    password:     ['', [Validators.required, Validators.minLength(8)]],
-    confirmation: ['', Validators.required],
+    currentPassword: ['', Validators.required],
+    password:        ['', [Validators.required, Validators.minLength(8)]],
+    confirmation:    ['', Validators.required],
   });
 
   ngOnInit(): void {
@@ -95,10 +96,10 @@ export class ProfileComponent implements OnInit {
   }
 
   savePassword(): void {
-    const { password, confirmation } = this.passwordForm.value;
+    const { currentPassword, password, confirmation } = this.passwordForm.value;
     if (this.passwordForm.invalid) {
       this.passwordForm.markAllAsTouched();
-      this.notify.error('A senha deve ter ao menos 8 caracteres.');
+      this.notify.error('Informe a senha atual e uma nova senha com ao menos 8 caracteres.');
       return;
     }
     if (password !== confirmation) {
@@ -106,15 +107,15 @@ export class ProfileComponent implements OnInit {
       return;
     }
     this.savingPassword.set(true);
-    this.service.update(this.userId, { password: password ?? '' }).subscribe({
+    this.service.changePassword(currentPassword ?? '', password ?? '').subscribe({
       next: () => {
         this.savingPassword.set(false);
         this.passwordForm.reset();
         this.notify.success('Senha alterada com sucesso.');
       },
-      error: () => {
+      error: err => {
         this.savingPassword.set(false);
-        this.notify.error('Não foi possível alterar a senha.');
+        this.notify.error(err?.error?.message ?? 'Não foi possível alterar a senha.');
       },
     });
   }

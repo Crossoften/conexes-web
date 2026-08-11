@@ -1,7 +1,9 @@
 // src/app/features/financial-transfers/financial-transfers.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { FinancialTransfer, TransferStatus, TransferType, TransferView } from './financial-transfers.model';
 import { FinancialTransfersService } from './financial-transfers.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items: FinancialTransfer[];
@@ -16,6 +18,7 @@ interface State {
 @Injectable()
 export class FinancialTransfersStore {
   private readonly svc = inject(FinancialTransfersService);
+  private readonly notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items: [],
@@ -123,6 +126,28 @@ export class FinancialTransfersStore {
       const allSelected = items.every(item => newSet.has(item.id));
       items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
       return { ...s, selectedIds: newSet };
+    });
+  }
+
+  readonly selectedCount = computed(() => this.state().selectedIds.size);
+  clearSelection() { this.state.update(s => ({ ...s, selectedIds: new Set() })); }
+
+  private get currentView(): TransferView { return this.state().filters.view; }
+
+  deleteOne(id: string): void {
+    this.svc.delete(id, this.currentView).subscribe({
+      next: () => { this.notify.success('Registro excluído.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir o registro.'),
+    });
+  }
+
+  deleteSelected(): void {
+    const ids = [...this.state().selectedIds];
+    if (!ids.length) return;
+    const view = this.currentView;
+    forkJoin(ids.map(id => this.svc.delete(id, view))).subscribe({
+      next: () => { this.notify.success(`${ids.length} registro(s) excluído(s).`); this.clearSelection(); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir em lote.'),
     });
   }
 }

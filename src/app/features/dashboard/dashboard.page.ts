@@ -34,8 +34,9 @@ export class DashboardComponent implements OnInit {
   readonly user = this.auth.user;
   readonly loading = signal(true);
   readonly summary = signal<DashboardSummary>({
-    stakeholders: 0, partnerships: 0, payablesOpen: 0, accountabilities: 0,
+    stakeholders: 0, partnerships: 0, payablesOpen: 0, payablesOpenValue: 0, accountabilities: 0,
   });
+  private readonly brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   readonly recent = signal<DashboardAccountability[]>([]);
 
   readonly kpis: KpiCard[] = [
@@ -64,6 +65,10 @@ export class DashboardComponent implements OnInit {
 
   get firstName(): string {
     return (this.user()?.name ?? '').split(' ')[0] || 'usuário';
+  }
+
+  get payablesOpenValueLabel(): string {
+    return this.brl.format(this.summary().payablesOpenValue || 0);
   }
 
   statusLabel(status: string): string {

@@ -70,6 +70,16 @@
 
     </div>
 
+    @if (store.selectedCount() > 0) {
+      <div class="bulk-bar">
+        <span class="bulk-bar__count">{{ store.selectedCount() }} selecionado(s)</span>
+        <div class="bulk-bar__actions">
+          <button class="btn-outline btn-outline--sm btn-outline--danger" (click)="onDeleteSelected()">Excluir selecionados</button>
+          <button class="bulk-bar__clear" (click)="store.clearSelection()">Limpar seleção</button>
+        </div>
+      </div>
+    }
+
     <div class="table-wrap">
       <table class="table">
         <thead>
