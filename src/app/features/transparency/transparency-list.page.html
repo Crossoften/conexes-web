@@ -1,0 +1,62 @@
+<div class="portal">
+  <header class="portal__topbar">
+    <div class="portal__brand">
+      <span class="portal__logo">🏛️</span>
+      <div>
+        <strong>Portal da Transparência</strong>
+        <span class="portal__brand-sub">Conexão 3º Setor</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="portal__hero">
+    <h1>Parcerias e repasses públicos</h1>
+    <p>Acompanhe as parcerias, os valores repassados e a situação da prestação de contas.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ all().length }}</span>
+        <span class="hero-stat__label">parcerias publicadas</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ money(totalGranted()) }}</span>
+        <span class="hero-stat__label">valor total das parcerias</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="portal__main">
+    <div class="portal__search">
+      <input type="text" class="input" placeholder="Buscar por parceria, órgão ou organização…" [(ngModel)]="search">
+    </div>
+
+    @if (loading()) {
+      <p class="portal__msg">Carregando…</p>
+    } @else if (error()) {
+      <p class="portal__msg">Não foi possível carregar os dados no momento.</p>
+    } @else if (filtered().length === 0) {
+      <p class="portal__msg">Nenhuma parceria encontrada.</p>
+    } @else {
+      <div class="cards">
+        @for (p of filtered(); track p.id) {
+          <a class="pcard" [routerLink]="['/transparencia', p.id]">
+            <div class="pcard__head">
+              <h2 class="pcard__title">{{ p.title }}</h2>
+              <span class="pill" [class]="statusClass(p.accountabilityStatus)">{{ statusLabel(p.accountabilityStatus) }}</span>
+            </div>
+            <div class="pcard__row"><span>Órgão concessor</span><strong>{{ p.grantor }}</strong></div>
+            <div class="pcard__row"><span>Organização</span><strong>{{ p.entity }}</strong></div>
+            <div class="pcard__row"><span>Vigência</span><strong>{{ p.startDate ? (p.startDate | date:'dd/MM/yyyy') : '—' }} — {{ p.endDate ? (p.endDate | date:'dd/MM/yyyy') : '—' }}</strong></div>
+            <div class="pcard__values">
+              <div><span>Valor da parceria</span><strong>{{ money(p.totalValue) }}</strong></div>
+              <div><span>Repassado</span><strong>{{ money(p.receivedValue) }}</strong></div>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </main>
+
+  <footer class="portal__footer">
+    <p>Dados publicados conforme a Lei de Acesso à Informação. Informações sensíveis e pessoais são preservadas.</p>
+  </footer>
+</div>

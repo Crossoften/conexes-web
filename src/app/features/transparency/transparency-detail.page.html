@@ -1,0 +1,73 @@
+<div class="portal">
+  <header class="portal__topbar">
+    <div class="portal__brand">
+      <span class="portal__logo">🏛️</span>
+      <div>
+        <strong>Portal da Transparência</strong>
+        <span class="portal__brand-sub">Conexão 3º Setor</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal__main">
+    <a class="back-link" routerLink="/transparencia">← Voltar às parcerias</a>
+
+    @if (loading()) {
+      <p class="portal__msg">Carregando…</p>
+    } @else if (error() || !data()) {
+      <p class="portal__msg">Parceria não encontrada ou não publicada.</p>
+    } @else {
+      <h1 class="detail-title">{{ data()!.title }}</h1>
+      <p class="detail-sub">{{ data()!.grantor }} · {{ data()!.entity }}</p>
+
+      <div class="detail-grid">
+        <div class="block">
+          <h3>Informações da parceria</h3>
+          <div class="kv"><span>Órgão concessor</span><strong>{{ data()!.grantor }}</strong></div>
+          <div class="kv"><span>Organização</span><strong>{{ data()!.entity }}</strong></div>
+          <div class="kv"><span>Início</span><strong>{{ data()!.startDate ? (data()!.startDate | date:'dd/MM/yyyy') : '—' }}</strong></div>
+          <div class="kv"><span>Término</span><strong>{{ data()!.endDate ? (data()!.endDate | date:'dd/MM/yyyy') : '—' }}</strong></div>
+          <div class="kv"><span>Situação da prestação</span><strong><span class="pill" [class]="statusClass(data()!.accountabilityStatus)">{{ statusLabel(data()!.accountabilityStatus) }}</span></strong></div>
+
+          @if (data()!.object) {
+            <h3 style="margin-top:16px">Objeto</h3>
+            <p class="object-text">{{ data()!.object }}</p>
+          }
+        </div>
+
+        <div class="block">
+          <h3>Valores</h3>
+          <div class="values-row">
+            <div class="value-box"><span>Valor da parceria</span><strong>{{ money(data()!.totalValue) }}</strong></div>
+            <div class="value-box"><span>Repassado</span><strong>{{ money(data()!.receivedValue) }}</strong></div>
+          </div>
+          <h3 style="margin-top:16px">Fontes de recurso</h3>
+          <div class="kv"><span>Municipal</span><strong>{{ money(data()!.breakdown.municipal) }}</strong></div>
+          <div class="kv"><span>Estadual</span><strong>{{ money(data()!.breakdown.state) }}</strong></div>
+          <div class="kv"><span>Federal</span><strong>{{ money(data()!.breakdown.federal) }}</strong></div>
+        </div>
+      </div>
+
+      <div class="block" style="margin-top:16px">
+        <h3>Prestações de contas</h3>
+        @if (data()!.accountabilities.length === 0) {
+          <p class="portal__msg" style="padding:16px">Nenhuma prestação de contas registrada.</p>
+        } @else {
+          @for (a of data()!.accountabilities; track a.title) {
+            <div class="acct-item">
+              <span>
+                {{ a.title }}
+                @if (a.periodStart) { · {{ a.periodStart | date:'MM/yyyy' }}@if (a.periodEnd) { – {{ a.periodEnd | date:'MM/yyyy' }} } }
+              </span>
+              <span class="pill" [class]="statusClass(a.status)">{{ statusLabel(a.status) }}</span>
+            </div>
+          }
+        }
+      </div>
+    }
+  </main>
+
+  <footer class="portal__footer">
+    <p>Dados publicados conforme a Lei de Acesso à Informação. Informações sensíveis e pessoais são preservadas.</p>
+  </footer>
+</div>
