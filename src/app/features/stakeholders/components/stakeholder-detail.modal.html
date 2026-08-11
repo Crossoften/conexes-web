@@ -71,6 +71,12 @@
                   <span class="info-label">Tipo</span>
                   <span class="info-value">{{ typeLabel || '—' }}</span>
                 </div>
+                @if (supplierTypeLabel) {
+                  <div class="info-item">
+                    <span class="info-label">Subtipo do fornecedor</span>
+                    <span class="info-value">{{ supplierTypeLabel }}</span>
+                  </div>
+                }
                 <div class="info-item">
                   <span class="info-label">CEP</span>
                   <span class="info-value">{{ primaryAddress?.zipCode || '—' }}</span>
@@ -224,6 +230,20 @@
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
                 </div>
+                @if (form.controls['type'].value === 'Supplier') {
+                  <div class="field">
+                    <label class="field-label">Subtipo do fornecedor</label>
+                    <div class="select-wrap">
+                      <select class="select" formControlName="supplierType">
+                        <option value="">Selecione</option>
+                        <option value="Product">Fornecedor de produto</option>
+                        <option value="Service">Prestador de serviço</option>
+                        <option value="Both">Produto e serviço</option>
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                }
                 <div class="field">
                   <label class="field-label">Status</label>
                   <div class="select-wrap">
