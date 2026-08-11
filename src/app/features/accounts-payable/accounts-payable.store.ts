@@ -194,6 +194,13 @@ export class AccountsPayableStore {
     });
   }
 
+  sendToRemittance(id: string): void {
+    this.svc.sendToRemittance(Number(id)).subscribe({
+      next: () => { this.notify.success('Enviado para remessa.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao enviar para remessa.'),
+    });
+  }
+
   exportExcel(): void {
     this.svc.exportExcel().subscribe({
       next: blob => {

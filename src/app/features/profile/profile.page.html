@@ -63,6 +63,14 @@
         <h2 class="card__title">Segurança</h2>
         <p class="card__desc">Defina uma nova senha de acesso.</p>
 
+        <div class="field" [class.field--error]="passwordForm.controls['currentPassword'].invalid && passwordForm.controls['currentPassword'].touched">
+          <label class="field-label">Senha atual <span class="required">*</span></label>
+          <input class="input" type="password" formControlName="currentPassword" placeholder="Sua senha atual" autocomplete="current-password">
+          @if (passwordForm.controls['currentPassword'].invalid && passwordForm.controls['currentPassword'].touched) {
+            <span class="field-error">Informe a senha atual.</span>
+          }
+        </div>
+
         <div class="field" [class.field--error]="passwordForm.controls['password'].invalid && passwordForm.controls['password'].touched">
           <label class="field-label">Nova senha <span class="required">*</span></label>
           <input class="input" type="password" formControlName="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">

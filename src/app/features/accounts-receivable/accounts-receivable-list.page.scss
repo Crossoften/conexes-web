@@ -85,3 +85,12 @@
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 /* Onda 4 — excluir */
 .icon-btn--danger:hover { background: var(--status-danger-bg, #FEE2E2); color: var(--status-danger-text, #991B1B); }
+
+/* Onda 5 — barra de ações em lote */
+.bulk-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px; padding:10px 16px; background:var(--status-purple-bg,#EDE9FE); border:1px solid var(--surface-border-mid); border-radius:10px; }
+.bulk-bar__count { font-size:13px; font-weight:700; color:var(--brand-purple-dark,#5B21B6); }
+.bulk-bar__actions { display:flex; align-items:center; gap:10px; }
+.bulk-bar__clear { background:none; border:none; cursor:pointer; font-size:13px; color:var(--text-secondary); text-decoration:underline; }
+.btn-outline--sm { height:34px; padding:0 14px; font-size:13px; }
+.btn-outline--danger { color:var(--status-danger-text,#991B1B); border-color:#F3C7C7; }
+.btn-outline--danger:hover { background:var(--status-danger-bg,#FEE2E2); }

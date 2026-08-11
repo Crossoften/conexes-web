@@ -16,6 +16,9 @@
             @else { {{ summary()[kpi.key] }} }
           </span>
           <span class="kpi__label">{{ kpi.label }}</span>
+          @if (kpi.key === 'payablesOpen' && !loading()) {
+            <span class="kpi__sub">{{ payablesOpenValueLabel }}</span>
+          }
         </span>
       </a>
     }

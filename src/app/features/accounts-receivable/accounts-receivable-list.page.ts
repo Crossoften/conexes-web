@@ -82,4 +82,11 @@ export class AccountsReceivableListPage implements OnInit {
     if (!confirm('Excluir esta conta a receber? Esta ação não pode ser desfeita.')) return;
     this.store.deleteOne(item.id);
   }
+
+  onDeleteSelected() {
+    const n = this.store.selectedCount();
+    if (!n) return;
+    if (!confirm(`Excluir ${n} conta(s) a receber selecionada(s)? Esta ação não pode ser desfeita.`)) return;
+    this.store.deleteSelected();
+  }
 }

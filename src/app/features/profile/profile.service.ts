@@ -37,4 +37,8 @@ export class ProfileService {
   update(id: number, payload: UpdateProfilePayload): Observable<unknown> {
     return this.http.patch(`${this.api}/users/${id}`, payload);
   }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<unknown> {
+    return this.http.patch(`${this.api}/my-self/change-password`, { currentPassword, newPassword });
+  }
 }

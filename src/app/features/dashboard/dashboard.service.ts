@@ -6,10 +6,11 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface DashboardSummary {
-  stakeholders:     number;
-  partnerships:     number;
-  payablesOpen:     number;
-  accountabilities: number;
+  stakeholders:      number;
+  partnerships:      number;
+  payablesOpen:      number;
+  payablesOpenValue: number;
+  accountabilities:  number;
 }
 
 export interface DashboardAccountability {
@@ -26,11 +27,23 @@ export class DashboardService {
   /** Cada contador é isolado: uma falha vira 0 e não derruba o painel. */
   summary(): Observable<DashboardSummary> {
     return forkJoin({
-      stakeholders:     this.count(`${this.api}/stakeholders?take=1`),
-      partnerships:     this.count(`${this.api}/partnerships?take=1`),
-      payablesOpen:     this.count(`${this.api}/accounts-payable?status=Open&take=1`),
-      accountabilities: this.count(`${this.api}/accountability`),
+      stakeholders:      this.count(`${this.api}/stakeholders?take=1`),
+      partnerships:      this.count(`${this.api}/partnerships?take=1`),
+      payablesOpen:      this.count(`${this.api}/accounts-payable?status=Open&take=1`),
+      payablesOpenValue: this.sumAmount(`${this.api}/accounts-payable?status=Open&take=100000`),
+      accountabilities:  this.count(`${this.api}/accountability`),
     });
+  }
+
+  /** Soma o valor das contas em aberto no front (não há endpoint de agregação no back). */
+  private sumAmount(url: string): Observable<number> {
+    return this.http.get<any>(url).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : res?.data ?? [];
+        return rows.reduce((acc, r) => acc + (Number(r?.netAmount ?? r?.amount ?? r?.grossAmount) || 0), 0);
+      }),
+      catchError(() => of(0)),
+    );
   }
 
   recentAccountabilities(): Observable<DashboardAccountability[]> {

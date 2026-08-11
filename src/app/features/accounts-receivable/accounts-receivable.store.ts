@@ -1,5 +1,6 @@
 // src/app/features/accounts-receivable/accounts-receivable.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { ReceivableAccount, SummaryCard, ReceivableFilters } from './accounts-receivable.model';
 import { AccountsReceivableService } from './accounts-receivable.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -140,10 +141,22 @@ export class AccountsReceivableStore {
     });
   }
 
+  readonly selectedCount = computed(() => this.state().selectedIds.size);
+  clearSelection() { this.state.update(s => ({ ...s, selectedIds: new Set() })); }
+
   deleteOne(id: string): void {
     this.svc.delete(Number(id)).subscribe({
       next: () => { this.notify.success('Conta a receber excluída.'); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir a conta a receber.'),
+    });
+  }
+
+  deleteSelected(): void {
+    const ids = [...this.state().selectedIds];
+    if (!ids.length) return;
+    forkJoin(ids.map(id => this.svc.delete(Number(id)))).subscribe({
+      next: () => { this.notify.success(`${ids.length} conta(s) a receber excluída(s).`); this.clearSelection(); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir em lote.'),
     });
   }
 }

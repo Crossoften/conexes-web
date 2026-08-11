@@ -78,4 +78,10 @@ export class FinancialTransfersService {
   createTransfer(payload: CreateBankTransferPayload): Observable<unknown> {
     return this.http.post<unknown>(this.base, payload);
   }
+
+  /** Exclui conforme a visão: transferência ou lançamento bancário. */
+  delete(id: string | number, view: TransferView): Observable<void> {
+    const url = view === 'ENTRIES' ? this.entriesUrl : this.base;
+    return this.http.delete<void>(`${url}/${id}`);
+  }
 }
