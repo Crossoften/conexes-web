@@ -1,7 +1,9 @@
 // src/app/features/accounts-payable/accounts-payable.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { PayableAccount, SummaryCard, AdvancedFilters } from './accounts-payable.model';
 import { AccountsPayableService } from './accounts-payable.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items: PayableAccount[];
@@ -26,6 +28,7 @@ const INITIAL_FILTERS: AdvancedFilters = {
 @Injectable()
 export class AccountsPayableStore {
   private readonly svc = inject(AccountsPayableService);
+  private readonly notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items: [],
@@ -143,6 +146,59 @@ export class AccountsPayableStore {
       const allSelected = items.every(item => newSet.has(item.id));
       items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
       return { ...s, selectedIds: newSet };
+    });
+  }
+
+  readonly selectedCount = computed(() => this.state().selectedIds.size);
+
+  clearSelection() { this.state.update(s => ({ ...s, selectedIds: new Set() })); }
+
+  // ── Ações (o back já expõe delete/copy/multiply/bulk-due-date) ──────────────
+
+  deleteOne(id: string): void {
+    this.svc.delete(Number(id)).subscribe({
+      next: () => { this.notify.success('Lançamento excluído.'); this.dropSelection([id]); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir o lançamento.'),
+    });
+  }
+
+  deleteSelected(): void {
+    const ids = [...this.state().selectedIds];
+    if (!ids.length) return;
+    forkJoin(ids.map(id => this.svc.delete(Number(id)))).subscribe({
+      next: () => { this.notify.success(`${ids.length} lançamento(s) excluído(s).`); this.clearSelection(); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir em lote.'),
+    });
+  }
+
+  bulkDueDate(dueDate: string): void {
+    const ids = [...this.state().selectedIds].map(Number);
+    if (!ids.length || !dueDate) return;
+    this.svc.bulkUpdateDueDate(ids, dueDate).subscribe({
+      next: () => { this.notify.success('Vencimento atualizado nos selecionados.'); this.clearSelection(); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao atualizar o vencimento.'),
+    });
+  }
+
+  copyOne(id: string): void {
+    this.svc.copy(Number(id)).subscribe({
+      next: () => { this.notify.success('Lançamento copiado.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao copiar o lançamento.'),
+    });
+  }
+
+  multiplyOne(id: string, times: number, intervalDays: number): void {
+    this.svc.multiply(Number(id), times, intervalDays).subscribe({
+      next: () => { this.notify.success(`Lançamento multiplicado em ${times} parcela(s).`); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao multiplicar o lançamento.'),
+    });
+  }
+
+  private dropSelection(ids: string[]) {
+    this.state.update(s => {
+      const set = new Set(s.selectedIds);
+      ids.forEach(id => set.delete(id));
+      return { ...s, selectedIds: set };
     });
   }
 }

@@ -1,5 +1,5 @@
 // src/app/features/accounts-payable/accounts-payable-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsPayableStore } from './accounts-payable.store';
@@ -80,5 +80,59 @@ export class AccountsPayableListPage implements OnInit {
 
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
+  }
+
+  // ── Ações de linha e em lote ────────────────────────────────────────────────
+
+  onDelete(item: PayableAccount) {
+    if (!confirm(`Excluir o lançamento ${item.displayId ?? item.id}? Esta ação não pode ser desfeita.`)) return;
+    this.store.deleteOne(item.id);
+  }
+
+  onCopy(item: PayableAccount) {
+    this.store.copyOne(item.id);
+  }
+
+  onDeleteSelected() {
+    const n = this.store.selectedCount();
+    if (!n) return;
+    if (!confirm(`Excluir ${n} lançamento(s) selecionado(s)? Esta ação não pode ser desfeita.`)) return;
+    this.store.deleteSelected();
+  }
+
+  // Modal: multiplicar (gera parcelas)
+  readonly multiplyTarget = signal<PayableAccount | null>(null);
+  multiplyTimes = 2;
+  multiplyInterval = 30;
+
+  openMultiply(item: PayableAccount) {
+    this.multiplyTimes = 2;
+    this.multiplyInterval = 30;
+    this.multiplyTarget.set(item);
+  }
+  closeMultiply() { this.multiplyTarget.set(null); }
+  confirmMultiply() {
+    const item = this.multiplyTarget();
+    if (!item) return;
+    const times = Math.max(2, Math.floor(this.multiplyTimes));
+    const interval = Math.max(0, Math.floor(this.multiplyInterval));
+    this.store.multiplyOne(item.id, times, interval);
+    this.closeMultiply();
+  }
+
+  // Modal: alterar vencimento em lote
+  readonly bulkDateOpen = signal(false);
+  bulkDate = '';
+
+  openBulkDate() {
+    if (!this.store.selectedCount()) return;
+    this.bulkDate = '';
+    this.bulkDateOpen.set(true);
+  }
+  closeBulkDate() { this.bulkDateOpen.set(false); }
+  confirmBulkDate() {
+    if (!this.bulkDate) return;
+    this.store.bulkDueDate(this.bulkDate);
+    this.closeBulkDate();
   }
 }

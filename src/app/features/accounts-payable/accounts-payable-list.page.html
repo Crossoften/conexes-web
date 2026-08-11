@@ -74,6 +74,17 @@
 
     </div>
 
+    @if (store.selectedCount() > 0) {
+      <div class="bulk-bar">
+        <span class="bulk-bar__count">{{ store.selectedCount() }} selecionado(s)</span>
+        <div class="bulk-bar__actions">
+          <button class="btn-outline btn-outline--sm" (click)="openBulkDate()">Alterar vencimento</button>
+          <button class="btn-outline btn-outline--sm btn-outline--danger" (click)="onDeleteSelected()">Excluir selecionados</button>
+          <button class="bulk-bar__clear" (click)="store.clearSelection()">Limpar seleção</button>
+        </div>
+      </div>
+    }
+
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -109,9 +120,9 @@
               
               <td class="td td--center">
                 <div class="action-icons">
-                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  <button class="icon-btn" title="Excluir"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                  <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button class="icon-btn" title="Multiplicar (gerar parcelas)" (click)="openMultiply(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+                  <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 </div>
               </td>
             </tr>
@@ -190,6 +201,51 @@
       <div class="modal-footer">
         <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
         <button class="btn-solid btn-solid--purple" (click)="applyFilters()">Filtrar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (multiplyTarget()) {
+  <div class="modal-overlay" (click)="closeMultiply()">
+    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Multiplicar lançamento</h2>
+        <button class="modal-close" (click)="closeMultiply()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Gera parcelas a partir do lançamento {{ multiplyTarget()?.displayId }}.</p>
+        <div class="filter-grid filter-grid--2">
+          <div class="form-group"><label>Quantidade de parcelas</label><input type="number" min="2" class="input" [(ngModel)]="multiplyTimes"></div>
+          <div class="form-group"><label>Intervalo (dias)</label><input type="number" min="0" class="input" [(ngModel)]="multiplyInterval"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeMultiply()">Cancelar</button>
+        <button class="btn-solid btn-solid--purple" (click)="confirmMultiply()">Multiplicar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (bulkDateOpen()) {
+  <div class="modal-overlay" (click)="closeBulkDate()">
+    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Alterar vencimento</h2>
+        <button class="modal-close" (click)="closeBulkDate()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Aplica a data a {{ store.selectedCount() }} lançamento(s) selecionado(s).</p>
+        <div class="form-group"><label>Novo vencimento</label><input type="date" class="input" [(ngModel)]="bulkDate"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeBulkDate()">Cancelar</button>
+        <button class="btn-solid btn-solid--purple" (click)="confirmBulkDate()">Aplicar</button>
       </div>
     </div>
   </div>
