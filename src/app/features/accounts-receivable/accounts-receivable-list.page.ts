@@ -77,4 +77,9 @@ export class AccountsReceivableListPage implements OnInit {
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
   }
+
+  onDelete(item: ReceivableAccount) {
+    if (!confirm('Excluir esta conta a receber? Esta ação não pode ser desfeita.')) return;
+    this.store.deleteOne(item.id);
+  }
 }

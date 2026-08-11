@@ -2,6 +2,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Budget, BudgetStatus, BudgetTab } from './budgets.model';
 import { BudgetsService } from './budgets.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 interface State {
   items: Budget[];
@@ -18,6 +19,7 @@ interface State {
 @Injectable()
 export class BudgetsStore {
   private readonly svc = inject(BudgetsService);
+  private readonly notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     items: [],
@@ -121,6 +123,13 @@ export class BudgetsStore {
       const allSelected = items.every(item => newSet.has(item.id));
       items.forEach(item => allSelected ? newSet.delete(item.id) : newSet.add(item.id));
       return { ...s, selectedIds: newSet };
+    });
+  }
+
+  deleteOne(id: string): void {
+    this.svc.delete(Number(id)).subscribe({
+      next: () => { this.notify.success('Orçamento excluído.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir o orçamento.'),
     });
   }
 }
