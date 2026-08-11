@@ -1,28 +1,121 @@
 // features/profile/profile.page.ts
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../core/auth/auth.service';
+import { NotificationService } from '../../shared/services/notification.service';
+import { ProfileService, UpdateProfilePayload } from './profile.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  template: `
-    <div class="placeholder-page">
-      <div class="placeholder-page__icon">🚧</div>
-      <h2 class="placeholder-page__title">Perfil</h2>
-      <p class="placeholder-page__desc">Esta tela está sendo desenvolvida.</p>
-    </div>
-  `,
-  styles: [`
-    .placeholder-page {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 400px; gap: 12px;
-      text-align: center;
-    }
-    .placeholder-page__icon { font-size: 48px; }
-    .placeholder-page__title {
-      font-family: 'Sora', sans-serif; font-size: 20px;
-      font-weight: 700; color: #1E1B4B;
-    }
-    .placeholder-page__desc { font-size: 14px; color: #6B7280; }
-  `],
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './profile.page.html',
+  styleUrl: './profile.page.scss',
 })
-export class ProfileComponent {}
+export class ProfileComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private service = inject(ProfileService);
+  private auth = inject(AuthService);
+  private notify = inject(NotificationService);
+
+  private userId = 0;
+  readonly loading = signal(true);
+  readonly saving = signal(false);
+  readonly savingPassword = signal(false);
+  readonly email = signal('');
+  readonly role = signal('');
+
+  readonly form = this.fb.group({
+    name:     ['', Validators.required],
+    phone:    [''],
+    jobTitle: [''],
+    area:     [''],
+    document: [''],
+  });
+
+  readonly passwordForm = this.fb.group({
+    password:     ['', [Validators.required, Validators.minLength(8)]],
+    confirmation: ['', Validators.required],
+  });
+
+  ngOnInit(): void {
+    this.service.getMe().subscribe({
+      next: me => {
+        this.userId = me.id;
+        this.email.set(me.email ?? '');
+        this.role.set(me.role ?? '');
+        this.form.patchValue({
+          name:     me.name ?? '',
+          phone:    me.phone ?? '',
+          jobTitle: me.jobTitle ?? '',
+          area:     me.area ?? '',
+          document: me.document ?? '',
+        });
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.notify.error('Não foi possível carregar seu perfil.');
+      },
+    });
+  }
+
+  get initials(): string {
+    return (this.form.value.name ?? '')
+      .split(' ').filter(Boolean).slice(0, 2)
+      .map(p => p[0]?.toUpperCase()).join('') || '?';
+  }
+
+  save(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.notify.error('Preencha o nome.');
+      return;
+    }
+    this.saving.set(true);
+    const payload: UpdateProfilePayload = {
+      name:     this.form.value.name ?? '',
+      phone:    this.form.value.phone ?? '',
+      jobTitle: this.form.value.jobTitle ?? '',
+      area:     this.form.value.area ?? '',
+      document: this.form.value.document ?? '',
+    };
+    this.service.update(this.userId, payload).subscribe({
+      next: async () => {
+        await this.auth.refreshProfile();
+        this.saving.set(false);
+        this.notify.success('Perfil atualizado com sucesso.');
+      },
+      error: () => {
+        this.saving.set(false);
+        this.notify.error('Não foi possível salvar o perfil.');
+      },
+    });
+  }
+
+  savePassword(): void {
+    const { password, confirmation } = this.passwordForm.value;
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      this.notify.error('A senha deve ter ao menos 8 caracteres.');
+      return;
+    }
+    if (password !== confirmation) {
+      this.notify.error('As senhas não coincidem.');
+      return;
+    }
+    this.savingPassword.set(true);
+    this.service.update(this.userId, { password: password ?? '' }).subscribe({
+      next: () => {
+        this.savingPassword.set(false);
+        this.passwordForm.reset();
+        this.notify.success('Senha alterada com sucesso.');
+      },
+      error: () => {
+        this.savingPassword.set(false);
+        this.notify.error('Não foi possível alterar a senha.');
+      },
+    });
+  }
+}

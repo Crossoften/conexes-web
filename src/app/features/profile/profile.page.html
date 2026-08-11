@@ -1,0 +1,87 @@
+<section class="profile">
+  <header class="profile__header">
+    <div class="profile__avatar">{{ initials }}</div>
+    <div>
+      <h1 class="profile__name">{{ form.value.name || '—' }}</h1>
+      <p class="profile__meta">{{ email() || '—' }} @if (role()) { · <span class="profile__role">{{ role() }}</span> }</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="profile__loading">Carregando…</div>
+  } @else {
+    <div class="profile__grid">
+      <!-- Dados pessoais -->
+      <form class="card" [formGroup]="form" (ngSubmit)="save()">
+        <h2 class="card__title">Dados pessoais</h2>
+
+        <div class="field" [class.field--error]="form.controls['name'].invalid && form.controls['name'].touched">
+          <label class="field-label">Nome <span class="required">*</span></label>
+          <input class="input" type="text" formControlName="name" placeholder="Seu nome">
+          @if (form.controls['name'].invalid && form.controls['name'].touched) {
+            <span class="field-error">Campo obrigatório</span>
+          }
+        </div>
+
+        <div class="field">
+          <label class="field-label">E-mail</label>
+          <input class="input" type="email" [value]="email()" disabled>
+          <span class="field-hint">O e-mail de acesso não pode ser alterado por aqui.</span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Telefone</label>
+            <input class="input" type="text" formControlName="phone" placeholder="(00) 00000-0000">
+          </div>
+          <div class="field">
+            <label class="field-label">CPF</label>
+            <input class="input" type="text" formControlName="document" placeholder="000.000.000-00">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Cargo</label>
+            <input class="input" type="text" formControlName="jobTitle" placeholder="Ex.: Analista financeiro">
+          </div>
+          <div class="field">
+            <label class="field-label">Área</label>
+            <input class="input" type="text" formControlName="area" placeholder="Ex.: Financeiro">
+          </div>
+        </div>
+
+        <div class="card__actions">
+          <button type="submit" class="btn btn--primary" [disabled]="saving()">
+            {{ saving() ? 'Salvando…' : 'Salvar alterações' }}
+          </button>
+        </div>
+      </form>
+
+      <!-- Segurança -->
+      <form class="card" [formGroup]="passwordForm" (ngSubmit)="savePassword()">
+        <h2 class="card__title">Segurança</h2>
+        <p class="card__desc">Defina uma nova senha de acesso.</p>
+
+        <div class="field" [class.field--error]="passwordForm.controls['password'].invalid && passwordForm.controls['password'].touched">
+          <label class="field-label">Nova senha <span class="required">*</span></label>
+          <input class="input" type="password" formControlName="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+          @if (passwordForm.controls['password'].invalid && passwordForm.controls['password'].touched) {
+            <span class="field-error">Mínimo de 8 caracteres.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label class="field-label">Confirmar nova senha <span class="required">*</span></label>
+          <input class="input" type="password" formControlName="confirmation" placeholder="Repita a senha" autocomplete="new-password">
+        </div>
+
+        <div class="card__actions">
+          <button type="submit" class="btn btn--outline" [disabled]="savingPassword()">
+            {{ savingPassword() ? 'Alterando…' : 'Alterar senha' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</section>

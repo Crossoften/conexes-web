@@ -88,10 +88,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'accountability',
   },
   {
-    label:    'Perfil',
-    route:    '/profile',
-    icon:     'profile',
-    disabled: true,
-    badge:    'Em breve',
+    label: 'Perfil',
+    route: '/profile',
+    icon:  'profile',
   },
 ];

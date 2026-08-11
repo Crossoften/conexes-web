@@ -49,6 +49,14 @@
               <span class="topbar__menu-email">{{ auth.user()?.email }}</span>
             }
           </div>
+          <a class="topbar__menu-item" role="menuitem"
+             routerLink="/profile" (click)="menuOpen.set(false)">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+              <path d="M10 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM4 17a6 6 0 0 1 12 0"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Meu perfil
+          </a>
           <button class="topbar__menu-item topbar__menu-item--danger" type="button"
                   role="menuitem" (click)="logout()">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">

@@ -1,10 +1,12 @@
 // src/app/layout/topbar/topbar.component.ts
 import { Component, input, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss',
 })
