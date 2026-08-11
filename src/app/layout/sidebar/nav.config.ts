@@ -18,11 +18,9 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   {
-    label:    'Dashboard',
-    route:    '/dashboard',
-    icon:     'dashboard',
-    disabled: true,
-    badge:    'Em breve',
+    label: 'Dashboard',
+    route: '/dashboard',
+    icon:  'dashboard',
   },
   {
     label: 'Gestão de cadastros',
