@@ -170,6 +170,8 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
   const payload: StakeholderPayload = {
     code:     s1.code?.trim()     ?? '',
     type,
+    // Subtipo só faz sentido para fornecedor; nos demais tipos vai vazio.
+    supplierType: type === 'Supplier' ? (s1.supplierType?.trim() || undefined) : undefined,
     personType:            s1.personType     || 'PJ',
     // B-13: enviar o documento só com dígitos (o back grava/valida sem máscara).
     document:              (s1.document ?? '').replace(/\D/g, ''),

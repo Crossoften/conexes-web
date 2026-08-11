@@ -125,6 +125,7 @@ export interface Stakeholder {
   id:                    number;
   code:                  string;
   type:                  StakeholderType;
+  supplierType?:         string;
   personType:            PersonType;
   document:              string;
   name:                  string;

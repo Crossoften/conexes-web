@@ -89,6 +89,7 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     // Aba GERAIS
     code:                  [{ value: '', disabled: true }],
     type:                  [''],
+    supplierType:          [''],
     personType:            ['', Validators.required],
     document:              ['', Validators.required],
     name:                  ['', Validators.required],
@@ -201,6 +202,7 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     this.form.patchValue({
       code:                  s.code,
       type:                  s.type,
+      supplierType:          s.supplierType ?? '',
       personType:            s.personType,
       document:              s.document,
       name:                  s.name,
@@ -302,6 +304,16 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   get typeLabel(): string {
     if (!this.stakeholder) return '';
     return this.typeLabels[this.stakeholder.type] ?? this.stakeholder.type;
+  }
+
+  get supplierTypeLabel(): string {
+    const map: Record<string, string> = {
+      Product: 'Fornecedor de produto',
+      Service: 'Prestador de serviço',
+      Both:    'Produto e serviço',
+    };
+    const v = this.stakeholder?.supplierType;
+    return v ? (map[v] ?? v) : '';
   }
 
   get primaryAddress() {
@@ -469,6 +481,7 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     const payload: Partial<StakeholderPayload> = {
       code:                  v.code,
       type:                  v.type as any,
+      supplierType:          v.type === 'Supplier' ? (v.supplierType || undefined) : undefined,
       personType:            v.personType as any,
       // B-13: documento só com dígitos (o back grava/valida sem máscara).
       document:              (v.document ?? '').replace(/\D/g, ''),

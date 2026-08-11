@@ -17,6 +17,9 @@ export function buildStakeholderForm() {
     // Tipo é obrigatório no contrato (CreateStakeholderDto.required inclui "type")
     type:        ['', Validators.required],
 
+    // Subtipo do fornecedor (pedido do cliente 09/07): Product/Service/Both. Só aplicável quando type=Supplier.
+    supplierType: [''],
+
     // Opcionais
     zipCode:     [''],
     address:     [''],
