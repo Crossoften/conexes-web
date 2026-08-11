@@ -9,6 +9,12 @@ export const appRoutes: Routes = [
       import('./features/auth/auth.routes').then(m => m.authRoutes),
   },
   {
+    // Portal da Transparência — público, sem login e FORA do shell (sem sidebar/topbar).
+    path: 'transparencia',
+    loadChildren: () =>
+      import('./features/transparency/transparency.routes').then(m => m.transparencyRoutes),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/shell/shell.component').then(m => m.ShellComponent),
