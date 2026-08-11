@@ -290,7 +290,7 @@ export class TaxesStore {
 
     this.state.update(s => ({ ...s, deleteModal: { ...s.deleteModal, deleting: true } }));
 
-    this.svc.delete(tax.id).subscribe({
+    this.svc.delete(tax.stakeholderId).subscribe({
       next: () => {
         this.state.update(s => ({
           ...s,

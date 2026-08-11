@@ -1,11 +1,13 @@
 // src/app/features/budgets/budgets.store.ts
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Budget, BudgetStatus, BudgetTab } from './budgets.model';
-import { BUDGETS_MOCK } from './budgets.mock';
+import { BudgetsService } from './budgets.service';
 
 interface State {
   items: Budget[];
+  total: number;
   loading: boolean;
+  error: string | null;
   activeTab: BudgetTab;
   filters: { search: string; period: string };
   sort: { column: keyof Budget | ''; direction: 'asc' | 'desc' | '' };
@@ -15,9 +17,13 @@ interface State {
 
 @Injectable()
 export class BudgetsStore {
+  private readonly svc = inject(BudgetsService);
+
   private readonly state = signal<State>({
-    items: BUDGETS_MOCK,
+    items: [],
+    total: 0,
     loading: false,
+    error: null,
     activeTab: 'BUDGETS',
     filters: { search: '', period: '' },
     sort: { column: '', direction: '' },
@@ -25,8 +31,20 @@ export class BudgetsStore {
     selectedIds: new Set(),
   });
 
+  load(): void {
+    const { page, pageSize } = this.state().pagination;
+    const search = this.state().filters.search;
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.getAll(search, pageSize, (page - 1) * pageSize).subscribe({
+      next: res => this.state.update(s => ({ ...s, items: res.items, total: res.total, loading: false })),
+      error: () => this.state.update(s => ({ ...s, items: [], total: 0, loading: false, error: 'Não foi possível carregar os orçamentos.' })),
+    });
+  }
+
   // Selectors
   readonly loading = computed(() => this.state().loading);
+  readonly error   = computed(() => this.state().error);
+  readonly total   = computed(() => this.state().total);
   readonly activeTab = computed(() => this.state().activeTab);
   readonly filters = computed(() => this.state().filters);
   readonly sort = computed(() => this.state().sort);
@@ -34,27 +52,13 @@ export class BudgetsStore {
   readonly selectedIds = computed(() => this.state().selectedIds);
 
   readonly filteredItems = computed(() => {
-    let result = this.state().items;
-    const f = this.filters();
-    
-    if (f.search) {
-      const term = f.search.toLowerCase();
-      result = result.filter(item => 
-        item.displayId.toLowerCase().includes(term) || 
-        item.title.toLowerCase().includes(term) ||
-        item.description.toLowerCase().includes(term)
-      );
-    }
-    if (f.period) {
-      // Exemplo genérico: na prática você filtraria pelas datas corretas
-      result = result.filter(item => item.periodicity === f.period || f.period !== '');
-    }
-    return result;
+    // Busca e paginação são feitas no back (query params).
+    return this.state().items;
   });
 
   readonly sortedItems = computed(() => {
     const { column, direction } = this.sort();
-    const items = this.filteredItems();
+    const items = this.state().items;
     if (!column || !direction) return items;
     return [...items].sort((a, b) => {
       const va = (a as any)[column], vb = (b as any)[column];
@@ -65,13 +69,9 @@ export class BudgetsStore {
     });
   });
 
-  readonly filteredTotal = computed(() => this.filteredItems().length);
+  readonly filteredTotal = computed(() => this.state().total);
 
-  readonly pageItems = computed(() => {
-    const { page, pageSize } = this.pagination();
-    const start = (page - 1) * pageSize;
-    return this.sortedItems().slice(start, start + pageSize);
-  });
+  readonly pageItems = computed(() => this.sortedItems());
 
   readonly allPageSelected = computed(() => {
     const items = this.pageItems();
@@ -90,6 +90,7 @@ export class BudgetsStore {
 
   setSearch(search: string) {
     this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   setPeriod(period: string) {
@@ -103,8 +104,8 @@ export class BudgetsStore {
     });
   }
 
-  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); }
-  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); }
+  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); this.load(); }
+  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); this.load(); }
 
   toggleRow(id: string) {
     this.state.update(s => {

@@ -32,9 +32,36 @@
 
     <div class="topbar__divider" aria-hidden="true"></div>
 
-    <button class="topbar__avatar" title="Perfil" aria-label="Perfil do usuário">
-      {{ auth.userInitials() }}
-    </button>
+    <div class="topbar__user">
+      <button class="topbar__avatar" type="button"
+              (click)="toggleMenu()"
+              [attr.aria-expanded]="menuOpen()"
+              aria-haspopup="menu"
+              [attr.aria-label]="'Menu do usuário' + (auth.user()?.name ? ' — ' + auth.user()?.name : '')">
+        {{ auth.userInitials() }}
+      </button>
+
+      @if (menuOpen()) {
+        <div class="topbar__menu" role="menu">
+          <div class="topbar__menu-header">
+            <span class="topbar__menu-name">{{ auth.user()?.name || 'Usuário' }}</span>
+            @if (auth.user()?.email) {
+              <span class="topbar__menu-email">{{ auth.user()?.email }}</span>
+            }
+          </div>
+          <button class="topbar__menu-item topbar__menu-item--danger" type="button"
+                  role="menuitem" (click)="logout()">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+              <path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 10h9m0 0l-3-3m3 3l-3 3"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Sair
+          </button>
+        </div>
+      }
+    </div>
 
   </div>
 </header>

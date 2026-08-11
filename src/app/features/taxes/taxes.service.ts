@@ -34,8 +34,10 @@ export class TaxesService {
     return this.http.post<Tax>(this.base, payload);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${id}`);
+  // O contrato só expõe DELETE /tax-service/stakeholder/{stakeholderId}
+  // (o registro é único por stakeholder — upsert). Não existe DELETE /{id}.
+  delete(stakeholderId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/stakeholder/${stakeholderId}`);
   }
 
   /** FUNC-004: exporta os impostos/serviços em Excel. */

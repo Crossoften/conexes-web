@@ -1,11 +1,12 @@
 // src/app/features/financial-transfers/financial-transfers.store.ts
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { FinancialTransfer, TransferStatus, TransferType, TransferView } from './financial-transfers.model';
-import { TRANSFERS_MOCK } from './financial-transfers.mock';
+import { FinancialTransfersService } from './financial-transfers.service';
 
 interface State {
   items: FinancialTransfer[];
   loading: boolean;
+  error: string | null;
   filters: { view: TransferView; search: string; status: TransferStatus | ''; type: TransferType | '' };
   sort: { column: keyof FinancialTransfer | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
@@ -14,17 +15,30 @@ interface State {
 
 @Injectable()
 export class FinancialTransfersStore {
+  private readonly svc = inject(FinancialTransfersService);
+
   private readonly state = signal<State>({
-    items: TRANSFERS_MOCK,
+    items: [],
     loading: false,
+    error: null,
     filters: { view: 'TRANSFERS', search: '', status: '', type: '' },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
   });
 
+  load(): void {
+    const view = this.state().filters.view;
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.getAll(view).subscribe({
+      next: items => this.state.update(s => ({ ...s, items, loading: false })),
+      error: () => this.state.update(s => ({ ...s, items: [], loading: false, error: 'Não foi possível carregar os lançamentos.' })),
+    });
+  }
+
   // Selectors
   readonly loading = computed(() => this.state().loading);
+  readonly error   = computed(() => this.state().error);
   readonly filters = computed(() => this.state().filters);
   readonly sort = computed(() => this.state().sort);
   readonly pagination = computed(() => this.state().pagination);
@@ -80,7 +94,7 @@ export class FinancialTransfersStore {
   });
 
   // Updaters
-  setView(view: TransferView) { this.state.update(s => ({ ...s, filters: { ...s.filters, view }, pagination: { ...s.pagination, page: 1 } })); }
+  setView(view: TransferView) { this.state.update(s => ({ ...s, filters: { ...s.filters, view }, pagination: { ...s.pagination, page: 1 } })); this.load(); }
   setSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } })); }
   setStatus(status: TransferStatus | '') { this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } })); }
   setType(type: TransferType | '') { this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } })); }

@@ -3,9 +3,13 @@
   <h1 class="page-title">Conciliação bancária</h1>
 
   <div class="global-filters">
-    <div class="search-wrap">
-      <input class="search" type="text" placeholder="Filtrar banco" [value]="store.filters().globalSearch" (input)="onGlobalSearch($any($event.target).value)">
-      <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <div class="select-wrap">
+      <select class="select select--pill" [value]="store.selectedAccountId()" (change)="store.selectAccount(+$any($event.target).value)">
+        @if (store.accounts().length === 0) { <option value="">Nenhuma conta bancária</option> }
+        @for (a of store.accounts(); track a.id) {
+          <option [value]="a.id">{{ a.name }} — {{ a.pendingCount }} pendente(s)</option>
+        }
+      </select>
     </div>
 
     <div class="select-wrap">
@@ -183,6 +187,17 @@
             }
           </div>
 
+        }
+        @if (!store.loading() && store.pageItems().length === 0) {
+          <div style="text-align:center; padding:36px; color: var(--text-secondary);">
+            @if (store.error()) { {{ store.error() }} }
+            @else if (store.accounts().length === 0) { Nenhuma conta bancária cadastrada para conciliar. }
+            @else if (store.activeTab() === 'PENDING') { Nenhuma conciliação pendente nesta conta. }
+            @else { Nenhuma movimentação nesta conta. }
+          </div>
+        }
+        @if (store.loading()) {
+          <div style="text-align:center; padding:36px; color: var(--text-secondary);">Carregando…</div>
         }
       </div>
     </div>

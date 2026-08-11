@@ -98,6 +98,14 @@
               </td>
             </tr>
           }
+          @if (!store.loading() && store.pageItems().length === 0) {
+            <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">
+              @if (store.error()) { {{ store.error() }} } @else { Nenhum lançamento nesta visão. }
+            </td></tr>
+          }
+          @if (store.loading()) {
+            <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+          }
         </tbody>
       </table>
     </div>

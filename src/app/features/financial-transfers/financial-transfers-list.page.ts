@@ -1,5 +1,5 @@
 // src/app/features/financial-transfers/financial-transfers-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
@@ -14,8 +14,12 @@ import { RouterLink } from "@angular/router";
   templateUrl: './financial-transfers-list.page.html',
   styleUrl: './financial-transfers-list.page.scss',
 })
-export class FinancialTransfersListPage {
+export class FinancialTransfersListPage implements OnInit {
   readonly store = inject(FinancialTransfersStore);
+
+  ngOnInit(): void {
+    this.store.load();
+  }
 
   readonly viewOptions: { label: string; value: TransferView }[] = [
     { label: 'Transferencias', value: 'TRANSFERS' },

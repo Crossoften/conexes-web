@@ -1,5 +1,5 @@
 // src/app/features/accounts-receivable/accounts-receivable-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsReceivableStore } from './accounts-receivable.store';
@@ -13,8 +13,12 @@ import { ReceivableAccount, ReceivableFilters } from './accounts-receivable.mode
   templateUrl: './accounts-receivable-list.page.html',
   styleUrl: './accounts-receivable-list.page.scss',
 })
-export class AccountsReceivableListPage {
+export class AccountsReceivableListPage implements OnInit {
   readonly store = inject(AccountsReceivableStore);
+
+  ngOnInit(): void {
+    this.store.load();
+  }
 
   readonly viewOptions = [
     { label: 'Captura de Nota Fiscal', value: 'CAPTURA_NF' },

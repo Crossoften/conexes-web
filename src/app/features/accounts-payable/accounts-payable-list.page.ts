@@ -1,5 +1,5 @@
 // src/app/features/accounts-payable/accounts-payable-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsPayableStore } from './accounts-payable.store';
@@ -14,8 +14,12 @@ import { RouterLink } from "@angular/router";
   templateUrl: './accounts-payable-list.page.html',
   styleUrl: './accounts-payable-list.page.scss',
 })
-export class AccountsPayableListPage {
+export class AccountsPayableListPage implements OnInit {
   readonly store = inject(AccountsPayableStore);
+
+  ngOnInit(): void {
+    this.store.load();
+  }
 
   readonly viewOptions = [
     { label: 'Lançamentos', value: 'LANÇAMENTOS' },
