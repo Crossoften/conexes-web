@@ -1,0 +1,86 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Prestação de contas</h1>
+    <button class="btn-primary" type="button" (click)="openNew()">
+      <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Nova prestação
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2 class="card-title">Processos de prestação de contas</h2></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th">Cód</th>
+            <th class="th">Título</th>
+            <th class="th th--center">Itens</th>
+            <th class="th th--center">Validados</th>
+            <th class="th th--center">Pendentes</th>
+            <th class="th">Situação</th>
+            <th class="th th--center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of items(); track p.id) {
+            <tr class="tr" (click)="open(p.id)">
+              <td class="td td--mono">#{{ p.id }}</td>
+              <td class="td td--name">{{ p.title }}</td>
+              <td class="td td--center">{{ p.itemsTotal }}</td>
+              <td class="td td--center">{{ p.itemsValidated }}</td>
+              <td class="td td--center">{{ p.itemsPending }}</td>
+              <td class="td">
+                <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[p.status].variant">{{ statusConfig[p.status].label }}</span>
+              </td>
+              <td class="td td--center">
+                <button class="icon-btn" title="Abrir" aria-label="Abrir prestação" (click)="open(p.id); $event.stopPropagation()">
+                  <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </td>
+            </tr>
+          }
+          @if (!loading() && items().length === 0) {
+            <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">Nenhuma prestação de contas criada. Clique em “Nova prestação”.</td></tr>
+          }
+          @if (loading()) {
+            <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (modalOpen()) {
+    <div class="modal-backdrop" (click)="closeNew()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3 class="modal-title">Nova prestação de contas</h3>
+          <button class="icon-btn" (click)="closeNew()" aria-label="Fechar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>Parceria (termo) <span class="req">*</span></label>
+            <select class="input" [(ngModel)]="form.partnershipId">
+              <option value="">Selecione</option>
+              @for (p of partnerships(); track p.id) { <option [value]="p.id">{{ p.title }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label>Título <span class="req">*</span></label>
+            <input class="input" [(ngModel)]="form.title" placeholder="Ex.: Prestação 1º quadrimestre">
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Início do período</label><input type="date" class="input" [(ngModel)]="form.periodStart"></div>
+            <div class="field"><label>Fim do período</label><input type="date" class="input" [(ngModel)]="form.periodEnd"></div>
+          </div>
+          <p class="hint">Ao criar, os pagamentos validados do termo são carregados automaticamente como itens.</p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-outline" (click)="closeNew()">Cancelar</button>
+          <button class="btn-primary" (click)="save()" [disabled]="saving()">{{ saving() ? 'Criando…' : 'Criar' }}</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

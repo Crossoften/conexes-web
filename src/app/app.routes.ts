@@ -52,11 +52,12 @@ export const appRoutes: Routes = [
       { path: 'accounts-payable',     loadChildren: () => import('./features/accounts-payable/accounts-payable.routes').then(m => m.accountsPayableRoutes) },
       { path: 'accounts-receivable',  loadChildren: () => import('./features/accounts-receivable/accounts-receivable.routes').then(m => m.accountsReceivableRoutes) },
       { path: 'budgets',              loadChildren: () => import('./features/budgets/budgets.routes').then(m => m.budgetsRoutes) },
+      { path: 'invoice-review',       loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
       // { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
 
       // Outros — a implementar
       // { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },
-      // { path: 'accountability', loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
+      { path: 'accountability', loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
       // { path: 'profile',        loadChildren: () => import('./features/profile/profile.routes').then(m => m.profileRoutes) },
 
       // Rota desconhecida com o usuário AUTENTICADO: mostra o 404 DENTRO do shell

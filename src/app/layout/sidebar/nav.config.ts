@@ -77,6 +77,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: 'Transferências e lançamentos', route: '/financial-transfers' },
       { label: 'Conciliação bancária',         route: '/bank-reconciliation' },
+      { label: 'Análise de notas',             route: '/invoice-review' },
       { label: 'Contas a pagar',               route: '/accounts-payable' },
       { label: 'Contas a receber',             route: '/accounts-receivable' },
       { label: 'Orçamentos',                   route: '/budgets' },
@@ -84,11 +85,9 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label:    'Prestação de contas',
-    route:    '/accountability',
-    icon:     'accountability',
-    disabled: true,
-    badge:    'Em breve',
+    label: 'Prestação de contas',
+    route: '/accountability',
+    icon:  'accountability',
   },
   {
     label:    'Perfil',

@@ -1,0 +1,80 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Análise de notas</h1>
+    <button class="btn-primary" type="button" (click)="openInvoice()">
+      <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Faturar pedido
+    </button>
+  </div>
+  <p class="subtitle">Notas pré-lançadas pelo compras, aguardando análise do financeiro. Validar envia ao contas a pagar; devolver retorna ao compras.</p>
+
+  <div class="kanban">
+    <div class="col">
+      <div class="col-head col-head--pending">Pendentes de análise <span class="count">{{ pending().length }}</span></div>
+      <div class="col-body">
+        @for (c of pending(); track c.id) {
+          <div class="kcard">
+            <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
+            <div class="kcard-sub">{{ c.supplier || '—' }}</div>
+            <div class="kcard-value">{{ brl(c.amount) }}</div>
+            <div class="kcard-actions">
+              <button class="btn-mini btn-mini--ok" (click)="validate(c.id)">Validar</button>
+              <button class="btn-mini btn-mini--danger" (click)="returnCard(c.id)">Devolver</button>
+            </div>
+          </div>
+        }
+        @if (pending().length === 0) { <div class="empty">Nada pendente.</div> }
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-head col-head--ok">Validadas (contas a pagar) <span class="count">{{ validated().length }}</span></div>
+      <div class="col-body">
+        @for (c of validated(); track c.id) {
+          <div class="kcard kcard--ok">
+            <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
+            <div class="kcard-sub">{{ c.supplier || '—' }}</div>
+            <div class="kcard-value">{{ brl(c.amount) }}</div>
+          </div>
+        }
+        @if (validated().length === 0) { <div class="empty">Nenhuma validada.</div> }
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-head col-head--danger">Devolvidas ao compras <span class="count">{{ returned().length }}</span></div>
+      <div class="col-body">
+        @for (c of returned(); track c.id) {
+          <div class="kcard kcard--danger">
+            <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
+            <div class="kcard-sub">{{ c.supplier || '—' }}</div>
+            <div class="kcard-value">{{ brl(c.amount) }}</div>
+          </div>
+        }
+        @if (returned().length === 0) { <div class="empty">Nenhuma devolvida.</div> }
+      </div>
+    </div>
+  </div>
+
+  @if (modalOpen()) {
+    <div class="modal-backdrop" (click)="closeInvoice()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head"><h3 class="modal-title">Faturar pedido de compra</h3></div>
+        <div class="modal-body">
+          <div class="field">
+            <label>Pedido</label>
+            <select class="input" [(ngModel)]="selectedOrder">
+              <option value="">Selecione um pedido</option>
+              @for (o of orders(); track o.id) { <option [value]="o.id">Pedido #{{ o.id }} — {{ o.supplier }} — {{ brl(o.total) }}</option> }
+            </select>
+          </div>
+          <p class="hint">Gera um pré-lançamento em análise no financeiro, herdando a parceria da requisição e trazendo os anexos (NF/CNDs).</p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-outline" (click)="closeInvoice()">Cancelar</button>
+          <button class="btn-primary" (click)="invoice()">Faturar</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
