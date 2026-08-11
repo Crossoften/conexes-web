@@ -1,28 +1,81 @@
 // features/dashboard/dashboard.page.ts
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
+import { DashboardService, DashboardSummary, DashboardAccountability } from './dashboard.service';
+
+interface KpiCard {
+  key:   keyof DashboardSummary;
+  label: string;
+  icon:  string;
+  route: string;
+  tone:  'purple' | 'orange' | 'info' | 'success';
+}
+
+interface Shortcut {
+  label: string;
+  desc:  string;
+  icon:  string;
+  route: string;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  template: `
-    <div class="placeholder-page">
-      <div class="placeholder-page__icon">🚧</div>
-      <h2 class="placeholder-page__title">Dashboard</h2>
-      <p class="placeholder-page__desc">Esta tela está sendo desenvolvida.</p>
-    </div>
-  `,
-  styles: [`
-    .placeholder-page {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 400px; gap: 12px;
-      text-align: center;
-    }
-    .placeholder-page__icon { font-size: 48px; }
-    .placeholder-page__title {
-      font-family: 'Sora', sans-serif; font-size: 20px;
-      font-weight: 700; color: #1E1B4B;
-    }
-    .placeholder-page__desc { font-size: 14px; color: #6B7280; }
-  `],
+  imports: [CommonModule, RouterLink],
+  templateUrl: './dashboard.page.html',
+  styleUrl: './dashboard.page.scss',
 })
-export class DashboardComponent {}
+export class DashboardComponent implements OnInit {
+  private auth = inject(AuthService);
+  private service = inject(DashboardService);
+
+  readonly user = this.auth.user;
+  readonly loading = signal(true);
+  readonly summary = signal<DashboardSummary>({
+    stakeholders: 0, partnerships: 0, payablesOpen: 0, accountabilities: 0,
+  });
+  readonly recent = signal<DashboardAccountability[]>([]);
+
+  readonly kpis: KpiCard[] = [
+    { key: 'stakeholders',     label: 'Stakeholders',            icon: '👥', route: '/stakeholders',   tone: 'purple'  },
+    { key: 'partnerships',     label: 'Parcerias',               icon: '🤝', route: '/work-plans',     tone: 'info'    },
+    { key: 'payablesOpen',     label: 'Contas a pagar em aberto', icon: '💸', route: '/accounts-payable', tone: 'orange' },
+    { key: 'accountabilities', label: 'Prestações de contas',    icon: '📋', route: '/accountability', tone: 'success' },
+  ];
+
+  readonly shortcuts: Shortcut[] = [
+    { label: 'Novo stakeholder',   desc: 'Cadastrar fornecedor, cliente ou doador', icon: '➕', route: '/stakeholders/new' },
+    { label: 'Contas a pagar',     desc: 'Lançamentos e pagamentos',                icon: '💸', route: '/accounts-payable' },
+    { label: 'Análise de notas',   desc: 'Validar notas vindas do compras',         icon: '🧾', route: '/invoice-review' },
+    { label: 'Prestação de contas', desc: 'Acompanhar processos de prestação',      icon: '📋', route: '/accountability' },
+    { label: 'Plano de trabalho',  desc: 'Parcerias e planos de aplicação',         icon: '📄', route: '/work-plans' },
+    { label: 'Conciliação bancária', desc: 'Conferir extratos e lançamentos',       icon: '🏦', route: '/bank-reconciliation' },
+  ];
+
+  ngOnInit(): void {
+    this.service.summary().subscribe({
+      next: s => { this.summary.set(s); this.loading.set(false); },
+      error: () => this.loading.set(false),
+    });
+    this.service.recentAccountabilities().subscribe(r => this.recent.set(r));
+  }
+
+  get firstName(): string {
+    return (this.user()?.name ?? '').split(' ')[0] || 'usuário';
+  }
+
+  statusLabel(status: string): string {
+    const map: Record<string, string> = {
+      Open: 'Aberta', Approved: 'Aprovada', Returned: 'Devolvida',
+    };
+    return map[status] ?? status;
+  }
+
+  statusClass(status: string): string {
+    if (status === 'Approved') return 'badge--success';
+    if (status === 'Returned') return 'badge--danger';
+    return 'badge--info';
+  }
+}

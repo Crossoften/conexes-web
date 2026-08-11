@@ -14,7 +14,7 @@ export const appRoutes: Routes = [
       import('./layout/shell/shell.component').then(m => m.ShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'stakeholders', pathMatch: 'full' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 
       // Gestão de cadastros 
       { path: 'stakeholders',         loadChildren: () => import('./features/stakeholders/stakeholders.routes').then(m => m.stakeholdersRoutes) },
@@ -55,10 +55,10 @@ export const appRoutes: Routes = [
       { path: 'invoice-review',       loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
       // { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
 
-      // Outros — a implementar
-      // { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },
+      // Outros
+      { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },
       { path: 'accountability', loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
-      // { path: 'profile',        loadChildren: () => import('./features/profile/profile.routes').then(m => m.profileRoutes) },
+      { path: 'profile',        loadChildren: () => import('./features/profile/profile.routes').then(m => m.profileRoutes) },
 
       // Rota desconhecida com o usuário AUTENTICADO: mostra o 404 DENTRO do shell
       // (sidebar/topbar visíveis, sessão preservada) em vez de jogar para o login.
