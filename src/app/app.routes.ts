@@ -40,6 +40,7 @@ export const appRoutes: Routes = [
 
       // Compras 
       { path: 'purchasing-dashboard', loadChildren: () => import('./features/purchasing-dashboard/purchasing-dashboard.routes').then(m => m.purchasingDashboardRoutes) },
+      { path: 'purchasing-reports',   loadChildren: () => import('./features/purchasing-reports/purchasing-reports.routes').then(m => m.purchasingReportsRoutes) },
       { path: 'quotations',           loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
       { path: 'purchasing-management', loadChildren: () => import('./features/purchasing-management/purchasing-management.routes').then(m => m.purchasingManagementRoutes) },
       { path: 'purchasing-orders',     loadChildren: () => import('./features/purchasing-orders/purchasing-orders.routes').then(m => m.purchasingOrdersRoutes) },
@@ -53,7 +54,7 @@ export const appRoutes: Routes = [
       { path: 'accounts-receivable',  loadChildren: () => import('./features/accounts-receivable/accounts-receivable.routes').then(m => m.accountsReceivableRoutes) },
       { path: 'budgets',              loadChildren: () => import('./features/budgets/budgets.routes').then(m => m.budgetsRoutes) },
       { path: 'invoice-review',       loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
-      // { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
+      { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
 
       // Outros
       { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },

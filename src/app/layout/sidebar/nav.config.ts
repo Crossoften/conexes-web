@@ -66,7 +66,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Gerenciamento', route: '/purchasing-management' },
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
-      { label: 'Relatórios',    route: '/purchasing-reports', disabled: true, badge: 'Em breve' },
+      { label: 'Relatórios',    route: '/purchasing-reports' },
     ],
   },
   {
@@ -79,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Contas a pagar',               route: '/accounts-payable' },
       { label: 'Contas a receber',             route: '/accounts-receivable' },
       { label: 'Orçamentos',                   route: '/budgets' },
-      { label: 'Relatórios financeiros',       route: '/financial-reports', disabled: true, badge: 'Em breve' },
+      { label: 'Relatórios financeiros',       route: '/financial-reports' },
     ],
   },
   {
