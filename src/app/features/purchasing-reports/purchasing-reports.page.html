@@ -1,0 +1,63 @@
+<section class="preports">
+  <header class="preports__header">
+    <div>
+      <h1 class="preports__title">Relatórios de compras</h1>
+      <p class="preports__subtitle">Visão consolidada das requisições de compra.</p>
+    </div>
+    <button class="btn btn--outline" (click)="exportExcel()">Exportar requisições (Excel)</button>
+  </header>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    @if (loading()) {
+      @for (i of [1,2,3,4,5]; track i) { <div class="kpi kpi--skeleton"></div> }
+    } @else {
+      @for (k of kpis(); track k.label) {
+        <div class="kpi" [class]="'kpi--' + k.tone">
+          <span class="kpi__value">{{ k.value }}</span>
+          <span class="kpi__label">{{ k.label }}</span>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Distribuição por etapa -->
+  <div class="panel">
+    <h2 class="panel__title">Distribuição por etapa</h2>
+    <div class="dist">
+      @for (d of distribution(); track d.label) {
+        <div class="dist__item">
+          <span class="dist__value">{{ d.value }}</span>
+          <span class="dist__label">{{ d.label }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Tabela de requisições -->
+  <div class="panel">
+    <h2 class="panel__title">Requisições</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>#</th><th>Título</th><th>Status</th><th>Data</th><th class="ta-right">Valor estimado</th></tr>
+        </thead>
+        <tbody>
+          @if (requests().length === 0) {
+            <tr><td colspan="5" class="td--empty">Nenhuma requisição encontrada.</td></tr>
+          } @else {
+            @for (r of requests(); track r.id) {
+              <tr>
+                <td>{{ r.referenceNumber || ('#' + r.id) }}</td>
+                <td>{{ r.title }}</td>
+                <td>{{ statusLabel(r.status) }}</td>
+                <td>{{ r.requestDate ? (r.requestDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="ta-right">{{ money(r.estimatedValue) }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,79 @@
+<section class="reports">
+  <header class="reports__header">
+    <div>
+      <h1 class="reports__title">Relatórios financeiros</h1>
+      <p class="reports__subtitle">Consolidado de contas a pagar e a receber por período.</p>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <div class="filters__field">
+      <label>De (vencimento/emissão)</label>
+      <input type="date" class="input" [(ngModel)]="startDate">
+    </div>
+    <div class="filters__field">
+      <label>Até</label>
+      <input type="date" class="input" [(ngModel)]="endDate">
+    </div>
+    <div class="filters__field">
+      <label>Status</label>
+      <div class="select-wrap">
+        <select class="select" [(ngModel)]="status">
+          @for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+        </select>
+      </div>
+    </div>
+    <div class="filters__actions">
+      <button class="btn btn--primary" (click)="apply()">Aplicar</button>
+      <button class="btn btn--ghost" (click)="clear()">Limpar</button>
+    </div>
+  </div>
+  <p class="reports__hint">A data filtra o <strong>vencimento</strong> nas contas a pagar e a <strong>emissão</strong> nas contas a receber.</p>
+
+  <!-- Totais -->
+  <div class="cards">
+    <div class="card card--orange"><span class="card__label">A pagar em aberto</span><span class="card__value">{{ money(payOpen()) }}</span></div>
+    <div class="card"><span class="card__label">A pagar pago</span><span class="card__value">{{ money(payPaid()) }}</span></div>
+    <div class="card card--info"><span class="card__label">A receber em aberto</span><span class="card__value">{{ money(recOpen()) }}</span></div>
+    <div class="card"><span class="card__label">A receber recebido</span><span class="card__value">{{ money(recPaid()) }}</span></div>
+    <div class="card card--balance" [class.card--negative]="balance() < 0">
+      <span class="card__label">Saldo (receber − pagar)</span>
+      <span class="card__value">{{ money(balance()) }}</span>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="export-bar">
+    <button class="btn btn--outline" (click)="exportPayables()">Exportar contas a pagar (Excel)</button>
+    <button class="btn btn--outline" (click)="exportReceivables()">Exportar contas a receber (Excel)</button>
+  </div>
+
+  <!-- Tabela consolidada -->
+  <div class="table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tipo</th><th>Parte</th><th>Data</th><th>Status</th><th class="ta-right">Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="5" class="td--empty">Carregando…</td></tr>
+        } @else if (rows().length === 0) {
+          <tr><td colspan="5" class="td--empty">Nenhum lançamento no período/critério selecionado.</td></tr>
+        } @else {
+          @for (r of rows(); track r.kind + '-' + r.id) {
+            <tr>
+              <td><span class="tag" [class.tag--ap]="r.kind === 'AP'" [class.tag--ar]="r.kind === 'AR'">{{ r.kindLabel }}</span></td>
+              <td>{{ r.party }}</td>
+              <td>{{ r.date ? (r.date | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ statusLabel(r.status) }}</td>
+              <td class="ta-right">{{ money(r.value) }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

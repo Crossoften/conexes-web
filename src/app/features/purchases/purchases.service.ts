@@ -355,4 +355,9 @@ export class PurchasesService {
   getDashboard(): Observable<PurchaseDashboardResponse> {
     return this.http.get<PurchaseDashboardResponse>(`${this.base}/dashboard`);
   }
+
+  /** Exporta as requisições em Excel (GET /v1/purchases/requests/export/excel). */
+  exportRequestsExcel(): Observable<Blob> {
+    return this.http.get(`${this.base}/requests/export/excel`, { responseType: 'blob' });
+  }
 }
