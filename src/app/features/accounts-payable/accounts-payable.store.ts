@@ -194,6 +194,21 @@ export class AccountsPayableStore {
     });
   }
 
+  exportExcel(): void {
+    this.svc.exportExcel().subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contas-a-pagar_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.notify.success('Exportação gerada.');
+      },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao exportar a planilha.'),
+    });
+  }
+
   private dropSelection(ids: string[]) {
     this.state.update(s => {
       const set = new Set(s.selectedIds);
