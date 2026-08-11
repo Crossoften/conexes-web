@@ -1,5 +1,5 @@
 // src/app/features/bank-reconciliation/bank-reconciliation.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { BankReconciliationStore } from './bank-reconciliation.store';
@@ -12,8 +12,12 @@ import { BankReconciliationStore } from './bank-reconciliation.store';
   templateUrl: './bank-reconciliation.page.html',
   styleUrl: './bank-reconciliation.page.scss',
 })
-export class BankReconciliationPage {
+export class BankReconciliationPage implements OnInit {
   readonly store = inject(BankReconciliationStore);
+
+  ngOnInit(): void {
+    this.store.load();
+  }
 
   readonly periodOptions = [
     { label: 'Selecione o período', value: '' },

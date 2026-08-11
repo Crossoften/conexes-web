@@ -58,8 +58,14 @@ export const appRoutes: Routes = [
       // { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },
       // { path: 'accountability', loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
       // { path: 'profile',        loadChildren: () => import('./features/profile/profile.routes').then(m => m.profileRoutes) },
+
+      // Rota desconhecida com o usuário AUTENTICADO: mostra o 404 DENTRO do shell
+      // (sidebar/topbar visíveis, sessão preservada) em vez de jogar para o login.
+      { path: '**', loadComponent: () => import('./features/not-found/not-found.page').then(m => m.NotFoundPage) },
     ],
   },
 
+  // Rota desconhecida com o usuário DESLOGADO: cai no shell acima, o authGuard
+  // redireciona para o login. Este ** é uma salvaguarda final.
   { path: '**', redirectTo: 'auth/login' },
 ];

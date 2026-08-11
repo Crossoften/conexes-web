@@ -106,14 +106,14 @@ export class EntityRegistryService {
   }
 
   /**
-   * POST /upload/one-file — upload de arquivo (png/jpg/jpeg/pdf), multipart campo `file`.
+   * POST /v1/upload/one-file — upload de arquivo (png/jpg/jpeg/pdf), multipart campo `file`.
    * A resposta não tem schema no Swagger ("devolve o link"); lemos o link/key de forma
    * tolerante entre os nomes mais comuns.
    */
   uploadFile(file: File): Observable<{ url: string; key: string }> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<unknown>(`${environment.apiUrl}/upload/one-file`, form).pipe(
+    return this.http.post<unknown>(`${environment.apiUrl}/v1/upload/one-file`, form).pipe(
       map(res => {
         const r = (res ?? {}) as Record<string, unknown>;
         const pick = (...keys: string[]): string => {

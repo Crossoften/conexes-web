@@ -1,5 +1,5 @@
 // src/app/features/budgets/budgets-list.page.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { BudgetsStore } from './budgets.store';
@@ -14,9 +14,13 @@ import { RouterLink } from "@angular/router";
   templateUrl: './budgets-list.page.html',
   styleUrl: './budgets-list.page.scss',
 })
-export class BudgetsListPage {
+export class BudgetsListPage implements OnInit {
   readonly store = inject(BudgetsStore);
   readonly statusConfig = BUDGET_STATUS_CONFIG;
+
+  ngOnInit(): void {
+    this.store.load();
+  }
 
   readonly periodOptions = [
     { label: 'Selecione o período', value: '' },

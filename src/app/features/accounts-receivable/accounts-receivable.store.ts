@@ -1,12 +1,14 @@
 // src/app/features/accounts-receivable/accounts-receivable.store.ts
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { ReceivableAccount, SummaryCard, ReceivableFilters } from './accounts-receivable.model';
-import { ACCOUNTS_RECEIVABLE_MOCK, RECEIVABLE_SUMMARIES_MOCK } from './accounts-receivable.mock';
+import { AccountsReceivableService } from './accounts-receivable.service';
 
 interface State {
   items: ReceivableAccount[];
   summaries: SummaryCard[];
+  total: number;
   loading: boolean;
+  error: string | null;
   view: string;
   filters: ReceivableFilters;
   sort: { column: keyof ReceivableAccount | ''; direction: 'asc' | 'desc' | '' };
@@ -21,10 +23,14 @@ const INITIAL_FILTERS: ReceivableFilters = {
 
 @Injectable()
 export class AccountsReceivableStore {
+  private readonly svc = inject(AccountsReceivableService);
+
   private readonly state = signal<State>({
-    items: ACCOUNTS_RECEIVABLE_MOCK,
-    summaries: RECEIVABLE_SUMMARIES_MOCK,
+    items: [],
+    summaries: [],
+    total: 0,
     loading: false,
+    error: null,
     view: 'CAPTURA_NF',
     filters: { ...INITIAL_FILTERS },
     sort: { column: '', direction: '' },
@@ -33,7 +39,25 @@ export class AccountsReceivableStore {
     isFilterModalOpen: false,
   });
 
+  load(): void {
+    const { page, pageSize } = this.state().pagination;
+    const filters = this.state().filters;
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.getAll(filters, pageSize, (page - 1) * pageSize).subscribe({
+      next: res => this.state.update(s => ({
+        ...s, items: res.items, total: res.total,
+        summaries: this.svc.buildSummaries(res.raw), loading: false,
+      })),
+      error: () => this.state.update(s => ({
+        ...s, items: [], total: 0, loading: false,
+        error: 'Não foi possível carregar as contas a receber.',
+      })),
+    });
+  }
+
   readonly loading = computed(() => this.state().loading);
+  readonly error   = computed(() => this.state().error);
+  readonly total   = computed(() => this.state().total);
   readonly summaries = computed(() => this.state().summaries);
   readonly view = computed(() => this.state().view);
   readonly filters = computed(() => this.state().filters);
@@ -43,14 +67,12 @@ export class AccountsReceivableStore {
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
 
   readonly filteredItems = computed(() => {
-    let result = this.state().items;
-    // Lógica de filtro avançado entraria aqui
-    return result;
+    return this.state().items;
   });
 
   readonly sortedItems = computed(() => {
     const { column, direction } = this.sort();
-    const items = this.filteredItems();
+    const items = this.state().items;
     if (!column || !direction) return items;
     return [...items].sort((a, b) => {
       const va = (a as any)[column], vb = (b as any)[column];
@@ -61,13 +83,9 @@ export class AccountsReceivableStore {
     });
   });
 
-  readonly filteredTotal = computed(() => this.filteredItems().length);
+  readonly filteredTotal = computed(() => this.state().total);
 
-  readonly pageItems = computed(() => {
-    const { page, pageSize } = this.pagination();
-    const start = (page - 1) * pageSize;
-    return this.sortedItems().slice(start, start + pageSize);
-  });
+  readonly pageItems = computed(() => this.sortedItems());
 
   readonly allPageSelected = computed(() => {
     const items = this.pageItems();
@@ -85,10 +103,12 @@ export class AccountsReceivableStore {
   
   applyFilters(newFilters: ReceivableFilters) {
     this.state.update(s => ({ ...s, filters: newFilters, isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   clearFilters() {
-    this.state.update(s => ({ ...s, filters: { ...INITIAL_FILTERS } }));
+    this.state.update(s => ({ ...s, filters: { ...INITIAL_FILTERS }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   setSort(column: keyof ReceivableAccount) {
@@ -98,8 +118,8 @@ export class AccountsReceivableStore {
     });
   }
 
-  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); }
-  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); }
+  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); this.load(); }
+  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); this.load(); }
 
   toggleRow(id: string) {
     this.state.update(s => {

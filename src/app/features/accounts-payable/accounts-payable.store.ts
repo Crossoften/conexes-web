@@ -1,12 +1,14 @@
 // src/app/features/accounts-payable/accounts-payable.store.ts
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { PayableAccount, SummaryCard, AdvancedFilters } from './accounts-payable.model';
-import { ACCOUNTS_PAYABLE_MOCK, PAYABLE_SUMMARIES_MOCK } from './accounts-payable.mock';
+import { AccountsPayableService } from './accounts-payable.service';
 
 interface State {
   items: PayableAccount[];
   summaries: SummaryCard[];
+  total: number;
   loading: boolean;
+  error: string | null;
   view: string;
   filters: AdvancedFilters;
   sort: { column: keyof PayableAccount | ''; direction: 'asc' | 'desc' | '' };
@@ -23,10 +25,14 @@ const INITIAL_FILTERS: AdvancedFilters = {
 
 @Injectable()
 export class AccountsPayableStore {
+  private readonly svc = inject(AccountsPayableService);
+
   private readonly state = signal<State>({
-    items: ACCOUNTS_PAYABLE_MOCK,
-    summaries: PAYABLE_SUMMARIES_MOCK,
+    items: [],
+    summaries: [],
+    total: 0,
     loading: false,
+    error: null,
     view: 'LANÇAMENTOS',
     filters: { ...INITIAL_FILTERS },
     sort: { column: '', direction: '' },
@@ -35,8 +41,30 @@ export class AccountsPayableStore {
     isFilterModalOpen: false,
   });
 
+  // Carrega a página atual do back (base limpa => lista vazia, sem mock).
+  load(): void {
+    const { page, pageSize } = this.state().pagination;
+    const filters = this.state().filters;
+    this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.svc.getAll(filters, pageSize, (page - 1) * pageSize).subscribe({
+      next: res => this.state.update(s => ({
+        ...s,
+        items: res.items,
+        total: res.total,
+        summaries: this.svc.buildSummaries(res.items, []),
+        loading: false,
+      })),
+      error: () => this.state.update(s => ({
+        ...s, items: [], total: 0, loading: false,
+        error: 'Não foi possível carregar as contas a pagar.',
+      })),
+    });
+  }
+
   // Selectors
   readonly loading = computed(() => this.state().loading);
+  readonly error   = computed(() => this.state().error);
+  readonly total   = computed(() => this.state().total);
   readonly summaries = computed(() => this.state().summaries);
   readonly view = computed(() => this.state().view);
   readonly filters = computed(() => this.state().filters);
@@ -45,15 +73,11 @@ export class AccountsPayableStore {
   readonly selectedIds = computed(() => this.state().selectedIds);
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
 
-  readonly filteredItems = computed(() => {
-    let result = this.state().items;
-    // Aqui seria implementada a lógica de filtro baseado no state().filters
-    return result;
-  });
-
+  // A filtragem e a paginação são feitas no BACK (query params). O front só ordena
+  // visualmente a página já carregada.
   readonly sortedItems = computed(() => {
     const { column, direction } = this.sort();
-    const items = this.filteredItems();
+    const items = this.state().items;
     if (!column || !direction) return items;
     return [...items].sort((a, b) => {
       const va = (a as any)[column], vb = (b as any)[column];
@@ -64,13 +88,11 @@ export class AccountsPayableStore {
     });
   });
 
-  readonly filteredTotal = computed(() => this.filteredItems().length);
+  // Total do servidor (não o tamanho da página carregada).
+  readonly filteredTotal = computed(() => this.state().total);
 
-  readonly pageItems = computed(() => {
-    const { page, pageSize } = this.pagination();
-    const start = (page - 1) * pageSize;
-    return this.sortedItems().slice(start, start + pageSize);
-  });
+  // O back já devolve apenas a página pedida.
+  readonly pageItems = computed(() => this.sortedItems());
 
   readonly allPageSelected = computed(() => {
     const items = this.pageItems();
@@ -89,10 +111,12 @@ export class AccountsPayableStore {
   
   applyFilters(newFilters: AdvancedFilters) {
     this.state.update(s => ({ ...s, filters: newFilters, isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   clearFilters() {
-    this.state.update(s => ({ ...s, filters: { ...INITIAL_FILTERS } }));
+    this.state.update(s => ({ ...s, filters: { ...INITIAL_FILTERS }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   setSort(column: keyof PayableAccount) {
@@ -102,8 +126,8 @@ export class AccountsPayableStore {
     });
   }
 
-  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); }
-  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); }
+  setPage(page: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, page } })); this.load(); }
+  setPageSize(pageSize: number) { this.state.update(s => ({ ...s, pagination: { ...s.pagination, pageSize, page: 1 } })); this.load(); }
 
   toggleRow(id: string) {
     this.state.update(s => {

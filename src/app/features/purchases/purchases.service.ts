@@ -153,7 +153,18 @@ export class PurchasesService {
   }
 
   getProjectsLookup(): Observable<PurchaseRef[]> {
-    return this.lookup('/v1/projects', 'name');
+    // GET /v1/projects sem filtro devolve Centros de Custo E Projetos juntos, cada linha
+    // marcada com _entityType. O select de Projeto da requisição deve listar SÓ projetos —
+    // selecionar um centro de custo aqui causava 400 (projectId FK inexistente na tabela projects).
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/projects`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows
+          .filter(r => r['_entityType'] === 'project')
+          .map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']) }));
+      }));
   }
 
   /** FE-13: Centro de Custo (campo distinto de Projeto na requisição). */
