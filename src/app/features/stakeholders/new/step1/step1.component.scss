@@ -40,6 +40,9 @@
   &--3       { grid-template-columns: repeat(3, 1fr); }
   &--5       { grid-template-columns: repeat(5, 1fr); }
   &--address { grid-template-columns: 130px 130px 1fr 100px 140px; }
+  // Quando Tipo = Fornecedor, o campo condicional "Subtipo" entra como 2ª coluna
+  // (track extra de 160px) — assim Tipo/CEP/Endereço/Nro/Complemento não desalinham.
+  &--address-supplier { grid-template-columns: 130px 160px 130px 1fr 100px 140px; }
   &--6       { grid-template-columns: repeat(6, 1fr); }
   &--2-auto  { grid-template-columns: 200px 200px; }
   &--3-auto  { grid-template-columns: 1fr 1fr 1fr; }

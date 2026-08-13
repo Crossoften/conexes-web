@@ -61,8 +61,6 @@
       <p class="registry-state">Carregando cadastros…</p>
     } @else if (store.error()) {
       <p class="registry-state registry-state--error">{{ store.error() }} <button type="button" class="link-retry" (click)="store.load()">Tentar novamente</button></p>
-    } @else if (store.filteredTotal() === 0) {
-      <p class="registry-state">Nenhum registro encontrado.</p>
     }
 
     <div class="table-wrap">
@@ -131,6 +129,11 @@
                 </tr>
               }
             }
+          }
+          @if (!store.loading() && !store.error() && store.filteredTotal() === 0) {
+            <tr>
+              <td class="td registry-empty-cell" style="text-align:center; padding:32px; color: var(--text-secondary);" [attr.colspan]="store.activeTab() === 'PRODUCTS' ? 8 : 4">Nenhum registro encontrado.</td>
+            </tr>
           }
         </tbody>
       </table>

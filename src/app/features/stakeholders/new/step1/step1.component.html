@@ -65,8 +65,8 @@
 
     </div>
 
-    <!-- Linha 2: Tipo | CEP | Endereço | Nro | Complemento -->
-    <div class="form-row form-row--address">
+    <!-- Linha 2: Tipo | (Subtipo) | CEP | Endereço | Nro | Complemento -->
+    <div class="form-row form-row--address" [class.form-row--address-supplier]="f['type'].value === 'Supplier'">
 
       <div class="field" [class.field--error]="isInvalid('type')">
         <label class="field-label">Tipo <span class="required">*</span></label>

@@ -49,9 +49,13 @@
                     @for (c of e.changes; track $index) {
                       <li class="changes__row">
                         <span class="changes__field">{{ fieldLabel(c.field) }}</span>
-                        <span class="changes__from">{{ formatValue(c.field, c.from) }}</span>
-                        <span class="changes__arrow">→</span>
-                        <span class="changes__to">{{ formatValue(c.field, c.to) }}</span>
+                        @if (isCreate(e.action)) {
+                          <span class="changes__to">{{ formatValue(c.field, c.to) }}</span>
+                        } @else {
+                          <span class="changes__from">{{ formatValue(c.field, c.from) }}</span>
+                          <span class="changes__arrow">→</span>
+                          <span class="changes__to">{{ formatValue(c.field, c.to) }}</span>
+                        }
                       </li>
                     }
                   </ul>

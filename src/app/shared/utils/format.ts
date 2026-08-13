@@ -33,6 +33,22 @@ export function maskCnpj(value: string | null | undefined): string {
     .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
 }
 
+/** Máscara de CPF: `000.000.000-00`. */
+export function maskCpf(value: string | null | undefined): string {
+  return onlyDigits(value)
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+/** Máscara de CEP: `00000-000`. */
+export function maskCep(value: string | null | undefined): string {
+  return onlyDigits(value)
+    .slice(0, 8)
+    .replace(/(\d{5})(\d{1,3})$/, '$1-$2');
+}
+
 /** Máscara de telefone BR: `(00) 0000-0000` (fixo) ou `(00) 00000-0000` (celular). */
 export function maskPhone(value: string | null | undefined): string {
   const d = onlyDigits(value).slice(0, 11);

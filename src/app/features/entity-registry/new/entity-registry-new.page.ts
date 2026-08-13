@@ -6,7 +6,7 @@ import { NgClass, NgIf } from '@angular/common';
 import { EntityRegistryStore } from '../entity-registry.store';
 import { EntityRegistryService } from '../entity-registry.service';
 import { EntityRegistryPayload, ENTITY_STATUS_OPTIONS } from '../entity-registry.model';
-import { maskCnpj, maskPhone } from '../../../shared/utils/format';
+import { maskCnpj, maskPhone, maskCpf, maskCep } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-entity-registry-new',
@@ -145,9 +145,21 @@ export class EntityRegistryNewPage {
     this.form.get('cnpj')?.setValue(el.value, { emitEvent: false });
   }
 
-  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone'): void {
+  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone' | 'accountantPhone' | 'accountantOfficePhone'): void {
     const el = event.target as HTMLInputElement;
     el.value = maskPhone(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCpfInput(event: Event, control: string): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCpf(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCepInput(event: Event, control: string): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCep(el.value);
     this.form.get(control)?.setValue(el.value, { emitEvent: false });
   }
 

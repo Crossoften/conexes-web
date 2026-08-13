@@ -7,6 +7,7 @@ import { UsersService } from './users.service';
 import { User, PermissionProfile, USER_STATUS_CONFIG, UserUpdatePayload, PermissionProfileUpdatePayload } from './users.model';
 import { UserDetailModalComponent } from './components/user-detail.modal';
 import { PermissionDetailModalComponent } from './components/permission-detail.modal';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-users-list',
@@ -19,13 +20,13 @@ import { PermissionDetailModalComponent } from './components/permission-detail.m
 export class UsersListPage implements OnInit {
   readonly store        = inject(UsersStore);
   readonly svc          = inject(UsersService);
+  private readonly notify = inject(NotificationService);
   readonly statusConfig = USER_STATUS_CONFIG;
 
   readonly selectedUser    = signal<User | null>(null);
   readonly selectedProfile = signal<PermissionProfile | null>(null);
   readonly userMode        = signal<'view' | 'edit'>('view');
   readonly profileMode     = signal<'view' | 'edit'>('view');
-  readonly toast           = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   readonly statusOptions = [
     { label: 'Todos os status', value: ''         },
@@ -155,11 +156,11 @@ export class UsersListPage implements OnInit {
     });
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
+  // ── Feedback via toast global (NotificationService + <app-toast> na raiz) ────
 
   private showToast(msg: string, type: 'success' | 'error'): void {
-    this.toast.set({ msg, type });
-    setTimeout(() => this.toast.set(null), 3500);
+    if (type === 'success') this.notify.success(msg);
+    else this.notify.error(msg);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

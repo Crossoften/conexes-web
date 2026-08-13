@@ -173,7 +173,7 @@
             </div>
             <div class="form-group">
               <label>CPF do Contador<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00">
+              <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00" (input)="onCpfInput($event, 'accountantCpf')">
             </div>
             <div class="form-group">
               <label>CRC do Contador<span class="req">*</span></label>
@@ -184,7 +184,7 @@
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>CEP do Contador<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000">
+              <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000" (input)="onCepInput($event, 'accountantZipCode')">
             </div>
             <div class="form-group">
               <label>Endereço do Contador<span class="req">*</span></label>
@@ -203,7 +203,7 @@
           <div class="form-row grid-cols-2">
             <div class="form-group">
               <label>Telefone do Contador<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="accountantPhone" placeholder="Digite aqui...">
+              <input type="text" class="form-control" formControlName="accountantPhone" placeholder="(00) 00000-0000" (input)="onPhoneInput($event, 'accountantPhone')">
             </div>
             <div class="form-group">
               <label>E-mail do Contador<span class="req">*</span></label>
@@ -218,7 +218,7 @@
             </div>
             <div class="form-group">
               <label>Telefone do Escritório<span class="req">*</span></label>
-              <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="Digite aqui...">
+              <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="(00) 00000-0000" (input)="onPhoneInput($event, 'accountantOfficePhone')">
             </div>
           </div>
         </div>

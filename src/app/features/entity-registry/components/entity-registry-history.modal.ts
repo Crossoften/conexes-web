@@ -74,6 +74,11 @@ export class EntityRegistryHistoryModalComponent {
     return this.ACTION_LABELS[action.toLowerCase()] ?? action;
   }
 
+  /** Na criação não há valor anterior — mostra só o valor, sem o diff "— →". */
+  isCreate(action: string | undefined): boolean {
+    return !!action && ['create', 'created'].includes(action.toLowerCase());
+  }
+
   fieldLabel(field: string): string {
     return this.FIELD_LABELS[field] ?? field;
   }

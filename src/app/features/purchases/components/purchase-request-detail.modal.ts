@@ -71,6 +71,13 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
   private          usersLoaded = false;
   /** Campos de `changes` cujo valor é um id de usuário (resolvido para nome). */
   private static readonly USER_FIELDS = new Set(['buyerId', 'requesterId']);
+  // Fix (PDF #2): campos estruturais/relacionais que não devem aparecer no histórico
+  // como JSON cru (items, approvalFlow, group, relações e metadados técnicos).
+  private static readonly HIDDEN_FIELDS = new Set([
+    'items', 'approvalFlow', 'group', 'attachments', 'quotations', 'deliveryLocation',
+    'accountPlan', 'costCenter', 'project', 'subProject', 'contract', 'buyer', 'requester',
+    'id', 'createdAt', 'updatedAt',
+  ]);
 
   // ── Anexos (FE-10) ──────────────────────────────────────────────────────────
   readonly files        = signal<PurchaseFile[]>([]);
@@ -245,7 +252,8 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     if (Array.isArray(changes)) {
       return changes
         .filter((c): c is { field: string; from: unknown; to: unknown } =>
-          !!c && typeof c === 'object' && 'field' in c)
+          !!c && typeof c === 'object' && 'field' in c
+          && !PurchaseRequestDetailModalComponent.HIDDEN_FIELDS.has((c as { field: string }).field))
         .map(c => ({
           label: this.fieldLabel(c.field),
           value: `${this.changeValue(c.field, c.from)} → ${this.changeValue(c.field, c.to)}`,
@@ -254,10 +262,12 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
 
     // Formato legado: objeto plano { campo: valor }.
     if (typeof changes === 'object') {
-      return Object.entries(changes as Record<string, unknown>).map(([key, val]) => ({
-        label: this.fieldLabel(key),
-        value: this.changeValue(key, val),
-      }));
+      return Object.entries(changes as Record<string, unknown>)
+        .filter(([key]) => !PurchaseRequestDetailModalComponent.HIDDEN_FIELDS.has(key))
+        .map(([key, val]) => ({
+          label: this.fieldLabel(key),
+          value: this.changeValue(key, val),
+        }));
     }
 
     return [];
@@ -271,7 +281,9 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     if (val === null || val === undefined || val === '') return '—';
     if (key === 'status') return this.statusConfig[val as keyof typeof this.statusConfig]?.label ?? String(val);
     if (PurchaseRequestDetailModalComponent.USER_FIELDS.has(key)) return this.userName(val);
-    if (typeof val === 'object') return JSON.stringify(val);
+    // Rede de segurança: nunca vaza JSON cru se algum objeto escapar do HIDDEN_FIELDS.
+    if (Array.isArray(val)) return `${val.length} ${val.length === 1 ? 'item' : 'itens'}`;
+    if (typeof val === 'object') return '—';
     return String(val);
   }
 
