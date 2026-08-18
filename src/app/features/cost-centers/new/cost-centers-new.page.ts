@@ -50,6 +50,7 @@ export class CostCentersNewPage implements OnInit {
 
   form: FormGroup = this.fb.group({
     projectType:         ['', Validators.required],
+    classification:      ['Analitica', Validators.required],
     projectCode:         ['', [Validators.required, Validators.pattern(/^[0-9.]+$/)]],
     projectTitle:        ['', Validators.required],
     accountingCode:      [''],
@@ -172,6 +173,7 @@ export class CostCentersNewPage implements OnInit {
       type:                v.projectType         ?? '',
       // entityKind canônico substitui a detecção frágil por texto em `type`.
       entityKind:          ENTITY_KINDS.includes(v.projectType) ? v.projectType : undefined,
+      classification:      v.classification === 'Sintetica' ? 'Sintetica' : 'Analitica',
       description:         v.categoryDescription ?? '',
       status:              'Active',
       accountingCode:      v.accountingCode      ?? '',

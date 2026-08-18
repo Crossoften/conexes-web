@@ -181,7 +181,7 @@
   width: 100%;
   padding: 9px 11px;
   border: 1px solid var(--surface-border, #e5e7eb);
-  border-radius: 8px;
+  border-radius: 50px;
   font-size: 13px;
   color: var(--text-primary, #111827);
   background: var(--surface-primary, #fff);
@@ -191,7 +191,9 @@
   &.is-invalid { border-color: #dc2626; }
 }
 
-textarea.form-control { resize: vertical; }
+// DSG-01: inputs de uma linha usam cápsula (50px); textareas mantêm cantos
+// suaves para não deformar o box multi-linha.
+textarea.form-control { resize: vertical; border-radius: 16px; }
 
 .select-wrap { position: relative; }
 .select-wrap .form-control { appearance: none; padding-right: 30px; }

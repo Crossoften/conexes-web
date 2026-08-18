@@ -55,6 +55,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
 
   form: FormGroup = this.fb.group({
     projectType:         ['', Validators.required],
+    classification:      ['Analitica', Validators.required],
     projectCode:         ['', [Validators.required, Validators.pattern(/^[0-9.]+$/)]],
     projectTitle:        ['', Validators.required],
     accountingCode:      [''],
@@ -105,6 +106,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   private patchForm(c: CostCenter): void {
     this.form.patchValue({
       projectType:         c.type               ?? '',
+      classification:      c.classification === 'Sintetica' ? 'Sintetica' : 'Analitica',
       projectCode:         c.code               ?? '',
       projectTitle:        c.name ?? c.title      ?? '',
       accountingCode:      c.accountingCode      ?? '',
@@ -209,6 +211,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       type:                 v.projectType         ?? '',
       // entityKind canônico substitui a detecção frágil por texto em `type`.
       entityKind:           ENTITY_KINDS.includes(v.projectType) ? v.projectType : undefined,
+      classification:       v.classification === 'Sintetica' ? 'Sintetica' : 'Analitica',
       description:          v.categoryDescription ?? '',
       status:               (v.status as CostCenterStatus) ?? 'Active',
       accountingCode:       v.accountingCode       ?? '',

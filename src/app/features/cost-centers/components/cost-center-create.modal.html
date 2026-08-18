@@ -51,6 +51,21 @@
           </div>
 
           <div class="form-row grid-cols-3">
+            <!-- CC-01: classificação contábil (Sintética/Analítica) -->
+            <div class="form-group">
+              <label>Classificação contábil <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="classification"
+                  [class.is-invalid]="form.get('classification')?.invalid && form.get('classification')?.touched">
+                  <option value="Analitica">Analítica (recebe lançamento)</option>
+                  <option value="Sintetica">Sintética (totalizadora)</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row grid-cols-3">
             <div class="form-group">
               <label>Código Contábil</label>
               <div class="select-wrap">

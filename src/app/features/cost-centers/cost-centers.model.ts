@@ -34,6 +34,7 @@ export interface CostCenter {
   type:                 string;
   _entityType?:         'cost_center' | 'project'; // indicador autoritativo do back (qual tabela)
   entityKind?:          string;   // canônico do back: centro_de_custo | projeto | atividade
+  classification?:      string;   // CC-01: Sintetica | Analitica
   description:          string;
   status:               CostCenterStatus;
   accountingCode:       string;
@@ -58,6 +59,7 @@ export interface CostCenterPayload {
   name:                 string;
   type:                 string;
   entityKind?:          string;        // canônico: centro_de_custo | projeto | atividade
+  classification?:      string;        // CC-01: Sintetica | Analitica
   description:          string;
   status:               CostCenterStatus;
   accountingCode:       string;

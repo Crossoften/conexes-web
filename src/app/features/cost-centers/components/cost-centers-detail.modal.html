@@ -64,6 +64,11 @@
               </div>
 
               <div class="info-item">
+                <span class="info-label">Classificação</span>
+                <span class="info-value">{{ item?.classification === 'Sintetica' ? 'Sintética (totalizadora)' : 'Analítica (recebe lançamento)' }}</span>
+              </div>
+
+              <div class="info-item">
                 <span class="info-label">Código contábil</span>
                 <span class="info-value">{{ item?.accountingCode || '—' }}</span>
               </div>
@@ -133,6 +138,19 @@
                       <option value="">Selecione</option>
                       <option value="centro_de_custo">Centro de Custo</option>
                       <option value="projeto">Projeto</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <!-- CC-01: classificação contábil (Sintética/Analítica) -->
+                <div class="field">
+                  <label class="field-label">Classificação <span class="required">*</span></label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="classification"
+                      [class.is-invalid]="form.get('classification')?.invalid && form.get('classification')?.touched">
+                      <option value="Analitica">Analítica (recebe lançamento)</option>
+                      <option value="Sintetica">Sintética (totalizadora)</option>
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>

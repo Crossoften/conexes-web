@@ -39,6 +39,7 @@ export class CostCenterCreateModalComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     projectType:         ['', Validators.required],
+    classification:      ['Analitica', Validators.required],
     projectCode:         ['', [Validators.required, Validators.pattern(/^[0-9.]+$/)]],
     projectTitle:        ['', Validators.required],
     accountingCode:      [''],
@@ -112,6 +113,7 @@ export class CostCenterCreateModalComponent implements OnInit {
       name:                 v.projectTitle        ?? '',
       type:                 v.projectType         ?? '',
       entityKind:           ENTITY_KINDS.includes(v.projectType) ? v.projectType : undefined,
+      classification:       v.classification === 'Sintetica' ? 'Sintetica' : 'Analitica',
       description:          v.categoryDescription ?? '',
       status:              'Active',
       accountingCode:       v.accountingCode      ?? '',

@@ -120,7 +120,12 @@
 
                 <td class="td td--mono">{{ item.code }}</td>
                 <td class="td td--name">{{ item.name || item.title }}</td>
-                <td class="td">{{ typeLabel(item.type) }}</td>
+                <td class="td">
+                  {{ typeLabel(item.type) }}
+                  @if (item.classification) {
+                    <span class="class-tag" [class.class-tag--sint]="item.classification === 'Sintetica'">{{ item.classification === 'Sintetica' ? 'Sintética' : 'Analítica' }}</span>
+                  }
+                </td>
                 <td class="td">{{ item.restrictBudget ? 'Sim' : 'Não' }}</td>
                 <td class="td">{{ item.description }}</td>
 
@@ -171,7 +176,12 @@
                     <td class="td td--expand"></td>
                     <td class="td td--mono td--child-first">{{ child.code }}</td>
                     <td class="td td--name">{{ child.name || child.title }}</td>
-                    <td class="td">{{ typeLabel(child.type) }}</td>
+                    <td class="td">
+                      {{ typeLabel(child.type) }}
+                      @if (child.classification) {
+                        <span class="class-tag" [class.class-tag--sint]="child.classification === 'Sintetica'">{{ child.classification === 'Sintetica' ? 'Sintética' : 'Analítica' }}</span>
+                      }
+                    </td>
                     <td class="td">{{ child.restrictBudget ? 'Sim' : 'Não' }}</td>
                     <td class="td">{{ child.description }}</td>
 

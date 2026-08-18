@@ -410,3 +410,22 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+
+// CC-01: selo de classificação contábil ao lado do Tipo.
+.class-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1E8449;
+  background: rgba(30, 132, 73, .10);
+  border: 1px solid rgba(30, 132, 73, .25);
+  vertical-align: middle;
+}
+.class-tag--sint {
+  color: #C0392B;
+  background: rgba(192, 57, 43, .10);
+  border-color: rgba(192, 57, 43, .25);
+}
