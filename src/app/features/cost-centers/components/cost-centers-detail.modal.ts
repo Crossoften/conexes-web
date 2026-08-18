@@ -145,6 +145,12 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     this.linkedAccounts = this.linkedAccounts.filter((_, i) => i !== index);
   }
 
+  /** CC-02: abre o cadastro de Contas Bancárias em nova aba (hash routing). */
+  openBankAccountRegister(): void {
+    const base = window.location.href.split('#')[0];
+    window.open(`${base}#/bank-accounts/new`, '_blank');
+  }
+
   getAccountLabel(id: number): string {
     const a = this.accountPlans().find(p => p.id === id);
     return a ? `${a.code} — ${a.title}` : String(id);

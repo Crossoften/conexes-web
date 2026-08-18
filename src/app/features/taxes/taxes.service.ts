@@ -1,7 +1,7 @@
 // src/app/features/taxes/taxes.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Tax, TaxPayload, StakeholderItem, ScopeOptions, ScopeOption } from './taxes.model';
 
@@ -61,31 +61,31 @@ export class TaxesService {
   // pelo nível — mesma lógica do módulo Centro de Custo — para não depender do
   // filtro `type` no back (B-CC-07). Evita o 400 de FK por id digitado à mão.
   getScopeOptions(): Observable<ScopeOptions> {
-    return this.http
-      .get<unknown>(this.projectsBase, { params: { take: '1000' } })
-      .pipe(map(res => {
-        const rows: unknown[] = Array.isArray(res)
-          ? res
-          : ((res as { data?: unknown[] })?.data ?? []);
-
+    const toRows = (res: unknown): Record<string, unknown>[] =>
+      (Array.isArray(res) ? res : ((res as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
+    // IMP-09: a rota padrão de /v1/projects devolve só Centro de Custo/Projeto — as
+    // Atividades só vêm com ?kind=atividade. Buscamos as duas e mesclamos.
+    return forkJoin({
+      base: this.http.get<unknown>(this.projectsBase, { params: { take: '1000' } }),
+      acts: this.http.get<unknown>(this.projectsBase, { params: { take: '1000', kind: 'atividade' } }),
+    }).pipe(map(({ base, acts }) => {
         const costCenters: ScopeOption[] = [];
         const projects:    ScopeOption[] = [];
         const activities:  ScopeOption[] = [];
+        const opt = (o: Record<string, unknown>): ScopeOption => ({ id: Number(o['id']), name: String(o['name'] ?? o['title'] ?? o['id']) });
 
-        for (const r of rows) {
-          const o  = r as Record<string, unknown>;
-          const id = Number(o['id']);
-          if (isNaN(id)) continue;
-          const opt: ScopeOption = { id, name: String(o['name'] ?? o['title'] ?? id) };
-
+        for (const o of toRows(base)) {
+          if (isNaN(Number(o['id']))) continue;
           const type = o['type'];
-          if (o['_entityType'] === 'cost_center' || type === 'centro_de_custo') {
-            costCenters.push(opt);
-          } else if (type === 'atividade' || o['entityKind'] === 'atividade' || o['parentProjectId'] != null) {
-            activities.push(opt);
-          } else {
-            projects.push(opt);
-          }
+          if (o['_entityType'] === 'cost_center' || type === 'centro_de_custo') costCenters.push(opt(o));
+          else if (type === 'atividade' || o['entityKind'] === 'atividade' || o['parentProjectId'] != null) activities.push(opt(o));
+          else projects.push(opt(o));
+        }
+        const seen = new Set(activities.map(a => a.id));
+        for (const o of toRows(acts)) {
+          const id = Number(o['id']);
+          if (isNaN(id) || seen.has(id)) continue;
+          seen.add(id); activities.push(opt(o));
         }
         return { costCenters, projects, activities };
       }));

@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, SimpleChange
 import { NgClass, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Tax, TaxPayload, TaxService, StakeholderItem, ScopeOption } from '../taxes.model';
-import { parseDecimalBR } from '../../../shared/utils/format';
+import { parseDecimalBR, formatDecimalBR } from '../../../shared/utils/format';
 import { TaxesService } from '../taxes.service';
 
 type ModalTab = 'GERAIS' | 'ALIQUOTAS' | 'SERVICOS';
@@ -57,7 +57,7 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
     this.form = this.buildForm();
     // Atualiza o "Total das Retenções" ao alterar as alíquotas.
     this.form.valueChanges.subscribe(() => {
-      this.form.get('resumoRetencoes')?.setValue(this.computeTotal(), { emitEvent: false });
+      this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
     });
   }
 
@@ -80,7 +80,7 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
         tituloServico:          this.tax.serviceTitle,
         naturezaOperacao:       this.tax.operationNature,
         definirAliquotasManual: this.tax.manualAliquots,
-        resumoRetencoes:        this.tax.totalRetentions,
+        resumoRetencoes:        formatDecimalBR(this.tax.totalRetentions),
         aliqIRRF:               this.tax.irfAliquot,
         irfCode:                this.tax.irfCode,
         aliqPIS:                this.tax.pisAliquot,

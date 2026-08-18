@@ -38,7 +38,7 @@ export class BankAccountNewPage implements OnInit {
 
   form: FormGroup = this.fb.group({
     banco:             ['', Validators.required],
-    fontePagadora:     ['', Validators.required],
+    fontePagadora:     [''],
     tipoConta:         ['', Validators.required],
     dataAbertura:      ['', Validators.required],
     apelidoConta:      ['', Validators.required],

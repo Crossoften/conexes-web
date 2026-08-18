@@ -221,9 +221,57 @@
               <button type="button" class="tab-button" [class.active]="activeTab === 'geral'" (click)="activeTab = 'geral'">
                 Dados Gerais
               </button>
+              <button type="button" class="tab-button" [class.active]="activeTab === 'certificado'" (click)="activeTab = 'certificado'">
+                Dados do certificado digital
+              </button>
               <button type="button" class="tab-button" [class.active]="activeTab === 'contador'" (click)="activeTab = 'contador'">
                 Dados Contador
               </button>
+            </div>
+
+            <!-- Tab Edit: Dados do certificado digital (ENT-04) -->
+            <div class="tab-content" *ngIf="activeTab === 'certificado'">
+              <h3 class="section-subtitle">Dados do certificado digital</h3>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group">
+                  <label>Senha do certificado</label>
+                  <input type="password" class="form-control" formControlName="digitalCertPassword" placeholder="Digite aqui...">
+                </div>
+              </div>
+
+              @if (uploadError()) {
+                <div class="error-banner" role="alert">{{ uploadError() }}</div>
+              }
+
+              <div class="form-row grid-cols-2 mt-24">
+                <div class="form-group">
+                  <label>Alterar certificado digital</label>
+                  <label class="dropzone" [class.dropzone--done]="certFileName()">
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.pfx,.p12" (change)="onCertSelected($event)" hidden>
+                    @if (uploadingCert()) {
+                      <span class="dropzone__text">Enviando...</span>
+                    } @else if (certFileName()) {
+                      <span class="dropzone__file">{{ certFileName() }}</span>
+                    } @else {
+                      <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    }
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label>Alterar Logotipo da entidade</label>
+                  <label class="dropzone" [class.dropzone--done]="logoFileName()">
+                    <input type="file" accept="image/png,image/jpeg" (change)="onLogoSelected($event)" hidden>
+                    @if (uploadingLogo()) {
+                      <span class="dropzone__text">Enviando...</span>
+                    } @else if (logoFileName()) {
+                      <span class="dropzone__file">{{ logoFileName() }}</span>
+                    } @else {
+                      <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    }
+                  </label>
+                </div>
+              </div>
             </div>
 
             <!-- Tab Edit: Dados Gerais -->
@@ -330,7 +378,7 @@
                   </div>
                   <div class="form-group">
                     <label>CPF do Contador<span class="req">*</span></label>
-                    <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00">
+                    <input type="text" class="form-control" formControlName="accountantCpf" placeholder="000.000.000-00" (input)="onCpfInput($event, 'accountantCpf')">
                   </div>
                   <div class="form-group">
                     <label>CRC<span class="req">*</span></label>
@@ -341,7 +389,7 @@
                 <div class="form-row grid-cols-4">
                   <div class="form-group">
                     <label>CEP<span class="req">*</span></label>
-                    <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000">
+                    <input type="text" class="form-control" formControlName="accountantZipCode" placeholder="00000-000" (input)="onCepInput($event, 'accountantZipCode')">
                   </div>
                   <div class="form-group">
                     <label>Endereço<span class="req">*</span></label>
@@ -360,7 +408,7 @@
                 <div class="form-row grid-cols-2">
                   <div class="form-group">
                     <label>Telefone<span class="req">*</span></label>
-                    <input type="text" class="form-control" formControlName="accountantPhone" placeholder="Digite aqui...">
+                    <input type="text" class="form-control" formControlName="accountantPhone" placeholder="Digite aqui..." (input)="onPhoneInput($event, 'accountantPhone')">
                   </div>
                   <div class="form-group">
                     <label>E-mail<span class="req">*</span></label>
@@ -375,7 +423,7 @@
                   </div>
                   <div class="form-group">
                     <label>Telefone do Escritório<span class="req">*</span></label>
-                    <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="Digite aqui...">
+                    <input type="text" class="form-control" formControlName="accountantOfficePhone" placeholder="Digite aqui..." (input)="onPhoneInput($event, 'accountantOfficePhone')">
                   </div>
                 </div>
 

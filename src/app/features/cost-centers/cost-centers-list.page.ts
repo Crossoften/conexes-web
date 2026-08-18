@@ -33,6 +33,8 @@ export class CostCentersListPage implements OnInit {
     { label: 'Todos os tipos',    value: ''                },
     { label: 'Centro de Custo',   value: 'centro_de_custo' },
     { label: 'Projeto',           value: 'projeto'         },
+    // CC-04: Atividade passa a ser filtrável (o back aceita ?type=atividade).
+    { label: 'Atividade',         value: 'atividade'       },
   ];
 
   typeLabel(type: string): string {

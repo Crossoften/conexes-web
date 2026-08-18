@@ -1,5 +1,5 @@
 // src/app/features/entity-registry/components/entity-registry-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
 import { NgClass, NgIf } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -7,7 +7,8 @@ import {
   EntityRegistryPayload,
   ENTITY_STATUS_OPTIONS,
 } from '../entity-registry.model';
-import { maskCnpj, maskPhone } from '../../../shared/utils/format';
+import { EntityRegistryService } from '../entity-registry.service';
+import { maskCnpj, maskPhone, maskCpf, maskCep } from '../../../shared/utils/format';
 
 @Component({
   selector: 'app-entity-registry-detail-modal',
@@ -27,10 +28,18 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
   @Output() saved  = new EventEmitter<Partial<EntityRegistryPayload>>();
 
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly svc = inject(EntityRegistryService);
 
   protected mode: 'view' | 'edit' = 'view';
-  protected activeTab: 'geral' | 'contador' = 'geral';
+  protected activeTab: 'geral' | 'contador' | 'certificado' = 'geral';
   protected showRequiredWarning = false;
+
+  // ENT-04: estado dos uploads (certificado / logotipo) na edição.
+  protected readonly uploadingCert = signal(false);
+  protected readonly uploadingLogo = signal(false);
+  protected readonly certFileName  = signal<string | null>(null);
+  protected readonly logoFileName  = signal<string | null>(null);
+  protected readonly uploadError   = signal<string | null>(null);
 
   protected readonly statusOptions = ENTITY_STATUS_OPTIONS;
 
@@ -52,6 +61,8 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
     cellPhone:             ['', Validators.required],
     directorEmail:         ['', [Validators.required, Validators.email]],
     digitalCertPassword:   [''],
+    digitalCertFileUrl:    [''],
+    digitalCertFileKey:    [''],
     logoUrl:               [''],
     accountantName:        ['', Validators.required],
     accountantCpf:         ['', Validators.required],
@@ -78,7 +89,17 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
         cnpj:      maskCnpj(this.entity.cnpj),
         mainPhone: maskPhone(this.entity.mainPhone),
         cellPhone: maskPhone(this.entity.cellPhone),
+        // ENT-03: máscaras também na aba Dados do Contador ao abrir a edição.
+        accountantCpf:         maskCpf((this.entity as any).accountantCpf),
+        accountantZipCode:     maskCep((this.entity as any).accountantZipCode),
+        accountantPhone:       maskPhone((this.entity as any).accountantPhone),
+        accountantOfficePhone: maskPhone((this.entity as any).accountantOfficePhone),
       }, { emitEvent: false });
+      // ENT-04: rótulo de "arquivo já enviado" quando a entidade já possui cert/logo.
+      const certUrl = (this.entity as any).digitalCertFileUrl as string | undefined;
+      const logoUrl = (this.entity as any).logoUrl as string | undefined;
+      this.certFileName.set(certUrl ? decodeURIComponent(certUrl.split('/').pop() || 'Certificado atual') : null);
+      this.logoFileName.set(logoUrl ? decodeURIComponent(logoUrl.split('/').pop() || 'Logotipo atual') : null);
     }
   }
 
@@ -89,10 +110,59 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
     this.form.get('cnpj')?.setValue(el.value, { emitEvent: false });
   }
 
-  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone'): void {
+  onPhoneInput(event: Event, control: 'mainPhone' | 'cellPhone' | 'accountantPhone' | 'accountantOfficePhone'): void {
     const el = event.target as HTMLInputElement;
     el.value = maskPhone(el.value);
     this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCpfInput(event: Event, control: string): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCpf(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCepInput(event: Event, control: string): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCep(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  // ── ENT-04: uploads de certificado/logotipo na edição (via /upload/one-file) ─
+  onCertSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingCert.set(true);
+    this.uploadError.set(null);
+    this.svc.uploadFile(file).subscribe({
+      next: res => {
+        this.form.patchValue({ digitalCertFileUrl: res.url, digitalCertFileKey: res.key });
+        this.certFileName.set(file.name);
+        this.uploadingCert.set(false);
+      },
+      error: () => {
+        this.uploadError.set('Falha ao enviar o certificado. Tente novamente.');
+        this.uploadingCert.set(false);
+      },
+    });
+  }
+
+  onLogoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingLogo.set(true);
+    this.uploadError.set(null);
+    this.svc.uploadFile(file).subscribe({
+      next: res => {
+        this.form.patchValue({ logoUrl: res.url });
+        this.logoFileName.set(file.name);
+        this.uploadingLogo.set(false);
+      },
+      error: () => {
+        this.uploadError.set('Falha ao enviar o logotipo. Tente novamente.');
+        this.uploadingLogo.set(false);
+      },
+    });
   }
 
   protected statusLabel(v: string | undefined): string {

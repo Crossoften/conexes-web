@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } 
 import { NgClass } from '@angular/common';
 import { TaxesService } from '../taxes.service';
 import { TaxPayload, TaxService, ScopeOption } from '../taxes.model';
-import { parseDecimalBR } from '../../../shared/utils/format';
+import { parseDecimalBR, formatDecimalBR } from '../../../shared/utils/format';
 
 type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -97,7 +97,7 @@ export class TaxesNewPage implements OnInit {
   ngOnInit(): void {
     // Atualiza o "Total das Retenções" (campo calculado) ao alterar as alíquotas.
     this.form.valueChanges.subscribe(() => {
-      this.form.get('resumoRetencoes')?.setValue(this.computeTotal(), { emitEvent: false });
+      this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
     });
 
     this.svc.getStakeholders().subscribe({

@@ -127,6 +127,16 @@ export class CostCentersNewPage implements OnInit {
     this.selectedLinkedAccount = '';
   }
 
+  /**
+   * CC-02: o "+" ao lado de "Selecionar conta" abre o cadastro de Contas
+   * Bancárias em nova aba, preservando o formulário do Centro de Custo em
+   * andamento (o app usa hash routing).
+   */
+  openBankAccountRegister(): void {
+    const base = window.location.href.split('#')[0];
+    window.open(`${base}#/bank-accounts/new`, '_blank');
+  }
+
   removeLinkedAccount(index: number): void {
     this.linkedAccounts = this.linkedAccounts.filter((_, i) => i !== index);
   }

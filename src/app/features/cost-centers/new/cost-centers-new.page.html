@@ -151,8 +151,12 @@
             </div>
 
             <div class="linked-box__actions">
-              <button type="button" class="btn-square-outline" title="Adicionar" (click)="addLinkedAccount()">
+              <!-- CC-02: abre o cadastro de Contas Bancárias em nova aba. -->
+              <button type="button" class="btn-square-outline" title="Cadastrar nova conta bancária" (click)="openBankAccountRegister()">
                 <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+              <button type="button" class="btn-square-outline" title="Adicionar à composição" (click)="addLinkedAccount()">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </button>
             </div>
           </div>
