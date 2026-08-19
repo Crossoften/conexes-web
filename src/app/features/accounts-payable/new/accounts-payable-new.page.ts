@@ -30,6 +30,9 @@ export class AccountsPayableNewPage implements OnInit {
   activeMainTab: MainTab = 'GERAIS';
   activeSubTab: SubTab = 'COMPETENCIA';
   isParcelamentoOpen = true;
+
+  // FIN-02: opções de quantidade de parcelas (o select vinha vazio).
+  readonly parcelaOptions = Array.from({ length: 23 }, (_, i) => i + 2); // 2..24
   saving = signal(false);
 
   // Lookups reais para os selects
@@ -132,7 +135,29 @@ export class AccountsPayableNewPage implements OnInit {
         amount: v.valorRateio ? num(v.valorRateio) : num(v.valorLiquido),
       }];
     }
+
+    // FIN-02: parcelamento — divide o título em N parcelas com vencimentos mensais,
+    // preservando o valor total (a última parcela absorve o arredondamento).
+    const nParcelas = Number(v.parcelas);
+    if (v.parcelar === 'Sim' && nParcelas >= 2) {
+      const total = num(v.valorLiquido) || num(v.valorBruto);
+      payload.installments = this.buildInstallments(total, nParcelas, v.dataEmissao2);
+    }
     return payload;
+  }
+
+  /** FIN-02: gera N parcelas dividindo o total, com vencimentos mensais a partir de `firstDueDate`. */
+  private buildInstallments(total: number, n: number, firstDueDate: string): { installment: number; dueDate: string; amount: number }[] {
+    const base = Math.floor((total / n) * 100) / 100;
+    const start = firstDueDate ? new Date(firstDueDate) : new Date();
+    const out: { installment: number; dueDate: string; amount: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      const d = new Date(start);
+      d.setMonth(d.getMonth() + i);
+      const amount = i === n - 1 ? Math.round((total - base * (n - 1)) * 100) / 100 : base;
+      out.push({ installment: i + 1, dueDate: d.toISOString().slice(0, 10), amount });
+    }
+    return out;
   }
 
   onSubmit() {
