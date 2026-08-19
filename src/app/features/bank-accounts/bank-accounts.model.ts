@@ -91,6 +91,7 @@ export interface BankAccountPayload {
 export interface BankPayload {
   name: string;
   code: string;
+  type?: string; // BCO-03: Publico | Privado
 }
 
 // ── Resposta da listagem ──────────────────────────────────────────────────────

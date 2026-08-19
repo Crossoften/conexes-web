@@ -62,20 +62,20 @@ export class BankAccountsListPage implements OnInit {
 
   // ── Bank form (modal criar/editar banco) ──────────────────────────────────
 
-  readonly bankForm = signal<BankPayload>({ name: '', code: '' });
+  readonly bankForm = signal<BankPayload>({ name: '', code: '', type: '' });
 
   openCreateBank(): void {
-    this.bankForm.set({ name: '', code: '' });
+    this.bankForm.set({ name: '', code: '', type: '' });
     this.store.openCreateBank();
   }
 
   openEditBank(bank: any): void {
-    this.bankForm.set({ name: bank.name, code: bank.code });
+    this.bankForm.set({ name: bank.name, code: bank.code, type: bank.type ?? '' });
     this.store.openEditBank(bank);
   }
 
   openViewBank(bank: any): void {
-    this.bankForm.set({ name: bank.name, code: bank.code });
+    this.bankForm.set({ name: bank.name, code: bank.code, type: bank.type ?? '' });
     this.store.openViewBank(bank);
   }
 

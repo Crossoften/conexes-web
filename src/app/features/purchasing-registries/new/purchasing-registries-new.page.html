@@ -51,7 +51,11 @@
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>Tipo Medida</label>
-              <input type="text" class="form-control" placeholder="Ex: UN, KG, L" formControlName="measure">
+              <!-- CMP-06: unidades pré-cadastradas (com opção de digitar via datalist) -->
+              <input type="text" class="form-control" list="unidades-medida" placeholder="Ex: UN, KG, L" formControlName="measure">
+              <datalist id="unidades-medida">
+                @for (u of unidadesMedida; track u) { <option [value]="u"></option> }
+              </datalist>
             </div>
 
             <div class="form-group">

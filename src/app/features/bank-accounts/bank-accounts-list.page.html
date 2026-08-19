@@ -332,6 +332,18 @@
             [disabled]="store.bankModal().mode === 'view'"
             (input)="onBankFormChange('name', $any($event.target).value)">
         </div>
+        <!-- BCO-03: classificação Público/Privado -->
+        <div class="field">
+          <label class="field__label">Tipo</label>
+          <select class="field__input"
+            [value]="bankForm().type || ''"
+            [disabled]="store.bankModal().mode === 'view'"
+            (change)="onBankFormChange('type', $any($event.target).value)">
+            <option value="">Selecione</option>
+            <option value="Publico">Público</option>
+            <option value="Privado">Privado</option>
+          </select>
+        </div>
       </div>
       <div class="modal__footer">
         <button class="btn-outline" (click)="store.closeBankModal()">

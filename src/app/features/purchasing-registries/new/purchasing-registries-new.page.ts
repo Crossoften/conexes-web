@@ -15,6 +15,9 @@ import { ApiProductService, ProductServicePayload, RegistryStatus } from '../pur
   styleUrl: './purchasing-registries-new.page.scss',
 })
 export class PurchasingRegistriesNewPage {
+  // CMP-06: unidades de medida pré-cadastradas (o campo aceita digitar outras).
+  readonly unidadesMedida = ['UN', 'CX', 'PC', 'PCT', 'KG', 'G', 'L', 'ML', 'M', 'CM', 'M²', 'M³', 'DZ', 'PAR', 'RL', 'SC', 'FD', 'GL', 'TON', 'HR', 'SERV'];
+
   private fb          = inject(NonNullableFormBuilder);
   private svc         = inject(PurchasingRegistriesService);
   private purchasesSvc = inject(PurchasesService);
