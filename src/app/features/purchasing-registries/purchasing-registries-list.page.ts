@@ -29,7 +29,7 @@ export class PurchasingRegistriesListPage {
   readonly exporting = signal(false);
 
   onExport(): void {
-    if (this.exporting() || this.store.activeTab() !== 'PRODUCTS') return;
+    if (this.exporting() || this.tableKind() !== 'PRODUCTS') return;
     this.exporting.set(true);
     this.svc.exportProductsExcel().subscribe({
       next: (blob: Blob) => {
@@ -46,9 +46,17 @@ export class PurchasingRegistriesListPage {
   }
 
   /** Rota do botão "Novo" conforme a aba (só Produtos e Locais têm cadastro aqui). */
+  // CMP-09: Produtos e Serviços compartilham a mesma tabela (@switch não faz fall-through).
+  tableKind(): 'PRODUCTS' | 'LOCATIONS' | 'OTHER' {
+    const t = this.store.activeTab();
+    if (t === 'PRODUCTS' || t === 'SERVICES') return 'PRODUCTS';
+    if (t === 'LOCATIONS') return 'LOCATIONS';
+    return 'OTHER';
+  }
+
   newRoute(): string[] | null {
     const tab = this.store.activeTab();
-    if (tab === 'PRODUCTS')  return ['/purchasing-registries/new'];
+    if (tab === 'PRODUCTS' || tab === 'SERVICES') return ['/purchasing-registries/new'];
     if (tab === 'LOCATIONS') return ['/purchasing-registries/locations/new'];
     return null;
   }

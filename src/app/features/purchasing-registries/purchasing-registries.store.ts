@@ -65,7 +65,8 @@ export class PurchasingRegistriesStore {
 
   readonly currentListItems = computed<(Product | Supplier | CostCenter | DeliveryLocation)[]>(() => {
     switch (this.activeTab()) {
-      case 'PRODUCTS':     return this.state().products;
+      case 'PRODUCTS':
+      case 'SERVICES':     return this.state().products;
       case 'SUPPLIERS':    return this.state().suppliers;
       case 'COST_CENTERS': return this.state().costCenters;
       default:             return this.state().locations;
@@ -80,12 +81,12 @@ export class PurchasingRegistriesStore {
     if (search) {
       const t = search.toLowerCase();
       result = result.filter(item => {
-        if (tab === 'PRODUCTS')  { const p = item as Product;  return p.productName.toLowerCase().includes(t) || p.code.toLowerCase().includes(t); }
+        if (tab === 'PRODUCTS' || tab === 'SERVICES')  { const p = item as Product;  return p.productName.toLowerCase().includes(t) || p.code.toLowerCase().includes(t); }
         if (tab === 'SUPPLIERS') { const s = item as Supplier; return s.legalName.toLowerCase().includes(t) || s.cnpj.toLowerCase().includes(t); }
         const n = item as CostCenter | DeliveryLocation; return n.name.toLowerCase().includes(t) || n.address.toLowerCase().includes(t);
       });
     }
-    if (status && tab === 'PRODUCTS') {
+    if (status && (tab === 'PRODUCTS' || tab === 'SERVICES')) {
       result = result.filter(item => (item as Product).status === status);
     }
     return result;
@@ -112,7 +113,7 @@ export class PurchasingRegistriesStore {
     return this.sortedListItems().slice(start, start + pageSize);
   });
 
-  readonly pageProducts    = computed(() => this.activeTab() === 'PRODUCTS'     ? this.pageItems() as Product[]          : []);
+  readonly pageProducts    = computed(() => (this.activeTab() === 'PRODUCTS' || this.activeTab() === 'SERVICES') ? this.pageItems() as Product[]          : []);
   readonly pageSuppliers   = computed(() => this.activeTab() === 'SUPPLIERS'    ? this.pageItems() as Supplier[]         : []);
   readonly pageCostCenters = computed(() => this.activeTab() === 'COST_CENTERS' ? this.pageItems() as CostCenter[]       : []);
   readonly pageLocations   = computed(() => this.activeTab() === 'LOCATIONS'    ? this.pageItems() as DeliveryLocation[] : []);
@@ -135,7 +136,12 @@ export class PurchasingRegistriesStore {
 
     switch (tab) {
       case 'PRODUCTS':
-        this.svc.listProducts({ take: 500 }).subscribe({
+        this.svc.listProducts({ take: 500, type: 'Product' }).subscribe({
+          next: res => this.state.update(s => ({ ...s, products: res.data.map(toProduct), loading: false })), error: fail });
+        break;
+      case 'SERVICES':
+        // CMP-09: aba própria de Serviços (mesma tabela, filtrada por type=Service).
+        this.svc.listProducts({ take: 500, type: 'Service' }).subscribe({
           next: res => this.state.update(s => ({ ...s, products: res.data.map(toProduct), loading: false })), error: fail });
         break;
       case 'SUPPLIERS':

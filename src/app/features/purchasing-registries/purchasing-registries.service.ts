@@ -26,6 +26,7 @@ export interface RegistryListParams {
   status?: string;
   skip?:   number;
   take?:   number;
+  type?:   string; // CMP-09: 'Product' | 'Service' (separa produtos de serviços)
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +40,7 @@ export class PurchasingRegistriesService {
     if (params.status)      p = p.set('status', params.status);
     if (params.skip != null) p = p.set('skip', String(params.skip));
     if (params.take != null) p = p.set('take', String(params.take));
+    if (params.type)        p = p.set('type', params.type);
     for (const [k, v] of Object.entries(extra)) p = p.set(k, v);
     return p;
   }

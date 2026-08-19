@@ -1,7 +1,7 @@
 // src/app/features/purchasing-registries/purchasing-registries.model.ts
 import { PurchaseStatusConfig } from '../purchases/purchases.model';
 
-export type RegistryTab = 'PRODUCTS' | 'SUPPLIERS' | 'COST_CENTERS' | 'LOCATIONS';
+export type RegistryTab = 'PRODUCTS' | 'SERVICES' | 'SUPPLIERS' | 'COST_CENTERS' | 'LOCATIONS';
 export type RegistryStatus = 'Active' | 'Pending' | 'Inactive';
 
 // ── View models (linhas das tabelas) ─────────────────────────────────────────
