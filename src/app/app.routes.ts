@@ -61,6 +61,7 @@ export const appRoutes: Routes = [
       { path: 'budgets',              loadChildren: () => import('./features/budgets/budgets.routes').then(m => m.budgetsRoutes) },
       { path: 'invoice-review',       loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
       { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
+      { path: 'integrations',         loadChildren: () => import('./features/integrations/integrations.routes').then(m => m.integrationsRoutes) },
 
       // Outros
       { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },

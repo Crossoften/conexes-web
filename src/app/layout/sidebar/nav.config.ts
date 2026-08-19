@@ -83,6 +83,14 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    label: 'Integrações',
+    icon:  'financial',
+    children: [
+      { label: 'Notas fiscais (NFe.io)',   route: '/integrations/fiscal-documents' },
+      { label: 'Pagamentos e extrato',     route: '/integrations/bank-integrations' },
+    ],
+  },
+  {
     label: 'Prestação de contas',
     route: '/accountability',
     icon:  'accountability',

@@ -1,0 +1,169 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pagamentos e Extrato (TecnoSpeed / PlugBank)</h1>
+      <p class="page-subtitle">
+        Extrato via Open Finance
+        <span class="status-badge" [ngClass]="status().extrato ? 'status-badge--success' : 'status-badge--info'">{{ status().extrato ? 'configurado' : 'aguardando credenciais' }}</span>
+        · Pagamentos
+        <span class="status-badge" [ngClass]="status().pagamentos ? 'status-badge--success' : 'status-badge--info'">{{ status().pagamentos ? 'configurado' : 'aguardando credenciais' }}</span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="connect()">Conectar conta</button>
+      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="syncStatement()">
+        @if (busy()) { <span class="btn-spinner" aria-hidden="true"></span> } @else { Sincronizar extrato }
+      </button>
+      <button type="button" class="btn-solid btn-solid--orange" (click)="openPay()">Nova ordem de pagamento</button>
+    </div>
+  </div>
+
+  @if (banner(); as b) {
+    <div class="banner" [class.banner--ok]="b.kind === 'ok'" [class.banner--err]="b.kind === 'err'" role="alert">{{ b.msg }}</div>
+  }
+
+  <div class="card">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th">Método</th>
+            <th class="th">Favorecido</th>
+            <th class="th th--right">Valor</th>
+            <th class="th">Situação</th>
+            <th class="th">Criada em</th>
+            <th class="th th--center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (i of [1,2,3,4]; track i) {
+              <tr class="tr--skeleton"><td colspan="6"><div class="skeleton"></div></td></tr>
+            }
+          } @else if (payments().length === 0) {
+            <tr>
+              <td class="td--empty" colspan="6">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" width="48" height="48" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+                </svg>
+                <p class="empty-title">Nenhuma ordem de pagamento</p>
+                <span class="empty-desc">Crie uma ordem de pagamento (PIX, boleto ou TED).</span>
+              </td>
+            </tr>
+          } @else {
+            @for (o of payments(); track o.id) {
+              <tr class="tr">
+                <td class="td">{{ o.method }}</td>
+                <td class="td">{{ o.payeeName || o.payeeDocument || o.description || '—' }}</td>
+                <td class="td td--right">R$ {{ o.amount | number:'1.2-2':'pt-BR' }}</td>
+                <td class="td">
+                  <span class="status-badge" [ngClass]="'status-badge--' + payStatus(o.status).variant">{{ payStatus(o.status).label }}</span>
+                  @if (o.error) { <span class="err-flag" [title]="o.error">erro</span> }
+                </td>
+                <td class="td">{{ o.createdAt ? (o.createdAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="td td--center">
+                  <button class="icon-btn" title="Atualizar status" (click)="refresh(o)">↻</button>
+                  @if (o.status === 'Pending' || o.status === 'Scheduled' || o.status === 'Processing') {
+                    <button class="icon-btn" title="Cancelar" (click)="cancel(o)">✕</button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (connections().length > 0) {
+    <div class="card" style="margin-top:18px">
+      <div class="card-header--filters"><strong>Conexões Open Finance</strong></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Conta interna</th>
+              <th class="th">Conta no provedor</th>
+              <th class="th">Consentimento</th>
+              <th class="th">Ativa</th>
+              <th class="th">Última sincronização</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of connections(); track c.id) {
+              <tr class="tr">
+                <td class="td">{{ c.bankAccountId ?? '—' }}</td>
+                <td class="td td--mono">{{ c.externalAccountId || '—' }}</td>
+                <td class="td"><span class="status-badge" [ngClass]="c.consentStatus === 'Authorized' ? 'status-badge--success' : 'status-badge--info'">{{ c.consentStatus }}</span></td>
+                <td class="td">{{ c.isActive ? 'Sim' : 'Não' }}</td>
+                <td class="td">{{ c.lastSyncAt ? (c.lastSyncAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+@if (showPay()) {
+  <div class="modal-backdrop" (click)="closePay()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="card-title">Nova ordem de pagamento</h2>
+        <button type="button" class="icon-btn" (click)="closePay()" aria-label="Fechar">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="submitPay()">
+        <div class="modal-body">
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Método <span class="req">*</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="method">
+                  <option value="PIX">PIX</option>
+                  <option value="BOLETO">Boleto</option>
+                  <option value="TED">TED</option>
+                  <option value="TRANSFER">Transferência</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Valor <span class="req">*</span></label>
+              <input type="number" step="0.01" class="form-control" formControlName="amount" placeholder="0,00">
+            </div>
+          </div>
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Favorecido — Nome</label>
+              <input type="text" class="form-control" formControlName="payeeName" placeholder="Nome do favorecido">
+            </div>
+            <div class="form-group">
+              <label>Favorecido — CPF/CNPJ</label>
+              <input type="text" class="form-control" formControlName="payeeDocument" placeholder="Somente dígitos">
+            </div>
+          </div>
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Chave PIX / linha digitável / dados da conta</label>
+              <input type="text" class="form-control" formControlName="payeeKeyOrLine" placeholder="Conforme o método">
+            </div>
+          </div>
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Descrição</label>
+              <input type="text" class="form-control" formControlName="description" placeholder="Referência do pagamento">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-outline btn-outline--orange" (click)="closePay()">Cancelar</button>
+          <button type="submit" class="btn-solid btn-solid--orange" [disabled]="busy()">
+            @if (busy()) { <span class="btn-spinner" aria-hidden="true"></span> } @else { Criar ordem }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

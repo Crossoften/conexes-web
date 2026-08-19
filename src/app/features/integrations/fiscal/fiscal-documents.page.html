@@ -1,0 +1,159 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Notas Fiscais (NFe.io)</h1>
+      <p class="page-subtitle">
+        @if (companyName()) { Empresa: <strong>{{ companyName() }}</strong> · integração ativa }
+        @else { Configure a empresa (contribuinte) no NFe.io para emitir notas. }
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="enableNfse()">Habilitar captura NFS-e</button>
+      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="syncNfse()">
+        @if (busy()) { <span class="btn-spinner" aria-hidden="true"></span> } @else { Sincronizar recebidas }
+      </button>
+      <button type="button" class="btn-solid btn-solid--orange" (click)="openEmit()">Emitir NFS-e</button>
+    </div>
+  </div>
+
+  @if (banner(); as b) {
+    <div class="banner" [class.banner--ok]="b.kind === 'ok'" [class.banner--err]="b.kind === 'err'" role="alert">{{ b.msg }}</div>
+  }
+
+  <div class="card">
+    <div class="card-header card-header--filters">
+      <div class="form-group">
+        <label>Tipo</label>
+        <div class="select-wrap">
+          <select class="form-control" (change)="onFilterType($any($event.target).value)">
+            <option value="">Todos</option>
+            <option value="NFSE_SERVICO">NFS-e Serviço</option>
+            <option value="NFE_PRODUTO">NF-e Produto</option>
+            <option value="NFSE_INBOUND">NFS-e Recebida</option>
+            <option value="NFE_INBOUND">NF-e Recebida</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Direção</label>
+        <div class="select-wrap">
+          <select class="form-control" (change)="onFilterDirection($any($event.target).value)">
+            <option value="">Todas</option>
+            <option value="OUTBOUND">Emitidas</option>
+            <option value="INBOUND">Recebidas</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="th">Tipo</th>
+            <th class="th">Direção</th>
+            <th class="th">Situação</th>
+            <th class="th">Número / Chave</th>
+            <th class="th th--right">Valor</th>
+            <th class="th">Contraparte</th>
+            <th class="th">Criada em</th>
+            <th class="th th--center">Documentos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr class="tr--skeleton"><td colspan="8"><div class="skeleton"></div></td></tr>
+            }
+          } @else if (docs().length === 0) {
+            <tr>
+              <td class="td--empty" colspan="8">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" width="48" height="48" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/>
+                </svg>
+                <p class="empty-title">Nenhuma nota fiscal registrada</p>
+                <span class="empty-desc">Emita uma NFS-e ou sincronize as notas recebidas.</span>
+              </td>
+            </tr>
+          } @else {
+            @for (d of docs(); track d.id) {
+              <tr class="tr">
+                <td class="td">{{ typeLabel(d.type) }}</td>
+                <td class="td">{{ d.direction === 'OUTBOUND' ? 'Emitida' : 'Recebida' }}</td>
+                <td class="td">
+                  <span class="status-badge" [ngClass]="'status-badge--' + statusCfg(d.status).variant">{{ statusCfg(d.status).label }}</span>
+                </td>
+                <td class="td td--mono">{{ d.number || d.accessKey || d.externalId || '—' }}</td>
+                <td class="td td--right">{{ d.amount != null ? ('R$ ' + (d.amount | number:'1.2-2':'pt-BR')) : '—' }}</td>
+                <td class="td">{{ d.issuerName || d.recipientName || d.issuerCnpj || '—' }}</td>
+                <td class="td">{{ d.createdAt ? (d.createdAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="td td--center">
+                  @if (d.pdfUrl) { <a class="link" [href]="d.pdfUrl" target="_blank" rel="noopener">PDF</a> }
+                  @if (d.xmlUrl) { <a class="link" [href]="d.xmlUrl" target="_blank" rel="noopener">XML</a> }
+                  @if (!d.pdfUrl && !d.xmlUrl) { <span class="muted">—</span> }
+                  @if (d.error) { <span class="err-flag" [title]="d.error">erro</span> }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showEmit()) {
+  <div class="modal-backdrop" (click)="closeEmit()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="card-title">Emitir NFS-e (serviço)</h2>
+        <button type="button" class="icon-btn" (click)="closeEmit()" aria-label="Fechar">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="submitEmit()">
+        <div class="modal-body">
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Identificador (externalId) <span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="externalId" placeholder="ex.: OS-2026-001">
+            </div>
+            <div class="form-group">
+              <label>Valor dos serviços <span class="req">*</span></label>
+              <input type="number" step="0.01" class="form-control" formControlName="servicesAmount" placeholder="0,00">
+            </div>
+          </div>
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Descrição do serviço <span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="description" placeholder="Descreva o serviço prestado">
+            </div>
+          </div>
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Código do serviço municipal <span class="req">*</span></label>
+              <input type="text" class="form-control" formControlName="cityServiceCode" placeholder="ex.: 1.07">
+            </div>
+            <div class="form-group">
+              <label>Tomador — Nome</label>
+              <input type="text" class="form-control" formControlName="borrowerName" placeholder="Nome do tomador">
+            </div>
+          </div>
+          <div class="form-row grid-cols-2">
+            <div class="form-group">
+              <label>Tomador — CPF/CNPJ</label>
+              <input type="text" class="form-control" formControlName="borrowerDoc" placeholder="Somente dígitos">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-outline btn-outline--orange" (click)="closeEmit()">Cancelar</button>
+          <button type="submit" class="btn-solid btn-solid--orange" [disabled]="busy()">
+            @if (busy()) { <span class="btn-spinner" aria-hidden="true"></span> } @else { Emitir }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
