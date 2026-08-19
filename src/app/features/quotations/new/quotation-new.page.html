@@ -167,12 +167,16 @@
                   <div class="form-row grid-cols-3">
                     <div class="form-group">
                       <label>Produto/Serviço</label>
-                      <div class="select-wrap">
-                        <select class="form-control" formControlName="productId" (change)="onItemProduct(i)">
-                          <option value="">Selecione</option>
-                          @for (p of products(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
-                        </select>
-                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <!-- CMP-07: inclusão rápida de produto sem sair da requisição -->
+                      <div style="display:flex; gap:6px; align-items:center;">
+                        <div class="select-wrap" style="flex:1;">
+                          <select class="form-control" formControlName="productId" (change)="onItemProduct(i)">
+                            <option value="">Selecione</option>
+                            @for (p of products(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                          </select>
+                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar produto" (click)="quickAddProduct()" style="padding:8px 12px;">+</button>
                       </div>
                     </div>
                     <div class="form-group"><label>Nome do item <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="item.get('name')?.invalid && item.get('name')?.touched"></div>
@@ -206,12 +210,16 @@
             <div class="form-row grid-cols-2">
               <div class="form-group">
                 <label>Local de entrega</label>
-                <div class="select-wrap">
+                <!-- CMP-07: inclusão rápida de local sem sair da requisição -->
+                <div style="display:flex; gap:6px; align-items:center;">
+                <div class="select-wrap" style="flex:1;">
                   <select class="form-control" formControlName="deliveryLocationId">
                     <option value="">Selecione</option>
                     @for (l of deliveryLocations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar local" (click)="quickAddLocation()" style="padding:8px 12px;">+</button>
                 </div>
               </div>
             </div>
@@ -221,8 +229,21 @@
         <!-- ══ ANEXOS ═════════════════════════════════════════════════════ -->
         @if (activeTab === 'ANEXOS') {
           <h3 class="section-title">Anexos da Requisição</h3>
-          <p class="section-subtitle">O envio de anexos será habilitado em breve.</p>
-          <div class="dropzone dropzone--disabled">Anexos disponíveis após salvar a requisição.</div>
+          <p class="section-subtitle">CMP-20: anexe arquivos agora — eles são enviados ao salvar a requisição.</p>
+          <label class="dropzone" style="cursor:pointer; display:block; text-align:center; padding:20px;">
+            <input type="file" multiple (change)="onFilesSelected($event)" hidden accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx">
+            + Selecionar arquivos
+          </label>
+          @if (stagedFiles().length) {
+            <ul style="list-style:none; padding:0; margin-top:12px;">
+              @for (f of stagedFiles(); track $index) {
+                <li style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border:1px solid var(--surface-border,#E5E7EB); border-radius:10px; margin-bottom:6px; font-size:13px;">
+                  <span>{{ f.name }}</span>
+                  <button type="button" class="btn-outline btn-outline--orange" style="padding:4px 10px;" (click)="removeStagedFile($index)">Remover</button>
+                </li>
+              }
+            </ul>
+          }
         }
 
       </form>

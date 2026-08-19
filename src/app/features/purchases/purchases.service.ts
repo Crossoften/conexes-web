@@ -275,6 +275,21 @@ export class PurchasesService {
     return this.http.post<PurchaseFile>(`${this.base}/requests/${id}/files`, payload);
   }
 
+  // CMP-20: sobe um arquivo (multipart) e devolve url/key para anexar.
+  uploadFile(file: File): Observable<{ url: string; key: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; key: string }>(`${environment.apiUrl}/v1/upload/one-file`, form);
+  }
+
+  // CMP-07: criação rápida de produto/local sem sair da requisição.
+  createProductQuick(name: string): Observable<{ id: number; name: string }> {
+    return this.http.post<{ id: number; name: string }>(`${environment.apiUrl}/v1/products-services`, { name, type: 'Product', status: 'Active' });
+  }
+  createLocationQuick(name: string): Observable<{ id: number; name: string }> {
+    return this.http.post<{ id: number; name: string }>(`${environment.apiUrl}/v1/delivery-locations`, { name });
+  }
+
   listRequestFiles(id: number): Observable<PurchaseFile[]> {
     return this.http.get<PurchaseFile[]>(`${this.base}/requests/${id}/files`);
   }

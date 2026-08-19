@@ -231,12 +231,58 @@ export class QuotationNewPage {
       : this.svc.createRequest(payload);
 
     req$.subscribe({
-      next: () => { this.saving.set(false); this.router.navigate(['/quotations']); },
+      next: (res: any) => {
+        const id = this.editId ?? res?.id;
+        // CMP-20: sobe os anexos preparados só depois de existir o id da requisição.
+        this.flushFiles(id, () => { this.saving.set(false); this.router.navigate(['/quotations']); });
+      },
       error: err => {
         this.saving.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar a requisição.';
         this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
       },
+    });
+  }
+
+  // ── CMP-20: anexos preparados durante o preenchimento ─────────────────────
+  readonly stagedFiles = signal<File[]>([]);
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (files.length) this.stagedFiles.update(l => [...l, ...files]);
+    input.value = '';
+  }
+  removeStagedFile(i: number): void { this.stagedFiles.update(l => l.filter((_, idx) => idx !== i)); }
+
+  private flushFiles(id: number | null | undefined, done: () => void): void {
+    const files = this.stagedFiles();
+    if (!id || !files.length) { done(); return; }
+    let pending = files.length;
+    const finish = () => { if (--pending <= 0) { this.stagedFiles.set([]); done(); } };
+    for (const file of files) {
+      this.svc.uploadFile(file).subscribe({
+        next: r => this.svc.attachRequestFile(id, { fileUrl: r.url, fileKey: r.key } as any).subscribe({ next: finish, error: finish }),
+        error: finish,
+      });
+    }
+  }
+
+  // ── CMP-07: inclusão rápida de produto/local sem sair da requisição ───────
+  quickAddProduct(): void {
+    const name = (prompt('Nome do novo produto/serviço:') || '').trim();
+    if (!name) return;
+    this.svc.createProductQuick(name).subscribe({
+      next: p => this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v) }),
+      error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o produto.'),
+    });
+  }
+  quickAddLocation(): void {
+    const name = (prompt('Nome do novo local de entrega:') || '').trim();
+    if (!name) return;
+    this.svc.createLocationQuick(name).subscribe({
+      next: l => this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v) }),
+      error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o local.'),
     });
   }
 
