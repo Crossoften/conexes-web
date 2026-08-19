@@ -3,19 +3,41 @@ import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsPayableStore } from './accounts-payable.store';
+import { AccountsPayableService } from './accounts-payable.service';
 import { PayableAccount, AdvancedFilters } from './accounts-payable.model';
 import { RouterLink } from "@angular/router";
+import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-accounts-payable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent],
   providers: [AccountsPayableStore],
   templateUrl: './accounts-payable-list.page.html',
   styleUrl: './accounts-payable-list.page.scss',
 })
 export class AccountsPayableListPage implements OnInit {
   readonly store = inject(AccountsPayableStore);
+  private svc    = inject(AccountsPayableService);
+  private notify = inject(NotificationService);
+
+  // FIN-01: baixa (pagamento) total ou parcial.
+  readonly payItem = signal<PayableAccount | null>(null);
+  readonly payBusy = signal(false);
+
+  openPay(item: PayableAccount): void { this.payItem.set(item); }
+  closePay(): void { this.payItem.set(null); }
+
+  onBaixaConfirm(r: BaixaResult): void {
+    const item = this.payItem();
+    if (!item) return;
+    this.payBusy.set(true);
+    this.svc.registerPayment(Number(item.id), { amount: r.amount, paymentDate: r.date, note: r.note }).subscribe({
+      next: () => { this.payBusy.set(false); this.payItem.set(null); this.notify.success('Baixa registrada com sucesso.'); this.store.load(); },
+      error: err => { this.payBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar a baixa.'); },
+    });
+  }
 
   ngOnInit(): void {
     this.store.load();

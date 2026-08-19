@@ -15,6 +15,7 @@ interface ApiAccountReceivable {
   issueDate?: string | null;
   dueDate?: string | null;
   amount?: number | null;
+  amountReceived?: number | null;
   status?: string | null;
   asaasInvoiceUrl?: string | null;
   stakeholder?: { name?: string | null } | null;
@@ -28,7 +29,7 @@ export interface ReceivableListResult {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  Open: 'Em aberto', Paid: 'Recebido', Cancelled: 'Cancelado', Reconciled: 'Conciliado',
+  Open: 'Em aberto', PartiallyPaid: 'Parcialmente recebido', Paid: 'Recebido', Cancelled: 'Cancelado', Reconciled: 'Conciliado',
 };
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -75,6 +76,11 @@ export class AccountsReceivableService {
     return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
   }
 
+  /** FIN-01: registra recebimento (baixa) total ou parcial. */
+  registerReceipt(id: number, payload: { amount?: number; receiptDate: string; bankAccountId?: number; note?: string }): Observable<ApiAccountReceivable> {
+    return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/receipts`, payload);
+  }
+
   buildSummaries(raw: ApiAccountReceivable[]): SummaryCard[] {
     const total = raw.reduce((a, r) => a + (r.amount ?? 0), 0);
     const abertos = raw.filter(r => r.status === 'Open').reduce((a, r) => a + (r.amount ?? 0), 0);
@@ -94,6 +100,12 @@ export class AccountsReceivableService {
     issueDate: fmtDate(r.issueDate),
     invoiceNumber: r.invoiceNumber ?? r.document ?? '—',
     status: STATUS_LABEL[r.status ?? ''] ?? (r.status ?? '—'),
+    // FIN-01: valor, saldo e situação crua para a baixa (recebimento).
+    value: brl.format(r.amount ?? 0),
+    rawStatus: r.status ?? 'Open',
+    balanceNum: Math.max(0, (r.amount ?? 0) - (r.amountReceived ?? 0)),
+    balance: brl.format(Math.max(0, (r.amount ?? 0) - (r.amountReceived ?? 0))),
+    canReceive: (r.status === 'Open' || r.status === 'PartiallyPaid'),
   });
 }
 

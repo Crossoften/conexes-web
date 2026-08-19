@@ -120,6 +120,10 @@
               
               <td class="td td--center">
                 <div class="action-icons">
+                  @if (item.canPay) {
+                    <!-- FIN-01: baixa (pagamento) total ou parcial -->
+                    <button class="icon-btn" title="Baixar (pagar)" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  }
                   <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button class="icon-btn" title="Multiplicar (gerar parcelas)" (click)="openMultiply(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
                   <button class="icon-btn" title="Enviar para remessa" (click)="onSendToRemittance(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M18 3L9 12M18 3l-6 15-3-6-6-3 15-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -250,4 +254,14 @@
       </div>
     </div>
   </div>
+}
+@if (payItem(); as p) {
+  <app-baixa-modal
+    kind="pagar"
+    [title]="p.company + ' · ' + p.value"
+    [balance]="p.balanceNum"
+    [busy]="payBusy()"
+    (confirm)="onBaixaConfirm($event)"
+    (cancel)="closePay()">
+  </app-baixa-modal>
 }

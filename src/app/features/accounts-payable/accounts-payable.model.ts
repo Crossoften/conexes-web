@@ -22,6 +22,11 @@ export interface PayableAccount {
   dueDate: string;
   value: string;
   status: string;
+  // FIN-01: baixa parcial
+  rawStatus: string;
+  balance: string;
+  balanceNum: number;
+  canPay: boolean;
 }
 
 export interface AdvancedFilters {

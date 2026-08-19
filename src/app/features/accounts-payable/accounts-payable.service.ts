@@ -26,6 +26,7 @@ interface ApiAccountPayable {
   grossAmount?: number | null;
   netAmount?: number | null;
   amount?: number | null;
+  amountPaid?: number | null;
   status?: string | null;
   stakeholder?: { name?: string | null } | null;
 }
@@ -38,6 +39,7 @@ export interface PayableListResult {
 
 const STATUS_LABEL: Record<string, string> = {
   Open: 'Em aberto',
+  PartiallyPaid: 'Parcialmente pago',
   Paid: 'Pago',
   Cancelled: 'Cancelado',
   Reconciled: 'Conciliado',
@@ -80,6 +82,11 @@ export class AccountsPayableService {
   // ── Criação / edição / exclusão ─────────────────────────────────────────
   create(payload: unknown): Observable<ApiAccountPayable> {
     return this.http.post<ApiAccountPayable>(this.base, payload);
+  }
+
+  /** FIN-01: registra baixa (pagamento) total ou parcial. */
+  registerPayment(id: number, payload: { amount?: number; paymentDate: string; bankAccountId?: number; installmentId?: number; note?: string }): Observable<ApiAccountPayable> {
+    return this.http.post<ApiAccountPayable>(`${this.base}/${id}/payments`, payload);
   }
 
   update(id: number, payload: unknown): Observable<ApiAccountPayable> {
@@ -136,6 +143,11 @@ export class AccountsPayableService {
     dueDate: fmtDate(r.dueDate),
     value: brl.format(r.netAmount ?? r.amount ?? 0),
     status: STATUS_LABEL[r.status ?? ''] ?? (r.status ?? '—'),
+    // FIN-01: saldo e situação crua para a ação de baixa.
+    rawStatus: r.status ?? 'Open',
+    balanceNum: Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0)),
+    balance: brl.format(Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0))),
+    canPay: (r.status === 'Open' || r.status === 'PartiallyPaid'),
   });
 }
 

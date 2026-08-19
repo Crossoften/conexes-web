@@ -18,6 +18,12 @@ export interface ReceivableAccount {
   issueDate: string;
   invoiceNumber: string;
   status: string;
+  // FIN-01: baixa (recebimento) parcial
+  value: string;
+  rawStatus: string;
+  balance: string;
+  balanceNum: number;
+  canReceive: boolean;
 }
 
 export interface ReceivableFilters {

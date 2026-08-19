@@ -1,20 +1,42 @@
 // src/app/features/accounts-receivable/accounts-receivable-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsReceivableStore } from './accounts-receivable.store';
+import { AccountsReceivableService } from './accounts-receivable.service';
 import { ReceivableAccount, ReceivableFilters } from './accounts-receivable.model';
+import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-accounts-receivable-list',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, BaixaModalComponent],
   providers: [AccountsReceivableStore],
   templateUrl: './accounts-receivable-list.page.html',
   styleUrl: './accounts-receivable-list.page.scss',
 })
 export class AccountsReceivableListPage implements OnInit {
   readonly store = inject(AccountsReceivableStore);
+  private svc    = inject(AccountsReceivableService);
+  private notify = inject(NotificationService);
+
+  // FIN-01: baixa (recebimento) total ou parcial.
+  readonly rcvItem = signal<ReceivableAccount | null>(null);
+  readonly rcvBusy = signal(false);
+
+  openReceive(item: ReceivableAccount): void { this.rcvItem.set(item); }
+  closeReceive(): void { this.rcvItem.set(null); }
+
+  onReceiveConfirm(r: BaixaResult): void {
+    const item = this.rcvItem();
+    if (!item) return;
+    this.rcvBusy.set(true);
+    this.svc.registerReceipt(Number(item.id), { amount: r.amount, receiptDate: r.date, note: r.note }).subscribe({
+      next: () => { this.rcvBusy.set(false); this.rcvItem.set(null); this.notify.success('Recebimento registrado com sucesso.'); this.store.load(); },
+      error: err => { this.rcvBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar o recebimento.'); },
+    });
+  }
 
   ngOnInit(): void {
     this.store.load();
