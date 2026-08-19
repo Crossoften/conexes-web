@@ -6,6 +6,7 @@ import { NgClass } from '@angular/common';
 import { TaxesService } from '../taxes.service';
 import { TaxPayload, TaxService, ScopeOption } from '../taxes.model';
 import { parseDecimalBR, formatDecimalBR } from '../../../shared/utils/format';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
 
@@ -22,6 +23,7 @@ export class TaxesNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
   private svc    = inject(TaxesService);
+  private notify = inject(NotificationService);
 
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
@@ -200,6 +202,8 @@ export class TaxesNewPage implements OnInit {
   private onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // IMP-05: feedback consistente também quando falta campo obrigatório.
+      this.notify.error('Preencha os campos obrigatórios antes de salvar.');
       return;
     }
 
@@ -240,12 +244,16 @@ export class TaxesNewPage implements OnInit {
     this.svc.save(payload).subscribe({
       next: () => {
         this.loading.set(false);
+        // IMP-05: feedback explícito de sucesso (antes só navegava, sem confirmar).
+        this.notify.success('Serviço e retenções salvos com sucesso.');
         this.router.navigate(['/taxes']);
       },
       error: err => {
         this.loading.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar. Tente novamente.';
-        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+        const text = Array.isArray(msg) ? msg.join(', ') : msg;
+        this.errorMsg.set(text);
+        this.notify.error(text);
       },
     });
   }

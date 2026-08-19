@@ -1,6 +1,6 @@
 // src/app/features/chart-of-accounts/new/chart-of-accounts-new.page.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -25,8 +25,12 @@ interface ProjectOption {
 export class ChartOfAccountsNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   private svc    = inject(ChartOfAccountsService);
   private http   = inject(HttpClient);
+
+  /** PC-04: quando aberto via "+" de uma conta sintética, já vincula à conta superior. */
+  readonly parentName = signal<string | null>(null);
 
   readonly loading  = signal(false);
   readonly errorMsg = signal<string | null>(null);
@@ -59,6 +63,15 @@ export class ChartOfAccountsNewPage implements OnInit {
   ngOnInit(): void {
     this.loadProjects();
     this.loadParents();
+
+    // PC-04: "+" na conta sintética abre a criação já com a conta superior vinculada.
+    const parentId = this.route.snapshot.queryParamMap.get('parentId');
+    if (parentId) {
+      this.form.patchValue({ parentId: Number(parentId) });
+      this.parentName.set(this.route.snapshot.queryParamMap.get('parentName'));
+      // Subconta de uma sintética é, por padrão, Analítica (recebe lançamento).
+      this.form.patchValue({ accountType: 'Analitica' });
+    }
   }
 
   /** Carrega as contas que podem ser "conta superior" (Totalizadora/Sintética). */

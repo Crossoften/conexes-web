@@ -10,6 +10,9 @@
     <div class="card-header">
       <h2 class="card-title">Campos da Categoria / Conta</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova conta.</p>
+      @if (parentName()) {
+        <p class="card-subtitle" style="color: var(--brand-purple-mid, #7C3AED); font-weight: 600;">Subcategoria de: {{ parentName() }}</p>
+      }
     </div>
 
     <div class="card-body">
