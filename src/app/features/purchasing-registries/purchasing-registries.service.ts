@@ -55,6 +55,22 @@ export class PurchasingRegistriesService {
   createProduct(payload: ProductServicePayload): Observable<ApiProductService> {
     return this.http.post<ApiProductService>(`${this.base}/v1/products-services`, payload);
   }
+
+  // CMP-04/05: cadastros de Grupos de Produtos e Fabricantes.
+  getProductGroups(): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ data?: { id: number; name: string }[] }>(`${this.base}/v1/product-groups`, { params: { take: '1000' } })
+      .pipe(map(r => (r?.data ?? []) as { id: number; name: string }[]));
+  }
+  createProductGroup(name: string): Observable<{ id: number; name: string }> {
+    return this.http.post<{ id: number; name: string }>(`${this.base}/v1/product-groups`, { name });
+  }
+  getManufacturers(): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ data?: { id: number; name: string }[] }>(`${this.base}/v1/manufacturers`, { params: { take: '1000' } })
+      .pipe(map(r => (r?.data ?? []) as { id: number; name: string }[]));
+  }
+  createManufacturer(name: string): Observable<{ id: number; name: string }> {
+    return this.http.post<{ id: number; name: string }>(`${this.base}/v1/manufacturers`, { name });
+  }
   updateProduct(id: number, payload: Partial<ProductServicePayload>): Observable<ApiProductService> {
     return this.http.patch<ApiProductService>(`${this.base}/v1/products-services/${id}`, payload);
   }

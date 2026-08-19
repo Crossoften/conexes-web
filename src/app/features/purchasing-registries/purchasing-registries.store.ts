@@ -26,7 +26,7 @@ function toProduct(a: ApiProductService): Product {
   return {
     id: String(a.id), apiId: a.id,
     code: a.code ?? '—', productName: a.name,
-    measureType: a.measure ?? '—', group: a.group ?? '—',
+    measureType: a.measure ?? '—', group: a.productGroup?.name ?? a.group ?? '—', manufacturer: a.manufacturerRef?.name ?? a.manufacturer ?? '—',
     description: a.description ?? '—', status: a.status ?? 'Active',
   };
 }

@@ -75,6 +75,7 @@
                 <th class="th th--sortable" (click)="store.setSort('productName')">Produto <span class="sort-icon" [ngClass]="'sort--' + getSortState('productName')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('measureType')">Tipo medida <span class="sort-icon" [ngClass]="'sort--' + getSortState('measureType')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('group')">Grupo <span class="sort-icon" [ngClass]="'sort--' + getSortState('group')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('manufacturer')">Fabricante <span class="sort-icon" [ngClass]="'sort--' + getSortState('manufacturer')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
                 <th class="th th--center">Ações</th>
@@ -101,6 +102,7 @@
                   <td class="td td--name">{{ item.productName }}</td>
                   <td class="td">{{ item.measureType }}</td>
                   <td class="td">{{ item.group }}</td>
+                  <td class="td">{{ item.manufacturer }}</td>
                   <td class="td">{{ item.description }}</td>
                   <td class="td">
                     <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">{{ statusConfig[item.status].label }}</span>
@@ -132,7 +134,7 @@
           }
           @if (!store.loading() && !store.error() && store.filteredTotal() === 0) {
             <tr>
-              <td class="td registry-empty-cell" style="text-align:center; padding:32px; color: var(--text-secondary);" [attr.colspan]="store.activeTab() === 'PRODUCTS' ? 8 : 4">Nenhum registro encontrado.</td>
+              <td class="td registry-empty-cell" style="text-align:center; padding:32px; color: var(--text-secondary);" [attr.colspan]="store.activeTab() === 'PRODUCTS' ? 9 : 4">Nenhum registro encontrado.</td>
             </tr>
           }
         </tbody>

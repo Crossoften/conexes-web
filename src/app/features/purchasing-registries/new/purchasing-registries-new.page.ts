@@ -29,12 +29,15 @@ export class PurchasingRegistriesNewPage {
   readonly saving   = signal(false);
   readonly errorMsg = signal<string | null>(null);
   readonly accountPlans = signal<PurchaseRef[]>([]);
+  // CMP-04/05: grupos e fabricantes cadastrados.
+  readonly productGroups = signal<{ id: number; name: string }[]>([]);
+  readonly manufacturers = signal<{ id: number; name: string }[]>([]);
 
   readonly form = this.fb.group({
     name:          ['', Validators.required],
     type:          ['Product', Validators.required],
-    manufacturer:  [''],
-    group:         [''],
+    manufacturerId: [''],
+    groupId:       [''],
     measure:       [''],
     costBase:      [''],
     origin:        [''],
@@ -45,6 +48,8 @@ export class PurchasingRegistriesNewPage {
 
   constructor() {
     this.purchasesSvc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
+    this.svc.getProductGroups().subscribe({ next: v => this.productGroups.set(v), error: () => {} });
+    this.svc.getManufacturers().subscribe({ next: v => this.manufacturers.set(v), error: () => {} });
     if (this.editId != null) {
       this.svc.getProduct(this.editId).subscribe({
         next: p => this.patchForm(p),
@@ -57,8 +62,8 @@ export class PurchasingRegistriesNewPage {
     this.form.patchValue({
       name:          p.name ?? '',
       type:          p.type ?? 'Product',
-      manufacturer:  p.manufacturer ?? '',
-      group:         p.group ?? '',
+      manufacturerId: p.manufacturerId != null ? String(p.manufacturerId) : '',
+      groupId:       p.groupId != null ? String(p.groupId) : '',
       measure:       p.measure ?? '',
       costBase:      p.costBase != null ? String(p.costBase) : '',
       origin:        p.origin ?? '',
@@ -74,6 +79,24 @@ export class PurchasingRegistriesNewPage {
     this.form.reset({ type: 'Product', status: 'Active' });
   }
 
+  // CMP-04/05: cria um grupo/fabricante na hora (sem sair da tela) e já seleciona.
+  quickCreateGroup(): void {
+    const name = (prompt('Nome do novo grupo de produtos:') || '').trim();
+    if (!name) return;
+    this.svc.createProductGroup(name).subscribe({
+      next: g => { this.productGroups.update(list => [...list, g].sort((a, b) => a.name.localeCompare(b.name))); this.form.patchValue({ groupId: String(g.id) }); },
+      error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o grupo.'),
+    });
+  }
+  quickCreateManufacturer(): void {
+    const name = (prompt('Nome do novo fabricante:') || '').trim();
+    if (!name) return;
+    this.svc.createManufacturer(name).subscribe({
+      next: m => { this.manufacturers.update(list => [...list, m].sort((a, b) => a.name.localeCompare(b.name))); this.form.patchValue({ manufacturerId: String(m.id) }); },
+      error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o fabricante.'),
+    });
+  }
+
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
@@ -83,8 +106,8 @@ export class PurchasingRegistriesNewPage {
     const payload: ProductServicePayload = {
       name:          v.name,
       type:          v.type,
-      manufacturer:  v.manufacturer || undefined,
-      group:         v.group || undefined,
+      groupId:         v.groupId ? Number(v.groupId) : undefined,
+      manufacturerId:  v.manufacturerId ? Number(v.manufacturerId) : undefined,
       measure:       v.measure || undefined,
       costBase:      v.costBase !== '' ? Number(v.costBase) : undefined,
       origin:        v.origin || undefined,

@@ -13,6 +13,7 @@ export interface Product {
   productName: string;
   measureType: string;
   group:       string;
+  manufacturer: string;
   description: string;
   status:      RegistryStatus;
 }
@@ -49,6 +50,10 @@ export interface ApiProductService {
   type?:         string | null;
   manufacturer?: string | null;
   group?:        string | null;
+  groupId?:        number | null;
+  manufacturerId?: number | null;
+  productGroup?:   { name: string } | null;
+  manufacturerRef?: { name: string } | null;
   measure?:      string | null;
   costBase?:     number | null;
   origin?:       string | null;
@@ -90,6 +95,8 @@ export interface ProductServicePayload {
   type:          string; // 'Product' | 'Service'
   manufacturer?: string;
   group?:        string;
+  groupId?:        number;
+  manufacturerId?: number;
   measure?:      string;
   costBase?:     number;
   origin?:       string;
