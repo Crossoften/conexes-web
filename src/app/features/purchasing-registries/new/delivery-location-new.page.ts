@@ -51,6 +51,8 @@ export class DeliveryLocationNewPage {
   }
 
   resetForm(): void {
+    // CMP-13: confirmação para evitar limpar por clique acidental.
+    if (this.form.dirty && !confirm('Limpar os campos preenchidos?')) return;
     this.form.reset();
   }
 

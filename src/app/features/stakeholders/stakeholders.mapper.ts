@@ -218,9 +218,18 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
       cofinsAliquot:       Number(s3.aliqCOFINS)         || 0,
       cofinsCode:          s3.codCOFINS?.trim()           ?? '',
       inssAliquot:         Number(s3.aliqINSS)           || 0,
+      // KWN-03C: campos que o fornecedor coletava mas o save descartava (zerava
+      // ISS/códigos ao editar). Agora vão junto para não sobrescrever com vazio.
+      inssCode:            s3.codINSS?.trim()             ?? '',
       csllAliquot:         Number(s3.aliqCSLL)           || 0,
+      csllCode:            s3.codCSLL?.trim()             ?? '',
+      issAliquot:          Number(s3.aliqISS)            || 0,
+      issCode:             s3.codISS?.trim()              ?? '',
       ibsAliquot:          Number(s3.aliqIBS)            || 0,
+      ibsCode:             s3.codIBS?.trim()              ?? '',
       cbsAliquot:          Number(s3.aliqCBS)            || 0,
+      cbsCode:             s3.codCBS?.trim()              ?? '',
+      manualAliquots:      !!s3.manualAliquots,
       // 5.2: lista de serviços (array) + um "novo serviço" preenchido não adicionado.
       services: [
         ...(s3.services ?? []),

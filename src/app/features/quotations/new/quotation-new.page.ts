@@ -203,6 +203,8 @@ export class QuotationNewPage {
   }
 
   resetForm(): void {
+    // CMP-13: confirmação para não apagar a requisição inteira por clique acidental.
+    if (this.form.dirty && !confirm('Limpar todos os campos preenchidos? Essa ação não pode ser desfeita.')) return;
     this.form.reset();
     this.items.clear();
     this.items.push(this.newItem());

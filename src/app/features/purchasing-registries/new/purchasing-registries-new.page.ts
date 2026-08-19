@@ -69,6 +69,8 @@ export class PurchasingRegistriesNewPage {
   }
 
   resetForm(): void {
+    // CMP-13: confirmação para evitar limpar o cadastro por clique acidental.
+    if (this.form.dirty && !confirm('Limpar os campos preenchidos?')) return;
     this.form.reset({ type: 'Product', status: 'Active' });
   }
 

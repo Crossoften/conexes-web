@@ -514,38 +514,9 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
         complianceObservations:   v.complianceObservations   ?? '',
       },
 
-      taxesAndServices: {
-        serviceClassCode:     v.serviceClassCode     ?? '',
-        serviceTitle:         v.serviceTitle         ?? '',
-        operationNature:      v.operationNature      ?? '',
-        totalRetentions:      v.totalRetentions      ?? 0,
-        irfAliquot:           v.irfAliquot           ?? 0,
-        irfCode:              v.irfCode              ?? '',
-        pisAliquot:           v.pisAliquot           ?? 0,
-        pisCode:              v.pisCode              ?? '',
-        pccAliquot:           v.pccAliquot           ?? 0,
-        pccCode:              v.pccCode              ?? '',
-        cofinsAliquot:        v.cofinsAliquot        ?? 0,
-        cofinsCode:           v.cofinsCode           ?? '',
-        inssAliquot:          v.inssAliquot          ?? 0,
-        csllAliquot:          v.csllAliquot          ?? 0,
-        ibsAliquot:           v.ibsAliquot           ?? 0,
-        cbsAliquot:           v.cbsAliquot           ?? 0,
-        // 5.2: envia a lista completa; inclui um "novo serviço" preenchido não adicionado.
-        services: [
-          ...this.services,
-          ...(v.serviceName?.trim()
-            ? [{
-                name:          v.serviceName.trim(),
-                description:   v.serviceDescription   ?? '',
-                externalCode:  v.serviceExternalCode  ?? '',
-                grantorOrgan:  v.serviceGrantorOrgan  ?? '',
-                hasRetention:  !!v.serviceHasRetention,
-                accessorOrgan: v.serviceAccessorOrgan ?? '',
-              }]
-            : []),
-        ],
-      },
+      // KWN-03 (Opção A): o cadastro do fornecedor NÃO escreve mais os dados
+      // fiscais — a tela de Impostos e Retenções é a dona. Omitir o bloco faz o
+      // back preservar a linha existente (só mexe quando taxesAndServices !== undefined).
     };
 
     // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).

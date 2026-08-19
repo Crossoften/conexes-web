@@ -124,6 +124,8 @@ export class PurchasingManagementListPage {
   }
 
   copy(item: PurchasingReq) {
+    // CMP-13: confirmação antes de duplicar (evita duplicação por clique acidental).
+    if (!confirm('Duplicar esta requisição?')) return;
     this.store.copy(item.apiId);
   }
 

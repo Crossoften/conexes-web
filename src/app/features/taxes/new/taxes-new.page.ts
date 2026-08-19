@@ -160,6 +160,20 @@ export class TaxesNewPage implements OnInit {
           aliqCBS:    t.cbsAliquot    ?? '',
           cbsCode:    t.cbsCode       ?? '',
         });
+        // STK-04.4: antes só as alíquotas vinham; a lista de serviços era ignorada.
+        if (Array.isArray(t.services) && t.services.length) {
+          this.services = t.services.map((sv: any) => ({
+            name:          sv.name          ?? '',
+            description:   sv.description   ?? '',
+            externalCode:  sv.externalCode  ?? '',
+            grantorOrgan:  sv.grantorOrgan  ?? '',
+            hasRetention:  !!sv.hasRetention,
+            accessorOrgan: sv.accessorOrgan ?? '',
+            costCenterId:  this.idOrNull(sv.costCenterId),
+            projectId:     this.idOrNull(sv.projectId),
+            activityId:    this.idOrNull(sv.activityId),
+          }));
+        }
       },
       error: () => { /* fornecedor sem impostos: mantém o formulário como está */ },
     });
