@@ -1,6 +1,6 @@
 // src/app/features/taxes/new/taxes-new.page.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { TaxesService } from '../taxes.service';
@@ -22,6 +22,7 @@ interface StakeholderItem { id: number; name: string; document: string; }
 export class TaxesNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   private svc    = inject(TaxesService);
   private notify = inject(NotificationService);
 
@@ -112,6 +113,13 @@ export class TaxesNewPage implements OnInit {
         }));
         this.stakeholders.set(mapped);
         this.loadingLists.set(false);
+        // KWN-03D: quando aberto via "Configurar impostos" do fornecedor, já
+        // pré-seleciona o fornecedor e carrega os impostos dele.
+        const sid = this.route.snapshot.queryParamMap.get('stakeholderId');
+        if (sid && !this.form.get('fornecedor')?.value) {
+          this.form.patchValue({ fornecedor: sid });
+          this.onSupplierChange(sid);
+        }
       },
       error: () => this.loadingLists.set(false),
     });
