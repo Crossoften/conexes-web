@@ -132,51 +132,77 @@ export class TaxesNewPage implements OnInit {
   onSupplierChange(value: string | number): void {
     const id = Number(value);
     if (!id) return;
-
     this.svc.getStakeholderById(id).subscribe({
-      next: (s: any) => {
-        const t = s?.taxesAndServices;
-        if (!t) return;
-        this.form.patchValue({
-          codigoServico:    t.serviceClassCode || this.form.get('codigoServico')?.value || '',
-          tituloServico:    t.serviceTitle     || this.form.get('tituloServico')?.value || '',
-          naturezaOperacao: t.operationNature  ?? '',
-          aliqIRRF:   t.irfAliquot    ?? '',
-          irfCode:    t.irfCode       ?? '',
-          aliqPIS:    t.pisAliquot    ?? '',
-          pisCode:    t.pisCode       ?? '',
-          aliqPCC:    t.pccAliquot    ?? '',
-          pccCode:    t.pccCode       ?? '',
-          aliqCOFINS: t.cofinsAliquot ?? '',
-          cofinsCode: t.cofinsCode    ?? '',
-          aliqINSS:   t.inssAliquot   ?? '',
-          inssCode:   t.inssCode      ?? '',
-          aliqCSLL:   t.csllAliquot   ?? '',
-          csllCode:   t.csllCode      ?? '',
-          aliqISS:    t.issAliquot    ?? '',
-          issCode:    t.issCode       ?? '',
-          aliqIBS:    t.ibsAliquot    ?? '',
-          ibsCode:    t.ibsCode       ?? '',
-          aliqCBS:    t.cbsAliquot    ?? '',
-          cbsCode:    t.cbsCode       ?? '',
-        });
-        // STK-04.4: antes só as alíquotas vinham; a lista de serviços era ignorada.
-        if (Array.isArray(t.services) && t.services.length) {
-          this.services = t.services.map((sv: any) => ({
-            name:          sv.name          ?? '',
-            description:   sv.description   ?? '',
-            externalCode:  sv.externalCode  ?? '',
-            grantorOrgan:  sv.grantorOrgan  ?? '',
-            hasRetention:  !!sv.hasRetention,
-            accessorOrgan: sv.accessorOrgan ?? '',
-            costCenterId:  this.idOrNull(sv.costCenterId),
-            projectId:     this.idOrNull(sv.projectId),
-            activityId:    this.idOrNull(sv.activityId),
-          }));
-        }
-      },
+      next: (s: any) => this.applyTaxConfig(s?.taxesAndServices, false),
       error: () => { /* fornecedor sem impostos: mantém o formulário como está */ },
     });
+  }
+
+  // STK-04.1: copia a configuração de impostos/serviços de OUTRO fornecedor.
+  copyFrom: number | string = '';
+  readonly copying = signal(false);
+
+  onCopyFromSupplier(value: string | number): void {
+    const id = Number(value);
+    if (!id) return;
+    if (this.form.dirty && !confirm('Isso vai substituir as alíquotas e a lista de serviços atuais. Continuar?')) {
+      this.copyFrom = '';
+      return;
+    }
+    this.copying.set(true);
+    this.svc.getByStakeholder(id).subscribe({
+      next: (t: any) => {
+        this.copying.set(false);
+        if (!t || !t.serviceClassCode && !t.services?.length && !t.irfAliquot) {
+          this.notify.error('Esse fornecedor não tem impostos/serviços cadastrados para copiar.');
+          return;
+        }
+        this.applyTaxConfig(t, true);
+        this.notify.success('Impostos e serviços copiados. Ajuste o que precisar antes de salvar.');
+        this.copyFrom = '';
+      },
+      error: () => { this.copying.set(false); this.notify.error('Esse fornecedor não tem impostos/serviços para copiar.'); this.copyFrom = ''; },
+    });
+  }
+
+  // Aplica uma config fiscal (do próprio fornecedor ou copiada de outro) ao form.
+  // `overwriteServices`: quando true (cópia), substitui a lista mesmo se vazia.
+  private applyTaxConfig(t: any, overwriteServices: boolean): void {
+    if (!t) return;
+    this.form.patchValue({
+      codigoServico:    t.serviceClassCode || this.form.get('codigoServico')?.value || '',
+      tituloServico:    t.serviceTitle     || this.form.get('tituloServico')?.value || '',
+      naturezaOperacao: t.operationNature  ?? '',
+      aliqIRRF:   t.irfAliquot    ?? '', irfCode:    t.irfCode    ?? '',
+      aliqPIS:    t.pisAliquot    ?? '', pisCode:    t.pisCode    ?? '',
+      aliqPCC:    t.pccAliquot    ?? '', pccCode:    t.pccCode    ?? '',
+      aliqCOFINS: t.cofinsAliquot ?? '', cofinsCode: t.cofinsCode ?? '',
+      aliqINSS:   t.inssAliquot   ?? '', inssCode:   t.inssCode   ?? '',
+      aliqCSLL:   t.csllAliquot   ?? '', csllCode:   t.csllCode   ?? '',
+      aliqISS:    t.issAliquot    ?? '', issCode:    t.issCode    ?? '',
+      aliqIBS:    t.ibsAliquot    ?? '', ibsCode:    t.ibsCode    ?? '',
+      aliqCBS:    t.cbsAliquot    ?? '', cbsCode:    t.cbsCode    ?? '',
+    });
+    // STK-04.4/STK-04.3: traz também a lista de serviços (strip de ids, preserva escopo).
+    if (overwriteServices || (Array.isArray(t.services) && t.services.length)) {
+      this.services = (t.services ?? []).map((sv: any) => ({
+        name:          sv.name          ?? '',
+        description:   sv.description   ?? '',
+        externalCode:  sv.externalCode  ?? '',
+        grantorOrgan:  sv.grantorOrgan  ?? '',
+        hasRetention:  !!sv.hasRetention,
+        accessorOrgan: sv.accessorOrgan ?? '',
+        costCenterId:  this.idOrNull(sv.costCenterId),
+        projectId:     this.idOrNull(sv.projectId),
+        activityId:    this.idOrNull(sv.activityId),
+      }));
+    }
+  }
+
+  /** Fornecedores disponíveis como origem da cópia (exclui o destino já selecionado). */
+  copySourceOptions(): StakeholderItem[] {
+    const target = Number(this.form.get('fornecedor')?.value);
+    return this.stakeholders().filter(s => s.id !== target);
   }
 
   // ── Services array ────────────────────────────────────────────────────────
