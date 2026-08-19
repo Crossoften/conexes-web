@@ -7,12 +7,13 @@ import { AccountsPayableService } from './accounts-payable.service';
 import { PayableAccount, AdvancedFilters } from './accounts-payable.model';
 import { RouterLink } from "@angular/router";
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
+import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-accounts-payable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent],
+  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent, RenegotiateModalComponent],
   providers: [AccountsPayableStore],
   templateUrl: './accounts-payable-list.page.html',
   styleUrl: './accounts-payable-list.page.scss',
@@ -36,6 +37,21 @@ export class AccountsPayableListPage implements OnInit {
     this.svc.registerPayment(Number(item.id), { amount: r.amount, paymentDate: r.date, note: r.note }).subscribe({
       next: () => { this.payBusy.set(false); this.payItem.set(null); this.notify.success('Baixa registrada com sucesso.'); this.store.load(); },
       error: err => { this.payBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar a baixa.'); },
+    });
+  }
+
+  // FIN-03: renegociação.
+  readonly rngItem = signal<PayableAccount | null>(null);
+  readonly rngBusy = signal(false);
+  openRenegotiate(item: PayableAccount): void { this.rngItem.set(item); }
+  closeRenegotiate(): void { this.rngItem.set(null); }
+  onRenegotiateConfirm(r: RenegotiateResult): void {
+    const item = this.rngItem();
+    if (!item) return;
+    this.rngBusy.set(true);
+    this.svc.renegotiate(Number(item.id), r).subscribe({
+      next: () => { this.rngBusy.set(false); this.rngItem.set(null); this.notify.success('Título renegociado — novo título gerado.'); this.store.load(); },
+      error: err => { this.rngBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao renegociar.'); },
     });
   }
 

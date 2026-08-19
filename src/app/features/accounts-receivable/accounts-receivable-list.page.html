@@ -110,6 +110,8 @@
                   @if (item.canReceive) {
                     <!-- FIN-01: baixa (recebimento) total ou parcial -->
                     <button class="icon-btn" title="Receber (baixar)" (click)="openReceive(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                    <!-- FIN-03: renegociar o saldo -->
+                    <button class="icon-btn" title="Renegociar" (click)="openRenegotiate(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 8a6 6 0 0 1 10-2M16 12a6 6 0 0 1-10 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3M6 17v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   }
                   <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                   <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -182,4 +184,14 @@
     (confirm)="onReceiveConfirm($event)"
     (cancel)="closeReceive()">
   </app-baixa-modal>
+}
+
+@if (rngItem(); as r) {
+  <app-renegotiate-modal
+    [title]="r.contractorName + ' · ' + r.value"
+    [balance]="r.balanceNum"
+    [busy]="rngBusy()"
+    (confirm)="onRenegotiateConfirm($event)"
+    (cancel)="closeRenegotiate()">
+  </app-renegotiate-modal>
 }

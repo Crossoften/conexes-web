@@ -89,6 +89,11 @@ export class AccountsPayableService {
     return this.http.post<ApiAccountPayable>(`${this.base}/${id}/payments`, payload);
   }
 
+  /** FIN-03: renegocia o saldo pendente gerando um novo título. */
+  renegotiate(id: number, payload: { interest?: number; fine?: number; discount?: number; installmentsCount: number; firstDueDate: string; note?: string }): Observable<unknown> {
+    return this.http.post(`${this.base}/${id}/renegotiate`, payload);
+  }
+
   update(id: number, payload: unknown): Observable<ApiAccountPayable> {
     return this.http.patch<ApiAccountPayable>(`${this.base}/${id}`, payload);
   }

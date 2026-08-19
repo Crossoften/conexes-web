@@ -6,12 +6,13 @@ import { AccountsReceivableStore } from './accounts-receivable.store';
 import { AccountsReceivableService } from './accounts-receivable.service';
 import { ReceivableAccount, ReceivableFilters } from './accounts-receivable.model';
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
+import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-accounts-receivable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, BaixaModalComponent],
+  imports: [FormsModule, NgClass, BaixaModalComponent, RenegotiateModalComponent],
   providers: [AccountsReceivableStore],
   templateUrl: './accounts-receivable-list.page.html',
   styleUrl: './accounts-receivable-list.page.scss',
@@ -35,6 +36,21 @@ export class AccountsReceivableListPage implements OnInit {
     this.svc.registerReceipt(Number(item.id), { amount: r.amount, receiptDate: r.date, note: r.note }).subscribe({
       next: () => { this.rcvBusy.set(false); this.rcvItem.set(null); this.notify.success('Recebimento registrado com sucesso.'); this.store.load(); },
       error: err => { this.rcvBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar o recebimento.'); },
+    });
+  }
+
+  // FIN-03: renegociação.
+  readonly rngItem = signal<ReceivableAccount | null>(null);
+  readonly rngBusy = signal(false);
+  openRenegotiate(item: ReceivableAccount): void { this.rngItem.set(item); }
+  closeRenegotiate(): void { this.rngItem.set(null); }
+  onRenegotiateConfirm(r: RenegotiateResult): void {
+    const item = this.rngItem();
+    if (!item) return;
+    this.rngBusy.set(true);
+    this.svc.renegotiate(Number(item.id), r).subscribe({
+      next: () => { this.rngBusy.set(false); this.rngItem.set(null); this.notify.success('Título renegociado — novo título gerado.'); this.store.load(); },
+      error: err => { this.rngBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao renegociar.'); },
     });
   }
 

@@ -81,6 +81,11 @@ export class AccountsReceivableService {
     return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/receipts`, payload);
   }
 
+  /** FIN-03: renegocia o saldo a receber gerando um novo título. */
+  renegotiate(id: number, payload: { interest?: number; fine?: number; discount?: number; installmentsCount: number; firstDueDate: string; note?: string }): Observable<unknown> {
+    return this.http.post(`${this.base}/${id}/renegotiate`, payload);
+  }
+
   buildSummaries(raw: ApiAccountReceivable[]): SummaryCard[] {
     const total = raw.reduce((a, r) => a + (r.amount ?? 0), 0);
     const abertos = raw.filter(r => r.status === 'Open').reduce((a, r) => a + (r.amount ?? 0), 0);
