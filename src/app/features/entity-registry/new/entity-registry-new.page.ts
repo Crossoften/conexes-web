@@ -75,6 +75,47 @@ export class EntityRegistryNewPage {
     accountantOfficePhone: ['', Validators.required],
   });
 
+  // MO-01: feedback de campos obrigatórios (rótulo + aba de cada campo).
+  protected readonly formError = signal<string | null>(null);
+
+  private readonly fieldMeta: Record<string, { label: string; tab: 'gerais' | 'contador' }> = {
+    cnpj:                  { label: 'CNPJ', tab: 'gerais' },
+    legalName:             { label: 'Razão social', tab: 'gerais' },
+    tradeName:             { label: 'Nome fantasia', tab: 'gerais' },
+    zipCode:               { label: 'CEP', tab: 'gerais' },
+    address:               { label: 'Endereço', tab: 'gerais' },
+    number:                { label: 'Número', tab: 'gerais' },
+    city:                  { label: 'Cidade', tab: 'gerais' },
+    state:                 { label: 'Estado (UF)', tab: 'gerais' },
+    mainPhone:             { label: 'Telefone principal', tab: 'gerais' },
+    cellPhone:             { label: 'Celular', tab: 'gerais' },
+    directorEmail:         { label: 'E-mail do dirigente', tab: 'gerais' },
+    accountantName:        { label: 'Nome do contador', tab: 'contador' },
+    accountantCpf:         { label: 'CPF do contador', tab: 'contador' },
+    accountantCrc:         { label: 'CRC', tab: 'contador' },
+    accountantZipCode:     { label: 'CEP do contador', tab: 'contador' },
+    accountantAddress:     { label: 'Endereço do contador', tab: 'contador' },
+    accountantNumber:      { label: 'Número (contador)', tab: 'contador' },
+    accountantPhone:       { label: 'Telefone do contador', tab: 'contador' },
+    accountantEmail:       { label: 'E-mail do contador', tab: 'contador' },
+    accountantOffice:      { label: 'Escritório', tab: 'contador' },
+    accountantOfficePhone: { label: 'Telefone do escritório', tab: 'contador' },
+  };
+
+  private invalidControlNames(): string[] {
+    return Object.keys(this.form.controls).filter(k => this.form.get(k)?.invalid);
+  }
+
+  /** Leva o usuário até o 1º campo inválido: abre a aba certa, rola e foca. */
+  private goToInvalid(name: string): void {
+    if (this.fieldMeta[name]?.tab === 'contador') this.activeTab = 'contador';
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[formcontrolname="${name}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus();
+    }, 60);
+  }
+
   // ── Uploads (certificado / logotipo) via /upload/one-file ──────────────────
 
   onCertSelected(event: Event): void {
@@ -116,9 +157,19 @@ export class EntityRegistryNewPage {
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const invalid = this.invalidControlNames();
+      const labels = invalid.map(n => this.fieldMeta[n]?.label ?? n);
+      const shown = labels.slice(0, 6).join(', ') + (labels.length > 6 ? '…' : '');
+      const temContador = invalid.some(n => this.fieldMeta[n]?.tab === 'contador');
+      this.formError.set(
+        `Há ${invalid.length} campo(s) obrigatório(s) pendente(s): ${shown}.` +
+        (temContador ? ' Confira também a aba "Dados do Contador".' : '')
+      );
+      if (invalid.length) this.goToInvalid(invalid[0]);
       return;
     }
 
+    this.formError.set(null);
     const raw = this.form.value;
     const onlyNumbers = (v: string | undefined) => v ? v.replace(/\D/g, '') : '';
 
@@ -135,7 +186,11 @@ export class EntityRegistryNewPage {
     } as EntityRegistryPayload;
 
     const ok = await this.store.createEntity(payload);
-    if (ok) this.router.navigate(['/entity-registry']);
+    if (ok) {
+      this.router.navigate(['/entity-registry']);
+    } else {
+      this.formError.set(this.store.error() ?? 'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.');
+    }
   }
 
   // ── Máscaras (o submit já envia só os dígitos via onlyNumbers) ─────────────

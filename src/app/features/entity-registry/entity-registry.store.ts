@@ -11,6 +11,7 @@ import { EntityRegistryService } from './entity-registry.service';
 interface State {
   items:       EntityRegistryListItem[];
   loading:     boolean;
+  error:       string | null;
   filters:     { search: string };
   sort:        { column: keyof EntityRegistryListItem | ''; direction: 'asc' | 'desc' | '' };
   pagination:  { page: number; pageSize: number };
@@ -24,6 +25,7 @@ export class EntityRegistryStore {
   private readonly state = signal<State>({
     items:       [],
     loading:     false,
+    error:       null,
     filters:     { search: '' },
     sort:        { column: '', direction: '' },
     pagination:  { page: 1, pageSize: 10 },
@@ -33,6 +35,7 @@ export class EntityRegistryStore {
   // ── Selectors ─────────────────────────────────────────────────────────────
 
   readonly loading     = computed(() => this.state().loading);
+  readonly error       = computed(() => this.state().error);
   readonly filters     = computed(() => this.state().filters);
   readonly sort        = computed(() => this.state().sort);
   readonly pagination  = computed(() => this.state().pagination);
@@ -107,7 +110,7 @@ export class EntityRegistryStore {
   }
 
   async createEntity(payload: EntityRegistryPayload): Promise<boolean> {
-    this.state.update(s => ({ ...s, loading: true }));
+    this.state.update(s => ({ ...s, loading: true, error: null }));
     try {
       const created = await firstValueFrom(this.service.create(payload));
       // Adiciona o novo item resumido no topo da lista
@@ -115,10 +118,18 @@ export class EntityRegistryStore {
       this.state.update(s => ({ ...s, items: [listItem, ...s.items], loading: false }));
       return true;
     } catch (error) {
-      this.state.update(s => ({ ...s, loading: false }));
+      this.state.update(s => ({ ...s, loading: false, error: this._extractError(error) }));
       console.error('❌ Falha ao cadastrar entidade:', error);
       return false;
     }
+  }
+
+  /** MO-01: extrai uma mensagem legível do erro do back (evita bloqueio silencioso). */
+  private _extractError(error: any): string {
+    const msg = error?.error?.message ?? error?.message;
+    if (Array.isArray(msg)) return msg.join(', ');
+    if (typeof msg === 'string') return msg;
+    return 'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.';
   }
 
   async updateEntity(id: number, payload: Partial<EntityRegistryPayload>): Promise<boolean> {

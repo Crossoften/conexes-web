@@ -148,6 +148,29 @@
 
 .mt-24 { margin-top: 24px; }
 
+// MO-01: banner de pendências e realce visual de campos obrigatórios inválidos
+.form-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #FDECEC;
+  border: 1px solid #F5B5B0;
+  color: #B4231A;
+  font-size: 13px;
+  line-height: 1.4;
+
+  svg { flex-shrink: 0; }
+}
+
+.form-control.ng-invalid.ng-touched,
+.form-control.is-invalid {
+  border-color: #E0655B !important;
+  background-color: #FEF7F6;
+}
+
 // BK-16: dica de consulta CNPJ
 .cnpj-hint {
   display: block;
