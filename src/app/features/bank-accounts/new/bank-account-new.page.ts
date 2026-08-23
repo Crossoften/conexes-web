@@ -38,7 +38,8 @@ export class BankAccountNewPage implements OnInit {
 
   form: FormGroup = this.fb.group({
     banco:             ['', Validators.required],
-    fontePagadora:     [''],
+    entidadeDona:      ['', Validators.required], // FA-02: entidade dona da conta (obrigatória)
+    fontePagadora:     [''],                       // FA-02: Fonte Pagadora agora é opcional e separada
     tipoConta:         ['', Validators.required],
     dataAbertura:      ['', Validators.required],
     apelidoConta:      ['', Validators.required],
@@ -110,25 +111,20 @@ export class BankAccountNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.errorMsg.set('Preencha os campos obrigatórios destacados (banco, tipo de conta e saldo inicial).');
+      this.errorMsg.set('Preencha os campos obrigatórios destacados (banco, entidade dona, tipo de conta e saldo inicial).');
       return;
     }
 
     const v = this.form.value;
 
-    // FA-02: sem Fonte Pagadora (entidade), o back rejeita com erro técnico — orienta antes.
-    if (!(Number(v.fontePagadora) > 0)) {
-      this.errorMsg.set('Selecione a Fonte Pagadora (entidade responsável pela conta) antes de salvar.');
-      return;
-    }
-
     this.loading.set(true);
     this.errorMsg.set(null);
 
+    const paying = Number(v.fontePagadora);
     const payload: BankAccountPayload = {
       bankId:            Number(v.banco)           || 0,
-      entityId:          Number(v.fontePagadora)   || 0,
-      // payingSourceId omitido: o back assume a entidade dona (a Fonte Pagadora selecionada).
+      entityId:          Number(v.entidadeDona)    || 0, // FA-02: entidade DONA da conta
+      payingSourceId:    paying > 0 ? paying : undefined, // FA-02: Fonte Pagadora opcional, separada
       accountType:       v.tipoConta               || 'Checking',
       status:            'Active',
       openDate:          v.dataAbertura            ?? '',

@@ -39,15 +39,27 @@
               </div>
             </div>
 
-            <!-- Fonte Pagadora → populado com entidades do back -->
+            <!-- FA-02: Entidade DONA da conta (obrigatória) -->
             <div class="form-group">
-              <label>Fonte Pagadora</label>
+              <label>Entidade (dona da conta) <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="fontePagadora"
-                  [class.is-invalid]="form.get('fontePagadora')?.invalid && form.get('fontePagadora')?.touched">
-                  <option value="">
-                    {{ loadingLists() ? 'Carregando...' : 'Selecione' }}
-                  </option>
+                <select class="form-control" formControlName="entidadeDona"
+                  [class.is-invalid]="form.get('entidadeDona')?.invalid && form.get('entidadeDona')?.touched">
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  @for (entity of entities(); track entity.id) {
+                    <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <!-- FA-02: Fonte Pagadora agora é opcional e separada da entidade dona -->
+            <div class="form-group">
+              <label>Fonte Pagadora <span class="field-hint-inline">(opcional)</span></label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="fontePagadora">
+                  <option value="">Mesma da entidade dona</option>
                   @for (entity of entities(); track entity.id) {
                     <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
                   }
