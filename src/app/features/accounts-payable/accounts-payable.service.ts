@@ -129,9 +129,9 @@ export class AccountsPayableService {
     const abertos = raw.filter(r => r.status === 'Open').reduce((a, r) => a + (r.netAmount ?? r.amount ?? 0), 0);
     const pagos = raw.filter(r => r.status === 'Paid').reduce((a, r) => a + (r.netAmount ?? r.amount ?? 0), 0);
     return [
-      { title: 'Total de contas', credit: String(items.length), debit: brl.format(totalNet) },
-      { title: 'Em aberto', credit: '', debit: brl.format(abertos) },
-      { title: 'Pago', credit: '', debit: brl.format(pagos) },
+      { title: 'Total de contas', credit: brl.format(0), debit: brl.format(totalNet) },
+      { title: 'Em aberto', credit: brl.format(0), debit: brl.format(abertos) },
+      { title: 'Pago', credit: brl.format(0), debit: brl.format(pagos) },
     ];
   }
 

@@ -22,7 +22,7 @@ export class FinancialTransfersListPage implements OnInit {
   }
 
   readonly viewOptions: { label: string; value: TransferView }[] = [
-    { label: 'Transferencias', value: 'TRANSFERS' },
+    { label: 'Transferências', value: 'TRANSFERS' },
     { label: 'Lançamentos', value: 'ENTRIES' },
   ];
 

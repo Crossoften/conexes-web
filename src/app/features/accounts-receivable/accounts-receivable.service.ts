@@ -91,9 +91,9 @@ export class AccountsReceivableService {
     const abertos = raw.filter(r => r.status === 'Open').reduce((a, r) => a + (r.amount ?? 0), 0);
     const recebidos = raw.filter(r => r.status === 'Paid').reduce((a, r) => a + (r.amount ?? 0), 0);
     return [
-      { title: 'Total a receber', credit: brl.format(total), debit: '' },
-      { title: 'Em aberto', credit: brl.format(abertos), debit: '' },
-      { title: 'Recebido', credit: brl.format(recebidos), debit: '' },
+      { title: 'Total a receber', credit: brl.format(total), debit: brl.format(0) },
+      { title: 'Em aberto', credit: brl.format(abertos), debit: brl.format(0) },
+      { title: 'Recebido', credit: brl.format(recebidos), debit: brl.format(0) },
     ];
   }
 
