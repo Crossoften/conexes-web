@@ -51,6 +51,7 @@ export class StakeholderNewPage {
     const stepForm = this.currentStepForm();
     if (stepForm.invalid) {
       stepForm.markAllAsTouched();
+      this.notify.error('Preencha os campos obrigatórios desta etapa antes de avançar.');
       return;
     }
     if (!this.isLast()) {

@@ -110,6 +110,7 @@ export class BankAccountNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMsg.set('Preencha os campos obrigatórios destacados (banco, tipo de conta e saldo inicial).');
       return;
     }
 
