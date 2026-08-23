@@ -52,7 +52,7 @@
       <label class="btn-outline btn-pill" [class.is-loading]="importing()" style="cursor:pointer;">
         {{ importing() ? 'Importando...' : 'Importar planilha' }}
         <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onImportFile($event)" hidden [disabled]="importing()">
-      </button>
+      </label>
 
       <button class="btn-outline btn-pill" (click)="onExport()" [disabled]="exporting()">
         {{ exporting() ? 'Exportando...' : 'Exportar' }}
