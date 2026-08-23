@@ -75,6 +75,12 @@ export class FinancialTransferNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // FA-03: não falhar em silêncio — orienta o usuário (inclusive quando não há conta bancária).
+      this.errorMsg.set(
+        this.accounts().length === 0
+          ? 'Não há conta bancária cadastrada. Cadastre uma conta bancária antes de registrar transferências.'
+          : 'Preencha os campos obrigatórios destacados (origem, destino, data e valor).',
+      );
       return;
     }
 
