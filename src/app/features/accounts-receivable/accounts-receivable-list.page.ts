@@ -1,5 +1,6 @@
 // src/app/features/accounts-receivable/accounts-receivable-list.page.ts
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsReceivableStore } from './accounts-receivable.store';
@@ -21,6 +22,10 @@ export class AccountsReceivableListPage implements OnInit {
   readonly store = inject(AccountsReceivableStore);
   private svc    = inject(AccountsReceivableService);
   private notify = inject(NotificationService);
+  private router = inject(Router);
+
+  // FA-09: cadastro manual de conta a receber.
+  goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
 
   // FIN-01: baixa (recebimento) total ou parcial.
   readonly rcvItem = signal<ReceivableAccount | null>(null);
