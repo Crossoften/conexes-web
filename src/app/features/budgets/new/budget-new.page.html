@@ -28,6 +28,7 @@
               <div class="select-wrap">
                 <select class="form-control" formControlName="periodicidade" [class.is-invalid]="form.get('periodicidade')?.invalid && form.get('periodicidade')?.touched">
                   <option value="">Selecione</option>
+                  @for (p of periodicidades; track p) { <option [value]="p">{{ p }}</option> }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -37,6 +38,7 @@
               <div class="select-wrap">
                 <select class="form-control" formControlName="tipoLancamento" [class.is-invalid]="form.get('tipoLancamento')?.invalid && form.get('tipoLancamento')?.touched">
                   <option value="">Selecione</option>
+                  @for (t of tiposLancamento; track t) { <option [value]="t">{{ t }}</option> }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -54,28 +56,28 @@
             <div class="form-group">
               <label>Mês Início <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="mesInicio" [class.is-invalid]="form.get('mesInicio')?.invalid && form.get('mesInicio')?.touched"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="mesInicio" [class.is-invalid]="form.get('mesInicio')?.invalid && form.get('mesInicio')?.touched"><option value="">Selecione</option>@for (m of meses; track m.v) { <option [value]="m.v">{{ m.l }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
             <div class="form-group">
               <label>Ano Início <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="anoInicio" [class.is-invalid]="form.get('anoInicio')?.invalid && form.get('anoInicio')?.touched"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="anoInicio" [class.is-invalid]="form.get('anoInicio')?.invalid && form.get('anoInicio')?.touched"><option value="">Selecione</option>@for (a of anos; track a) { <option [value]="a">{{ a }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
             <div class="form-group">
               <label>Mês Fim <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="mesFim" [class.is-invalid]="form.get('mesFim')?.invalid && form.get('mesFim')?.touched"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="mesFim" [class.is-invalid]="form.get('mesFim')?.invalid && form.get('mesFim')?.touched"><option value="">Selecione</option>@for (m of meses; track m.v) { <option [value]="m.v">{{ m.l }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
             <div class="form-group">
               <label>Ano Fim <span class="req">*</span></label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="anoFim" [class.is-invalid]="form.get('anoFim')?.invalid && form.get('anoFim')?.touched"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="anoFim" [class.is-invalid]="form.get('anoFim')?.invalid && form.get('anoFim')?.touched"><option value="">Selecione</option>@for (a of anos; track a) { <option [value]="a">{{ a }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
@@ -88,21 +90,21 @@
             <div class="form-group">
               <label>Projeto / Centro de Custo</label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="projetoCentroCusto"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="projetoCentroCusto"><option value="">Selecione</option>@for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
             <div class="form-group">
               <label>Subprojeto</label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option>@for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
             <div class="form-group">
               <label>Atividade</label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="atividade"><option value="">Selecione</option></select>
+                <select class="form-control" formControlName="atividade"><option value="">Selecione</option>@for (a of atividades; track a.id) { <option [value]="a.id">{{ a.nome }}</option> }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
