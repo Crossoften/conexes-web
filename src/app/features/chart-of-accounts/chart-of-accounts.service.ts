@@ -41,6 +41,16 @@ export class ChartOfAccountsService {
     return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
   }
 
+  // PC-03: importação por planilha.
+  importSpreadsheet(file: File): Observable<{ message: string; criadas: number; total: number; results: { line: number; code: string; status: string }[] }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.base}/import`, form);
+  }
+  downloadImportTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/import/template`, { responseType: 'blob' });
+  }
+
   /**
    * FE-PC-3: marca/desmarca contas em lote para orçamento (B-PC-03).
    * mode: 'all' (todas) · 'with_transactions' (só com transação) · 'none' (desmarca todas).

@@ -154,6 +154,41 @@ export class ChartOfAccountsListPage implements OnInit {
     });
   }
 
+  // ── PC-03: importação por planilha ──────────────────────────────────────────
+  readonly importing = signal(false);
+
+  onTemplate(): void {
+    this.svc.downloadImportTemplate().subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = 'modelo-plano-de-contas.xlsx';
+        link.click(); URL.revokeObjectURL(url);
+      },
+      error: () => {},
+    });
+  }
+
+  onImportFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importing.set(true);
+    this.svc.importSpreadsheet(file).subscribe({
+      next: (res) => {
+        this.importing.set(false);
+        input.value = '';
+        alert(res?.message ?? 'Importação concluída.');
+        this.store.load();
+      },
+      error: (err) => {
+        this.importing.set(false);
+        input.value = '';
+        alert(err?.error?.message ?? 'Falha ao importar a planilha.');
+      },
+    });
+  }
+
   // ── Delete ────────────────────────────────────────────────────────────────
 
   onDelete(id: number): void {

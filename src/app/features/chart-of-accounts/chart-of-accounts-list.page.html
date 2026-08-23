@@ -47,6 +47,13 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
+      <button class="btn-outline btn-pill" (click)="onTemplate()">Baixar modelo</button>
+
+      <label class="btn-outline btn-pill" [class.is-loading]="importing()" style="cursor:pointer;">
+        {{ importing() ? 'Importando...' : 'Importar planilha' }}
+        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onImportFile($event)" hidden [disabled]="importing()">
+      </button>
+
       <button class="btn-outline btn-pill" (click)="onExport()" [disabled]="exporting()">
         {{ exporting() ? 'Exportando...' : 'Exportar' }}
         <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
