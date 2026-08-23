@@ -33,7 +33,8 @@ export interface ApprovalTierPayload {
   isManagerTier?: boolean;
   minValue:      number;
   maxValue:      number;
-  purchaseRole?: string;             // obrigatório em COMPRAS; omitido em FINANCEIRO
+  purchaseRole?: string;             // legado (função única)
+  purchaseRoles?: string[];          // AL-01: funções cumulativas (COMPRAS)
   userId:        number;
   costCenterId?: number;
   projectId?:    number;

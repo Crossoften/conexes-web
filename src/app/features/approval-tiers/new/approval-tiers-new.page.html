@@ -86,19 +86,18 @@
 
             @if (isCompras) {
               <div class="form-group">
-                <label>Papel de compra <span class="req">*</span></label>
-                <div class="select-wrap">
-                  <select class="form-control" formControlName="purchaseRole"
-                    [class.is-invalid]="form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched">
-                    <option value="">Selecione</option>
-                    @for (opt of purchaseRoleOptions; track opt.value) {
-                      <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <label>Funções de compra <span class="req">*</span></label>
+                <div class="roles-checkboxes">
+                  @for (opt of purchaseRoleOptions; track opt.value) {
+                    <label class="role-check">
+                      <input type="checkbox" [checked]="isRole(opt.value)" (change)="toggleRole(opt.value)">
+                      <span>{{ opt.label }}</span>
+                    </label>
+                  }
                 </div>
-                @if (form.get('purchaseRole')?.invalid && form.get('purchaseRole')?.touched) {
-                  <span class="field-error">Campo obrigatório</span>
+                <span class="field-hint">Selecione uma ou mais funções — elas são cumulativas para a mesma pessoa.</span>
+                @if (rolesInvalid && rolesTouched()) {
+                  <span class="field-error">Selecione ao menos uma função.</span>
                 }
               </div>
             }

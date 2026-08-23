@@ -48,7 +48,6 @@ export class ApprovalTiersNewPage implements OnInit {
     description:  ['', Validators.required],
     type:         ['COMPRAS', Validators.required],
     approver:     ['', Validators.required],
-    purchaseRole: [''],
     tierLevel:    ['', Validators.required],
     minValue:     ['', Validators.required],
     maxValue:     ['', Validators.required],
@@ -56,6 +55,17 @@ export class ApprovalTiersNewPage implements OnInit {
     projectId:    [''],
     activityId:   [''],
   });
+
+  // AL-01: funções cumulativas (checkboxes) em vez de seleção única.
+  readonly selectedRoles = signal<Set<string>>(new Set());
+  readonly rolesTouched  = signal(false);
+  isRole(value: string): boolean { return this.selectedRoles().has(value); }
+  toggleRole(value: string): void {
+    const next = new Set(this.selectedRoles());
+    next.has(value) ? next.delete(value) : next.add(value);
+    this.selectedRoles.set(next);
+  }
+  get rolesInvalid(): boolean { return this.isCompras && this.selectedRoles().size === 0; }
 
   /** Compras: papel de compra é obrigatório; Financeiro: campo não se aplica. */
   get isCompras(): boolean { return this.form.get('type')?.value === 'COMPRAS'; }
@@ -100,15 +110,9 @@ export class ApprovalTiersNewPage implements OnInit {
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   private applyTypeRules(type: ApprovalTierType | string): void {
-    const role  = this.form.get('purchaseRole')!;
     const level = this.form.get('tierLevel')!;
-    if (type === 'COMPRAS') {
-      role.setValidators([Validators.required]);
-    } else {
-      role.clearValidators();
-      role.setValue('');
-    }
-    role.updateValueAndValidity({ emitEvent: false });
+    // AL-01: em FINANCEIRO as funções de compra não se aplicam — limpa a seleção.
+    if (type !== 'COMPRAS') this.selectedRoles.set(new Set());
     // Nível selecionado pode não existir no novo tipo (ex.: 5 ou "manager" ao virar COMPRAS).
     const valid = this.levelOptions.some(o => o.value === level.value);
     if (!valid) level.setValue('');
@@ -116,12 +120,15 @@ export class ApprovalTiersNewPage implements OnInit {
 
   resetForm(): void {
     this.form.reset({ type: 'COMPRAS' });
+    this.selectedRoles.set(new Set());
+    this.rolesTouched.set(false);
     this.applyTypeRules('COMPRAS');
     this.errorMsg.set(null);
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
+    this.rolesTouched.set(true);
+    if (this.form.invalid || this.rolesInvalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -141,8 +148,8 @@ export class ApprovalTiersNewPage implements OnInit {
     // Nível: "manager" (Gestor do Financeiro) → isManagerTier; senão, número.
     if (v.tierLevel === 'manager') payload.isManagerTier = true;
     else if (v.tierLevel)          payload.level = Number(v.tierLevel);
-    // Papel de compra só em COMPRAS (o back ignora em FINANCEIRO).
-    if (v.type === 'COMPRAS' && v.purchaseRole) payload.purchaseRole = v.purchaseRole;
+    // AL-01: funções cumulativas só em COMPRAS (o back ignora em FINANCEIRO).
+    if (v.type === 'COMPRAS' && this.selectedRoles().size) payload.purchaseRoles = [...this.selectedRoles()];
     // Escopo (opcional) só em COMPRAS.
     if (v.type === 'COMPRAS') {
       if (v.costCenterId) payload.costCenterId = Number(v.costCenterId);

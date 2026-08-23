@@ -189,3 +189,18 @@
     }
   }
 }
+/* AL-01: funções de compra como checkboxes cumulativos */
+.roles-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px 16px;
+  padding: 4px 0;
+}
+.role-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.role-check input { width: 16px; height: 16px; cursor: pointer; }
