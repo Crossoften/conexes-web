@@ -81,25 +81,12 @@
             </div>
           </div>
 
-          <div class="form-row grid-cols-3">
+          <div class="form-row grid-cols-2">
             <div class="form-group">
               <label>E-mail <span class="req">*</span></label>
               <input type="email" class="form-control" placeholder="email@exemplo.com"
                 formControlName="email"
                 [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
-            </div>
-            <div class="form-group">
-              <label>Perfil de acesso <span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="role"
-                  [class.is-invalid]="form.get('role')?.invalid && form.get('role')?.touched">
-                  <option value="">Selecione</option>
-                  @for (opt of roleOptions; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
             </div>
             <div class="form-group">
               <label>Senha</label>
@@ -109,15 +96,18 @@
             </div>
           </div>
 
+          <!-- US-02: o acesso do usuário é definido por um único Perfil de Permissão.
+               A matriz de módulos e o "Perfil de acesso" ficam na área de Permissões. -->
           <div class="form-row grid-cols-1">
             <div class="form-group">
-              <label>Perfil de permissão</label>
+              <label>Perfil de permissão <span class="req">*</span></label>
               @if (profilesLoading()) {
                 <input class="form-control" disabled placeholder="Carregando perfis...">
               } @else {
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="permissionProfileId">
-                    <option [ngValue]="null">Nenhum perfil (opcional)</option>
+                  <select class="form-control" formControlName="permissionProfileId"
+                    [class.is-invalid]="form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched">
+                    <option [ngValue]="null">Selecione um perfil</option>
                     @for (p of profiles(); track p.id) {
                       <option [value]="p.id">{{ p.name }}</option>
                     }
@@ -125,39 +115,7 @@
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               }
-              <span class="field-hint">As permissões de módulo serão herdadas do perfil selecionado.</span>
-            </div>
-          </div>
-
-          <!-- US-4: permissões diretas (opcional) — complementam o perfil -->
-          <div class="form-row grid-cols-1">
-            <div class="form-group">
-              <label>Permissões de módulo (opcional)</label>
-              <div class="table-wrap">
-                <table class="perm-table">
-                  <thead>
-                    <tr>
-                      <th>Módulo</th><th>Submenu</th>
-                      <th class="center">Visualização</th><th class="center">Inclusão</th>
-                      <th class="center">Edição</th><th class="center">Exclusão</th><th class="center">Ilimitado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (mod of modules; track mod.module + mod.subMenu; let i = $index) {
-                      <tr>
-                        <td class="bold">{{ mod.module }}</td>
-                        <td>{{ mod.subMenu }}</td>
-                        <td class="center"><input type="checkbox" [checked]="mod.canView"     (change)="togglePermission(i, 'canView')"></td>
-                        <td class="center"><input type="checkbox" [checked]="mod.canCreate"   (change)="togglePermission(i, 'canCreate')"></td>
-                        <td class="center"><input type="checkbox" [checked]="mod.canEdit"     (change)="togglePermission(i, 'canEdit')"></td>
-                        <td class="center"><input type="checkbox" [checked]="mod.canDelete"   (change)="togglePermission(i, 'canDelete')"></td>
-                        <td class="center"><input type="checkbox" [checked]="mod.isUnlimited" (change)="togglePermission(i, 'isUnlimited')"></td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              <span class="field-hint">Deixe tudo desmarcado para usar só o perfil. Marcações aqui definem permissões diretas do usuário.</span>
+              <span class="field-hint">As permissões do usuário são herdadas do perfil selecionado. Crie ou ajuste perfis em Permissões.</span>
             </div>
           </div>
 
