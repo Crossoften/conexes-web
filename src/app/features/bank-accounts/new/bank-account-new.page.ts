@@ -98,16 +98,31 @@ export class BankAccountNewPage implements OnInit {
     this.errorMsg.set(null);
   }
 
+  /** FA-02: interpreta valor monetário no padrão brasileiro ("1.000,00" → 1000). */
+  private parseMoney(value: any): number {
+    if (typeof value === 'number') return value;
+    const s = String(value ?? '').trim();
+    if (!s) return 0;
+    const n = Number(s.replace(/\./g, '').replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
+    const v = this.form.value;
+
+    // FA-02: sem Fonte Pagadora (entidade), o back rejeita com erro técnico — orienta antes.
+    if (!(Number(v.fontePagadora) > 0)) {
+      this.errorMsg.set('Selecione a Fonte Pagadora (entidade responsável pela conta) antes de salvar.');
+      return;
+    }
+
     this.loading.set(true);
     this.errorMsg.set(null);
-
-    const v = this.form.value;
 
     const payload: BankAccountPayload = {
       bankId:            Number(v.banco)           || 0,
@@ -119,7 +134,7 @@ export class BankAccountNewPage implements OnInit {
       nickname:          v.apelidoConta            ?? '',
       agency:            v.agenciaDigito           ?? '',
       account:           v.numeroContaDigito       ?? '',
-      initialBalance:    Number(v.saldoInicial)    || 0,
+      initialBalance:    this.parseMoney(v.saldoInicial),
       phone:             v.telefonePrincipal       ?? '',
       cellPhone:         v.telefoneCelular         ?? '',
       contactEmail:      v.emailContato            ?? '',
@@ -149,8 +164,14 @@ export class BankAccountNewPage implements OnInit {
       },
       error: err => {
         this.loading.set(false);
-        const msg = err?.error?.message ?? 'Erro ao salvar conta bancária. Tente novamente.';
-        this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
+        const raw = err?.error?.message;
+        const msg = Array.isArray(raw) ? raw.join(', ') : (raw ?? '');
+        // FA-02: não expor mensagem técnica de API (ex.: "entityId ... GET /v1/institutional/entities").
+        if (/entityid/i.test(msg) || /\/v1\//.test(msg)) {
+          this.errorMsg.set('Selecione a Fonte Pagadora (entidade responsável pela conta) antes de salvar.');
+        } else {
+          this.errorMsg.set(msg || 'Não foi possível salvar a conta bancária. Verifique os dados e tente novamente.');
+        }
       },
     });
   }
