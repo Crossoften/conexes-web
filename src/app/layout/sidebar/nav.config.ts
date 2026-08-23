@@ -63,6 +63,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: 'Dashboard',     route: '/purchasing-dashboard' },
       { label: 'Cotações',      route: '/quotations' },
+      { label: 'Mapa de cotação', route: '/quotation-map' },
       { label: 'Gerenciamento', route: '/purchasing-management' },
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Cadastros',     route: '/purchasing-registries' },

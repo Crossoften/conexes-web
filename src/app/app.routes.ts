@@ -48,6 +48,7 @@ export const appRoutes: Routes = [
       { path: 'purchasing-dashboard', loadChildren: () => import('./features/purchasing-dashboard/purchasing-dashboard.routes').then(m => m.purchasingDashboardRoutes) },
       { path: 'purchasing-reports',   loadChildren: () => import('./features/purchasing-reports/purchasing-reports.routes').then(m => m.purchasingReportsRoutes) },
       { path: 'quotations',           loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
+      { path: 'quotation-map',        loadChildren: () => import('./features/quotation-map/quotation-map.routes').then(m => m.quotationMapRoutes) },
       { path: 'purchasing-management', loadChildren: () => import('./features/purchasing-management/purchasing-management.routes').then(m => m.purchasingManagementRoutes) },
       { path: 'purchasing-orders',     loadChildren: () => import('./features/purchasing-orders/purchasing-orders.routes').then(m => m.purchasingOrdersRoutes) },
       { path: 'purchasing-registries', loadChildren: () => import('./features/purchasing-registries/purchasing-registries.routes').then(m => m.purchasingRegistriesRoutes) },
