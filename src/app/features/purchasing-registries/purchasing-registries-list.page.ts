@@ -66,6 +66,9 @@ export class PurchasingRegistriesListPage {
     if (r) this.router.navigate(r);
   }
 
+  // POS-05: gestão de grupos e fabricantes.
+  goAux() { this.router.navigate(['/purchasing-registries/auxiliares']); }
+
   readonly statusOptions: { label: string; value: RegistryStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
     { label: 'Ativo',    value: 'Active' },

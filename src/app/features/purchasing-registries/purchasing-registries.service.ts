@@ -73,6 +73,19 @@ export class PurchasingRegistriesService {
   createManufacturer(name: string): Observable<{ id: number; name: string }> {
     return this.http.post<{ id: number; name: string }>(`${this.base}/v1/manufacturers`, { name });
   }
+  // Gestão de auxiliares (POS-05): editar/excluir grupos e fabricantes.
+  updateProductGroup(id: number, name: string): Observable<{ id: number; name: string }> {
+    return this.http.patch<{ id: number; name: string }>(`${this.base}/v1/product-groups/${id}`, { name });
+  }
+  deleteProductGroup(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/v1/product-groups/${id}`);
+  }
+  updateManufacturer(id: number, name: string): Observable<{ id: number; name: string }> {
+    return this.http.patch<{ id: number; name: string }>(`${this.base}/v1/manufacturers/${id}`, { name });
+  }
+  deleteManufacturer(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/v1/manufacturers/${id}`);
+  }
   updateProduct(id: number, payload: Partial<ProductServicePayload>): Observable<ApiProductService> {
     return this.http.patch<ApiProductService>(`${this.base}/v1/products-services/${id}`, payload);
   }

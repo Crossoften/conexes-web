@@ -1,0 +1,84 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Cadastros auxiliares</h1>
+    <button class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">Voltar aos cadastros</button>
+  </div>
+
+  <div class="aux-grid">
+
+    <!-- Grupos de produtos -->
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Grupos de produtos</h2></div>
+      <div class="card-body">
+        <div class="add-row">
+          <input class="form-control" placeholder="Novo grupo..." [(ngModel)]="newGroup" (keyup.enter)="add('group')">
+          <button class="btn-primary" (click)="add('group')">Adicionar</button>
+        </div>
+        <ul class="aux-list">
+          @for (g of groups(); track g.id) {
+            <li class="aux-item">
+              @if (isEditing('group', g.id)) {
+                <input class="form-control form-control--sm" [(ngModel)]="editName" (keyup.enter)="saveEdit('group', g.id)">
+                <div class="acts">
+                  <button class="link-ok" (click)="saveEdit('group', g.id)">Salvar</button>
+                  <button class="link-mut" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              } @else if (isConfirming('group', g.id)) {
+                <span class="aux-name">Excluir "{{ g.name }}"?</span>
+                <div class="acts">
+                  <button class="link-danger" (click)="confirmRemove('group', g.id)">Sim, excluir</button>
+                  <button class="link-mut" (click)="clearConfirm()">Não</button>
+                </div>
+              } @else {
+                <span class="aux-name">{{ g.name }}</span>
+                <div class="acts">
+                  <button class="link-mut" (click)="startEdit('group', g)">Editar</button>
+                  <button class="link-danger" (click)="askRemove('group', g)">Excluir</button>
+                </div>
+              }
+            </li>
+          }
+          @if (groups().length === 0) { <li class="aux-empty">Nenhum grupo cadastrado.</li> }
+        </ul>
+      </div>
+    </div>
+
+    <!-- Fabricantes -->
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Fabricantes</h2></div>
+      <div class="card-body">
+        <div class="add-row">
+          <input class="form-control" placeholder="Novo fabricante..." [(ngModel)]="newManufacturer" (keyup.enter)="add('manufacturer')">
+          <button class="btn-primary" (click)="add('manufacturer')">Adicionar</button>
+        </div>
+        <ul class="aux-list">
+          @for (m of manufacturers(); track m.id) {
+            <li class="aux-item">
+              @if (isEditing('manufacturer', m.id)) {
+                <input class="form-control form-control--sm" [(ngModel)]="editName" (keyup.enter)="saveEdit('manufacturer', m.id)">
+                <div class="acts">
+                  <button class="link-ok" (click)="saveEdit('manufacturer', m.id)">Salvar</button>
+                  <button class="link-mut" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              } @else if (isConfirming('manufacturer', m.id)) {
+                <span class="aux-name">Excluir "{{ m.name }}"?</span>
+                <div class="acts">
+                  <button class="link-danger" (click)="confirmRemove('manufacturer', m.id)">Sim, excluir</button>
+                  <button class="link-mut" (click)="clearConfirm()">Não</button>
+                </div>
+              } @else {
+                <span class="aux-name">{{ m.name }}</span>
+                <div class="acts">
+                  <button class="link-mut" (click)="startEdit('manufacturer', m)">Editar</button>
+                  <button class="link-danger" (click)="askRemove('manufacturer', m)">Excluir</button>
+                </div>
+              }
+            </li>
+          }
+          @if (manufacturers().length === 0) { <li class="aux-empty">Nenhum fabricante cadastrado.</li> }
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
