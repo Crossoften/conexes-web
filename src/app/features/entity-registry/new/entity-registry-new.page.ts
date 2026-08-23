@@ -123,14 +123,16 @@ export class EntityRegistryNewPage {
     if (!file) return;
     this.uploadingCert.set(true);
     this.uploadError.set(null);
-    this.svc.uploadFile(file).subscribe({
+    // MO-02: rota dedicada que aceita .pfx/.p12.
+    this.svc.uploadCertificate(file).subscribe({
       next: res => {
         this.form.patchValue({ digitalCertFileUrl: res.url, digitalCertFileKey: res.key });
         this.certFileName.set(file.name);
         this.uploadingCert.set(false);
       },
-      error: () => {
-        this.uploadError.set('Falha ao enviar o certificado. Tente novamente.');
+      error: (err) => {
+        const msg = err?.error?.message;
+        this.uploadError.set(typeof msg === 'string' ? msg : 'Falha ao enviar o certificado. Aceitos: .pfx ou .p12 (até 8MB).');
         this.uploadingCert.set(false);
       },
     });

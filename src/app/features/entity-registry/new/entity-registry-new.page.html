@@ -144,7 +144,7 @@
             <div class="form-group">
               <label>Alterar certificado digital</label>
               <label class="dropzone" [class.dropzone--done]="certFileName()">
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg" (change)="onCertSelected($event)" hidden>
+                <input type="file" accept=".pfx,.p12,application/x-pkcs12" (change)="onCertSelected($event)" hidden>
                 @if (uploadingCert()) {
                   <span class="dropzone__text">Enviando...</span>
                 } @else if (certFileName()) {
@@ -153,6 +153,7 @@
                   <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                 }
               </label>
+              <span class="field-hint">Formatos aceitos: .pfx ou .p12 (certificado digital A1), até 8MB.</span>
             </div>
             <div class="form-group">
               <label>Alterar Logotipo da entidade</label>

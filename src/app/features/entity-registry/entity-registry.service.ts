@@ -111,9 +111,18 @@ export class EntityRegistryService {
    * tolerante entre os nomes mais comuns.
    */
   uploadFile(file: File): Observable<{ url: string; key: string }> {
+    return this._upload('/v1/upload/one-file', file);
+  }
+
+  /** MO-02: upload de certificado digital (.pfx/.p12) via rota dedicada. */
+  uploadCertificate(file: File): Observable<{ url: string; key: string }> {
+    return this._upload('/v1/upload/certificate', file);
+  }
+
+  private _upload(path: string, file: File): Observable<{ url: string; key: string }> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<unknown>(`${environment.apiUrl}/v1/upload/one-file`, form).pipe(
+    return this.http.post<unknown>(`${environment.apiUrl}${path}`, form).pipe(
       map(res => {
         const r = (res ?? {}) as Record<string, unknown>;
         const pick = (...keys: string[]): string => {
