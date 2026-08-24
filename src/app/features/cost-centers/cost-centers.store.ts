@@ -95,7 +95,48 @@ export const CostCentersStore = signalStore(
       return [...withChildren, ...orphans];
     });
 
-    return { sortedItems, treeItems, totalPages, expandedIds };
+    // CC-02/CC-03: árvore recursiva de N níveis (Centro de Custo → Projeto → Atividade → …).
+    // Achatada com profundidade para renderização, respeitando os nós expandidos.
+    // Filhos por costCenterId (projetos de topo do CC) e por parentProjectId (subníveis).
+    const treeFlat = computed<{ node: CostCenter; depth: number; hasChildren: boolean; key: string }[]>(() => {
+      const all  = sortedItems();
+      const isCC = (i: CostCenter) => resolveEntityType(i) === 'cost_center';
+      const key  = (i: CostCenter) => `${resolveEntityType(i)}:${i.id}`;
+
+      const ccIds       = new Set(all.filter(isCC).map(c => c.id));
+      const projectIds  = new Set(all.filter(i => !isCC(i)).map(p => p.id));
+      const byCostCenter    = new Map<number, CostCenter[]>();
+      const byParentProject = new Map<number, CostCenter[]>();
+
+      for (const i of all) {
+        if (isCC(i)) continue;
+        if (i.parentProjectId != null && projectIds.has(i.parentProjectId)) {
+          const arr = byParentProject.get(i.parentProjectId) ?? []; arr.push(i); byParentProject.set(i.parentProjectId, arr);
+        } else if (i.costCenterId != null && ccIds.has(i.costCenterId)) {
+          const arr = byCostCenter.get(i.costCenterId) ?? []; arr.push(i); byCostCenter.set(i.costCenterId, arr);
+        }
+      }
+
+      const childrenOf = (n: CostCenter): CostCenter[] =>
+        isCC(n) ? (byCostCenter.get(n.id) ?? []) : (byParentProject.get(n.id) ?? []);
+
+      const out: { node: CostCenter; depth: number; hasChildren: boolean; key: string }[] = [];
+      const placed = new Set<number>();
+      const exp = expanded();
+      const walk = (n: CostCenter, depth: number) => {
+        placed.add(n.id);
+        const kids = childrenOf(n);
+        out.push({ node: n, depth, hasChildren: kids.length > 0, key: key(n) });
+        if (kids.length && exp.has(key(n))) for (const k of kids) walk(k, depth + 1);
+      };
+
+      for (const r of all.filter(isCC)) walk(r, 0);
+      // projetos órfãos (pai fora da página) entram no topo
+      for (const i of all) { if (!isCC(i) && !placed.has(i.id)) walk(i, 0); }
+      return out;
+    });
+
+    return { sortedItems, treeItems, treeFlat, totalPages, expandedIds };
   }),
 
   withMethods(store => {
