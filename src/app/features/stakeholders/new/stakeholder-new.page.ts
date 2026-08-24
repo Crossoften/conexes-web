@@ -47,6 +47,9 @@ export class StakeholderNewPage {
     return [this.step1Form, this.step2Form, this.step3Form][this.currentStep()];
   }
 
+  /** CF-07: fluxo contínuo — Finalizar valida o formulário inteiro e envia. */
+  finalize(): void { this.submit(); }
+
   next(): void {
     const stepForm = this.currentStepForm();
     if (stepForm.invalid) {

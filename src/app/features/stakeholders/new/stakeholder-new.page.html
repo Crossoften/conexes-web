@@ -3,35 +3,14 @@
 
   <!-- Cabeçalho -->
   <div class="page-header">
-    <h1 class="page-title">Cadastro de stakeholders</h1>
+    <h1 class="page-title">Cadastro de contato</h1>
   </div>
 
-  <!-- Wizard steps bar -->
-  <div class="wizard-bar">
-    @for (step of steps; track $index) {
-      <button
-        class="wizard-step"
-        [class.wizard-step--active]="$index === currentStep()"
-        [class.wizard-step--done]="$index < currentStep()"
-        (click)="$index < currentStep() && currentStep.set($index)">
-        {{ step.label }}
-      </button>
-    }
-  </div>
-
-  <!-- Conteúdo da etapa -->
-  <div class="step-content">
-    @switch (currentStep()) {
-      @case (0) {
-        <app-step1 [form]="step1Form" />
-      }
-      @case (1) {
-        <app-step2 [form]="step2Form" />
-      }
-      @case (2) {
-        <app-step3 [form]="step3Form" />
-      }
-    }
+  <!-- CF-07: fluxo contínuo — sem numeração de etapas; seções empilhadas -->
+  <div class="flow-content">
+    <app-step1 [form]="step1Form" />
+    <app-step2 [form]="step2Form" />
+    <app-step3 [form]="step3Form" />
   </div>
 
   <!-- Mensagem de erro (validação de blocos ou falha ao salvar) -->
@@ -52,8 +31,8 @@
         </svg>
         Salvar rascunho
       </button>
-      <button class="btn-next" (click)="next()">
-        {{ isLast() ? 'Finalizar' : 'Próximo' }}
+      <button class="btn-next" (click)="finalize()">
+        Finalizar cadastro
       </button>
     </div>
   </div>
