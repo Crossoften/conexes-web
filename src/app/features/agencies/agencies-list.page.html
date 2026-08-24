@@ -76,6 +76,9 @@
             <th class="th th--sortable" (click)="store.setSort('email')">
               E-mail <span class="sort-icon" [ngClass]="'sort--' + getSortState('email')"></span>
             </th>
+            <th class="th th--sortable" (click)="store.setSort('status')">
+              Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span>
+            </th>
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -84,19 +87,19 @@
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
               <tr class="tr--skeleton">
-                <td colspan="7"><div class="skeleton"></div></td>
+                <td colspan="8"><div class="skeleton"></div></td>
               </tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="7">
+              <td class="td--empty" colspan="8">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.items().length === 0) {
             <tr>
-              <td class="td--empty" colspan="7">
+              <td class="td--empty" colspan="8">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -117,6 +120,9 @@
                 <td class="td td--mono">{{ item.cnpj }}</td>
                 <td class="td">{{ item.managingOrgan || '—' }}</td>
                 <td class="td">{{ item.email || '—' }}</td>
+                <td class="td">
+                  <span class="badge badge--{{ statusVariant(item.status) }}">{{ statusLabel(item.status) }}</span>
+                </td>
                 <td class="td td--center">
                   <div class="action-icons">
                     <button class="icon-btn" title="Visualizar" (click)="onView(item)">

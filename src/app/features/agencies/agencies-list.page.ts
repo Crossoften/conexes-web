@@ -19,6 +19,10 @@ export class AgenciesListPage implements OnInit {
   readonly store        = inject(AgenciesStore);
   readonly statusConfig = AGENCY_STATUS_CONFIG;
 
+  // ORG-INATIV: rótulo e variante do status para exibir badge na listagem.
+  statusLabel(s: string | undefined): string { return this.statusConfig[s ?? 'Active']?.label ?? (s ?? '—'); }
+  statusVariant(s: string | undefined): string { return this.statusConfig[s ?? 'Active']?.variant ?? 'neutral'; }
+
   // ── Modal ─────────────────────────────────────────────────────────────────
   readonly selectedAgency = signal<Agency | null>(null);
   readonly showModal      = signal(false);

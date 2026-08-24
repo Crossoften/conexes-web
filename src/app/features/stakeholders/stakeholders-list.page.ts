@@ -53,6 +53,12 @@ export class StakeholdersPage implements OnInit {
     { label: 'Clientes',     value: 'clients'   },
   ];
 
+  // CF-01: nomenclatura da tela derivada da visão (Fornecedor ↔ Cliente).
+  readonly isClients      = computed(() => this.store.filters().view === 'clients');
+  readonly entityLabel    = computed(() => this.isClients() ? 'cliente'  : 'fornecedor');
+  readonly entityLabelUc  = computed(() => this.isClients() ? 'Cliente'  : 'Fornecedor');
+  readonly listTitle      = computed(() => this.isClients() ? 'Cadastro de clientes' : 'Cadastro de fornecedores');
+
   readonly typeOptions = computed(() => {
     const view = this.store.filters().view;
     return [
@@ -156,6 +162,7 @@ export class StakeholdersPage implements OnInit {
   selectedStakeholder: Stakeholder | null = null;
   isModalOpen  = false;
   modalLoading = false;
+  modalMode: 'view' | 'edit' = 'view';
   saveLoading  = false;
   saveError:   string | null = null;
 
@@ -171,6 +178,17 @@ export class StakeholdersPage implements OnInit {
   }
 
   openModal(item: StakeholderListItem): void {
+    this.modalMode = 'view';
+    this._loadModal(item);
+  }
+
+  // CF-04: ação "Editar" da listagem abre o modal já em modo de edição.
+  openEditModal(item: StakeholderListItem): void {
+    this.modalMode = 'edit';
+    this._loadModal(item);
+  }
+
+  private _loadModal(item: StakeholderListItem): void {
     this.modalLoading = true;
     this.saveError    = null;
     this.svc.getById(item.id).subscribe({

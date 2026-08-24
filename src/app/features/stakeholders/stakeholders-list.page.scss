@@ -193,3 +193,48 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
+/* CF-02: seletor de visão em pílula (toggle) */
+.pill-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--brand-purple-light, #F3F0FF);
+  border: 1.5px solid var(--surface-border-mid, #E4E4EF);
+  border-radius: 999px;
+}
+.pill-toggle__btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: var(--text-secondary, #555);
+  transition: all var(--transition, .15s ease);
+
+  &:hover:not(&--active) { color: var(--brand-purple, #7C3AED); }
+  &--active {
+    background: var(--brand-purple, #7C3AED);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(124, 58, 237, .35);
+  }
+}
+
+/* CF-04: ações padronizadas (mesmo padrão de Centro de Custo) */
+.action-icons { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.icon-btn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted, #98A2B3);
+  border-radius: 6px;
+  transition: all var(--transition, .15s ease);
+  text-decoration: none;
+
+  &:hover { background: var(--nav-hover-bg, #F3F0FF); color: var(--brand-purple, #7C3AED); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+  &--danger:hover { background: #FEECEC; color: #E5484D; }
+}

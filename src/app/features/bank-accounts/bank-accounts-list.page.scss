@@ -187,3 +187,7 @@
   &:active { transform: translateY(0); }
   &:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 }
+
+/* DSG-01: botão de inclusão empurrado para a direita na faixa de filtros */
+.filter-bar { flex-wrap: wrap; }
+.filter-bar__new { margin-left: auto; }

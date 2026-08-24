@@ -2,12 +2,12 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Cadastro de stakeholders</h1>
+    <h1 class="page-title">{{ listTitle() }}</h1>
     <button class="btn-novo" routerLink="new">
       <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
         <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      Novo fornecedor
+      Novo {{ entityLabel() }}
     </button>
   </div>
 
@@ -17,15 +17,17 @@
 
       <div class="vision-group">
         <label>Selecione a visão</label>
-        <div class="select-wrap">
-          <select class="select-vision"
-            [value]="store.filters().view"
-            (change)="onViewChange($any($event.target).value)">
-            @for (opt of viewOptions; track opt.value) {
-              <option [value]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <!-- CF-02: seletor em pílula (toggle), padrão visual do sistema. -->
+        <div class="pill-toggle" role="tablist" aria-label="Visão de contatos">
+          @for (opt of viewOptions; track opt.value) {
+            <button type="button" class="pill-toggle__btn"
+              role="tab"
+              [class.pill-toggle__btn--active]="store.filters().view === opt.value"
+              [attr.aria-selected]="store.filters().view === opt.value"
+              (click)="onViewChange(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
         </div>
       </div>
 
@@ -162,12 +164,12 @@
                 <rect x="2" y="7" width="20" height="14" rx="2"/>
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
               </svg>
-              <p class="empty-title">Nenhum fornecedor cadastrado</p>
-              <span class="empty-desc">Cadastre o primeiro fornecedor ou ajuste os filtros aplicados.</span>
+              <p class="empty-title">Nenhum {{ entityLabel() }} cadastrado</p>
+              <span class="empty-desc">Cadastre o primeiro {{ entityLabel() }} ou ajuste os filtros aplicados.</span>
               <div>
                 <a class="empty-cta" routerLink="new">
                   <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  Cadastrar fornecedor
+                  Cadastrar {{ entityLabel() }}
                 </a>
               </div>
             </td></tr>
@@ -220,21 +222,27 @@
                   }
                 </td>
                 <td class="td td--center">
-                  <div style="display:inline-flex; gap:6px; align-items:center;">
-                    <button type="button" class="btn-ver"
+                  <!-- CF-04: ações padronizadas (Visualizar / Editar / Excluir), mesmo conjunto de Centro de Custo. -->
+                  <div class="action-icons">
+                    <button type="button" class="icon-btn" title="Visualizar"
                       [disabled]="modalLoading"
                       (click)="$event.stopPropagation(); openModal(item)">
-                      <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
-                        <circle cx="10" cy="10" r="2.5"/>
-                      </svg>
-                      Ver
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                    </button>
+                    <button type="button" class="icon-btn" title="Editar"
+                      [disabled]="modalLoading"
+                      (click)="$event.stopPropagation(); openEditModal(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <!-- KWN-03D: a tela de Impostos é a dona da config fiscal (deep link). -->
-                    <a class="btn-ver" [routerLink]="['/taxes/new']" [queryParams]="{ stakeholderId: item.id }"
+                    <a class="icon-btn" [routerLink]="['/taxes/new']" [queryParams]="{ stakeholderId: item.id }"
                       (click)="$event.stopPropagation()" title="Configurar impostos e retenções">
-                      Impostos
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L2.2 7.7l5.4-.8L10 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
+                    <button type="button" class="icon-btn icon-btn--danger" title="Excluir"
+                      (click)="$event.stopPropagation(); onDelete(item.id)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -311,6 +319,7 @@
 @if (isModalOpen) {
   <app-stakeholder-detail-modal
     [stakeholder]="selectedStakeholder"
+    [initialMode]="modalMode"
     (close)="closeModal()"
     (delete)="onDelete($event)"
     (saved)="onSaved($event)">

@@ -25,6 +25,8 @@ interface AccountPlanOption { id: number; code: string; title: string; }
 })
 export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   @Input() stakeholder: Stakeholder | null = null;
+  /** CF-04: permite que a ação "Editar" da listagem abra o modal já em edição. */
+  @Input() initialMode: 'view' | 'edit' = 'view';
 
   @Output() close  = new EventEmitter<void>();
   @Output() delete = new EventEmitter<number>();
@@ -184,6 +186,7 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   ngOnChanges(): void {
     if (this.stakeholder) {
       this.patchForm(this.stakeholder);
+      this.mode = this.initialMode;
     }
   }
 

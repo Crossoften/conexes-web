@@ -347,3 +347,13 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+/* ORG-INATIV: badge de status na listagem */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; line-height: 1.6;
+  border: 1px solid transparent;
+}
+.badge--success { background: #E7F7EF; color: #1B7F4B; border-color: #B7E7CD; }
+.badge--danger  { background: #FDECEC; color: #C5303A; border-color: #F5C2C4; }
+.badge--neutral { background: #F1F1F5; color: #667085; border-color: #E1E1EA; }
