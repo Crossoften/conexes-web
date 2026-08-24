@@ -30,6 +30,7 @@ export class AgencyNewPage {
   readonly logoUrl       = signal<string>('');
   readonly logoName      = signal<string>('');
   readonly logoUploading = signal(false);
+  readonly cnpjLoading   = signal(false);
 
   form: FormGroup = this.fb.group({
     cnpj:           ['', Validators.required],
@@ -108,6 +109,41 @@ export class AgencyNewPage {
       .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
     input.value = masked;
     this.form.get('cnpj')?.setValue(masked, { emitEvent: false });
+  }
+
+  /**
+   * ORG-CNPJ: ao sair do campo CNPJ, consulta a Receita e preenche
+   * razão social, nome fantasia e endereço automaticamente.
+   */
+  onCnpjBlur(): void {
+    const digits = (this.form.get('cnpj')?.value ?? '').replace(/\D/g, '');
+    if (digits.length !== 14) return;
+    this.cnpjLoading.set(true);
+    this.svc.getCnpjData(digits).subscribe({
+      next: (data) => {
+        const setIfEmpty = (ctrl: string, val?: string) => {
+          if (!val) return;
+          const c = this.form.get(ctrl);
+          if (c && !c.value) c.setValue(val);
+        };
+        setIfEmpty('razaoSocial',  data.razaoSocial);
+        setIfEmpty('nomeFantasia', data.nomeFantasia);
+        setIfEmpty('endereco',     data.logradouro);
+        setIfEmpty('nro',          data.numero);
+        setIfEmpty('complemento',  data.complemento);
+        setIfEmpty('email',        data.email);
+        if (data.cep && !this.form.get('cep')?.value) {
+          const masked = data.cep.replace(/\D/g, '').replace(/(\d{5})(\d{1,3})$/, '$1-$2');
+          this.form.get('cep')?.setValue(masked);
+        }
+        this.cnpjLoading.set(false);
+        this.notify.success('Dados do CNPJ carregados.');
+      },
+      error: () => {
+        this.cnpjLoading.set(false);
+        // silencioso: consulta é conveniência; o usuário pode preencher manualmente
+      },
+    });
   }
 
   applyCepMask(event: Event): void {

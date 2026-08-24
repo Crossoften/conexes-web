@@ -14,7 +14,7 @@ import { environment } from '../../../../environments/environment';
 
 type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
 
-interface AccountPlanOption { id: number; code: string; title: string; }
+interface AccountPlanOption { id: number; code: string; title: string; accountType?: string; }
 
 @Component({
   selector: 'app-stakeholder-detail-modal',
@@ -83,6 +83,16 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     if (!id) return '—';
     const p = this.accountPlans().find(a => a.id === Number(id));
     return p ? `${p.code} — ${p.title}` : String(id);
+  }
+
+  /**
+   * CF-06: a conta contábil do rateio deve listar apenas contas ANALÍTICAS.
+   * Fallback: se o back não enviar accountType, mantém a lista para não esvaziar o select.
+   */
+  analyticAccountPlans(): AccountPlanOption[] {
+    const list = this.accountPlans();
+    const analytic = list.filter(a => a.accountType === 'Analitica');
+    return analytic.length ? analytic : list;
   }
 
   // ── Formulário ────────────────────────────────────────────────────────────

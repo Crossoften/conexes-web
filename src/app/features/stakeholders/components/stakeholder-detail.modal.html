@@ -313,9 +313,10 @@
                 <div class="field">
                   <label class="field-label">Conta contábil</label>
                   <div class="select-wrap">
+                    <!-- CF-06: apenas contas ANALÍTICAS podem receber rateio -->
                     <select class="select" formControlName="accountId">
                       <option [ngValue]="0">Selecione</option>
-                      @for (p of accountPlans(); track p.id) {
+                      @for (p of analyticAccountPlans(); track p.id) {
                         <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
                       }
                     </select>

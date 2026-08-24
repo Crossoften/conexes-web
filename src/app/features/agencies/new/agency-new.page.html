@@ -30,7 +30,11 @@
                 formControlName="cnpj"
                 [class.is-invalid]="form.get('cnpj')?.invalid && form.get('cnpj')?.touched"
                 (input)="applyCnpjMask($event)"
+                (blur)="onCnpjBlur()"
                 (keydown)="onlyNumbers($event)">
+              @if (cnpjLoading()) {
+                <span class="field-hint">Consultando CNPJ na Receita…</span>
+              }
               @if (form.get('cnpj')?.invalid && form.get('cnpj')?.touched) {
                 <span class="field-error">Campo obrigatório</span>
               }

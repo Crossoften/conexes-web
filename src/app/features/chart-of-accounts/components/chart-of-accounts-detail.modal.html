@@ -200,7 +200,7 @@
                   <div class="select-wrap">
                     <select class="select" formControlName="parentId">
                       <option [ngValue]="null">Nenhuma (conta raiz)</option>
-                      @for (p of parents; track p.id) {
+                      @for (p of filteredParents(); track p.id) {
                         <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
                       }
                     </select>

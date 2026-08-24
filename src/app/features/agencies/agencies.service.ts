@@ -14,10 +14,25 @@ export interface AgencyListParams {
   take?:      number;
 }
 
+/** ORG-CNPJ: retorno da consulta de CNPJ na Receita (mesmo contrato de /entities/cnpj). */
+export interface GrantorCnpjLookup {
+  cnpj: string;
+  razaoSocial?: string; nomeFantasia?: string;
+  logradouro?: string; numero?: string; complemento?: string;
+  bairro?: string; municipio?: string; uf?: string; cep?: string;
+  email?: string; telefone?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AgenciesService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/v1/grantors`;
+
+  /** ORG-CNPJ: reusa a consulta de CNPJ já existente (Receita Federal). */
+  getCnpjData(cnpj: string): Observable<GrantorCnpjLookup> {
+    const clean = cnpj.replace(/\D/g, '');
+    return this.http.get<GrantorCnpjLookup>(`${environment.apiUrl}/v1/entities/cnpj/${clean}`);
+  }
 
   getAll(params: AgencyListParams = {}): Observable<Page<Agency>> {
     let httpParams = new HttpParams();

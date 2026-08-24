@@ -104,6 +104,16 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
     return CATEGORY_TYPE_LABELS[this.account.categoryType] ?? this.account.categoryType;
   }
 
+  /**
+   * PC-01: conta superior filtrada pela natureza selecionada.
+   * Uma subconta de Entrada só lista pais de Entrada (ou Totalizadora); Saída idem.
+   */
+  filteredParents(): Account[] {
+    const nature = this.form.get('categoryType')?.value;
+    if (!nature) return this.parents;
+    return this.parents.filter(p => p.categoryType === nature || p.categoryType === 'Totalizadora');
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private populateForm(a: Account): void {
