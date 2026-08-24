@@ -6,7 +6,7 @@ export const authRoutes: Routes = [
     path: 'login',
     loadComponent: () =>
       import('./login/login.page').then(m => m.LoginPage),
-    data: { title: 'Entrar — Conexão 3° Setor' },
+    data: { title: 'Entrar — Conex3s' },
   },
   {
     path: 'register',

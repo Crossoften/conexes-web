@@ -16,40 +16,44 @@ export interface NavItem {
   badge?:    string;
 }
 
+// v16 H-01..H-06: nomenclatura e agrupamento do menu principal.
+//  H-01 Dashboard -> Início   · H-02 Stakeholders -> Contatos
+//  H-03 Entidades -> "Minha Organização" (Cadastro da organização + Contas bancárias + Colaboradores)
+//  H-04 "Contratos e parcerias" -> "Convênios e parcerias"
+//  H-05 "Gestão de cadastros" -> "Cadastros e configurações" (Contatos, Plano de contas, Centros de custos,
+//       Tributos e retenções, Usuários e permissões, Alçadas)
+//  H-06 "Integrações" movido para depois de "Prestação de contas".
 export const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Dashboard',
+    label: 'Início',
     route: '/dashboard',
     icon:  'dashboard',
   },
   {
-    label: 'Gestão de cadastros',
+    label: 'Cadastros e configurações',
     icon:  'registration',
     children: [
-      { label: 'Stakeholders',          route: '/stakeholders' },
+      { label: 'Contatos',              route: '/stakeholders' },
       { label: 'Plano de contas',       route: '/chart-of-accounts' },
-      { label: 'Centro de custos',      route: '/cost-centers' },
-      { label: 'Impostos e retenções',  route: '/taxes' },
+      { label: 'Centros de custos',     route: '/cost-centers' },
+      { label: 'Tributos e retenções',  route: '/taxes' },
+      { label: 'Usuários e permissões', route: '/users' },
       { label: 'Alçadas de aprovação',  route: '/approval-tiers' },
-      { label: 'Cadastro de usuários',  route: '/users' },
       { label: 'Configurações gerais',  route: '/general-settings', disabled: true, badge: 'Em breve' },
     ],
   },
   {
-    label: 'Entidades',
+    label: 'Minha Organização',
     icon:  'entities',
     children: [
-      { label: 'Cadastro de entidades',        route: '/entity-registry' },
+      { label: 'Cadastro da organização',      route: '/entity-registry' },
       { label: 'Contas bancárias e bancos',    route: '/bank-accounts' },
       { label: 'Colaboradores e dirigentes',   route: '/employees' },
       { label: 'Corpo diretivo',               route: '/positions' },
-      // 'Anexos da entidade' oculto até a feature existir: a rota /entity-attachments está
-      // comentada em app.routes e o Back ainda não tem o contrato (B-AN-01). Reativar quando pronto.
-      // { label: 'Anexos da entidade',           route: '/entity-attachments' },
     ],
   },
   {
-    label: 'Contratos e parcerias',
+    label: 'Convênios e parcerias',
     icon:  'contracts',
     children: [
       { label: 'Cadastrar órgãos',       route: '/agencies' },
@@ -85,17 +89,17 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    label: 'Prestação de contas',
+    route: '/accountability',
+    icon:  'accountability',
+  },
+  {
     label: 'Integrações',
     icon:  'financial',
     children: [
       { label: 'Notas fiscais (NFe.io)',   route: '/integrations/fiscal-documents' },
       { label: 'Pagamentos e extrato',     route: '/integrations/bank-integrations' },
     ],
-  },
-  {
-    label: 'Prestação de contas',
-    route: '/accountability',
-    icon:  'accountability',
   },
   {
     label: 'Perfil',
