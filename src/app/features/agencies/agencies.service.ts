@@ -28,10 +28,10 @@ export class AgenciesService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/v1/grantors`;
 
-  /** ORG-CNPJ: reusa a consulta de CNPJ já existente (Receita Federal). */
+  /** ORG-CNPJ: reusa a consulta de CNPJ da Receita já disponível em /stakeholders/cnpj. */
   getCnpjData(cnpj: string): Observable<GrantorCnpjLookup> {
     const clean = cnpj.replace(/\D/g, '');
-    return this.http.get<GrantorCnpjLookup>(`${environment.apiUrl}/v1/entities/cnpj/${clean}`);
+    return this.http.get<GrantorCnpjLookup>(`${environment.apiUrl}/v1/stakeholders/cnpj/${clean}`);
   }
 
   getAll(params: AgencyListParams = {}): Observable<Page<Agency>> {
