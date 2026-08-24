@@ -62,6 +62,9 @@ export class ChartOfAccountsListPage implements OnInit {
     });
   }
 
+  treeStatusVariant(s: any): string { return this.statusConfig[s as AccountStatus]?.variant ?? ''; }
+  treeStatusLabel(s: any): string { return this.statusConfig[s as AccountStatus]?.label ?? String(s ?? ''); }
+
   hasChildren(n: any): boolean { return !!(n.children && n.children.length); }
   isCollapsed(id: number): boolean { return this.collapsed().has(id); }
   toggleNode(id: number): void {
