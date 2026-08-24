@@ -41,6 +41,11 @@ export class ChartOfAccountsService {
     return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
   }
 
+  // PC-02: árvore completa (N níveis) com numeração hierárquica.
+  tree(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/tree`);
+  }
+
   // PC-03: importação por planilha.
   importSpreadsheet(file: File): Observable<{ message: string; criadas: number; total: number; results: { line: number; code: string; status: string }[] }> {
     const form = new FormData();

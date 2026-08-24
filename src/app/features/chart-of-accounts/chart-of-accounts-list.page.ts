@@ -42,6 +42,47 @@ export class ChartOfAccountsListPage implements OnInit {
 
   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
+  // ── PC-02: visão em árvore (N níveis) ───────────────────────────────────────
+  readonly viewMode   = signal<'list' | 'tree'>('list');
+  readonly treeRoots  = signal<Account[]>([]);
+  readonly treeLoading = signal(false);
+  readonly collapsed  = signal<Set<number>>(new Set());
+
+  toggleView(): void {
+    const next = this.viewMode() === 'list' ? 'tree' : 'list';
+    this.viewMode.set(next);
+    if (next === 'tree' && this.treeRoots().length === 0) this.loadTree();
+  }
+
+  loadTree(): void {
+    this.treeLoading.set(true);
+    this.svc.tree().subscribe({
+      next: (roots) => { this.treeRoots.set(roots ?? []); this.treeLoading.set(false); },
+      error: () => { this.treeLoading.set(false); },
+    });
+  }
+
+  hasChildren(n: any): boolean { return !!(n.children && n.children.length); }
+  isCollapsed(id: number): boolean { return this.collapsed().has(id); }
+  toggleNode(id: number): void {
+    const s = new Set(this.collapsed());
+    s.has(id) ? s.delete(id) : s.add(id);
+    this.collapsed.set(s);
+  }
+
+  /** Achata a árvore respeitando os nós recolhidos, com profundidade para indentação. */
+  readonly treeFlat = computed(() => {
+    const out: { node: any; depth: number }[] = [];
+    const walk = (nodes: any[], depth: number) => {
+      for (const n of nodes) {
+        out.push({ node: n, depth });
+        if (this.hasChildren(n) && !this.isCollapsed(n.id)) walk(n.children, depth + 1);
+      }
+    };
+    walk(this.treeRoots(), 0);
+    return out;
+  });
+
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
   );
