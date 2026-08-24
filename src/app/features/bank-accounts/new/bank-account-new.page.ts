@@ -1,5 +1,5 @@
 // src/app/features/bank-accounts/new/bank-account-new.page.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -33,6 +33,32 @@ export class BankAccountNewPage implements OnInit {
   readonly entities     = signal<Entity[]>([]);
   readonly banks        = signal<Bank[]>([]);
   readonly loadingLists = signal(true);
+
+  // BCO-05: typeahead de banco (busca por código ou nome; lista padronizada dos 71 bancos BC).
+  readonly bankQuery = signal('');
+  readonly bankOpen  = signal(false);
+  readonly filteredBanks = computed(() => {
+    const q = this.bankQuery().toLowerCase().trim();
+    const list = this.banks();
+    if (!q) return list.slice(0, 60);
+    return list.filter(b => `${b.code ?? ''} ${b.name}`.toLowerCase().includes(q)).slice(0, 60);
+  });
+
+  onBankQuery(v: string): void {
+    this.bankQuery.set(v);
+    this.bankOpen.set(true);
+    this.form.get('banco')?.setValue('');   // exige seleção explícita de um item da lista
+  }
+  pickBank(b: Bank): void {
+    this.form.get('banco')?.setValue(b.id);
+    this.form.get('banco')?.markAsTouched();
+    this.bankQuery.set(`${b.code ? b.code + ' — ' : ''}${b.name}`);
+    this.bankOpen.set(false);
+  }
+  onBankBlur(): void {
+    // fecha o dropdown após o clique (mousedown) ser processado
+    setTimeout(() => this.bankOpen.set(false), 150);
+  }
 
   activeTab: BankAccountTab = 'PARAMS';
 

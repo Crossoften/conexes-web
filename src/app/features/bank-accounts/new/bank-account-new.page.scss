@@ -157,3 +157,27 @@
     &:active { transform: translateY(0); }
   }
 }
+/* BCO-05: typeahead de banco */
+.typeahead {
+  position: relative;
+
+  .form-control { padding-right: 38px; }
+  &__icon {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--text-muted, #98A2B3); pointer-events: none;
+  }
+  &__list {
+    position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px);
+    margin: 0; padding: 4px; list-style: none;
+    max-height: 280px; overflow-y: auto;
+    background: #fff; border: 1px solid var(--surface-border, #E4E4EF);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,.12);
+  }
+  &__item {
+    padding: 9px 12px; border-radius: 7px; cursor: pointer; font-size: 14px;
+    color: var(--text-secondary, #475467);
+    strong { color: var(--text-primary, #1D2939); font-weight: 700; }
+    &:hover { background: var(--brand-purple-light, #F3F0FF); }
+  }
+  &__empty { padding: 12px; color: var(--text-muted, #98A2B3); font-size: 13px; }
+}
