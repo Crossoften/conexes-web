@@ -1,0 +1,90 @@
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Recebimento de Pedidos</h1>
+  </div>
+
+  <!-- Lista de pedidos -->
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">Pedidos de compra</h2></div>
+    <div class="card-body">
+      @if (loadingList()) {
+        <p class="muted">Carregando…</p>
+      } @else if (orders().length === 0) {
+        <p class="muted">Nenhum pedido de compra encontrado. Pedidos são gerados a partir de cotações aprovadas.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="ord-table">
+            <thead><tr><th>Pedido</th><th>Fornecedor</th><th>Total</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              @for (o of orders(); track o.id) {
+                <tr>
+                  <td>#{{ o.id }}</td>
+                  <td>{{ o.supplier?.name || '—' }}</td>
+                  <td>{{ brl(o.totalValue) }}</td>
+                  <td><span class="st" [class]="statusClass(o.status)">{{ statusLabel(o.status) }}</span></td>
+                  <td class="right"><button class="btn-outline" (click)="open(o)">Abrir</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Detalhe / recebimento -->
+  @if (detail(); as d) {
+    <div class="card">
+      <div class="card-header det-head">
+        <h2 class="card-title">Pedido #{{ d.id }} — <span class="st" [class]="statusClass(d.status)">{{ statusLabel(d.status) }}</span></h2>
+        <button class="btn-text" (click)="close()">Fechar</button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="ord-table">
+            <thead><tr><th>Item</th><th>Qtd. pedida</th><th>Recebido</th><th>Pendente</th><th>Receber agora</th></tr></thead>
+            <tbody>
+              @for (it of d.items; track it.id) {
+                <tr>
+                  <td>{{ it.name }}</td>
+                  <td>{{ it.quantity }}</td>
+                  <td>{{ it.receivedQty }}</td>
+                  <td class="strong">{{ it.pendingQty }}</td>
+                  <td>
+                    @if (it.pendingQty > 0) {
+                      <div class="recv-cell">
+                        <input type="number" min="0" [max]="it.pendingQty" [value]="toReceive()[it.id] || ''" (input)="setQty(it.id, $any($event.target).value)">
+                        <button class="btn-mini" (click)="fillPending(it)">tudo</button>
+                      </div>
+                    } @else { <span class="muted">completo</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="recv-form">
+          <div class="recv-fields">
+            <div><label class="lbl">Nº da nota fiscal</label><input class="form-control" [value]="invoiceNumber()" (input)="invoiceNumber.set($any($event.target).value)" placeholder="Opcional"></div>
+            <div><label class="lbl">Observação</label><input class="form-control" [value]="note()" (input)="note.set($any($event.target).value)" placeholder="Opcional"></div>
+          </div>
+          <button class="btn-primary" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Registrando…' : 'Registrar recebimento' }}</button>
+        </div>
+
+        @if (d.receipts?.length) {
+          <div class="hist">
+            <h3>Histórico de recebimentos</h3>
+            @for (r of d.receipts; track r.id) {
+              <div class="hist-row">
+                <span>Recebimento #{{ r.id }}</span>
+                @if (r.invoiceNumber) { <span class="muted">NF {{ r.invoiceNumber }}</span> }
+                @if (r.note) { <span class="muted">— {{ r.note }}</span> }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
