@@ -159,6 +159,7 @@ export class BankAccountNewPage implements OnInit {
       phone:             v.telefonePrincipal       ?? '',
       cellPhone:         v.telefoneCelular         ?? '',
       contactEmail:      v.emailContato            ?? '',
+      contactName:       '',                        // CB-02: campo 'Contato' removido da UI
       accountingAccount: v.contaContabil1          ?? '',
       resourceType:      v.tipoRecurso             ?? '',
       isAccountHolderDataDifferent: !!v.dadosDiferentes,
