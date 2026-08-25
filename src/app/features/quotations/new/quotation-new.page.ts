@@ -167,6 +167,15 @@ export class QuotationNewPage {
   // ── UI ────────────────────────────────────────────────────────────────────
   setTab(tab: QuotationTab) { this.activeTab = tab; }
   addItem()                 { this.items.push(this.newItem()); }
+
+  /** CP-18: valor total do item = Quantidade × Valor unitário (formatado em BR). */
+  itemTotal(index: number): string {
+    const it = this.items.at(index) as FormGroup;
+    const qty = Number(it.get('quantity')?.value) || 0;
+    const raw = String(it.get('estimatedUnitValue')?.value ?? '').replace(/\./g, '').replace(',', '.');
+    const unit = parseFloat(raw) || 0;
+    return formatDecimalBR(qty * unit);
+  }
   removeItem(index: number) { if (this.items.length > 1) this.items.removeAt(index); }
 
   // BK-6: "Área Requisitante" puxa a área do usuário selecionado.

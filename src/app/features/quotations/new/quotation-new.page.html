@@ -151,8 +151,6 @@
           <h3 class="section-title">Itens e serviços</h3>
           <p class="section-subtitle">Adicione ao menos um item à requisição.</p>
 
-          <button type="button" class="btn-block-gray mb-8" (click)="addItem()">Incluir item</button>
-
           <div class="items-list mb-8" formArrayName="items">
             @for (item of items.controls; track item; let i = $index) {
               <div class="item-card" [formGroupName]="i">
@@ -183,10 +181,12 @@
                     <div class="form-group"><label>Grupo</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="group"></div>
                   </div>
 
-                  <div class="form-row grid-cols-3 mt-4">
+                  <div class="form-row grid-cols-4 mt-4">
                     <div class="form-group"><label>Quantidade <span class="req">*</span></label><input type="number" class="form-control" placeholder="0" formControlName="quantity" [class.is-invalid]="item.get('quantity')?.invalid && item.get('quantity')?.touched"></div>
                     <div class="form-group"><label>Unidade <span class="req">*</span></label><input type="text" class="form-control" placeholder="Ex: UN" formControlName="unit" [class.is-invalid]="item.get('unit')?.invalid && item.get('unit')?.touched"></div>
                     <div class="form-group"><label>Valor unit. estimado (R$)</label><input type="text" inputmode="decimal" class="form-control" placeholder="0,00" formControlName="estimatedUnitValue" (input)="onItemMoneyInput($event, i)"></div>
+                    <!-- CP-18: Valor total = Quantidade × Valor unitário (calculado automaticamente) -->
+                    <div class="form-group"><label>Valor total (R$)</label><input type="text" class="form-control" [value]="itemTotal(i)" readonly tabindex="-1" style="background:#f4f6f9;"></div>
                   </div>
 
                   <div class="form-row grid-cols-2 mt-4">
@@ -200,6 +200,8 @@
               </div>
             }
           </div>
+          <!-- CP-21: botão Incluir item sempre abaixo do último item -->
+          <button type="button" class="btn-block-gray mb-8" (click)="addItem()">Incluir item</button>
         }
 
         <!-- ══ LOCAL ══════════════════════════════════════════════════════ -->
