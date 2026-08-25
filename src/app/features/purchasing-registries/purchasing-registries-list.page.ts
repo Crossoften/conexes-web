@@ -118,5 +118,7 @@ export class PurchasingRegistriesListPage {
   removeLocation(item: DeliveryLocation) { if (confirm(`Excluir o local "${item.name}"?`)) this.store.removeLocation(item.apiId); }
 
   editProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId]); }
+  viewProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId], { queryParams: { view: 1 } }); }      // CP-03
+  duplicateProduct(item: Product)   { this.router.navigate(['/purchasing-registries/new'], { queryParams: { duplicate: item.apiId } }); }   // CP-05
   editLocation(item: DeliveryLocation) { this.router.navigate(['/purchasing-registries/locations/edit', item.apiId]); }
 }

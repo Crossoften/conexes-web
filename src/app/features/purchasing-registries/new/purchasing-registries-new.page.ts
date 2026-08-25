@@ -26,6 +26,9 @@ export class PurchasingRegistriesNewPage {
 
   readonly editId   = Number(this.route.snapshot.paramMap.get('id')) || null;
   readonly isEdit   = signal(this.editId != null);
+  // CP-03: modo somente-visualização; CP-05: duplicar um produto existente.
+  readonly viewOnly = signal(this.route.snapshot.queryParamMap.get('view') === '1');
+  private  dupId    = Number(this.route.snapshot.queryParamMap.get('duplicate')) || null;
   readonly saving   = signal(false);
   readonly errorMsg = signal<string | null>(null);
   readonly accountPlans = signal<PurchaseRef[]>([]);
@@ -52,8 +55,14 @@ export class PurchasingRegistriesNewPage {
     this.svc.getManufacturers().subscribe({ next: v => this.manufacturers.set(v), error: () => {} });
     if (this.editId != null) {
       this.svc.getProduct(this.editId).subscribe({
-        next: p => this.patchForm(p),
+        next: p => { this.patchForm(p); if (this.viewOnly()) this.form.disable(); },
         error: () => this.errorMsg.set('Erro ao carregar o produto para edição.'),
+      });
+    } else if (this.dupId != null) {
+      // CP-05: carrega o produto de origem e mantém como NOVO (salva cria outro).
+      this.svc.getProduct(this.dupId).subscribe({
+        next: p => this.patchForm({ ...p, name: `${p.name ?? ''} (cópia)` } as ApiProductService),
+        error: () => {},
       });
     }
   }
