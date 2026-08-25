@@ -114,8 +114,8 @@ export class PurchasingRegistriesListPage {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  removeProduct(item: Product)      { this.store.removeProduct(item.apiId); }
-  removeLocation(item: DeliveryLocation) { this.store.removeLocation(item.apiId); }
+  removeProduct(item: Product)      { if (confirm(`Excluir "${item.name}"?`)) this.store.removeProduct(item.apiId); }
+  removeLocation(item: DeliveryLocation) { if (confirm(`Excluir o local "${item.name}"?`)) this.store.removeLocation(item.apiId); }
 
   editProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId]); }
   editLocation(item: DeliveryLocation) { this.router.navigate(['/purchasing-registries/locations/edit', item.apiId]); }

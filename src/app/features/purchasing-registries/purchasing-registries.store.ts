@@ -1,5 +1,6 @@
 // src/app/features/purchasing-registries/purchasing-registries.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { NotificationService } from '../../shared/services/notification.service';
 import {
   Product, Supplier, CostCenter, DeliveryLocation,
   RegistryTab, RegistryStatus,
@@ -43,7 +44,8 @@ function toLocation(a: ApiDeliveryLocation): DeliveryLocation {
 
 @Injectable()
 export class PurchasingRegistriesStore {
-  private svc = inject(PurchasingRegistriesService);
+  private svc    = inject(PurchasingRegistriesService);
+  private notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     products: [], suppliers: [], costCenters: [], locations: [],
@@ -195,10 +197,17 @@ export class PurchasingRegistriesStore {
   }
 
   // ── Exclusão (Produtos e Locais) ────────────────────────────────────────────
+  // CP-04: exclusão com feedback claro (sucesso e erro), sem falha silenciosa.
   removeProduct(apiId: number) {
-    this.svc.deleteProduct(apiId).subscribe({ next: () => this.load(), error: () => {} });
+    this.svc.deleteProduct(apiId).subscribe({
+      next: () => { this.notify.success('Item excluído.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Não foi possível excluir. O item pode estar em uso.'),
+    });
   }
   removeLocation(apiId: number) {
-    this.svc.deleteLocation(apiId).subscribe({ next: () => this.load(), error: () => {} });
+    this.svc.deleteLocation(apiId).subscribe({
+      next: () => { this.notify.success('Local excluído.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Não foi possível excluir o local. Ele pode estar em uso.'),
+    });
   }
 }
