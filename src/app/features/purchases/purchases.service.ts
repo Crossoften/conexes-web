@@ -217,6 +217,8 @@ export class PurchasesService {
           group:    pick(r, 'group', 'groupName', 'productGroup'),
           unit:     pick(r, 'measure', 'unit', 'unitOfMeasure', 'measureUnit'),
           costBase: num(r['costBase'] ?? r['cost'] ?? r['price'] ?? r['basePrice']),
+          // CP-17: fabricante do cadastro (string direta ou relação manufacturerRef.name).
+          fabricante: pick(r, 'manufacturer') ?? ((r['manufacturerRef'] as Record<string, unknown> | undefined)?.['name'] as string ?? null),
         }));
       }));
   }

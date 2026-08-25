@@ -118,6 +118,7 @@ export class QuotationNewPage {
       quantity:           ['', Validators.required],
       unit:               ['', Validators.required],
       group:              [''],
+      manufacturer:       [''],   // CP-17
       referenceLink:      [''],
       estimatedUnitValue: [''],
       description:        [''],
@@ -202,6 +203,7 @@ export class QuotationNewPage {
       quantity:           [it.quantity != null ? String(it.quantity) : '', Validators.required],
       unit:               [it.unit ?? '', Validators.required],
       group:              [it.group ?? ''],
+      manufacturer:       [it.manufacturer ?? ''],
       referenceLink:      [it.referenceLink ?? ''],
       estimatedUnitValue: [it.estimatedUnitValue != null ? formatDecimalBR(it.estimatedUnitValue) : ''],
       description:        [it.description ?? ''],
@@ -250,9 +252,10 @@ export class QuotationNewPage {
     const prod = this.products().find(p => p.id === id);
     if (!prod) return;
     item.get('name')?.setValue(prod.name ?? '');
-    if (prod.group != null)    item.get('group')?.setValue(prod.group);
-    if (prod.unit != null)     item.get('unit')?.setValue(prod.unit);
-    if (prod.costBase != null) item.get('estimatedUnitValue')?.setValue(formatDecimalBR(prod.costBase));
+    if (prod.group != null)      item.get('group')?.setValue(prod.group);
+    if (prod.unit != null)       item.get('unit')?.setValue(prod.unit);
+    if (prod.fabricante != null) item.get('manufacturer')?.setValue(prod.fabricante);  // CP-17
+    if (prod.costBase != null)   item.get('estimatedUnitValue')?.setValue(formatDecimalBR(prod.costBase));
   }
 
   resetForm(): void {
@@ -348,6 +351,7 @@ export class QuotationNewPage {
       quantity:           Number(it['quantity'] ?? 0),
       unit:               String(it['unit'] ?? ''),
       group:              String(it['group'] ?? '') || undefined,
+      manufacturer:       String(it['manufacturer'] ?? '') || undefined,
       referenceLink:      String(it['referenceLink'] ?? '') || undefined,
       estimatedUnitValue: parseDecimalBR(String(it['estimatedUnitValue'] ?? '')) || undefined,
       description:        String(it['description'] ?? '') || undefined,

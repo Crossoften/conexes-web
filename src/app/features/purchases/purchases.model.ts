@@ -86,6 +86,7 @@ export interface PurchaseRequestItem {
   quantity: number;
   unit: string;
   group?: string | null;
+  manufacturer?: string | null;
   referenceLink?: string | null;
   estimatedUnitValue?: number | null;
   finalUnitValue?: number | null;
@@ -233,6 +234,7 @@ export interface PurchaseRequestItemPayload {
   quantity: number;
   unit: string;
   group?: string;
+  manufacturer?: string;
   referenceLink?: string;
   estimatedUnitValue?: number;
 }
