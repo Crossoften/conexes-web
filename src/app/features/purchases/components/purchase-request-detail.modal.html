@@ -62,6 +62,9 @@
               <div class="info-grid">
                 <div class="info-item"><span class="info-label">Descrição</span><span class="info-value">{{ fmtText(request.description) }}</span></div>
                 <div class="info-item"><span class="info-label">Justificativa</span><span class="info-value">{{ fmtText(request.justification) }}</span></div>
+                <!-- CP-27: exibir integralmente Obrigações da Contratada e Condições Comerciais -->
+                <div class="info-item"><span class="info-label">Obrigações da Contratada</span><span class="info-value">{{ fmtText(request.contractorObligations) }}</span></div>
+                <div class="info-item"><span class="info-label">Condições Comerciais</span><span class="info-value">{{ fmtText(request.commercialConditions) }}</span></div>
               </div>
             </div>
           }
@@ -98,6 +101,7 @@
                   <tr>
                     <th>Item</th><th>Qtd.</th><th>Unidade</th><th>Grupo</th>
                     <th class="right">Valor unit. estimado</th><th class="right">Valor unit. final</th>
+                    <th class="right">Valor total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,6 +113,8 @@
                       <td>{{ fmtText(item.group) }}</td>
                       <td class="right">{{ fmtCurrency(item.estimatedUnitValue) }}</td>
                       <td class="right">{{ item.finalUnitValue != null ? fmtCurrency(item.finalUnitValue) : 'N/A' }}</td>
+                      <!-- CP-28: Valor total = Qtd × (valor final, ou estimado) -->
+                      <td class="right">{{ fmtCurrency(((item.finalUnitValue ?? item.estimatedUnitValue) || 0) * item.quantity) }}</td>
                     </tr>
                   } @empty {
                     <tr><td class="empty" colspan="6">Nenhum item cadastrado.</td></tr>
