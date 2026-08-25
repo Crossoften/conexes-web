@@ -28,6 +28,8 @@ export class PurchasingRegistriesNewPage {
   readonly isEdit   = signal(this.editId != null);
   // CP-03: modo somente-visualização; CP-05: duplicar um produto existente.
   readonly viewOnly = signal(this.route.snapshot.queryParamMap.get('view') === '1');
+  // CP-01: formulário de Serviço é simplificado (sem Fabricante, Tipo de medida e Origem, próprios de Produto).
+  isService(): boolean { return this.form.get('type')?.value === 'Service'; }
   private  dupId    = Number(this.route.snapshot.queryParamMap.get('duplicate')) || null;
   readonly saving   = signal(false);
   readonly errorMsg = signal<string | null>(null);

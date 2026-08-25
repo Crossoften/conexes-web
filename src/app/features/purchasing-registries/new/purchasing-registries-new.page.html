@@ -7,7 +7,7 @@
   <div class="card">
 
     <div class="card-header">
-      <h2 class="card-title">Dados Gerais – Produtos</h2>
+      <h2 class="card-title">{{ isService() ? 'Dados Gerais – Serviços' : 'Dados Gerais – Produtos' }}</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
     </div>
 
@@ -37,6 +37,8 @@
               </div>
             </div>
 
+            <!-- CP-01: Fabricante é campo de Produto — some no formulário de Serviço -->
+            @if (!isService()) {
             <div class="form-group">
               <label>Fabricante</label>
               <!-- CMP-05: fabricante cadastrado (com criação rápida) -->
@@ -51,6 +53,7 @@
                 <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar fabricante" (click)="quickCreateManufacturer()" style="padding:8px 12px;">+</button>
               </div>
             </div>
+            }
 
             <div class="form-group">
               <label>Grupo</label>
@@ -69,6 +72,7 @@
           </div>
 
           <div class="form-row grid-cols-4">
+            @if (!isService()) {
             <div class="form-group">
               <label>Tipo Medida</label>
               <!-- CMP-06: unidades pré-cadastradas (com opção de digitar via datalist) -->
@@ -77,16 +81,19 @@
                 @for (u of unidadesMedida; track u) { <option [value]="u"></option> }
               </datalist>
             </div>
+            }
 
             <div class="form-group">
               <label>Valor custo base</label>
               <input type="number" step="0.01" class="form-control" placeholder="0,00" formControlName="costBase">
             </div>
 
+            @if (!isService()) {
             <div class="form-group">
               <label>Origem</label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="origin">
             </div>
+            }
 
             <div class="form-group">
               <label>Conta Padrão</label>
