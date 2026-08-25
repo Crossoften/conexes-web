@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, NonNullableFormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { PurchasesService } from '../../purchases/purchases.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import {
   PurchaseRef,
   PurchaseRequest,
@@ -26,6 +27,7 @@ export class QuotationNewPage {
   private svc    = inject(PurchasesService);
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
+  private auth   = inject(AuthService);
 
   activeTab: QuotationTab = 'DADOS';
 
@@ -98,7 +100,18 @@ export class QuotationNewPage {
   }
 
   private loadLookups(): void {
-    this.svc.getUsersLookup().subscribe({ next: v => this.users.set(v), error: () => {} });
+    this.svc.getUsersLookup().subscribe({
+      next: v => {
+        this.users.set(v);
+        // CP-11: na criação, o requisitante já vem preenchido com o usuário logado.
+        const me = this.auth.user()?.id;
+        if (this.editId == null && me && !this.form.get('requesterId')?.value && v.some(u => String(u.id) === String(me))) {
+          this.form.get('requesterId')?.setValue(String(me));
+          this.onRequesterChange();
+        }
+      },
+      error: () => {},
+    });
     this.svc.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
     this.svc.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
