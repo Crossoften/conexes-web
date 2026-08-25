@@ -271,6 +271,16 @@ export class PurchasesService {
     return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/complete`, {});
   }
 
+  // CP-36: importar propostas de cotação por planilha.
+  importQuotations(requestId: number, file: File): Observable<{ message: string; criadas: number; total: number }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.base}/quotations/import/${requestId}`, form);
+  }
+  quotationsTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/quotations/template`, { responseType: 'blob' });
+  }
+
   // CP-24: importar itens da requisição por planilha (parse no back, sem persistir).
   parseRequestItems(file: File): Observable<{ items: any[]; total: number }> {
     const form = new FormData();

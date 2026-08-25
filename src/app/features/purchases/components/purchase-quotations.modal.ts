@@ -149,4 +149,23 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     const m = (err as { error?: { message?: string | string[] } })?.error?.message ?? fallback;
     return Array.isArray(m) ? m.join(', ') : m;
   }
+
+  // CP-36: importar propostas de cotação por planilha.
+  readonly importing = signal(false);
+  downloadQuotTemplate(): void {
+    this.svc.quotationsTemplate().subscribe({
+      next: blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'modelo-cotacoes.xlsx'; a.click(); URL.revokeObjectURL(url); },
+      error: () => {},
+    });
+  }
+  onImportQuotations(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.requestId) return;
+    this.importing.set(true);
+    this.svc.importQuotations(this.requestId, file).subscribe({
+      next: res => { this.importing.set(false); input.value = ''; this.notify.success(res?.message ?? 'Propostas importadas.'); this.load(); },
+      error: err => { this.importing.set(false); input.value = ''; this.notify.error(err?.error?.message ?? 'Falha ao importar as propostas.'); },
+    });
+  }
 }
