@@ -47,6 +47,19 @@
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
+      <!-- PC-05: filtro por Centro de custo/Projeto/Atividade vinculado -->
+      <div class="select-wrap">
+        <select class="select select--pill"
+          [value]="store.filters().costCenter"
+          (change)="onCostCenterFilter($any($event.target).value)">
+          <option value="">Todos os centros de custo</option>
+          @for (o of ccOptions(); track o.id) {
+            <option [value]="o.id">{{ o.name }}</option>
+          }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
       <button class="btn-outline btn-pill" (click)="toggleView()">{{ viewMode() === 'tree' ? 'Ver em lista' : 'Ver em árvore' }}</button>
 
       <button class="btn-outline btn-pill" (click)="onTemplate()">Baixar modelo</button>
@@ -125,6 +138,7 @@
             <th class="th th--sortable" (click)="store.setSort('code')">Número <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('title')">Título categoria/conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('accountType')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('accountType')"></span></th>
+            <th class="th">Centro de custo</th>
             <th class="th th--sortable" (click)="store.setSort('budgetManagement')">Gestão de orçamentos <span class="sort-icon" [ngClass]="'sort--' + getSortState('budgetManagement')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('description')">Descrição categoria/conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
@@ -135,18 +149,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td colspan="9"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td colspan="10"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" colspan="10">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" colspan="10">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -185,6 +199,7 @@
                 <td class="td td--mono">{{ item.code }}</td>
                 <td class="td td--name">{{ item.title }}</td>
                 <td class="td">{{ accountTypeLabel(item.accountType) }}</td>
+                <td class="td">{{ linkedName(item.category) }}</td>
                 <td class="td">{{ item.budgetManagement ? 'Sim' : 'Não' }}</td>
                 <td class="td">{{ item.description }}</td>
 
@@ -224,7 +239,7 @@
 
               @if (store.expandedIds().has(toStr(item.id)) && item.children?.length) {
                 <tr class="tr-expand-panel">
-                  <td colspan="9" class="td-expand-panel">
+                  <td colspan="10" class="td-expand-panel">
                     <div class="expand-table-wrap">
                       <table class="expand-table">
                         <thead>

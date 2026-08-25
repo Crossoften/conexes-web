@@ -10,6 +10,7 @@ interface AccountFilters {
   search: string;
   status: AccountStatus | '';
   type:   AccountType | '';
+  costCenter: string;   // PC-05: filtro por Centro de custo/Projeto/Atividade (id vinculado em category)
 }
 
 interface AccountSort {
@@ -37,7 +38,7 @@ const initialState: AccountsState = {
   items:      [],
   selected:   new Set(),
   expanded:   new Set(),
-  filters:    { search: '', status: '', type: '' },
+  filters:    { search: '', status: '', type: '', costCenter: '' },
   sort:       { column: '', direction: null },
   pagination: { page: 1, pageSize: 50 },
   loading:    false,
@@ -50,13 +51,14 @@ export const AccountsStore = signalStore(
   withComputed(({ items, filters, sort, pagination, selected, expanded }) => {
 
     const afterFilter = computed(() => {
-      const { search, status, type } = filters();
+      const { search, status, type, costCenter } = filters();
       return items().filter(a => {
         const q = search.toLowerCase();
         return (
           (!search || a.title.toLowerCase().includes(q) || a.code.includes(search)) &&
           (!status || a.status === status) &&
-          (!type   || a.accountType === type)
+          (!type   || a.accountType === type) &&
+          (!costCenter || String((a as any).category ?? '') === costCenter)
         );
       });
     });
@@ -154,6 +156,11 @@ export const AccountsStore = signalStore(
 
       setType(type: AccountType | '') {
         patchState(store, s => ({ filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } }));
+      },
+
+      // PC-05: filtro por Centro de custo/Projeto/Atividade vinculado.
+      setCostCenter(costCenter: string) {
+        patchState(store, s => ({ filters: { ...s.filters, costCenter }, pagination: { ...s.pagination, page: 1 } }));
       },
 
       // ── Pagination ───────────────────────────────────────────────────────

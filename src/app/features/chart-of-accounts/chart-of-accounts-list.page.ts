@@ -1,8 +1,10 @@
 // src/app/features/chart-of-accounts/chart-of-accounts-list.page.ts
 import { Component, inject, computed, OnInit, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../../environments/environment';
 import { AccountsStore } from './chart-of-accounts.store';
 import { ChartOfAccountsService } from './chart-of-accounts.service';
 import { ChartOfAccountsDetailModalComponent } from './components/chart-of-accounts-detail.modal';
@@ -20,6 +22,32 @@ export class ChartOfAccountsListPage implements OnInit {
   readonly store        = inject(AccountsStore);
   readonly router       = inject(Router);
   private  svc          = inject(ChartOfAccountsService);
+  private  http         = inject(HttpClient);
+
+  // PC-05: lookup de Centro de custo/Projeto/Atividade para exibir o vínculo e filtrar.
+  readonly ccMap     = signal<Map<string, string>>(new Map());
+  readonly ccOptions = signal<{ id: string; name: string }[]>([]);
+  linkedName(category: unknown): string {
+    const key = String(category ?? '');
+    return key ? (this.ccMap().get(key) ?? '—') : '—';
+  }
+  onCostCenterFilter(v: string): void { this.store.setCostCenter(v); }
+  private loadCostCenters(): void {
+    this.http.get<{ data?: any[] } | any[]>(`${environment.apiUrl}/v1/projects`, { params: { take: '500' } })
+      .subscribe({
+        next: res => {
+          const rows = Array.isArray(res) ? res : (res.data ?? []);
+          const map = new Map<string, string>();
+          const opts: { id: string; name: string }[] = [];
+          for (const r of rows) {
+            const id = String(r.id); const name = String(r.name ?? r.title ?? r.id);
+            map.set(id, name); opts.push({ id, name });
+          }
+          this.ccMap.set(map); this.ccOptions.set(opts);
+        },
+        error: () => {},
+      });
+  }
   readonly statusConfig = ACCOUNT_STATUS_CONFIG;
 
   readonly statusOptions: { label: string; value: AccountStatus | '' }[] = [
@@ -111,6 +139,7 @@ export class ChartOfAccountsListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+    this.loadCostCenters();
   }
 
   // ── Search ────────────────────────────────────────────────────────────────
