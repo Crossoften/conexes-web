@@ -46,7 +46,8 @@ export const appRoutes: Routes = [
 
       // Compras 
       { path: 'purchasing-dashboard', loadChildren: () => import('./features/purchasing-dashboard/purchasing-dashboard.routes').then(m => m.purchasingDashboardRoutes) },
-      { path: 'purchasing-reports',   loadChildren: () => import('./features/purchasing-reports/purchasing-reports.routes').then(m => m.purchasingReportsRoutes) },
+      // HI-07: rota de relatórios de Compras removida do menu e do roteamento (Central de Relatórios futura).
+      // { path: 'purchasing-reports', ... }
       { path: 'quotations',           loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
       { path: 'quotation-map',        loadChildren: () => import('./features/quotation-map/quotation-map.routes').then(m => m.quotationMapRoutes) },
       { path: 'purchase-receiving',   loadChildren: () => import('./features/purchase-receiving/purchase-receiving.routes').then(m => m.purchaseReceivingRoutes) },
@@ -62,7 +63,8 @@ export const appRoutes: Routes = [
       { path: 'accounts-receivable',  loadChildren: () => import('./features/accounts-receivable/accounts-receivable.routes').then(m => m.accountsReceivableRoutes) },
       { path: 'budgets',              loadChildren: () => import('./features/budgets/budgets.routes').then(m => m.budgetsRoutes) },
       { path: 'invoice-review',       loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
-      { path: 'financial-reports',    loadChildren: () => import('./features/financial-reports/financial-reports.routes').then(m => m.financialReportsRoutes) },
+      // HI-07: rota de relatórios financeiros removida do menu e do roteamento (Central de Relatórios futura).
+      // { path: 'financial-reports', ... }
       { path: 'integrations',         loadChildren: () => import('./features/integrations/integrations.routes').then(m => m.integrationsRoutes) },
 
       // Outros

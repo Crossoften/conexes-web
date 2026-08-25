@@ -57,7 +57,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'contracts',
     children: [
       { label: 'Cadastrar órgãos',       route: '/agencies' },
-      { label: 'Plano de trabalho',      route: '/work-plans' },
+      { label: 'Plano de trabalho',      route: '/work-plans', disabled: true, badge: 'Em breve' },
       { label: 'Repasses e informações', route: '/contract-transfers' },
     ],
   },
@@ -72,7 +72,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Recebimento',   route: '/purchase-receiving' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
-      { label: 'Relatórios',    route: '/purchasing-reports' },
+      // HI-07: telas de relatórios removidas de todos os módulos (haverá uma Central de Relatórios futura).
     ],
   },
   {
@@ -85,13 +85,16 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Contas a pagar',               route: '/accounts-payable' },
       { label: 'Contas a receber',             route: '/accounts-receivable' },
       { label: 'Orçamentos',                   route: '/budgets' },
-      { label: 'Relatórios financeiros',       route: '/financial-reports' },
+      // HI-07: relatórios financeiros removidos do menu (Central de Relatórios futura).
     ],
   },
   {
+    // PR-01: módulo bloqueado com "Em breve" até o cliente enviar as orientações.
     label: 'Prestação de contas',
     route: '/accountability',
     icon:  'accountability',
+    disabled: true,
+    badge: 'Em breve',
   },
   {
     label: 'Integrações',
