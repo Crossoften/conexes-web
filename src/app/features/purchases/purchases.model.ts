@@ -68,6 +68,10 @@ export interface PurchaseRef {
   group?: string | null;
   unit?: string | null;
   costBase?: number | null;
+  fabricante?: string | null;      // CP-17: fabricante herdado do cadastro do produto
+  // CP-20: cascata de alocação (Centro de custo → Projeto → Atividade).
+  costCenterId?: number | null;
+  parentProjectId?: number | null;
 }
 
 // ── Item da requisição ────────────────────────────────────────────────────────

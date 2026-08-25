@@ -1,5 +1,5 @@
 // src/app/features/quotations/new/quotation-new.page.ts
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, NonNullableFormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { PurchasesService } from '../../purchases/purchases.service';
@@ -39,8 +39,32 @@ export class QuotationNewPage {
   // Lookups
   readonly users            = signal<PurchaseRef[]>([]);
   readonly projects         = signal<PurchaseRef[]>([]);
+  readonly activities       = signal<PurchaseRef[]>([]);
   readonly costCenters      = signal<PurchaseRef[]>([]);
   readonly accountPlans     = signal<PurchaseRef[]>([]);
+
+  // CP-20: cascata Centro de custo → Projeto → Atividade (signals reativos).
+  readonly selectedCC   = signal<number | null>(null);
+  readonly selectedProj = signal<number | null>(null);
+  readonly filteredProjects = computed(() => {
+    const cc = this.selectedCC();
+    return cc ? this.projects().filter(p => p.costCenterId === cc) : this.projects();
+  });
+  readonly filteredActivities = computed(() => {
+    const pr = this.selectedProj();
+    return pr ? this.activities().filter(a => a.parentProjectId === pr) : this.activities();
+  });
+
+  onCostCenterChange(): void {
+    this.selectedCC.set(Number(this.form.get('costCenterId')?.value) || null);
+    this.form.get('projectId')?.setValue('');
+    this.form.get('activityId')?.setValue('');
+    this.selectedProj.set(null);
+  }
+  onProjectChange(): void {
+    this.selectedProj.set(Number(this.form.get('projectId')?.value) || null);
+    this.form.get('activityId')?.setValue('');
+  }
   readonly contracts        = signal<PurchaseRef[]>([]);
   readonly products         = signal<PurchaseRef[]>([]);
   readonly deliveryLocations = signal<PurchaseRef[]>([]);
@@ -59,6 +83,7 @@ export class QuotationNewPage {
     commercialConditions:  [''],
     payingSource:          [''],
     projectId:             [''],
+    activityId:            [''],
     costCenterId:          [''],
     accountPlanId:         [''],
     uniqueSupplier:        [false],
@@ -113,6 +138,7 @@ export class QuotationNewPage {
       error: () => {},
     });
     this.svc.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
+    this.svc.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
     this.svc.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
     this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v), error: () => {} });
@@ -145,6 +171,7 @@ export class QuotationNewPage {
       commercialConditions:  r.commercialConditions ?? '',
       payingSource:          r.payingSource ?? '',
       projectId:             r.projectId != null ? String(r.projectId) : '',
+      activityId:            this.activities().find(a => a.name === (r as any).activity)?.id?.toString() ?? '',
       costCenterId:          r.costCenterId != null ? String(r.costCenterId) : '',
       accountPlanId:         r.accountPlanId != null ? String(r.accountPlanId) : '',
       uniqueSupplier:        r.uniqueSupplier ?? false,
@@ -154,6 +181,10 @@ export class QuotationNewPage {
       contractId:            r.contractId != null ? String(r.contractId) : '',
       deliveryLocationId:    r.deliveryLocationId != null ? String(r.deliveryLocationId) : '',
     });
+
+    // CP-20: reflete a cascata ao editar (Centro de custo → Projeto).
+    this.selectedCC.set(r.costCenterId ?? null);
+    this.selectedProj.set(r.projectId ?? null);
 
     this.items.clear();
     const list = r.items?.length ? r.items : [];
@@ -338,6 +369,8 @@ export class QuotationNewPage {
       projectId:             this.num(v.projectId),
       costCenterId:          this.num(v.costCenterId),
       accountPlanId:         this.num(v.accountPlanId),
+      // CP-19: Atividade (nível abaixo de Projeto) — enviada como texto no campo activity.
+      activity:              this.activities().find(a => String(a.id) === String(v.activityId))?.name || undefined,
       uniqueSupplier:        v.uniqueSupplier,
       exclusiveSupplier:     v.exclusiveSupplier,
       withoutSubsidy:        v.withoutSubsidy,

@@ -163,7 +163,21 @@ export class PurchasesService {
         const rows = Array.isArray(res) ? res : res.data ?? [];
         return rows
           .filter(r => r['_entityType'] === 'project')
-          .map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']) }));
+          // CP-20: carrega costCenterId para a cascata Centro de custo → Projeto.
+          .map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']), costCenterId: r['costCenterId'] != null ? Number(r['costCenterId']) : null }));
+      }));
+  }
+
+  /** CP-19/CP-20: Atividades (nível abaixo de Projeto) para a alocação em cascata. */
+  getActivitiesLookup(): Observable<PurchaseRef[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/projects`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows
+          .filter(r => r['_entityType'] === 'activity')
+          .map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']), parentProjectId: r['parentProjectId'] != null ? Number(r['parentProjectId']) : null }));
       }));
   }
 
