@@ -101,6 +101,7 @@
               <th class="th th--sortable" (click)="store.setSort('agency')">Agência <span class="sort-icon" [ngClass]="'sort--' + getSortState('agency')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('account')">Conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('account')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('accountType')">Tipo Conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('accountType')"></span></th>
+              <th class="th th--sortable" (click)="store.setSort('resourceType')">Recurso <span class="sort-icon" [ngClass]="'sort--' + getSortState('resourceType')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('initialBalance')">Saldo inicial <span class="sort-icon" [ngClass]="'sort--' + getSortState('initialBalance')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('openDate')">Data Abertura <span class="sort-icon" [ngClass]="'sort--' + getSortState('openDate')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('bankName')">Banco <span class="sort-icon" [ngClass]="'sort--' + getSortState('bankName')"></span></th>
@@ -128,18 +129,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 10 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -159,6 +160,7 @@
                 <td class="td td--mono">{{ item.agency }}</td>
                 <td class="td td--mono">{{ item.account }}</td>
                 <td class="td">{{ item.accountType }}</td>
+                <td class="td">{{ item.resourceType === 'Publico' ? 'Público' : item.resourceType === 'Privado' ? 'Privado' : '—' }}</td>
                 <td class="td">{{ item.initialBalance }}</td>
                 <td class="td td--dates">
                   <span class="date-line">{{ item.openDate | date:'dd/MM/yyyy':'UTC' }}</span>

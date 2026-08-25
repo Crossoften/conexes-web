@@ -142,25 +142,23 @@
             </div>
           </div>
 
+          <!-- CB-02: removido "Contato" (redundante com telefone/e-mail) e a 2ª "Conta contábil" duplicada -->
           <div class="form-row grid-cols-4">
             <div class="form-group">
               <label>Conta contábil</label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contaContabil1">
             </div>
-            <div class="form-group">
-              <label>Contato</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contato">
-            </div>
-          </div>
-
-          <div class="form-row grid-cols-4">
+            <!-- CB-03: tipo do recurso como Público/Privado -->
             <div class="form-group">
               <label>Tipo do recurso</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tipoRecurso">
-            </div>
-            <div class="form-group">
-              <label>Conta contábil</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contaContabil2">
+              <div class="select-wrap">
+                <select class="form-control" formControlName="tipoRecurso">
+                  <option value="">Selecione</option>
+                  <option value="Publico">Público</option>
+                  <option value="Privado">Privado</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </div>
 
