@@ -325,6 +325,15 @@
                   @else { Clique para fazer upload }
                 </span>
               </label>
+
+              <!-- CV-03: pré-visualização da logo (existente ou recém-enviada) -->
+              @if (logoUrl()) {
+                <div class="logo-preview" style="margin-top:12px;display:inline-flex;padding:8px;border:1px solid var(--surface-border,#E4E4EF);border-radius:10px;background:#fff;">
+                  <img [src]="logoUrl()" alt="Pré-visualização do logotipo do concessor"
+                    style="max-width:160px;max-height:90px;object-fit:contain;display:block;"
+                    (error)="logoImg.style.display='none'" #logoImg>
+                </div>
+              }
             </div>
 
           </form>
