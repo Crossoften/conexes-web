@@ -55,6 +55,9 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
 
   activeTab: DetailTab = 'DADOS';
 
+  // CP-34: etapas da esteira (a atual vem de request.currentStage).
+  readonly STAGES = ['Requisição', 'Aprovação', 'Cotação', 'Aprovação da cotação', 'Pedido', 'Finalizado'];
+
   readonly statusConfig = PURCHASE_REQUEST_STATUS_CONFIG;
 
   /** Requisição já carregada (evita recarga a cada mudança do input `loading`). */

@@ -41,6 +41,18 @@
       @if (loading) {
         <p class="modal-loading">Carregando detalhes…</p>
       } @else if (request) {
+        <!-- CP-34: esteira das etapas com destaque de concluídas / atual / futuras -->
+        <div style="display:flex;gap:4px;flex-wrap:wrap;padding:10px 0 14px;">
+          @for (s of STAGES; track $index; let i = $index) {
+            <div style="flex:1;min-width:96px;text-align:center;padding:6px 4px;border-radius:8px;border:1px solid #e3e9ef;font-size:11px;"
+              [style.background]="(i + 1) === (request.currentStage ?? 1) ? '#17608f' : ((i + 1) < (request.currentStage ?? 1) ? '#e7f7ee' : '#f7f9fb')"
+              [style.color]="(i + 1) === (request.currentStage ?? 1) ? '#fff' : ((i + 1) < (request.currentStage ?? 1) ? '#1e7d3a' : '#8a97a4')"
+              [style.borderColor]="(i + 1) === (request.currentStage ?? 1) ? '#17608f' : ((i + 1) < (request.currentStage ?? 1) ? '#b7e7cd' : '#e3e9ef')">
+              <div style="font-weight:800;">{{ (i + 1) < (request.currentStage ?? 1) ? '✓' : (i + 1) }}</div>
+              <div>{{ s }}</div>
+            </div>
+          }
+        </div>
         <div class="tab-content">
 
           <!-- ══ DADOS DA REQUISIÇÃO ═══════════════════════════════════════ -->
