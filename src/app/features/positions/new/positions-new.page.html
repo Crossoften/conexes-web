@@ -56,6 +56,11 @@
                   <option value="">Selecione</option>
                   <option value="Ajuste">Ajuste</option>
                   <option value="PrestacaoDeContas">Prestação de Contas</option>
+                  <option value="Aditamento">Aditamento</option>
+                  <option value="Prorrogacao">Prorrogação</option>
+                  <option value="Rescisao">Rescisão</option>
+                  <option value="Renovacao">Renovação</option>
+                  <option value="Outros">Outros</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -75,11 +80,6 @@
               <label>Data de eleição <span class="req">*</span></label>
               <input type="date" class="form-control" formControlName="dataEleicao"
                 [class.is-invalid]="form.get('dataEleicao')?.invalid && form.get('dataEleicao')?.touched">
-            </div>
-
-            <div class="form-group">
-              <label>Código Certidão Audesp</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoAudesp">
             </div>
 
           </div>

@@ -90,10 +90,6 @@
                 <span class="info-label">Descrição</span>
                 <span class="info-value">{{ position.description || '—' }}</span>
               </div>
-              <div class="info-item">
-                <span class="info-label">Cód. Certidão Audesp</span>
-                <span class="info-value">{{ position.tcespCertCode || '—' }}</span>
-              </div>
 
             </div>
           </div>
@@ -164,6 +160,11 @@
                       <option value="">Selecione</option>
                       <option value="Ajuste">Ajuste</option>
                       <option value="PrestacaoDeContas">Prestação de Contas</option>
+                      <option value="Aditamento">Aditamento</option>
+                      <option value="Prorrogacao">Prorrogação</option>
+                      <option value="Rescisao">Rescisão</option>
+                      <option value="Renovacao">Renovação</option>
+                      <option value="Outros">Outros</option>
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
@@ -196,12 +197,6 @@
                 </div>
               </div>
 
-              <div class="form-row grid-cols-3">
-                <div class="form-group">
-                  <label>Código Certidão Audesp</label>
-                  <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoAudesp">
-                </div>
-              </div>
 
             </div>
 
