@@ -9,7 +9,8 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  // FN-02: força UTC para não deslocar a data um dia no fuso BR (off-by-one).
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 
 @Injectable({ providedIn: 'root' })
