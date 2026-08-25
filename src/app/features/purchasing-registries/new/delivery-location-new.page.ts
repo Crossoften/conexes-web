@@ -29,6 +29,12 @@ export class DeliveryLocationNewPage {
     zipCode:     [''],
     address:     [''],
     number:      [''],
+    complement:  [''],
+    district:    [''],
+    city:        [''],
+    state:       [''],
+    email:       [''],
+    phone:       [''],
   });
 
   constructor() {
@@ -47,6 +53,12 @@ export class DeliveryLocationNewPage {
       zipCode:     l.zipCode ?? '',
       address:     l.address ?? '',
       number:      l.number ?? '',
+      complement:  (l as any).complement ?? '',
+      district:    (l as any).district ?? '',
+      city:        (l as any).city ?? '',
+      state:       (l as any).state ?? '',
+      email:       (l as any).email ?? '',
+      phone:       (l as any).phone ?? '',
     });
   }
 
@@ -68,6 +80,12 @@ export class DeliveryLocationNewPage {
       zipCode:     v.zipCode || undefined,
       address:     v.address || undefined,
       number:      v.number || undefined,
+      complement:  v.complement || undefined,
+      district:    v.district || undefined,
+      city:        v.city || undefined,
+      state:       v.state || undefined,
+      email:       v.email || undefined,
+      phone:       v.phone || undefined,
     };
 
     const req$ = this.editId != null

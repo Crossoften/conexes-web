@@ -224,6 +224,12 @@ export interface DeliveryLocationPayload {
   zipCode?: string;
   address?: string;
   number?: string;
+  complement?: string;
+  district?: string;
+  city?: string;
+  state?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface PurchaseRequestItemPayload {
