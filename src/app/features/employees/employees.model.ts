@@ -37,7 +37,7 @@ export interface Employee {
   startDate:          string;
   endDate:            string;
   cns:                string;
-  salary:             number;
+  salary?:            number;   // VG-05: opcional — vazio não é gravado como zero
   professionalBoard:  string;
   personalEmail:      string;
   institutionalEmail: string;
@@ -72,7 +72,7 @@ export interface EmployeePayload {
   startDate:          string | null;   // ISO 8601 ou null (o back rejeita '' e exige ISO)
   endDate:            string | null;
   cns:                string;
-  salary:             number;
+  salary?:            number;   // VG-05: opcional — vazio não é gravado como zero
   professionalBoard:  string;
   personalEmail:      string;
   institutionalEmail: string;

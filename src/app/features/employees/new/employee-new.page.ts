@@ -177,7 +177,7 @@ export class EmployeeNewPage implements OnInit {
       startDate:          toIso(v.dataAdmissao),
       endDate:            toIso(v.dataDemissao),
       cns:                v.cns                        ?? '',
-      salary:             parseDecimalBR(v.salario),
+      salary:             String(v.salario ?? '').trim() ? parseDecimalBR(v.salario) : undefined,  // VG-05
       professionalBoard:  v.orgaoClasse                ?? '',
       personalEmail:      v.emailPessoal               ?? '',
       institutionalEmail: v.emailInstitucional         ?? '',
