@@ -111,6 +111,13 @@ export interface DeliveryLocationPayload {
   zipCode?:     string;
   address?:     string;
   number?:      string;
+  // CP-09: endereço estruturado (padrão RF)
+  complement?:  string;
+  district?:    string;
+  city?:        string;
+  state?:       string;
+  email?:       string;
+  phone?:       string;
 }
 
 // ── Status config ─────────────────────────────────────────────────────────────
