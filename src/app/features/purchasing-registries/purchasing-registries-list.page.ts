@@ -114,7 +114,7 @@ export class PurchasingRegistriesListPage {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  removeProduct(item: Product)      { if (confirm(`Excluir "${item.name}"?`)) this.store.removeProduct(item.apiId); }
+  removeProduct(item: Product)      { if (confirm(`Excluir "${item.productName}"?`)) this.store.removeProduct(item.apiId); }
   removeLocation(item: DeliveryLocation) { if (confirm(`Excluir o local "${item.name}"?`)) this.store.removeLocation(item.apiId); }
 
   editProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId]); }
