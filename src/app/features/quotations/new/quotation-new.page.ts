@@ -214,6 +214,36 @@ export class QuotationNewPage {
   setTab(tab: QuotationTab) { this.activeTab = tab; }
   addItem()                 { this.items.push(this.newItem()); }
 
+  // CP-24: importar itens por planilha (o back só parseia; adiciono ao formulário).
+  onImportItems(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.svc.parseRequestItems(file).subscribe({
+      next: res => {
+        for (const it of (res.items || [])) {
+          const g = this.newItem();
+          g.patchValue({
+            name: it.name ?? '',
+            quantity: it.quantity != null ? String(it.quantity) : '',
+            unit: it.unit ?? '',
+            group: it.group ?? '',
+            estimatedUnitValue: it.estimatedUnitValue != null ? formatDecimalBR(it.estimatedUnitValue) : '',
+          });
+          this.items.push(g);
+        }
+        input.value = '';
+      },
+      error: err => { input.value = ''; this.errorMsg.set(err?.error?.message ?? 'Falha ao importar os itens da planilha.'); },
+    });
+  }
+  downloadItemsTemplate(): void {
+    this.svc.itemsTemplate().subscribe({
+      next: blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'modelo-itens-requisicao.xlsx'; a.click(); URL.revokeObjectURL(url); },
+      error: () => {},
+    });
+  }
+
   /** CP-18: valor total do item = Quantidade × Valor unitário (formatado em BR). */
   itemTotal(index: number): string {
     const it = this.items.at(index) as FormGroup;

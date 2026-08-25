@@ -271,6 +271,16 @@ export class PurchasesService {
     return this.http.post<PurchaseRequest>(`${this.base}/requests/${id}/complete`, {});
   }
 
+  // CP-24: importar itens da requisição por planilha (parse no back, sem persistir).
+  parseRequestItems(file: File): Observable<{ items: any[]; total: number }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ items: any[]; total: number }>(`${this.base}/requests/items/import-parse`, form);
+  }
+  itemsTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/requests/items/template`, { responseType: 'blob' });
+  }
+
   generateRequestExcel(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/requests/${id}/excel`, { responseType: 'blob' });
   }

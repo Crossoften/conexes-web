@@ -217,6 +217,14 @@
           </div>
           <!-- CP-21: botão Incluir item sempre abaixo do último item -->
           <button type="button" class="btn-block-gray mb-8" (click)="addItem()">Incluir item</button>
+          <!-- CP-24: importar itens por planilha -->
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <button type="button" class="btn-outline btn-outline--orange" (click)="downloadItemsTemplate()" style="padding:8px 14px;">Baixar modelo de itens</button>
+            <label class="btn-outline btn-outline--orange" style="padding:8px 14px; cursor:pointer;">
+              Importar itens (planilha)
+              <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImportItems($event)">
+            </label>
+          </div>
         }
 
         <!-- ══ LOCAL ══════════════════════════════════════════════════════ -->
