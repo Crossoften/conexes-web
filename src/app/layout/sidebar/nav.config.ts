@@ -72,6 +72,8 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Recebimento',   route: '/purchase-receiving' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
+      // IT-05: Documentos fiscais dentro de Compras (o módulo Integrações deixou de existir).
+      { label: 'Documentos fiscais', route: '/integrations/fiscal-documents' },
       // HI-07: telas de relatórios removidas de todos os módulos (haverá uma Central de Relatórios futura).
     ],
   },
@@ -85,6 +87,9 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Contas a pagar',               route: '/accounts-payable' },
       { label: 'Contas a receber',             route: '/accounts-receivable' },
       { label: 'Orçamentos',                   route: '/budgets' },
+      // IT-03/IT-04/IT-06/IT-07: funções de Integrações realocadas para o Financeiro (o módulo isolado foi eliminado).
+      { label: 'Notas fiscais e cobranças',    route: '/integrations/fiscal-documents' },
+      { label: 'Conexão bancária e extrato',   route: '/integrations/bank-integrations' },
       // HI-07: relatórios financeiros removidos do menu (Central de Relatórios futura).
     ],
   },
@@ -96,14 +101,9 @@ export const NAV_ITEMS: NavItem[] = [
     disabled: true,
     badge: 'Em breve',
   },
-  {
-    label: 'Integrações',
-    icon:  'financial',
-    children: [
-      { label: 'Notas fiscais (NFe.io)',   route: '/integrations/fiscal-documents' },
-      { label: 'Pagamentos e extrato',     route: '/integrations/bank-integrations' },
-    ],
-  },
+  // IT-01/HI-05: o módulo individual "Integrações" foi ELIMINADO do menu (diretriz confirmada no
+  // Dossiê Consolidado 24/08). Cada função migrou para o módulo dono do processo (Compras/Financeiro);
+  // os parâmetros técnicos ficam em Configurações gerais (IT-02).
   {
     label: 'Perfil',
     route: '/profile',
