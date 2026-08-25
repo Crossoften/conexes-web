@@ -140,10 +140,20 @@
               <input type="text" class="form-control" formControlName="borrowerName" placeholder="Nome do tomador">
             </div>
           </div>
+          <!-- IT-09: selecionar um Contato preenche o tomador automaticamente -->
           <div class="form-row grid-cols-2">
             <div class="form-group">
+              <label>Tomador — Contato cadastrado</label>
+              <select class="form-control" (change)="onSelectContato($any($event.target).value)">
+                <option value="">Selecione um contato (ou preencha o CPF/CNPJ abaixo)</option>
+                @for (c of contatos(); track c.id) {
+                  <option [value]="c.id">{{ c.name }}{{ c.document ? ' — ' + c.document : '' }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
               <label>Tomador — CPF/CNPJ</label>
-              <input type="text" class="form-control" formControlName="borrowerDoc" placeholder="Somente dígitos">
+              <input type="text" class="form-control" formControlName="borrowerDoc" placeholder="Somente dígitos" (blur)="onBorrowerDocBlur()">
             </div>
           </div>
         </div>

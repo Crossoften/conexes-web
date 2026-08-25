@@ -2,8 +2,12 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { IntegrationsService } from '../integrations.service';
 import { FiscalDocument, FiscalStatus } from '../integrations.model';
+
+interface ContatoOption { id: number; name: string; document: string; }
 
 type StatusVariant = 'success' | 'warning' | 'danger' | 'info';
 
@@ -33,6 +37,38 @@ const TYPE_LABEL: Record<string, string> = {
 export class FiscalDocumentsPage implements OnInit {
   private svc = inject(IntegrationsService);
   private fb  = inject(FormBuilder);
+  private http = inject(HttpClient);
+
+  // IT-09: contatos (clientes) para autofill do tomador na emissão de NFS-e.
+  readonly contatos = signal<ContatoOption[]>([]);
+  loadContatos(): void {
+    this.http.get<{ data?: any[] } | any[]>(`${environment.apiUrl}/v1/stakeholders`, { params: { take: '500' } })
+      .subscribe({
+        next: res => {
+          const rows = Array.isArray(res) ? res : (res.data ?? []);
+          this.contatos.set(rows.map(r => ({ id: Number(r.id), name: String(r.name ?? r.tradeName ?? r.legalName ?? ''), document: String(r.document ?? '') })));
+        },
+        error: () => {},
+      });
+  }
+  onSelectContato(id: string): void {
+    const c = this.contatos().find(x => String(x.id) === String(id));
+    if (!c) return;
+    this.form.patchValue({ borrowerName: c.name, borrowerDoc: (c.document || '').replace(/\D/g, '') });
+  }
+  onBorrowerDocBlur(): void {
+    const digits = (this.form.get('borrowerDoc')?.value ?? '').replace(/\D/g, '');
+    // já cadastrado em Contatos?
+    const known = this.contatos().find(x => (x.document || '').replace(/\D/g, '') === digits);
+    if (known) { if (!this.form.get('borrowerName')?.value) this.form.get('borrowerName')?.setValue(known.name); return; }
+    // senão, se CNPJ, consulta a Receita
+    if (digits.length === 14 && !this.form.get('borrowerName')?.value) {
+      this.http.get<any>(`${environment.apiUrl}/v1/stakeholders/cnpj/${digits}`).subscribe({
+        next: d => { if (d?.razaoSocial) this.form.get('borrowerName')?.setValue(d.razaoSocial); },
+        error: () => {},
+      });
+    }
+  }
 
   readonly loading   = signal(true);
   readonly docs      = signal<FiscalDocument[]>([]);
@@ -61,6 +97,7 @@ export class FiscalDocumentsPage implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadContatos();
     this.svc.getCompany().subscribe({ next: c => this.company.set(c), error: () => {} });
   }
 
