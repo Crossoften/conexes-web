@@ -56,6 +56,13 @@
           <polyline points="9 15 12 18 15 15"></polyline>
         </svg>
       </button>
+
+      <!-- CP-06: importação em massa de produtos/serviços -->
+      <button class="btn-outline btn-pill" type="button" (click)="downloadTemplate()">Baixar modelo</button>
+      <label class="btn-outline btn-pill" style="cursor:pointer;" [class.is-loading]="importing()">
+        {{ importing() ? 'Importando…' : 'Importar planilha' }}
+        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImportProducts($event)" [disabled]="importing()">
+      </label>
     </div>
 
     @if (store.loading()) {

@@ -97,6 +97,16 @@ export class PurchasingRegistriesService {
     return this.http.get(`${this.base}/v1/products-services/export/excel`, { responseType: 'blob' });
   }
 
+  // CP-06: importação em massa de produtos/serviços por planilha.
+  importProducts(file: File): Observable<{ message: string; criadas: number; total: number }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.base}/v1/products-services/import`, form);
+  }
+  downloadProductsTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/v1/products-services/import/template`, { responseType: 'blob' });
+  }
+
   // ── Locais de entrega (CRUD) ────────────────────────────────────────────────
   listLocations(params: RegistryListParams = {}): Observable<Page<ApiDeliveryLocation>> {
     return this.http

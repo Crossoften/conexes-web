@@ -45,6 +45,30 @@ export class PurchasingRegistriesListPage {
     });
   }
 
+  // CP-06: importação em massa de produtos/serviços por planilha.
+  readonly importing = signal(false);
+  downloadTemplate(): void {
+    this.svc.downloadProductsTemplate().subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = 'modelo-produtos-servicos.xlsx';
+        link.click(); URL.revokeObjectURL(url);
+      },
+      error: () => {},
+    });
+  }
+  onImportProducts(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importing.set(true);
+    this.svc.importProducts(file).subscribe({
+      next: res => { this.importing.set(false); input.value = ''; alert(res?.message ?? 'Importação concluída.'); this.store.load(); },
+      error: err => { this.importing.set(false); input.value = ''; alert(err?.error?.message ?? 'Falha ao importar a planilha.'); },
+    });
+  }
+
   /** Rota do botão "Novo" conforme a aba (só Produtos e Locais têm cadastro aqui). */
   // CMP-09: Produtos e Serviços compartilham a mesma tabela (@switch não faz fall-through).
   tableKind(): 'PRODUCTS' | 'LOCATIONS' | 'OTHER' {
