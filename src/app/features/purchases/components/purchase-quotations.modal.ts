@@ -4,6 +4,7 @@
 // Etapa 3 (Cotação): registrar propostas. Etapa 4 (Cotação em aprovação): aprovar/reprovar.
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NotificationService } from '../../../shared/services/notification.service';
 import { PurchasesService } from '../purchases.service';
 import { PurchaseQuotation, PurchaseRef, QuotationStatus } from '../purchases.model';
 
@@ -30,6 +31,7 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
   @Output() close = new EventEmitter<void>();
 
   private svc = inject(PurchasesService);
+  private notify = inject(NotificationService);
   private fb  = inject(NonNullableFormBuilder);
 
   readonly statusConfig = QUOTATION_STATUS;
@@ -113,12 +115,12 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
 
   approve(q: PurchaseQuotation): void {
     this.error.set(null);
-    this.svc.approveQuotation(q.id).subscribe({ next: () => this.load(), error: err => this.error.set(this.msg(err, 'Erro ao aprovar a cotação.')) });
+    this.svc.approveQuotation(q.id).subscribe({ next: () => { this.notify.success('Cotação aprovada.'); this.load(); }, error: err => this.error.set(this.msg(err, 'Erro ao aprovar a cotação.')) });
   }
 
   reject(q: PurchaseQuotation): void {
     this.error.set(null);
-    this.svc.rejectQuotation(q.id).subscribe({ next: () => this.load(), error: err => this.error.set(this.msg(err, 'Erro ao reprovar a cotação.')) });
+    this.svc.rejectQuotation(q.id).subscribe({ next: () => { this.notify.success('Cotação reprovada.'); this.load(); }, error: err => this.error.set(this.msg(err, 'Erro ao reprovar a cotação.')) });
   }
 
   onClose(): void { this.close.emit(); }

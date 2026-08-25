@@ -163,7 +163,22 @@ export class PurchasingManagementStore {
     }
 
     obs.subscribe({
-      next: () => { this.actionSubmitting.set(false); this.closeAction(); this.load(); },
+      next: () => {
+        this.actionSubmitting.set(false);
+        // CP-30: confirmação clara da ação e da etapa de destino.
+        const ok: Record<string, string> = {
+          cancel:            'Requisição cancelada.',
+          reject:            'Requisição reprovada e devolvida ao requisitante.',
+          'request-changes': 'Ajustes solicitados ao requisitante.',
+          restart:           'Requisição reiniciada.',
+          move:              `Requisição encaminhada para a Etapa ${result.stage ?? ''}.`,
+          buyer:             'Comprador responsável atualizado.',
+          approvers:         'Aprovadores atualizados.',
+        };
+        this.notify.success(ok[result.kind] ?? 'Ação concluída com sucesso.');
+        this.closeAction();
+        this.load();
+      },
       error: err => {
         this.actionSubmitting.set(false);
         const raw = err?.error?.message ?? 'Erro ao executar a ação.';
