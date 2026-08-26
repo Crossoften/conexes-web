@@ -14,6 +14,8 @@ export interface Product {
   measureType: string;
   group:       string;
   manufacturer: string;
+  costBase:    number;
+  defaultAccount: string;
   description: string;
   status:      RegistryStatus;
 }
@@ -58,6 +60,7 @@ export interface ApiProductService {
   costBase?:     number | null;
   origin?:       string | null;
   accountPlanId?: number | null;
+  accountPlan?:  { title: string } | null;
   description?:  string | null;
   status?:       RegistryStatus;
 }

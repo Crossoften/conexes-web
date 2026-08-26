@@ -29,7 +29,7 @@ export class PurchasingRegistriesListPage {
   readonly exporting = signal(false);
 
   onExport(): void {
-    if (this.exporting() || this.tableKind() !== 'PRODUCTS') return;
+    if (this.exporting() || !this.canExport()) return;
     this.exporting.set(true);
     this.svc.exportProductsExcel().subscribe({
       next: (blob: Blob) => {
@@ -69,13 +69,27 @@ export class PurchasingRegistriesListPage {
     });
   }
 
-  /** Rota do botão "Novo" conforme a aba (só Produtos e Locais têm cadastro aqui). */
-  // CMP-09: Produtos e Serviços compartilham a mesma tabela (@switch não faz fall-through).
-  tableKind(): 'PRODUCTS' | 'LOCATIONS' | 'OTHER' {
+  /** Rota do botão "Novo" conforme a aba (só Produtos, Serviços e Locais têm cadastro aqui). */
+  tableKind(): 'PRODUCTS' | 'SERVICES' | 'LOCATIONS' | 'OTHER' {
     const t = this.store.activeTab();
-    if (t === 'PRODUCTS' || t === 'SERVICES') return 'PRODUCTS';
-    if (t === 'LOCATIONS') return 'LOCATIONS';
+    if (t === 'PRODUCTS' || t === 'SERVICES' || t === 'LOCATIONS') return t;
     return 'OTHER';
+  }
+
+  canExport(): boolean {
+    const k = this.tableKind();
+    return k === 'PRODUCTS' || k === 'SERVICES';
+  }
+
+  fmtMoney(v: number | null | undefined): string {
+    return (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  newLabel(): string {
+    const k = this.tableKind();
+    if (k === 'SERVICES') return 'Novo serviço';
+    if (k === 'PRODUCTS') return 'Novo produto';
+    return 'Novo local';
   }
 
   newRoute(): string[] | null {
@@ -87,7 +101,9 @@ export class PurchasingRegistriesListPage {
 
   goNew() {
     const r = this.newRoute();
-    if (r) this.router.navigate(r);
+    if (!r) return;
+    if (this.store.activeTab() === 'SERVICES') this.router.navigate(r, { queryParams: { type: 'Service' } });
+    else this.router.navigate(r);
   }
 
   // POS-05: gestão de grupos e fabricantes.

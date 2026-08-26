@@ -22,7 +22,7 @@
 
           <div class="form-row grid-cols-4">
             <div class="form-group">
-              <label>Nome do produto<span class="req">*</span></label>
+              <label>{{ isService() ? 'Nome do serviço' : 'Nome do produto' }}<span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
             </div>
 
@@ -123,7 +123,7 @@
 
           <div class="form-row grid-cols-1">
             <div class="form-group">
-              <label>Descrição do produto</label>
+              <label>{{ isService() ? 'Descrição do serviço' : 'Descrição do produto' }}</label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="description">
             </div>
           </div>

@@ -31,6 +31,9 @@ export class PurchasingRegistriesNewPage {
   // CP-01: formulário de Serviço é simplificado (sem Fabricante, Tipo de medida e Origem, próprios de Produto).
   isService(): boolean { return this.form.get('type')?.value === 'Service'; }
   private  dupId    = Number(this.route.snapshot.queryParamMap.get('duplicate')) || null;
+  // B25: aba Serviços abre o cadastro já no modo serviço (?type=Service).
+  private readonly defaultType: string =
+    this.editId == null && this.dupId == null && this.route.snapshot.queryParamMap.get('type') === 'Service' ? 'Service' : 'Product';
   readonly saving   = signal(false);
   readonly errorMsg = signal<string | null>(null);
   readonly accountPlans = signal<PurchaseRef[]>([]);
@@ -40,7 +43,7 @@ export class PurchasingRegistriesNewPage {
 
   readonly form = this.fb.group({
     name:          ['', Validators.required],
-    type:          ['Product', Validators.required],
+    type:          [this.defaultType, Validators.required],
     manufacturerId: [''],
     groupId:       [''],
     measure:       [''],
@@ -87,7 +90,7 @@ export class PurchasingRegistriesNewPage {
   resetForm(): void {
     // CMP-13: confirmação para evitar limpar o cadastro por clique acidental.
     if (this.form.dirty && !confirm('Limpar os campos preenchidos?')) return;
-    this.form.reset({ type: 'Product', status: 'Active' });
+    this.form.reset({ type: this.defaultType, status: 'Active' });
   }
 
   // CMP-04/05: cria um grupo/fabricante na hora (sem sair da tela) e já seleciona.

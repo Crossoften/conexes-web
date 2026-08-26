@@ -28,6 +28,7 @@ function toProduct(a: ApiProductService): Product {
     id: String(a.id), apiId: a.id,
     code: a.code ?? '—', productName: a.name,
     measureType: a.measure ?? '—', group: a.productGroup?.name ?? a.group ?? '—', manufacturer: a.manufacturerRef?.name ?? a.manufacturer ?? '—',
+    costBase: a.costBase ?? 0, defaultAccount: a.accountPlan?.title ?? '—',
     description: a.description ?? '—', status: a.status ?? 'Active',
   };
 }

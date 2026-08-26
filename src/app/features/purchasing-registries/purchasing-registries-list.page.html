@@ -9,7 +9,7 @@
         <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
           <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        {{ tableKind() === 'PRODUCTS' ? 'Novo produto' : 'Novo local' }}
+        {{ newLabel() }}
       </button>
     }
     </div>
@@ -46,8 +46,8 @@
       </div>
 
       <button class="btn-outline btn-pill" type="button" (click)="onExport()"
-              [disabled]="tableKind() !== 'PRODUCTS' || exporting()"
-              [title]="store.activeTab() !== 'PRODUCTS' ? 'Exportação disponível na aba Produtos' : 'Exportar'">
+              [disabled]="!canExport() || exporting()"
+              [title]="canExport() ? 'Exportar' : 'Exportação disponível nas abas Produtos e Serviços'">
         Exportar
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -84,6 +84,19 @@
                 <th class="th th--sortable" (click)="store.setSort('measureType')">Tipo medida <span class="sort-icon" [ngClass]="'sort--' + getSortState('measureType')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('group')">Grupo <span class="sort-icon" [ngClass]="'sort--' + getSortState('group')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('manufacturer')">Fabricante <span class="sort-icon" [ngClass]="'sort--' + getSortState('manufacturer')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
+                <th class="th th--center">Ações</th>
+              </tr>
+            }
+            @case ('SERVICES') {
+              <tr>
+                <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
+                <th class="th th--sortable" (click)="store.setSort('code')">Cód <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('productName')">Serviço <span class="sort-icon" [ngClass]="'sort--' + getSortState('productName')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('group')">Grupo <span class="sort-icon" [ngClass]="'sort--' + getSortState('group')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('costBase')">Valor custo base <span class="sort-icon" [ngClass]="'sort--' + getSortState('costBase')"></span></th>
+                <th class="th th--sortable" (click)="store.setSort('defaultAccount')">Conta padrão <span class="sort-icon" [ngClass]="'sort--' + getSortState('defaultAccount')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
                 <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
                 <th class="th th--center">Ações</th>
@@ -128,6 +141,30 @@
                 </tr>
               }
             }
+            @case ('SERVICES') {
+              @for (item of store.pageProducts(); track item.id) {
+                <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
+                  <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
+                  <td class="td td--mono">{{ item.code }}</td>
+                  <td class="td td--name">{{ item.productName }}</td>
+                  <td class="td">{{ item.group }}</td>
+                  <td class="td">{{ fmtMoney(item.costBase) }}</td>
+                  <td class="td">{{ item.defaultAccount }}</td>
+                  <td class="td">{{ item.description }}</td>
+                  <td class="td">
+                    <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[item.status].variant">{{ statusConfig[item.status].label }}</span>
+                  </td>
+                  <td class="td td--center">
+                    <div class="action-icons">
+                      <button class="icon-btn" title="Visualizar" (click)="viewProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                      <button class="icon-btn" title="Editar" (click)="editProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="icon-btn" title="Duplicar" (click)="duplicateProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 13V5a2 2 0 0 1 2-2h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                      <button class="icon-btn icon-btn--danger" title="Excluir" (click)="removeProduct(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
             @default {
               @for (item of store.pageLocations(); track item.id) {
                 <tr class="tr" [class.tr--selected]="store.selectedIds().has(item.id)">
@@ -146,7 +183,7 @@
           }
           @if (!store.loading() && !store.error() && store.filteredTotal() === 0) {
             <tr>
-              <td class="td registry-empty-cell" style="text-align:center; padding:32px; color: var(--text-secondary);" [attr.colspan]="tableKind() === 'PRODUCTS' ? 9 : 4">Nenhum registro encontrado.</td>
+              <td class="td registry-empty-cell" style="text-align:center; padding:32px; color: var(--text-secondary);" [attr.colspan]="tableKind() === 'PRODUCTS' || tableKind() === 'SERVICES' ? 9 : 4">Nenhum registro encontrado.</td>
             </tr>
           }
         </tbody>
