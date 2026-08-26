@@ -348,7 +348,7 @@ export class QuotationNewPage {
     const finish = () => { if (--pending <= 0) { this.stagedFiles.set([]); done(); } };
     for (const file of files) {
       this.svc.uploadFile(file).subscribe({
-        next: r => this.svc.attachRequestFile(id, { fileUrl: r.url, fileKey: r.key } as any).subscribe({ next: finish, error: finish }),
+        next: r => this.svc.attachRequestFile(id, { fileUrl: r.fileUrl, fileKey: r.fileKey }).subscribe({ next: finish, error: finish }),
         error: finish,
       });
     }

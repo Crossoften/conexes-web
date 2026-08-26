@@ -322,7 +322,7 @@
       [requestId]="q.id"
       [requestCode]="q.code"
       [canRegister]="canRegisterQuotation"
-      [canApproveQuote]="canApprove()"
+      [canApproveQuote]="hasApprovalRole()"
       (close)="store.closeQuotations()">
     </app-purchase-quotations-modal>
   }

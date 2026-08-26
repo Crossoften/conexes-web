@@ -33,10 +33,10 @@ export class QuotationsListPage {
   readonly sectionTitle = computed(() => this.route.snapshot.data['title'] ?? 'Requisições');
 
   // ── Ações disponíveis por etapa × papel de compras ─────────────────────────
-  // Aprovar/Reprovar: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
+  // Papel aprovador: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
   // = Supervisor de Compras. Gestor sempre pode. (Backend valida a alçada por valor.)
   // Se o /my-self ainda não trouxe purchaseRoles, cai no fallback por role global.
-  readonly canApprove = computed(() => {
+  readonly hasApprovalRole = computed(() => {
     const onApprovalStage = this.routeStage === 1 || this.routeStage === 3;
     if (!onApprovalStage) return false;
     if (this.perms.hasNoPurchaseRoleInfo()) return this.perms.canApproveByGlobalRole();
@@ -45,9 +45,11 @@ export class QuotationsListPage {
       (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager()))
     );
   });
-  readonly canReject = this.canApprove;
-  // Solicitar ajustes (FE-6): mesmos perfis/etapas do aprovar/reprovar (Etapa 2/4).
-  readonly canRequestChanges = this.canApprove;
+  // Aprovar genérico só na Etapa 2; na Etapa 4 o caminho 4→5 é a adjudicação (gera o pedido).
+  readonly canApprove = computed(() => this.routeStage === 1 && this.hasApprovalRole());
+  readonly canReject = this.hasApprovalRole;
+  // Solicitar ajustes (FE-6): mesmos perfis/etapas do reprovar (Etapa 2/4).
+  readonly canRequestChanges = this.hasApprovalRole;
 
   // Cancelar: ação administrativa exclusiva do Gestor (nas etapas onde já aparecia).
   readonly canCancel = computed(() =>
@@ -68,7 +70,7 @@ export class QuotationsListPage {
   readonly canRegisterQuotation = this.routeStage === 2;   // Etapa 3
 
   // Adjudicação (FE-8): Etapa 4, exige papel de aprovação (Supervisor de Compras / Gestor).
-  readonly canAward = computed(() => this.routeStage === 3 && this.canApprove());
+  readonly canAward = computed(() => this.routeStage === 3 && this.hasApprovalRole());
 
   // Consultar/Duplicar/Excel/PDF disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;

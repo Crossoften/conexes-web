@@ -311,11 +311,11 @@ export class PurchasesService {
     return this.http.post<PurchaseFile>(`${this.base}/requests/${id}/files`, payload);
   }
 
-  // CMP-20: sobe um arquivo (multipart) e devolve url/key para anexar.
-  uploadFile(file: File): Observable<{ url: string; key: string }> {
+  // CMP-20: sobe um arquivo (multipart) e devolve fileUrl/fileKey para anexar.
+  uploadFile(file: File): Observable<{ fileUrl: string; fileKey: string }> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<{ url: string; key: string }>(`${environment.apiUrl}/v1/upload/one-file`, form);
+    return this.http.post<{ fileUrl: string; fileKey: string }>(`${environment.apiUrl}/v1/upload/one-file`, form);
   }
 
   // CMP-07: criação rápida de produto/local sem sair da requisição.
