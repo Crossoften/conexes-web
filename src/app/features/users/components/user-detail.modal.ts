@@ -102,15 +102,47 @@ export class UserDetailModalComponent implements OnInit {
     this.mode = this.initialMode();
   }
 
-  private applyModules(u: User): void {
-    if (u.modulePermissions?.length) {
-      this.modules = this.catalogBase.map(def => {
-        const found = u.modulePermissions.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
-        return found ? { ...def, ...found } : { ...def };
-      });
-    } else {
-      this.modules = this.catalogBase.map(m => ({ ...m }));
+  private permissionsSource(u: User | null): ModulePermission[] {
+    return (u?.effectivePermissions?.length ? u.effectivePermissions : null)
+        ?? (u?.permissionProfile?.permissions?.length ? u.permissionProfile.permissions : null)
+        ?? u?.modulePermissions
+        ?? [];
+  }
+
+  private mergeIntoCatalog(source: ModulePermission[]): ModulePermission[] {
+    const used = new Set<ModulePermission>();
+    const rows = this.catalogBase.map(def => {
+      const found = source.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
+      if (!found) return { ...def };
+      used.add(found);
+      return {
+        ...def,
+        canView:     !!found.canView,
+        canCreate:   !!found.canCreate,
+        canEdit:     !!found.canEdit,
+        canDelete:   !!found.canDelete,
+        isUnlimited: !!found.isUnlimited,
+      };
+    });
+    for (const p of source) {
+      if (!used.has(p)) {
+        rows.push({
+          module:      p.module,
+          subMenu:     p.subMenu ?? '',
+          canView:     !!p.canView,
+          canCreate:   !!p.canCreate,
+          canEdit:     !!p.canEdit,
+          canDelete:   !!p.canDelete,
+          isUnlimited: !!p.isUnlimited,
+        });
+      }
     }
+    return rows;
+  }
+
+  private applyModules(u: User): void {
+    const source = this.permissionsSource(u);
+    this.modules = source.length ? this.mergeIntoCatalog(source) : this.catalogBase.map(m => ({ ...m }));
   }
 
   private patchForm(u: User): void {
@@ -166,16 +198,9 @@ export class UserDetailModalComponent implements OnInit {
    * ficar completa.
    */
   get effectiveModules(): ModulePermission[] {
-    const u = this.user();
-    const source = (u?.effectivePermissions?.length ? u.effectivePermissions : null)
-                ?? (u?.permissionProfile?.permissions?.length ? u.permissionProfile.permissions : null)
-                ?? u?.modulePermissions
-                ?? [];
+    const source = this.permissionsSource(this.user());
     if (!source.length) return [];
-    return this.catalogBase.map(def => {
-      const found = source.find(p => p.module === def.module && (!def.subMenu || p.subMenu === def.subMenu));
-      return found ? { ...def, ...found } : { ...def };
-    });
+    return this.mergeIntoCatalog(source);
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -227,9 +252,10 @@ export class UserDetailModalComponent implements OnInit {
       phone:             v.phone      || undefined,
       role:              v.role,
       status:            v.status     as any,
-      modulePermissions: this.modules,
     };
 
+    // BK-2: matriz intocada fica fora do payload — não vira permissão direta que mascara o perfil.
+    if (this.matrixDirty) payload.modulePermissions = this.modules;
     if (v.password) payload.password = v.password;
     if (v.entityId) payload.entityId = v.entityId;
     // permissionProfileId: envia inclusive quando limpo? Só quando definido (US-3).

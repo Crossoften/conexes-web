@@ -121,7 +121,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (mod of effectiveModules; track mod.module) {
+                      @for (mod of effectiveModules; track mod.module + '·' + mod.subMenu) {
                         <tr class="tr">
                           <td class="td td--bold">{{ mod.module }}</td>
                           <td class="td">{{ mod.subMenu }}</td>
@@ -253,7 +253,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (mod of modules; track mod.module; let i = $index) {
+                    @for (mod of modules; track mod.module + '·' + mod.subMenu; let i = $index) {
                       <tr class="tr">
                         <td class="td td--bold">{{ mod.module }}</td>
                         <td class="td">{{ mod.subMenu }}</td>
