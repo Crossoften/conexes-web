@@ -28,6 +28,19 @@ export class TaxesService {
     return this.http.get<Tax>(`${this.base}/stakeholder/${id}`);
   }
 
+  // Naturezas distintas já cadastradas, para o select do formulário
+  // (GET /operation-nature do back é busca por ?q= e não lista o catálogo todo).
+  getOperationNatures(): Observable<string[]> {
+    return this.getAll().pipe(map(list => {
+      const seen = new Set<string>();
+      for (const t of list) {
+        const n = (t.operationNature ?? '').trim();
+        if (n) seen.add(n);
+      }
+      return [...seen].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }));
+  }
+
   // POST é createOrUpdate (upsert por stakeholderId) — serve para criar E editar.
   // O contrato não expõe PATCH/{id} nem GET/{id}.
   save(payload: TaxPayload): Observable<Tax> {

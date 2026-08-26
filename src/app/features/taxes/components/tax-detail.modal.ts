@@ -6,7 +6,7 @@ import { Tax, TaxPayload, TaxService, StakeholderItem, ScopeOption } from '../ta
 import { parseDecimalBR, formatDecimalBR } from '../../../shared/utils/format';
 import { TaxesService } from '../taxes.service';
 
-type ModalTab = 'GERAIS' | 'ALIQUOTAS' | 'SERVICOS';
+type ModalTab = 'GERAIS' | 'ALIQUOTAS';
 
 @Component({
   selector: 'app-tax-detail-modal',
@@ -31,6 +31,9 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
 
   private svc = inject(TaxesService);
 
+  // Naturezas de operação já cadastradas, para o select do modo edição.
+  readonly operationNatures = signal<string[]>([]);
+
   // Opções de escopo para os selects do serviço.
   readonly costCenters = signal<ScopeOption[]>([]);
   readonly projects    = signal<ScopeOption[]>([]);
@@ -53,15 +56,33 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
     return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + parseDecimalBR(v[k]), 0);
   }
 
+  hasRetencao(): boolean {
+    return this.mode === 'edit'
+      ? !!this.form.get('definirAliquotasManual')?.value
+      : !!this.tax?.manualAliquots;
+  }
+
   constructor(private fb: FormBuilder) {
     this.form = this.buildForm();
     // Atualiza o "Total das Retenções" ao alterar as alíquotas.
     this.form.valueChanges.subscribe(() => {
       this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
     });
+    // Aba Alíquotas só fica acessível com o toggle de retenção marcado.
+    this.form.get('definirAliquotasManual')?.valueChanges.subscribe(v => {
+      if (this.mode === 'edit' && !v && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAIS';
+    });
   }
 
   ngOnInit(): void {
+    this.svc.getOperationNatures().subscribe({
+      next: natures => {
+        this.operationNatures.set(natures);
+        this.ensureNatureOption(this.form.get('naturezaOperacao')?.value);
+      },
+      error: () => { /* mantém o select só com a opção vazia se a lista falhar */ },
+    });
+
     this.svc.getScopeOptions().subscribe({
       next: opts => {
         this.costCenters.set(opts.costCenters);
@@ -79,6 +100,7 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
         codigoServico:          this.tax.serviceClassCode,
         tituloServico:          this.tax.serviceTitle,
         naturezaOperacao:       this.tax.operationNature,
+        descricao:              (this.tax.services ?? []).find(sv => sv.name === this.tax!.serviceTitle)?.description ?? '',
         definirAliquotasManual: this.tax.manualAliquots,
         resumoRetencoes:        formatDecimalBR(this.tax.totalRetentions),
         aliqIRRF:               this.tax.irfAliquot,
@@ -100,7 +122,19 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
         aliqCBS:                this.tax.cbsAliquot,
         cbsCode:                this.tax.cbsCode,
       });
-      this.services = [...(this.tax.services ?? [])];
+      this.ensureNatureOption(this.tax.operationNature);
+      this.services = (this.tax.services ?? []).map(sv => ({
+        name:           sv.name           ?? '',
+        description:    sv.description    ?? '',
+        externalCode:   sv.externalCode   ?? '',
+        grantorOrgan:   sv.grantorOrgan   ?? '',
+        hasRetention:   !!sv.hasRetention,
+        accessorOrgan:  sv.accessorOrgan  ?? '',
+        concessionLink: sv.concessionLink ?? '',
+        costCenterId:   this.idOrNull(sv.costCenterId),
+        projectId:      this.idOrNull(sv.projectId),
+        activityId:     this.idOrNull(sv.activityId),
+      }));
     }
 
     if (changes['mode']) {
@@ -111,6 +145,8 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
         this.form.get('resumoRetencoes')?.disable();
       }
     }
+
+    if (!this.hasRetencao() && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAIS';
   }
 
   // ── Accessors ─────────────────────────────────────────────────────────────
@@ -135,7 +171,10 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  setTab(tab: ModalTab): void { this.activeTab = tab; }
+  setTab(tab: ModalTab): void {
+    if (tab === 'ALIQUOTAS' && !this.hasRetencao()) return;
+    this.activeTab = tab;
+  }
 
   onClose(): void { this.close.emit(); }
 
@@ -153,6 +192,24 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
     if (!this.tax) return;
 
     const v = this.form.getRawValue();
+
+    // A Descrição persiste no serviço de mesmo nome do Título (único campo de
+    // descrição que o contrato do back expõe — services[].description).
+    const services = this.normalizeServices(this.services);
+    const desc = (v.descricao ?? '').trim();
+    if (desc) {
+      const main = services.find(s => s.name === v.tituloServico);
+      if (main) {
+        main.description = desc;
+      } else {
+        services.unshift({
+          name: v.tituloServico, description: desc, externalCode: '',
+          grantorOrgan: '', hasRetention: !!v.definirAliquotasManual,
+          accessorOrgan: '', concessionLink: '',
+          costCenterId: null, projectId: null, activityId: null,
+        });
+      }
+    }
 
     const payload: TaxPayload = {
       stakeholderId:    Number(v.fornecedor)           || this.tax.stakeholderId,
@@ -180,7 +237,7 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
       cbsAliquot:       parseDecimalBR(v.aliqCBS),
       cbsCode:          v.cbsCode                      ?? '',
       status:           this.tax.status ?? 'Active',
-      services:         this.normalizeServices(this.services),
+      services,
     };
 
     this.save.emit(payload);
@@ -194,6 +251,7 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
       codigoServico:          ['', Validators.required],
       tituloServico:          ['', Validators.required],
       naturezaOperacao:       [''],
+      descricao:              [''],
       definirAliquotasManual: [false],
       resumoRetencoes:        [{ value: '', disabled: true }],
       aliqIRRF:   [''], irfCode:    [''],
@@ -215,6 +273,13 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
       accessorOrgan: '', concessionLink: '',
       costCenterId: null, projectId: null, activityId: null,
     };
+  }
+
+  private ensureNatureOption(nature?: string | null): void {
+    const n = (nature ?? '').trim();
+    if (n && !this.operationNatures().includes(n)) {
+      this.operationNatures.update(list => [...list, n].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    }
   }
 
   /** FK do serviço: id positivo ou null (o back rejeita 0/"" como referência inexistente). */

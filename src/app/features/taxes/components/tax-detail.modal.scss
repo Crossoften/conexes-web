@@ -118,6 +118,14 @@
       border-radius: 2px 2px 0 0;
     }
   }
+
+  &:disabled {
+    color: var(--text-muted, #9CA3AF);
+    opacity: 0.55;
+    cursor: not-allowed;
+    svg { opacity: 0.5; }
+    &:hover { color: var(--text-muted, #9CA3AF); }
+  }
 }
 
 // ── Info Box (view) ───────────────────────────

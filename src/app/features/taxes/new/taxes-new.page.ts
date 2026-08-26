@@ -8,7 +8,7 @@ import { TaxPayload, TaxService, ScopeOption } from '../taxes.model';
 import { parseDecimalBR, formatDecimalBR } from '../../../shared/utils/format';
 import { NotificationService } from '../../../shared/services/notification.service';
 
-type TaxTab = 'CONFIG' | 'ALIQUOTAS' | 'SERVICOS';
+type TaxTab = 'GERAL' | 'ALIQUOTAS';
 
 interface StakeholderItem { id: number; name: string; document: string; }
 
@@ -31,12 +31,15 @@ export class TaxesNewPage implements OnInit {
   readonly stakeholders = signal<StakeholderItem[]>([]);
   readonly loadingLists = signal(true);
 
+  // Naturezas de operação já cadastradas, para o select da aba de dados gerais.
+  readonly operationNatures = signal<string[]>([]);
+
   // Opções de escopo para os selects do serviço (evitam id inválido digitado à mão).
   readonly costCenters = signal<ScopeOption[]>([]);
   readonly projects    = signal<ScopeOption[]>([]);
   readonly activities  = signal<ScopeOption[]>([]);
 
-  activeTab: TaxTab = 'CONFIG';
+  activeTab: TaxTab = 'GERAL';
 
   // Services gerenciados como array dinâmico
   services: TaxService[] = [];
@@ -71,6 +74,7 @@ export class TaxesNewPage implements OnInit {
     codigoServico:           ['', Validators.required],
     tituloServico:           ['', Validators.required],
     naturezaOperacao:        [''],
+    descricao:               [''],
     definirAliquotasManual:  [false],
     resumoRetencoes:         [{ value: '', disabled: true }],
     aliqIRRF:   [''], irfCode:    [''],
@@ -97,10 +101,19 @@ export class TaxesNewPage implements OnInit {
     return this.ALIQUOT_FIELDS.reduce((sum, k) => sum + parseDecimalBR(v[k]), 0);
   }
 
+  hasRetencao(): boolean {
+    return !!this.form.get('definirAliquotasManual')?.value;
+  }
+
   ngOnInit(): void {
     // Atualiza o "Total das Retenções" (campo calculado) ao alterar as alíquotas.
     this.form.valueChanges.subscribe(() => {
       this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
+    });
+
+    // Aba Alíquotas só fica acessível com o toggle de retenção marcado.
+    this.form.get('definirAliquotasManual')?.valueChanges.subscribe(v => {
+      if (!v && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAL';
     });
 
     this.svc.getStakeholders().subscribe({
@@ -124,6 +137,14 @@ export class TaxesNewPage implements OnInit {
       error: () => this.loadingLists.set(false),
     });
 
+    this.svc.getOperationNatures().subscribe({
+      next: natures => {
+        this.operationNatures.set(natures);
+        this.ensureNatureOption(this.form.get('naturezaOperacao')?.value);
+      },
+      error: () => { /* mantém o select só com a opção vazia se a lista falhar */ },
+    });
+
     this.svc.getScopeOptions().subscribe({
       next: opts => {
         this.costCenters.set(opts.costCenters);
@@ -141,46 +162,20 @@ export class TaxesNewPage implements OnInit {
     const id = Number(value);
     if (!id) return;
     this.svc.getStakeholderById(id).subscribe({
-      next: (s: any) => this.applyTaxConfig(s?.taxesAndServices, false),
+      next: (s: any) => this.applyTaxConfig(s?.taxesAndServices),
       error: () => { /* fornecedor sem impostos: mantém o formulário como está */ },
     });
   }
 
-  // STK-04.1: copia a configuração de impostos/serviços de OUTRO fornecedor.
-  copyFrom: number | string = '';
-  readonly copying = signal(false);
-
-  onCopyFromSupplier(value: string | number): void {
-    const id = Number(value);
-    if (!id) return;
-    if (this.form.dirty && !confirm('Isso vai substituir as alíquotas e a lista de serviços atuais. Continuar?')) {
-      this.copyFrom = '';
-      return;
-    }
-    this.copying.set(true);
-    this.svc.getByStakeholder(id).subscribe({
-      next: (t: any) => {
-        this.copying.set(false);
-        if (!t || !t.serviceClassCode && !t.services?.length && !t.irfAliquot) {
-          this.notify.error('Esse fornecedor não tem impostos/serviços cadastrados para copiar.');
-          return;
-        }
-        this.applyTaxConfig(t, true);
-        this.notify.success('Impostos e serviços copiados. Ajuste o que precisar antes de salvar.');
-        this.copyFrom = '';
-      },
-      error: () => { this.copying.set(false); this.notify.error('Esse fornecedor não tem impostos/serviços para copiar.'); this.copyFrom = ''; },
-    });
-  }
-
-  // Aplica uma config fiscal (do próprio fornecedor ou copiada de outro) ao form.
-  // `overwriteServices`: quando true (cópia), substitui a lista mesmo se vazia.
-  private applyTaxConfig(t: any, overwriteServices: boolean): void {
+  // Aplica a config fiscal já existente do fornecedor ao form.
+  private applyTaxConfig(t: any): void {
     if (!t) return;
     this.form.patchValue({
       codigoServico:    t.serviceClassCode || this.form.get('codigoServico')?.value || '',
       tituloServico:    t.serviceTitle     || this.form.get('tituloServico')?.value || '',
       naturezaOperacao: t.operationNature  ?? '',
+      descricao:        (t.services ?? []).find((sv: any) => sv.name === t.serviceTitle)?.description ?? '',
+      definirAliquotasManual: !!t.manualAliquots,
       aliqIRRF:   t.irfAliquot    ?? '', irfCode:    t.irfCode    ?? '',
       aliqPIS:    t.pisAliquot    ?? '', pisCode:    t.pisCode    ?? '',
       aliqPCC:    t.pccAliquot    ?? '', pccCode:    t.pccCode    ?? '',
@@ -191,26 +186,29 @@ export class TaxesNewPage implements OnInit {
       aliqIBS:    t.ibsAliquot    ?? '', ibsCode:    t.ibsCode    ?? '',
       aliqCBS:    t.cbsAliquot    ?? '', cbsCode:    t.cbsCode    ?? '',
     });
+    this.ensureNatureOption(t.operationNature);
     // STK-04.4/STK-04.3: traz também a lista de serviços (strip de ids, preserva escopo).
-    if (overwriteServices || (Array.isArray(t.services) && t.services.length)) {
-      this.services = (t.services ?? []).map((sv: any) => ({
-        name:          sv.name          ?? '',
-        description:   sv.description   ?? '',
-        externalCode:  sv.externalCode  ?? '',
-        grantorOrgan:  sv.grantorOrgan  ?? '',
-        hasRetention:  !!sv.hasRetention,
-        accessorOrgan: sv.accessorOrgan ?? '',
-        costCenterId:  this.idOrNull(sv.costCenterId),
-        projectId:     this.idOrNull(sv.projectId),
-        activityId:    this.idOrNull(sv.activityId),
+    if (Array.isArray(t.services) && t.services.length) {
+      this.services = t.services.map((sv: any) => ({
+        name:           sv.name           ?? '',
+        description:    sv.description    ?? '',
+        externalCode:   sv.externalCode   ?? '',
+        grantorOrgan:   sv.grantorOrgan   ?? '',
+        hasRetention:   !!sv.hasRetention,
+        accessorOrgan:  sv.accessorOrgan  ?? '',
+        concessionLink: sv.concessionLink ?? '',
+        costCenterId:   this.idOrNull(sv.costCenterId),
+        projectId:      this.idOrNull(sv.projectId),
+        activityId:     this.idOrNull(sv.activityId),
       }));
     }
   }
 
-  /** Fornecedores disponíveis como origem da cópia (exclui o destino já selecionado). */
-  copySourceOptions(): StakeholderItem[] {
-    const target = Number(this.form.get('fornecedor')?.value);
-    return this.stakeholders().filter(s => s.id !== target);
+  private ensureNatureOption(nature?: string | null): void {
+    const n = (nature ?? '').trim();
+    if (n && !this.operationNatures().includes(n)) {
+      this.operationNatures.update(list => [...list, n].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+    }
   }
 
   // ── Services array ────────────────────────────────────────────────────────
@@ -227,29 +225,23 @@ export class TaxesNewPage implements OnInit {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  setTab(tab: TaxTab): void { this.activeTab = tab; }
+  setTab(tab: TaxTab): void {
+    if (tab === 'ALIQUOTAS' && !this.hasRetencao()) return;
+    this.activeTab = tab;
+  }
 
   resetForm(): void {
     this.form.reset({ definirAliquotasManual: false });
     this.services   = [];
     this.newService = this.emptyService();
-    this.activeTab  = 'CONFIG';
+    this.activeTab  = 'GERAL';
     this.errorMsg.set(null);
   }
 
-  onNextOrSubmit(): void {
-    if (this.activeTab === 'CONFIG') {
-      this.activeTab = 'ALIQUOTAS';
-    } else if (this.activeTab === 'ALIQUOTAS') {
-      this.activeTab = 'SERVICOS';
-    } else {
-      this.onSubmit();
-    }
-  }
-
-  private onSubmit(): void {
+  onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.activeTab = 'GERAL';
       // IMP-05: feedback consistente também quando falta campo obrigatório.
       this.notify.error('Preencha os campos obrigatórios antes de salvar.');
       return;
@@ -259,6 +251,24 @@ export class TaxesNewPage implements OnInit {
     this.errorMsg.set(null);
 
     const v = this.form.value;
+
+    // A Descrição persiste no serviço de mesmo nome do Título (único campo de
+    // descrição que o contrato do back expõe — services[].description).
+    const services = this.normalizeServices(this.services);
+    const desc = (v.descricao ?? '').trim();
+    if (desc) {
+      const main = services.find(s => s.name === v.tituloServico);
+      if (main) {
+        main.description = desc;
+      } else {
+        services.unshift({
+          name: v.tituloServico, description: desc, externalCode: '',
+          grantorOrgan: '', hasRetention: !!v.definirAliquotasManual,
+          accessorOrgan: '', concessionLink: '',
+          costCenterId: null, projectId: null, activityId: null,
+        });
+      }
+    }
 
     const payload: TaxPayload = {
       stakeholderId:   Number(v.fornecedor)            || 0,
@@ -286,7 +296,7 @@ export class TaxesNewPage implements OnInit {
       cbsAliquot:      parseDecimalBR(v.aliqCBS),
       cbsCode:         v.cbsCode                       ?? '',
       status:          'Active',
-      services:        this.normalizeServices(this.services),
+      services,
     };
 
     this.svc.save(payload).subscribe({

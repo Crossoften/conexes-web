@@ -43,15 +43,12 @@
       <div class="modal-tabs">
         <button class="tab-btn" [class.active]="activeTab === 'GERAIS'" (click)="setTab('GERAIS')">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          Dados gerais
+          Dados gerais e serviços
         </button>
-        <button class="tab-btn" [class.active]="activeTab === 'ALIQUOTAS'" (click)="setTab('ALIQUOTAS')">
+        <button class="tab-btn" [class.active]="activeTab === 'ALIQUOTAS'"
+          [disabled]="!hasRetencao()" (click)="setTab('ALIQUOTAS')">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Alíquotas
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'SERVICOS'" (click)="setTab('SERVICOS')">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Serviços
         </button>
       </div>
 
@@ -63,11 +60,11 @@
             <div class="info-header">
               <strong>Fornecedor:</strong> {{ stakeholderName }}
               &nbsp;|&nbsp;
-              <strong>Retenções manuais:</strong> {{ tax?.manualAliquots ? 'Sim' : 'Não' }}
+              <strong>Possui retenção:</strong> {{ tax?.manualAliquots ? 'Sim' : 'Não' }}
             </div>
             <div class="info-grid">
               <div class="info-item col-span-2">
-                <span class="info-label">Código de classificação</span>
+                <span class="info-label">Código de Classificação NBS</span>
                 <span class="info-value mono">{{ tax?.serviceClassCode || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
@@ -83,6 +80,43 @@
                 <span class="info-value">{{ tax?.totalRetentions | number:'1.2-2' }}%</span>
               </div>
             </div>
+          </div>
+
+          <div class="info-box">
+            @if (!tax?.services?.length) {
+              <p class="empty-services">Nenhum serviço cadastrado.</p>
+            } @else {
+              <div class="services-list">
+                @for (svc of tax?.services; track $index) {
+                  <div class="service-card">
+                    <div class="service-card__header">
+                      <strong>{{ svc.name }}</strong>
+                      <span class="badge" [class.badge--green]="svc.hasRetention" [class.badge--gray]="!svc.hasRetention">
+                        {{ svc.hasRetention ? 'Com retenção' : 'Sem retenção' }}
+                      </span>
+                    </div>
+                    <div class="info-grid mt-2">
+                      <div class="info-item col-span-2">
+                        <span class="info-label">Descrição</span>
+                        <span class="info-value">{{ svc.description || '—' }}</span>
+                      </div>
+                      <div class="info-item col-span-2">
+                        <span class="info-label">Código externo</span>
+                        <span class="info-value mono">{{ svc.externalCode || '—' }}</span>
+                      </div>
+                      <div class="info-item col-span-2">
+                        <span class="info-label">Órgão concessor</span>
+                        <span class="info-value">{{ svc.grantorOrgan || '—' }}</span>
+                      </div>
+                      <div class="info-item col-span-2">
+                        <span class="info-label">Órgão acessor</span>
+                        <span class="info-value">{{ svc.accessorOrgan || '—' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -165,45 +199,6 @@
           </div>
         }
 
-        @if (activeTab === 'SERVICOS') {
-          <div class="info-box">
-            @if (!tax?.services?.length) {
-              <p class="empty-services">Nenhum serviço cadastrado.</p>
-            } @else {
-              <div class="services-list">
-                @for (svc of tax?.services; track $index) {
-                  <div class="service-card">
-                    <div class="service-card__header">
-                      <strong>{{ svc.name }}</strong>
-                      <span class="badge" [class.badge--green]="svc.hasRetention" [class.badge--gray]="!svc.hasRetention">
-                        {{ svc.hasRetention ? 'Com retenção' : 'Sem retenção' }}
-                      </span>
-                    </div>
-                    <div class="info-grid mt-2">
-                      <div class="info-item col-span-2">
-                        <span class="info-label">Descrição</span>
-                        <span class="info-value">{{ svc.description || '—' }}</span>
-                      </div>
-                      <div class="info-item col-span-2">
-                        <span class="info-label">Código externo</span>
-                        <span class="info-value mono">{{ svc.externalCode || '—' }}</span>
-                      </div>
-                      <div class="info-item col-span-2">
-                        <span class="info-label">Órgão concessor</span>
-                        <span class="info-value">{{ svc.grantorOrgan || '—' }}</span>
-                      </div>
-                      <div class="info-item col-span-2">
-                        <span class="info-label">Órgão acessor</span>
-                        <span class="info-value">{{ svc.accessorOrgan || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-
       }
 
       <!-- ════════════════ EDIT MODE ════════════════ -->
@@ -227,7 +222,7 @@
                   </div>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Código de Classificação <span class="req">*</span></label>
+                  <label class="form-label">Código de Classificação NBS <span class="req">*</span></label>
                   <input type="text" class="form-control" formControlName="codigoServico"
                     [class.is-invalid]="form.get('codigoServico')?.invalid && form.get('codigoServico')?.touched">
                 </div>
@@ -237,10 +232,22 @@
                     [class.is-invalid]="form.get('tituloServico')?.invalid && form.get('tituloServico')?.touched">
                 </div>
               </div>
-              <div class="form-row grid-cols-1">
+              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Natureza da operação</label>
-                  <input type="text" class="form-control" formControlName="naturezaOperacao">
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="naturezaOperacao">
+                      <option value="">Selecione</option>
+                      @for (n of operationNatures(); track n) {
+                        <option [value]="n">{{ n }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Descrição</label>
+                  <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="descricao">
                 </div>
               </div>
               <div class="form-row grid-cols-1">
@@ -249,7 +256,7 @@
                     <input type="checkbox" class="checkbox__input" formControlName="definirAliquotasManual">
                     <span class="checkbox__box"></span>
                   </div>
-                  Definir Alíquotas Manualmente
+                  Este serviço possui retenção?
                 </label>
               </div>
             </div>
@@ -290,7 +297,7 @@
             </div>
           }
 
-          @if (activeTab === 'SERVICOS') {
+          @if (activeTab === 'GERAIS') {
             <div class="form-grid">
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label class="form-label">Nome</label><input type="text" class="form-control" placeholder="Digite aqui..." [(ngModel)]="newService.name" [ngModelOptions]="{standalone:true}"></div>

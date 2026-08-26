@@ -18,75 +18,71 @@
           <div class="error-banner" role="alert">{{ errorMsg() }}</div>
         }
 
-        <div class="form-grid mb-6">
-          <div class="form-row grid-cols-3">
-
-            <div class="form-group">
-              <label>Fornecedor <span class="req">*</span></label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="fornecedor"
-                  (change)="onSupplierChange($any($event.target).value)"
-                  [class.is-invalid]="form.get('fornecedor')?.invalid && form.get('fornecedor')?.touched">
-                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
-                  @for (s of stakeholders(); track s.id) {
-                    <option [value]="s.id">{{ s.name }} — {{ s.document }}</option>
-                  }
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-
-            <!-- STK-04: reaproveita alíquotas/serviços já cadastrados de outro fornecedor -->
-            <div class="form-group">
-              <label>Copiar de outro fornecedor</label>
-              <div class="select-wrap">
-                <select class="form-control" [(ngModel)]="copyFrom" [ngModelOptions]="{ standalone: true }"
-                  [disabled]="copying()" (change)="onCopyFromSupplier($any($event.target).value)">
-                  <option value="">{{ copying() ? 'Copiando...' : 'Selecione (opcional)' }}</option>
-                  @for (s of copySourceOptions(); track s.id) {
-                    <option [value]="s.id">{{ s.name }} — {{ s.document }}</option>
-                  }
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Código de Classificação do Serviço <span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoServico"
-                [class.is-invalid]="form.get('codigoServico')?.invalid && form.get('codigoServico')?.touched">
-            </div>
-
-            <div class="form-group">
-              <label>Título do Serviço <span class="req">*</span></label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tituloServico"
-                [class.is-invalid]="form.get('tituloServico')?.invalid && form.get('tituloServico')?.touched">
-            </div>
-
-          </div>
-        </div>
-
         <div class="segmented-tabs mb-6">
-          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'CONFIG'" (click)="setTab('CONFIG')">
-            Configuração de Retenção de Impostos
+          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'GERAL'" (click)="setTab('GERAL')">
+            Dados gerais e serviços
           </button>
-          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'ALIQUOTAS'" (click)="setTab('ALIQUOTAS')">
+          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'ALIQUOTAS'"
+            [disabled]="!hasRetencao()" (click)="setTab('ALIQUOTAS')">
             Alíquotas
           </button>
-          <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'SERVICOS'" (click)="setTab('SERVICOS')">
-            Serviços
-          </button>
         </div>
 
-        @if (activeTab === 'CONFIG') {
-          <h3 class="section-title">Configuração de Retenção de Impostos</h3>
-          <div class="form-grid">
+        @if (activeTab === 'GERAL') {
+          <h3 class="section-title">Dados gerais</h3>
+          <div class="form-grid mb-6">
 
-            <div class="form-row grid-cols-1">
+            <div class="form-row grid-cols-3">
+
               <div class="form-group">
-                <label>Buscar por Natureza da Operação</label>
-                <input type="text" class="form-control" placeholder="Buscar" formControlName="naturezaOperacao">
+                <label>Fornecedor <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="fornecedor"
+                    (change)="onSupplierChange($any($event.target).value)"
+                    [class.is-invalid]="form.get('fornecedor')?.invalid && form.get('fornecedor')?.touched">
+                    <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                    @for (s of stakeholders(); track s.id) {
+                      <option [value]="s.id">{{ s.name }} — {{ s.document }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
               </div>
+
+              <div class="form-group">
+                <label>Código de Classificação NBS <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="codigoServico"
+                  [class.is-invalid]="form.get('codigoServico')?.invalid && form.get('codigoServico')?.touched">
+              </div>
+
+              <div class="form-group">
+                <label>Título do Serviço <span class="req">*</span></label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="tituloServico"
+                  [class.is-invalid]="form.get('tituloServico')?.invalid && form.get('tituloServico')?.touched">
+              </div>
+
+            </div>
+
+            <div class="form-row grid-cols-2">
+
+              <div class="form-group">
+                <label>Natureza da operação</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="naturezaOperacao">
+                    <option value="">Selecione</option>
+                    @for (n of operationNatures(); track n) {
+                      <option [value]="n">{{ n }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="descricao">
+              </div>
+
             </div>
 
             <div class="form-row grid-cols-1 mt-2">
@@ -95,63 +91,12 @@
                   <input type="checkbox" class="checkbox__input" formControlName="definirAliquotasManual">
                   <span class="checkbox__box"></span>
                 </div>
-                Definir Alíquotas Manualmente
+                Este serviço possui retenção?
               </label>
             </div>
 
-            <div class="form-row grid-cols-4 mt-2">
-              <div class="form-group col-span-1">
-                <label>Resumo / Total das Retenções</label>
-                <input type="text" class="form-control disabled-bg" formControlName="resumoRetencoes" readonly>
-              </div>
-            </div>
-
           </div>
-        }
 
-        @if (activeTab === 'ALIQUOTAS') {
-          <h3 class="section-title">Alíquotas</h3>
-          <div class="light-bg-box">
-            <div class="form-grid">
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % IRRF</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIRRF"></div>
-                <div class="form-group"><label>Cód. IRRF</label><input type="text" class="form-control" placeholder="Código" formControlName="irfCode"></div>
-                <div class="form-group"><label>Alíquota % PIS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPIS"></div>
-                <div class="form-group"><label>Cód. PIS</label><input type="text" class="form-control" placeholder="Código" formControlName="pisCode"></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % PCC</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPCC"></div>
-                <div class="form-group"><label>Cód. PCC</label><input type="text" class="form-control" placeholder="Código" formControlName="pccCode"></div>
-                <div class="form-group"><label>Alíquota % COFINS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCOFINS"></div>
-                <div class="form-group"><label>Cód. COFINS</label><input type="text" class="form-control" placeholder="Código" formControlName="cofinsCode"></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % INSS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqINSS"></div>
-                <div class="form-group"><label>Cód. INSS</label><input type="text" class="form-control" placeholder="Código" formControlName="inssCode"></div>
-                <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCSLL"></div>
-                <div class="form-group"><label>Cód. CSLL</label><input type="text" class="form-control" placeholder="Código" formControlName="csllCode"></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % ISS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqISS"></div>
-                <div class="form-group"><label>Cód. ISS</label><input type="text" class="form-control" placeholder="Código" formControlName="issCode"></div>
-                <div class="form-group"><label>Alíquota % IBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIBS"></div>
-                <div class="form-group"><label>Cód. IBS</label><input type="text" class="form-control" placeholder="Código" formControlName="ibsCode"></div>
-              </div>
-
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % CBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCBS"></div>
-                <div class="form-group"><label>Cód. CBS</label><input type="text" class="form-control" placeholder="Código" formControlName="cbsCode"></div>
-              </div>
-
-            </div>
-          </div>
-        }
-
-        @if (activeTab === 'SERVICOS') {
           <h3 class="section-title">Serviços</h3>
           <div class="form-grid">
 
@@ -263,6 +208,57 @@
           </div>
         }
 
+        @if (activeTab === 'ALIQUOTAS') {
+          <h3 class="section-title">Alíquotas</h3>
+          <div class="light-bg-box">
+            <div class="form-grid">
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % IRRF</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIRRF"></div>
+                <div class="form-group"><label>Cód. IRRF</label><input type="text" class="form-control" placeholder="Código" formControlName="irfCode"></div>
+                <div class="form-group"><label>Alíquota % PIS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPIS"></div>
+                <div class="form-group"><label>Cód. PIS</label><input type="text" class="form-control" placeholder="Código" formControlName="pisCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % PCC</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPCC"></div>
+                <div class="form-group"><label>Cód. PCC</label><input type="text" class="form-control" placeholder="Código" formControlName="pccCode"></div>
+                <div class="form-group"><label>Alíquota % COFINS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCOFINS"></div>
+                <div class="form-group"><label>Cód. COFINS</label><input type="text" class="form-control" placeholder="Código" formControlName="cofinsCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % INSS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqINSS"></div>
+                <div class="form-group"><label>Cód. INSS</label><input type="text" class="form-control" placeholder="Código" formControlName="inssCode"></div>
+                <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCSLL"></div>
+                <div class="form-group"><label>Cód. CSLL</label><input type="text" class="form-control" placeholder="Código" formControlName="csllCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % ISS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqISS"></div>
+                <div class="form-group"><label>Cód. ISS</label><input type="text" class="form-control" placeholder="Código" formControlName="issCode"></div>
+                <div class="form-group"><label>Alíquota % IBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIBS"></div>
+                <div class="form-group"><label>Cód. IBS</label><input type="text" class="form-control" placeholder="Código" formControlName="ibsCode"></div>
+              </div>
+
+              <div class="form-row grid-cols-4">
+                <div class="form-group"><label>Alíquota % CBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCBS"></div>
+                <div class="form-group"><label>Cód. CBS</label><input type="text" class="form-control" placeholder="Código" formControlName="cbsCode"></div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="form-grid mt-2">
+            <div class="form-row grid-cols-4">
+              <div class="form-group col-span-1">
+                <label>Resumo / Total das Retenções</label>
+                <input type="text" class="form-control disabled-bg" formControlName="resumoRetencoes" readonly>
+              </div>
+            </div>
+          </div>
+        }
+
       </form>
     </div>
 
@@ -278,10 +274,9 @@
           </svg>
           Reiniciar formulário
         </button>
-        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onNextOrSubmit()">
+        <button type="button" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
           @if (loading()) { <span class="btn-spinner" aria-hidden="true"></span> }
-          @else if (activeTab === 'SERVICOS') { Salvar }
-          @else { Próximo }
+          @else { Salvar }
         </button>
       </div>
     </div>
