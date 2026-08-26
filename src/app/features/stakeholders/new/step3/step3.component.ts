@@ -1,9 +1,8 @@
 // src/app/features/stakeholders/new/step3/step3.component.ts
-import { Component, input, signal } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { StakeholderService } from '../../stakeholders.model';
-
-type Step3Tab = 'contato' | 'impostos';
+import type { FormSection } from '../stakeholder-new.page';
 
 @Component({
   selector: 'app-step3',
@@ -13,8 +12,9 @@ type Step3Tab = 'contato' | 'impostos';
   styleUrl: './step3.component.scss',
 })
 export class Step3Component {
-  form = input.required<AbstractControl>();
-  activeTab = signal<Step3Tab>('contato');
+  form        = input.required<AbstractControl>();
+  entityLabel = input<string>('fornecedor');
+  section     = input.required<FormSection>();
 
   get f() { return (this.form() as any).controls; }
 

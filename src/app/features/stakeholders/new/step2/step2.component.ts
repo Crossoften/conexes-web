@@ -1,9 +1,8 @@
 // src/app/features/stakeholders/new/step2/step2.component.ts
-import { Component, input, signal } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { NgClass } from '@angular/common';
-
-type Step2Tab = 'privacidade' | 'compliance';
+import type { FormSection } from '../stakeholder-new.page';
 
 @Component({
   selector: 'app-step2',
@@ -13,9 +12,9 @@ type Step2Tab = 'privacidade' | 'compliance';
   styleUrl: './step2.component.scss',
 })
 export class Step2Component {
-  form = input.required<AbstractControl>();
-
-  activeTab = signal<Step2Tab>('privacidade');
+  form        = input.required<AbstractControl>();
+  entityLabel = input<string>('fornecedor');
+  section     = input.required<FormSection>();
 
   get f() { return (this.form() as any).controls; }
 

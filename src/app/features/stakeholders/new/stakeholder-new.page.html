@@ -3,14 +3,15 @@
 
   <!-- Cabeçalho -->
   <div class="page-header">
-    <h1 class="page-title">Cadastro de contato</h1>
+    <h1 class="page-title">Cadastro de {{ entityLabel() }}</h1>
   </div>
 
-  <!-- CF-07: fluxo contínuo — sem numeração de etapas; seções empilhadas -->
+  <!-- Layout aprovado: Dados gerais fixos + barra única de abas por seção -->
   <div class="flow-content">
-    <app-step1 [form]="step1Form" />
-    <app-step2 [form]="step2Form" />
-    <app-step3 [form]="step3Form" />
+    <app-step1 [form]="step1Form" [entityLabel]="entityLabel()" [view]="view()"
+               [section]="section()" (sectionChange)="section.set($event)" />
+    <app-step3 [form]="step3Form" [entityLabel]="entityLabel()" [section]="section()" />
+    <app-step2 [form]="step2Form" [entityLabel]="entityLabel()" [section]="section()" />
   </div>
 
   <!-- Mensagem de erro (validação de blocos ou falha ao salvar) -->

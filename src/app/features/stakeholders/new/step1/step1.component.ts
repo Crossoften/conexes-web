@@ -1,14 +1,24 @@
 // src/app/features/stakeholders/new/step1/step1.component.ts
-import { Component, inject, input, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, input, output, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { StakeholdersService } from '../../stakeholders.service';
 import { environment } from '../../../../../environments/environment';
+import { StakeholderView, STAKEHOLDER_TYPE_LABELS, VIEW_TYPES } from '../../stakeholders.model';
+import type { FormSection } from '../stakeholder-new.page';
 
-type Step1Tab = 'rateio' | 'bancario';
+interface AccountPlanOption { id: number; code: string; title: string; accountType?: string | null; children?: AccountPlanOption[]; }
 
-interface AccountPlanOption { id: number; code: string; title: string; }
+/** Barra única de abas do layout aprovado (a seção ativa vive na página). */
+export const FORM_SECTIONS: { key: FormSection; label: string }[] = [
+  { key: 'rateio',      label: 'Dados de rateio' },
+  { key: 'bancario',    label: 'Dados bancários' },
+  { key: 'contato',     label: 'Dados de contato' },
+  { key: 'impostos',    label: 'Cadastro de impostos e retenções' },
+  { key: 'privacidade', label: 'Privacidade e segurança da informação' },
+  { key: 'compliance',  label: 'Política de compliance' },
+];
 
 @Component({
   selector: 'app-step1',
@@ -18,22 +28,32 @@ interface AccountPlanOption { id: number; code: string; title: string; }
   styleUrl: './step1.component.scss',
 })
 export class Step1Component implements OnInit {
-  form = input.required<AbstractControl>();
+  form        = input.required<AbstractControl>();
+  entityLabel = input<string>('fornecedor');
+  view        = input<StakeholderView>('suppliers');
+  section     = input.required<FormSection>();
+  sectionChange = output<FormSection>();
 
   private svc  = inject(StakeholdersService);
   private http = inject(HttpClient);
 
-  activeTab    = signal<Step1Tab>('rateio');
+  readonly sections = FORM_SECTIONS;
+
+  /** Tipos coerentes com a visão de origem (Fornecedores × Clientes). */
+  readonly typeOptions = computed(() =>
+    VIEW_TYPES[this.view()].map(t => ({ value: t, label: STAKEHOLDER_TYPE_LABELS[t] }))
+  );
+
   cnpjLoading  = signal(false);
   cnpjError    = signal<string | null>(null);
   accountPlans = signal<AccountPlanOption[]>([]);
 
   ngOnInit(): void {
-    // 5.1: conta contábil vira select do Plano de Contas (mostra código — título).
+    // CF-06: conta contábil do rateio lista apenas contas ANALÍTICAS (árvore completa achatada).
     this.http
-      .get<{ data?: AccountPlanOption[] } | AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } })
+      .get<AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan/tree`)
       .subscribe({
-        next: res => this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []),
+        next: res => this.accountPlans.set(flattenAnalytic(res ?? [])),
         error: ()  => this.accountPlans.set([]),
       });
   }
@@ -133,4 +153,17 @@ export class Step1Component implements OnInit {
     if (nav.includes(event.key)) return true;
     return /^\d$/.test(event.key);
   }
+}
+
+/** Achata a árvore do plano de contas mantendo apenas as contas analíticas. */
+export function flattenAnalytic(nodes: AccountPlanOption[]): AccountPlanOption[] {
+  const out: AccountPlanOption[] = [];
+  const walk = (list: AccountPlanOption[]) => {
+    for (const n of list) {
+      if (n.accountType === 'Analitica') out.push({ id: n.id, code: n.code, title: n.title, accountType: n.accountType });
+      if (n.children?.length) walk(n.children);
+    }
+  };
+  walk(nodes);
+  return out;
 }

@@ -5,7 +5,7 @@
     <h2 class="step-title">
       Dados gerais
     </h2>
-    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
+    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo {{ entityLabel() }}.</p>
   </div>
 
   <div class="form-section">
@@ -50,7 +50,7 @@
       </div>
 
       <div class="field" [class.field--error]="isInvalid('name')">
-        <label class="field-label">Nome do fornecedor/outros <span class="required">*</span></label>
+        <label class="field-label">Nome do {{ entityLabel() }}/outros <span class="required">*</span></label>
         <div class="input-wrap" [class.input-wrap--loading]="cnpjLoading()">
           <input class="input" type="text" placeholder="Digite aqui..." formControlName="name"
             [attr.readonly]="cnpjLoading() ? true : null">
@@ -73,11 +73,9 @@
         <div class="select-wrap">
           <select class="select" formControlName="type">
             <option value="">Selecione</option>
-            <option value="Supplier">Fornecedor</option>
-            <option value="Customer">Cliente</option>
-            <option value="Donor">Doador</option>
-            <option value="SupportedProject">Projeto Apoiado</option>
-            <option value="Other">Outros</option>
+            @for (t of typeOptions(); track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -241,22 +239,19 @@
 
   </div>
 
-  <!-- Sub-abas -->
-  <div class="sub-tabs">
-    <button type="button" class="sub-tab"
-      [class.sub-tab--active]="activeTab() === 'rateio'"
-      (click)="activeTab.set('rateio')">
-      Dados de rateio
-    </button>
-    <button type="button" class="sub-tab"
-      [class.sub-tab--active]="activeTab() === 'bancario'"
-      (click)="activeTab.set('bancario')">
-      Dados bancários
-    </button>
+  <!-- Barra única de abas (layout aprovado) -->
+  <div class="sub-tabs sub-tabs--main">
+    @for (s of sections; track s.key) {
+      <button type="button" class="sub-tab"
+        [class.sub-tab--active]="section() === s.key"
+        (click)="sectionChange.emit(s.key)">
+        {{ s.label }}
+      </button>
+    }
   </div>
 
-  <!-- Sub-aba: Dados de rateio -->
-  @if (activeTab() === 'rateio') {
+  <!-- Seção: Dados de rateio -->
+  @if (section() === 'rateio') {
     <div class="sub-section">
       <h3 class="sub-title">Dados de rateio e parametrização contábil</h3>
       <div class="form-row form-row--2-auto">
@@ -280,8 +275,8 @@
     </div>
   }
 
-  <!-- Sub-aba: Dados bancários -->
-  @if (activeTab() === 'bancario') {
+  <!-- Seção: Dados bancários -->
+  @if (section() === 'bancario') {
     <div class="sub-section">
       <h3 class="sub-title">Dados bancários</h3>
 
@@ -290,7 +285,7 @@
           <input type="checkbox" class="checkbox__input" formControlName="differentHolder">
           <span class="checkbox__box"></span>
         </span>
-        <span class="checkbox-label">Dados do correntista diferentes dos dados do fornecedor</span>
+        <span class="checkbox-label">Dados do correntista diferentes dos dados do {{ entityLabel() }}</span>
       </label>
 
       <div class="form-row form-row--3">

@@ -1,25 +1,9 @@
 <!-- src/app/features/stakeholders/new/step3/step3.component.html -->
+@if (section() === 'contato' || section() === 'impostos') {
 <div class="step" [formGroup]="$any(form())">
 
-  <div class="step-header">
-    <h2 class="step-title">
-      Observações e contatos
-    </h2>
-    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
-  </div>
-
-  <!-- Sub-abas -->
-  <div class="sub-tabs">
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'contato'" (click)="activeTab.set('contato')">
-      Dados de contato
-    </button>
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'impostos'" (click)="activeTab.set('impostos')">
-      Cadastro de impostos e retenções
-    </button>
-  </div>
-
-  <!-- Sub-aba: Dados de contato -->
-  @if (activeTab() === 'contato') {
+  <!-- Seção: Dados de contato -->
+  @if (section() === 'contato') {
     <div class="sub-section">
       <h3 class="sub-title">Dados de contato</h3>
 
@@ -61,8 +45,8 @@
     </div>
   }
 
-  <!-- Sub-aba: Impostos e retenções -->
-  @if (activeTab() === 'impostos') {
+  <!-- Seção: Impostos e retenções -->
+  @if (section() === 'impostos') {
     <div class="sub-section">
       <h3 class="sub-title">Cadastro de impostos e retenções</h3>
       <p class="sub-desc">Preencha e configure todas as informações necessárias.</p>
@@ -180,3 +164,4 @@
   }
 
 </div>
+}

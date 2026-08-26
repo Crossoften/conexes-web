@@ -1,25 +1,9 @@
 <!-- src/app/features/stakeholders/new/step2/step2.component.html -->
+@if (section() === 'privacidade' || section() === 'compliance') {
 <div class="step" [formGroup]="$any(form())">
 
-  <div class="step-header">
-    <h2 class="step-title">
-      Classificação e risco
-    </h2>
-    <p class="step-desc">Preencha todas as informações necessárias para cadastrar um novo fornecedor.</p>
-  </div>
-
-  <!-- Sub-abas -->
-  <div class="sub-tabs">
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'privacidade'" (click)="activeTab.set('privacidade')">
-      Avaliação de Privacidade e Segurança da Informação
-    </button>
-    <button type="button" class="sub-tab" [class.sub-tab--active]="activeTab() === 'compliance'" (click)="activeTab.set('compliance')">
-      Avaliação Política de Compliance
-    </button>
-  </div>
-
-  <!-- Sub-aba: Privacidade -->
-  @if (activeTab() === 'privacidade') {
+  <!-- Seção: Privacidade e segurança da informação -->
+  @if (section() === 'privacidade') {
     <div class="sub-section">
       <h3 class="sub-title">Avaliação de Privacidade e Segurança da Informação</h3>
 
@@ -45,7 +29,7 @@
         </div>
 
         <div class="field">
-          <label class="field-label">Risco do Fornecedor</label>
+          <label class="field-label">Risco do {{ entityLabel() }}</label>
           <div class="select-wrap">
             <select class="select" formControlName="supplierRisk">
               <option value="Sem risco">Sem risco</option>
@@ -67,8 +51,8 @@
     </div>
   }
 
-  <!-- Sub-aba: Compliance -->
-  @if (activeTab() === 'compliance') {
+  <!-- Seção: Política de compliance -->
+  @if (section() === 'compliance') {
     <div class="sub-section">
       <h3 class="sub-title">Avaliação Política de Compliance</h3>
 
@@ -117,3 +101,4 @@
   }
 
 </div>
+}

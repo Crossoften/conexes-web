@@ -12,20 +12,20 @@
           </svg>
         </div>
         <div class="header-text">
-          <h2>Fornecedor: {{ stakeholder?.code || ('#' + stakeholder?.id) || '—' }}</h2>
+          <h2>{{ entityLabelCap() }}: {{ stakeholder?.code || ('#' + stakeholder?.id) || '—' }}</h2>
           <p>
-            @if (mode === 'view') { Acompanhe todas as informações cadastradas para o fornecedor. }
-            @else { Edite as informações do fornecedor e salve ao finalizar. }
+            @if (mode === 'view') { Acompanhe todas as informações cadastradas para o {{ entityLabel() }}. }
+            @else { Edite as informações do {{ entityLabel() }} e salve ao finalizar. }
           </p>
         </div>
       </div>
 
       <div class="header-actions">
         @if (mode === 'view') {
-          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar" aria-label="Editar fornecedor">
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar" aria-label="Editar cadastro">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir" aria-label="Excluir fornecedor">
+          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir" aria-label="Excluir cadastro">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         }
@@ -64,7 +64,7 @@
               </div>
               <div class="info-grid">
                 <div class="info-item">
-                  <span class="info-label">Nome do fornecedor</span>
+                  <span class="info-label">Nome do {{ entityLabel() }}</span>
                   <span class="info-value">{{ stakeholder?.name || '—' }}</span>
                 </div>
                 <div class="info-item">
@@ -506,7 +506,7 @@
                   <input class="input" type="date" formControlName="privacyEvalDate">
                 </div>
                 <div class="field">
-                  <label class="field-label">Risco do fornecedor</label>
+                  <label class="field-label">Risco do {{ entityLabel() }}</label>
                   <div class="select-wrap">
                     <select class="select" formControlName="privacyRisk">
                       <option value="">Sem risco</option>

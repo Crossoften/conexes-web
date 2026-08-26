@@ -156,6 +156,18 @@
   border: 1.5px solid var(--surface-border);
   margin-bottom: 24px;
   background: #F3F4F6;
+
+  &--main {
+    grid-template-columns: repeat(6, auto);
+
+    .sub-tab { padding: 12px 14px; font-size: 12.5px; }
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+      border-radius: 16px;
+      .sub-tab--active { border-radius: 16px; }
+    }
+  }
 }
 
 .sub-tab {

@@ -3,7 +3,7 @@
 
   <div class="page-header">
     <h1 class="page-title">{{ listTitle() }}</h1>
-    <button class="btn-novo" routerLink="new">
+    <button class="btn-novo" routerLink="new" [queryParams]="{ view: store.filters().view }">
       <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
         <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -167,7 +167,7 @@
               <p class="empty-title">Nenhum {{ entityLabel() }} cadastrado</p>
               <span class="empty-desc">Cadastre o primeiro {{ entityLabel() }} ou ajuste os filtros aplicados.</span>
               <div>
-                <a class="empty-cta" routerLink="new">
+                <a class="empty-cta" routerLink="new" [queryParams]="{ view: store.filters().view }">
                   <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   Cadastrar {{ entityLabel() }}
                 </a>

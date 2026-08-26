@@ -14,7 +14,7 @@ import { environment } from '../../../../environments/environment';
 
 type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
 
-interface AccountPlanOption { id: number; code: string; title: string; accountType?: string; }
+interface AccountPlanOption { id: number; code: string; title: string; accountType?: string | null; children?: AccountPlanOption[]; }
 
 @Component({
   selector: 'app-stakeholder-detail-modal',
@@ -71,9 +71,9 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   ngOnInit(): void {
     // 5.1: conta contábil vira select do Plano de Contas (mostra código — título).
     this.http
-      .get<{ data?: AccountPlanOption[] } | AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan`, { params: { take: '1000' } })
+      .get<AccountPlanOption[]>(`${environment.apiUrl}/v1/account-plan/tree`)
       .subscribe({
-        next: res => this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []),
+        next: res => this.accountPlans.set(flattenTree(res ?? [])),
         error: ()  => this.accountPlans.set([]),
       });
   }
@@ -85,14 +85,20 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     return p ? `${p.code} — ${p.title}` : String(id);
   }
 
-  /**
-   * CF-06: a conta contábil do rateio deve listar apenas contas ANALÍTICAS.
-   * Fallback: se o back não enviar accountType, mantém a lista para não esvaziar o select.
-   */
+  /** CF-06: a conta contábil do rateio lista apenas contas ANALÍTICAS. */
   analyticAccountPlans(): AccountPlanOption[] {
-    const list = this.accountPlans();
-    const analytic = list.filter(a => a.accountType === 'Analitica');
-    return analytic.length ? analytic : list;
+    return this.accountPlans().filter(a => a.accountType === 'Analitica');
+  }
+
+  /** Terminologia coerente com o tipo do contato (visão Clientes × Fornecedores). */
+  entityLabel(): string {
+    const type = this.stakeholder?.type ?? '';
+    return ['Customer', 'Donor', 'SupportedProject'].includes(type) ? 'cliente' : 'fornecedor';
+  }
+
+  entityLabelCap(): string {
+    const l = this.entityLabel();
+    return l.charAt(0).toUpperCase() + l.slice(1);
   }
 
   // ── Formulário ────────────────────────────────────────────────────────────
@@ -537,4 +543,17 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
 
     this.saved.emit({ id: this.stakeholder.id, payload });
   }
+}
+
+/** Achata a árvore do plano de contas (todas as contas, em ordem hierárquica). */
+function flattenTree(nodes: AccountPlanOption[]): AccountPlanOption[] {
+  const out: AccountPlanOption[] = [];
+  const walk = (list: AccountPlanOption[]) => {
+    for (const n of list) {
+      out.push({ id: n.id, code: n.code, title: n.title, accountType: n.accountType });
+      if (n.children?.length) walk(n.children);
+    }
+  };
+  walk(nodes);
+  return out;
 }
