@@ -3,6 +3,7 @@
 
 // ── Cabeçalho ─────────────────────────────────
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-header-actions { display: flex; align-items: center; gap: 10px; }
 .page-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
 .btn-novo {
   display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; background: var(--brand-orange); color: #fff;

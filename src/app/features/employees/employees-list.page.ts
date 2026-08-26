@@ -5,12 +5,13 @@ import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EmployeesStore } from './employees.store';
 import { EmployeeDetailModalComponent } from './components/employee-detail.modal';
+import { PositionsManageModalComponent } from './components/positions-manage.modal';
 import { Employee, EmployeeUpdatePayload, EMPLOYEE_STATUS_CONFIG } from './employees.model';
 
 @Component({
   selector: 'app-employees-list',
   standalone: true,
-  imports: [FormsModule, NgClass, NgIf, RouterLink, EmployeeDetailModalComponent],
+  imports: [FormsModule, NgClass, NgIf, RouterLink, EmployeeDetailModalComponent, PositionsManageModalComponent],
   providers: [EmployeesStore],
   templateUrl: './employees-list.page.html',
   styleUrl: './employees-list.page.scss',
@@ -65,6 +66,18 @@ export class EmployeesListPage implements OnInit {
   // ── Modal ─────────────────────────────────────────────────────────────────
 
   readonly modalMode = signal<'view' | 'edit'>('view');
+
+  // B11: modal de gestão de cargos (CRUD /v1/positions).
+  readonly managingPositions = signal(false);
+
+  openManagePositions(): void {
+    this.managingPositions.set(true);
+  }
+
+  onManagePositionsClosed(): void {
+    this.managingPositions.set(false);
+    this.store.load();
+  }
 
   openDetail(item: Employee, mode: 'view' | 'edit' = 'view'): void {
     this.modalMode.set(mode);

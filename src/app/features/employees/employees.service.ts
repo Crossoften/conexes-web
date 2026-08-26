@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Employee, EmployeePayload, EmployeeUpdatePayload, EmployeePayment, PositionOption } from './employees.model';
+import { Employee, EmployeePayload, EmployeeUpdatePayload, EmployeePayment, PositionOption, PositionManagePayload } from './employees.model';
 
 @Injectable({ providedIn: 'root' })
 export class EmployeesService {
@@ -21,8 +21,20 @@ export class EmployeesService {
   /** BK-1: catálogo de cargos (GET /v1/positions). Envelope tolerante (data/array). */
   getPositions(): Observable<PositionOption[]> {
     return this.http
-      .get<PositionOption[] | { data?: PositionOption[] }>(`${environment.apiUrl}/v1/positions`)
+      .get<PositionOption[] | { data?: PositionOption[] }>(`${environment.apiUrl}/v1/positions`, { params: { take: 999 } })
       .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
+  }
+
+  createPosition(payload: PositionManagePayload): Observable<PositionOption> {
+    return this.http.post<PositionOption>(`${environment.apiUrl}/v1/positions`, payload);
+  }
+
+  updatePosition(id: number, payload: PositionManagePayload): Observable<PositionOption> {
+    return this.http.patch<PositionOption>(`${environment.apiUrl}/v1/positions/${id}`, payload);
+  }
+
+  deletePosition(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${environment.apiUrl}/v1/positions/${id}`);
   }
 
   create(payload: EmployeePayload): Observable<Employee> {

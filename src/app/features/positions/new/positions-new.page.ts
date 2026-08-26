@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { PositionsService } from '../positions.service';
 import { PositionPayload, GoverningBodyMember } from '../positions.model';
 import { environment } from '../../../../environments/environment';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 interface EntityItem       { cnpj?: string; id?: number; legalName: string; tradeName: string; }
 interface CollaboratorItem { id: number; name: string; }
@@ -23,6 +24,7 @@ export class PositionsNewPage implements OnInit {
   private router = inject(Router);
   private svc    = inject(PositionsService);
   private http   = inject(HttpClient);
+  private notify = inject(NotificationService);
 
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
@@ -66,10 +68,16 @@ export class PositionsNewPage implements OnInit {
 
   // ── Members ───────────────────────────────────────────────────────────────
 
-  addMember(): void {
-    if (!this.selectedCollaborator || !this.selectedStartDate) return;
+  addMember(): boolean {
+    if (!this.selectedCollaborator || !this.selectedStartDate) {
+      this.notify.error('Informe o colaborador e a data de início para adicionar o integrante.');
+      return false;
+    }
     const id = Number(this.selectedCollaborator);
-    if (this.members.some(m => m.collaboratorId === id)) return;
+    if (this.members.some(m => m.collaboratorId === id)) {
+      this.notify.error('Este colaborador já está na lista de integrantes.');
+      return false;
+    }
 
     this.members = [
       ...this.members,
@@ -82,6 +90,7 @@ export class PositionsNewPage implements OnInit {
     this.selectedCollaborator = '';
     this.selectedStartDate    = '';
     this.selectedEndDate      = '';
+    return true;
   }
 
   removeMember(index: number): void {
@@ -112,6 +121,9 @@ export class PositionsNewPage implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+
+    // Linha de integrante preenchida sem clicar no "+" seria descartada em silêncio.
+    if ((this.selectedCollaborator || this.selectedStartDate) && !this.addMember()) return;
 
     this.loading.set(true);
     this.errorMsg.set(null);

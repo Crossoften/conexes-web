@@ -54,6 +54,21 @@
   }
 }
 
+// B12: banner de pendências (obrigatórios) e erros de servidor
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #FDECEC;
+  border: 1px solid #F5B5B0;
+  color: #B4231A;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 // ── Formulário Genérico ───────────────────────
 .section-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0; }
 .section-subtitle { font-size: 13.5px; color: var(--text-secondary); margin: 0 0 20px 0; }

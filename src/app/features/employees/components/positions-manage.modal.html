@@ -1,0 +1,84 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2>Gerenciar cargos</h2>
+          <p>Cadastre, renomeie ou exclua os cargos usados no formulário de colaboradores.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <div class="modal-body">
+
+      <div class="add-row">
+        <input class="form-control" placeholder="Nome do cargo..." [(ngModel)]="newName" (keyup.enter)="add()">
+        <input class="form-control" placeholder="Descrição (opcional)..." [(ngModel)]="newDescription" (keyup.enter)="add()">
+        <button class="btn-solid btn-solid--orange" [disabled]="saving()" (click)="add()">Adicionar</button>
+      </div>
+
+      @if (loading()) {
+        <p class="aux-empty">Carregando cargos...</p>
+      } @else {
+        <ul class="aux-list">
+          @for (p of positions(); track p.id) {
+            <li class="aux-item">
+              @if (editId() === p.id) {
+                <div class="edit-fields">
+                  <input class="form-control form-control--sm" placeholder="Nome do cargo..." [(ngModel)]="editName" (keyup.enter)="saveEdit(p.id)">
+                  <input class="form-control form-control--sm" placeholder="Descrição (opcional)..." [(ngModel)]="editDescription" (keyup.enter)="saveEdit(p.id)">
+                </div>
+                <div class="acts">
+                  <button class="link-ok" [disabled]="saving()" (click)="saveEdit(p.id)">Salvar</button>
+                  <button class="link-mut" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              } @else if (confirmId() === p.id) {
+                <span class="aux-name">Excluir "{{ positionLabel(p) }}"?</span>
+                <div class="acts">
+                  <button class="link-danger" [disabled]="saving()" (click)="confirmRemove(p.id)">Sim, excluir</button>
+                  <button class="link-mut" (click)="clearConfirm()">Não</button>
+                </div>
+              } @else {
+                <div class="aux-info">
+                  <span class="aux-name">{{ positionLabel(p) }}</span>
+                  @if (p.description) { <span class="aux-desc">{{ p.description }}</span> }
+                </div>
+                <div class="acts">
+                  <button class="link-mut" (click)="startEdit(p)">Renomear</button>
+                  <button class="link-danger" (click)="askRemove(p.id)">Excluir</button>
+                </div>
+              }
+            </li>
+          }
+          @if (positions().length === 0) { <li class="aux-empty">Nenhum cargo cadastrado.</li> }
+        </ul>
+      }
+
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+    <div class="modal-footer">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onClose()">
+        Fechar
+      </button>
+    </div>
+
+  </div>
+</div>

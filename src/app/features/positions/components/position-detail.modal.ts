@@ -8,6 +8,7 @@ import {
   Position, PositionPayload, PositionStatus, GoverningBodyMember,
   POSITION_TYPE_LABELS, POSITION_PURPOSE_LABELS, POSITION_STATUS_CONFIG, POSITION_STATUS_OPTIONS,
 } from '../positions.model';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 interface EntityItem       { cnpj?: string; id?: number; legalName: string; tradeName: string; }
 interface CollaboratorItem { id: number; name: string; }
@@ -29,8 +30,9 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
   @Output() delete = new EventEmitter<number>();
   @Output() saved  = new EventEmitter<PositionPayload>();
 
-  private readonly fb   = inject(FormBuilder);
-  private readonly http = inject(HttpClient);
+  private readonly fb     = inject(FormBuilder);
+  private readonly http   = inject(HttpClient);
+  private readonly notify = inject(NotificationService);
 
   protected mode: 'view' | 'edit' = 'view';
 
@@ -41,8 +43,10 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
   readonly statusConfig  = POSITION_STATUS_CONFIG;
   readonly statusOptions = POSITION_STATUS_OPTIONS;
 
-  // Integrantes editáveis localmente.
+  // Integrantes editáveis localmente. `membersDirty` evita que a resposta tardia
+  // do getById (openDetail hidrata o modal em duas levas) apague linhas recém-editadas.
   members: GoverningBodyMember[] = [];
+  private membersDirty = false;
   selectedCollaborator = '';
   selectedStartDate    = '';
   selectedEndDate      = '';
@@ -88,11 +92,13 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
         codigoAudesp:   this.position.tcespCertCode  ?? '',
         status:         this.position.status         ?? 'Active',
       });
-      this.members = (this.position.members ?? []).map(m => ({
-        collaboratorId: m.collaboratorId,
-        startDate:      (m.startDate ?? '')?.toString().substring(0, 10) || null,
-        endDate:        (m.endDate   ?? '')?.toString().substring(0, 10) || null,
-      }));
+      if (!this.membersDirty) {
+        this.members = (this.position.members ?? []).map(m => ({
+          collaboratorId: m.collaboratorId,
+          startDate:      (m.startDate ?? '')?.toString().substring(0, 10) || null,
+          endDate:        (m.endDate   ?? '')?.toString().substring(0, 10) || null,
+        }));
+      }
     }
   }
 
@@ -113,22 +119,31 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
 
   // ── Integrantes ───────────────────────────────────────────────────────────
 
-  addMember(): void {
-    if (!this.selectedCollaborator || !this.selectedStartDate) return;
+  addMember(): boolean {
+    if (!this.selectedCollaborator || !this.selectedStartDate) {
+      this.notify.error('Informe o colaborador e a data de início para adicionar o integrante.');
+      return false;
+    }
     const id = Number(this.selectedCollaborator);
-    if (this.members.some(m => m.collaboratorId === id)) return;
+    if (this.members.some(m => m.collaboratorId === id)) {
+      this.notify.error('Este colaborador já está na lista de integrantes.');
+      return false;
+    }
 
     this.members = [
       ...this.members,
       { collaboratorId: id, startDate: this.selectedStartDate, endDate: this.selectedEndDate || null },
     ];
+    this.membersDirty         = true;
     this.selectedCollaborator = '';
     this.selectedStartDate    = '';
     this.selectedEndDate      = '';
+    return true;
   }
 
   removeMember(index: number): void {
     this.members = this.members.filter((_, i) => i !== index);
+    this.membersDirty = true;
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -144,6 +159,10 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
 
   onCancelEdit(): void {
     this.mode = 'view';
+    this.membersDirty         = false;
+    this.selectedCollaborator = '';
+    this.selectedStartDate    = '';
+    this.selectedEndDate      = '';
     if (this.position) this.ngOnChanges();
   }
 
@@ -156,6 +175,10 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
       this.form.markAllAsTouched();
       return;
     }
+
+    // Linha de integrante preenchida sem clicar no "+" não pode ser descartada:
+    // members vazio no PATCH apaga todos os integrantes no back (deleteMany).
+    if ((this.selectedCollaborator || this.selectedStartDate) && !this.addMember()) return;
 
     const v = this.form.value;
     // Datas: ISO 8601 completo quando há valor; null quando vazio (o back exige ISO).

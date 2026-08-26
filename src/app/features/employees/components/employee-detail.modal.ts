@@ -1,5 +1,5 @@
 // src/app/features/employees/components/employee-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, OnChanges, OnInit, inject, signal } from '@angular/core';
 import { NgClass, NgIf, DecimalPipe, DatePipe } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -32,9 +32,13 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   private readonly fb   = inject(NonNullableFormBuilder);
   private readonly http = inject(HttpClient);
   private readonly svc  = inject(EmployeesService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected mode:      'view' | 'edit' = 'view';
   protected activeTab: DetailTab       = 'PARAMS';
+
+  // B12: banner de pendências (obrigatórios) no rodapé do modal.
+  protected requiredWarning: string | null = null;
 
   readonly entities     = signal<EntityItem[]>([]);
   readonly positions    = signal<PositionOption[]>([]);
@@ -83,6 +87,50 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
     referencia:         [''],
     grossValue:         [''],
   });
+
+  // B12: rótulo + aba de cada campo, para o banner de pendências e o foco no 1º inválido.
+  private readonly fieldMeta: Record<string, { label: string; tab: DetailTab }> = {
+    entidade:           { label: 'Entidade', tab: 'PARAMS' },
+    nome:               { label: 'Nome completo', tab: 'PARAMS' },
+    status:             { label: 'Status', tab: 'PARAMS' },
+    tipoResponsavel:    { label: 'Tipo responsável', tab: 'PARAMS' },
+    cargo:              { label: 'Cargo', tab: 'PARAMS' },
+    formacao:           { label: 'Formação', tab: 'PARAMS' },
+    vinculo:            { label: 'Vínculo', tab: 'PARAMS' },
+    cargaHorariaMensal: { label: 'Carga horária mensal', tab: 'PARAMS' },
+    dataAdmissao:       { label: 'Data Admissão', tab: 'PARAMS' },
+    dataDemissao:       { label: 'Data Demissão', tab: 'PARAMS' },
+    cns:                { label: 'CNS', tab: 'PARAMS' },
+    salario:            { label: 'Salário', tab: 'PARAMS' },
+    cpf:                { label: 'CPF', tab: 'PARAMS' },
+    orgaoClasse:        { label: 'Órgão de Classe', tab: 'PARAMS' },
+    emailInstitucional: { label: 'E-mail Institucional', tab: 'PARAMS' },
+    emailPessoal:       { label: 'E-mail Pessoal', tab: 'PARAMS' },
+    cep:                { label: 'CEP', tab: 'PARAMS' },
+    endereco:           { label: 'Endereço', tab: 'PARAMS' },
+    nro:                { label: 'Número', tab: 'PARAMS' },
+    complemento:        { label: 'Complemento', tab: 'PARAMS' },
+    telefone:           { label: 'Telefone', tab: 'PARAMS' },
+    celular:            { label: 'Celular', tab: 'PARAMS' },
+    parceria:           { label: 'Parceria', tab: 'BOLETO' },
+    origemRecurso:      { label: 'Origem do Recurso', tab: 'BOLETO' },
+    referencia:         { label: 'Referência', tab: 'BOLETO' },
+    grossValue:         { label: 'Valor Bruto', tab: 'BOLETO' },
+  };
+
+  private invalidControlNames(): string[] {
+    return Object.keys(this.form.controls).filter(k => this.form.get(k)?.invalid);
+  }
+
+  /** Leva o usuário até o 1º campo inválido: abre a aba certa, rola e foca. */
+  private goToInvalid(name: string): void {
+    this.activeTab = this.fieldMeta[name]?.tab ?? 'PARAMS';
+    setTimeout(() => {
+      const el = this.host.nativeElement.querySelector<HTMLElement>(`[formcontrolname="${name}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus();
+    }, 60);
+  }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -176,16 +224,19 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   onClose(): void {
     this.mode      = 'view';
     this.activeTab = 'PARAMS';
+    this.requiredWarning = null;
     this.close.emit();
   }
 
   onEdit(): void {
     this.mode      = 'edit';
     this.activeTab = 'PARAMS';
+    this.requiredWarning = null;
   }
 
   onCancelEdit(): void {
     this.mode = 'view';
+    this.requiredWarning = null;
     if (this.employee) this.ngOnChanges();
   }
 
@@ -196,9 +247,15 @@ export class EmployeeDetailModalComponent implements OnChanges, OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const invalid = this.invalidControlNames();
+      const labels = invalid.map(n => this.fieldMeta[n]?.label ?? n);
+      const shown = labels.slice(0, 6).join(', ') + (labels.length > 6 ? '…' : '');
+      this.requiredWarning = `Há ${invalid.length} campo(s) obrigatório(s) pendente(s): ${shown}.`;
+      if (invalid.length) this.goToInvalid(invalid[0]);
       return;
     }
 
+    this.requiredWarning = null;
     const v = this.form.value;
     // Datas: ISO 8601 completo quando há valor; null quando vazio (o back rejeita '').
     const toIso = (d: unknown): string | null => {

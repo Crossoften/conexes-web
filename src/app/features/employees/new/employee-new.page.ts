@@ -63,6 +63,49 @@ export class EmployeeNewPage implements OnInit {
     grossValue:         [''],
   });
 
+  // B12: rótulo + aba de cada campo, para o banner de pendências e o foco no 1º inválido.
+  private readonly fieldMeta: Record<string, { label: string; tab: EmployeeTab }> = {
+    entidade:           { label: 'Entidade', tab: 'PARAMS' },
+    nome:               { label: 'Nome completo', tab: 'PARAMS' },
+    tipoResponsavel:    { label: 'Tipo responsável', tab: 'PARAMS' },
+    cargo:              { label: 'Cargo', tab: 'PARAMS' },
+    formacao:           { label: 'Formação', tab: 'PARAMS' },
+    vinculo:            { label: 'Vínculo', tab: 'PARAMS' },
+    cargaHorariaMensal: { label: 'Carga horária mensal', tab: 'PARAMS' },
+    dataAdmissao:       { label: 'Data Admissão', tab: 'PARAMS' },
+    dataDemissao:       { label: 'Data Demissão', tab: 'PARAMS' },
+    cns:                { label: 'CNS', tab: 'PARAMS' },
+    salario:            { label: 'Salário', tab: 'PARAMS' },
+    cpf:                { label: 'CPF', tab: 'PARAMS' },
+    orgaoClasse:        { label: 'Órgão de Classe', tab: 'PARAMS' },
+    emailInstitucional: { label: 'E-mail Institucional', tab: 'PARAMS' },
+    emailPessoal:       { label: 'E-mail Pessoal', tab: 'PARAMS' },
+    cep:                { label: 'CEP', tab: 'PARAMS' },
+    endereco:           { label: 'Endereço', tab: 'PARAMS' },
+    nro:                { label: 'Número', tab: 'PARAMS' },
+    complemento:        { label: 'Complemento', tab: 'PARAMS' },
+    telefone:           { label: 'Telefone', tab: 'PARAMS' },
+    celular:            { label: 'Celular', tab: 'PARAMS' },
+    parceria:           { label: 'Parceria', tab: 'BOLETO' },
+    origemRecurso:      { label: 'Origem do Recurso', tab: 'BOLETO' },
+    referencia:         { label: 'Referência', tab: 'BOLETO' },
+    grossValue:         { label: 'Valor Bruto', tab: 'BOLETO' },
+  };
+
+  private invalidControlNames(): string[] {
+    return Object.keys(this.form.controls).filter(k => this.form.get(k)?.invalid);
+  }
+
+  /** Leva o usuário até o 1º campo inválido: abre a aba certa, rola e foca. */
+  private goToInvalid(name: string): void {
+    this.activeTab = this.fieldMeta[name]?.tab ?? 'PARAMS';
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[formcontrolname="${name}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus();
+    }, 60);
+  }
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
@@ -145,6 +188,11 @@ export class EmployeeNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const invalid = this.invalidControlNames();
+      const labels = invalid.map(n => this.fieldMeta[n]?.label ?? n);
+      const shown = labels.slice(0, 6).join(', ') + (labels.length > 6 ? '…' : '');
+      this.errorMsg.set(`Há ${invalid.length} campo(s) obrigatório(s) pendente(s): ${shown}.`);
+      if (invalid.length) this.goToInvalid(invalid[0]);
       return;
     }
 

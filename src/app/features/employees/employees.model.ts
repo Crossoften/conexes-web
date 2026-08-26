@@ -17,6 +17,12 @@ export interface PositionOption {
   description?: string;
 }
 
+// B11: payload do CRUD de cargos (POST/PATCH /v1/positions — DTO fechado: name + description).
+export interface PositionManagePayload {
+  name:         string;
+  description?: string;
+}
+
 // ── Model completo (resposta da API) ──────────────────────────────────────────
 
 export interface Employee {

@@ -2,12 +2,21 @@
 
   <div class="page-header">
     <h1 class="page-title">Colaboradores e dirigentes</h1>
-    <button class="btn-novo" routerLink="new">
-      <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
-        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      Novo colaborador
-    </button>
+    <div class="page-header-actions">
+      <button class="btn-outline btn-pill" (click)="openManagePositions()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+        Gerenciar cargos
+      </button>
+      <button class="btn-novo" routerLink="new">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Novo colaborador
+      </button>
+    </div>
   </div>
 
   <div class="card">
@@ -209,3 +218,8 @@
   (saved)="onModalSaved($event)"
   (delete)="onModalDelete($event)">
 </app-employee-detail-modal>
+
+<!-- ── Modal Gerenciar cargos (B11) ───────────────────────────────────────── -->
+@if (managingPositions()) {
+  <app-positions-manage-modal (close)="onManagePositionsClosed()"></app-positions-manage-modal>
+}
