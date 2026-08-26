@@ -12,6 +12,7 @@ import {
   PurchaseRequestItemPayload,
 } from '../../purchases/purchases.model';
 import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/utils/format';
+import { NotificationService } from '../../../shared/services/notification.service';
 
 type QuotationTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS';
 
@@ -28,6 +29,7 @@ export class QuotationNewPage {
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
   private auth   = inject(AuthService);
+  private notify = inject(NotificationService);
 
   activeTab: QuotationTab = 'DADOS';
 
@@ -345,11 +347,22 @@ export class QuotationNewPage {
     const files = this.stagedFiles();
     if (!id || !files.length) { done(); return; }
     let pending = files.length;
-    const finish = () => { if (--pending <= 0) { this.stagedFiles.set([]); done(); } };
+    const failed: string[] = [];
+    const finish = () => {
+      if (--pending > 0) return;
+      this.stagedFiles.set([]);
+      if (failed.length) {
+        this.notify.error(`Anexo(s) não enviado(s): ${failed.join(', ')}. Formatos aceitos: PDF, PNG e JPG (até 8 MB).`);
+      }
+      done();
+    };
     for (const file of files) {
       this.svc.uploadFile(file).subscribe({
-        next: r => this.svc.attachRequestFile(id, { fileUrl: r.fileUrl, fileKey: r.fileKey }).subscribe({ next: finish, error: finish }),
-        error: finish,
+        next: r => this.svc.attachRequestFile(id, { fileUrl: r.fileUrl, fileKey: r.fileKey }).subscribe({
+          next: finish,
+          error: () => { failed.push(file.name); finish(); },
+        }),
+        error: () => { failed.push(file.name); finish(); },
       });
     }
   }

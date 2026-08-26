@@ -256,7 +256,7 @@
           <h3 class="section-title">Anexos da Requisição</h3>
           <p class="section-subtitle">CMP-20: anexe arquivos agora — eles são enviados ao salvar a requisição.</p>
           <label class="dropzone" style="cursor:pointer; display:block; text-align:center; padding:20px;">
-            <input type="file" multiple (change)="onFilesSelected($event)" hidden accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx">
+            <input type="file" multiple (change)="onFilesSelected($event)" hidden accept=".pdf,.png,.jpg,.jpeg">
             + Selecionar arquivos
           </label>
           @if (stagedFiles().length) {
