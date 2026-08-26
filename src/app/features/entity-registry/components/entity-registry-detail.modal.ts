@@ -86,9 +86,11 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
       this.form.patchValue(this.entity as any);
       // Exibe os valores já mascarados ao abrir a edição.
       this.form.patchValue({
-        cnpj:      maskCnpj(this.entity.cnpj),
-        mainPhone: maskPhone(this.entity.mainPhone),
-        cellPhone: maskPhone(this.entity.cellPhone),
+        cnpj:             maskCnpj(this.entity.cnpj),
+        mainPhone:        maskPhone(this.entity.mainPhone),
+        cellPhone:        maskPhone(this.entity.cellPhone),
+        // B01: input type=date só exibe yyyy-MM-dd; o back devolve ISO completo.
+        constitutionDate: this.entity.constitutionDate?.slice(0, 10) ?? '',
         // ENT-03: máscaras também na aba Dados do Contador ao abrir a edição.
         accountantCpf:         maskCpf((this.entity as any).accountantCpf),
         accountantZipCode:     maskCep((this.entity as any).accountantZipCode),
@@ -206,6 +208,7 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
 
     const payload = {
       ...raw,
+      constitutionDate:      raw.constitutionDate ? raw.constitutionDate : undefined,
       cnpj:                  onlyNumbers(raw.cnpj),
       zipCode:               onlyNumbers(raw.zipCode),
       mainPhone:             onlyNumbers(raw.mainPhone),

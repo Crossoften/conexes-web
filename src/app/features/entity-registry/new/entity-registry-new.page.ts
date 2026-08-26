@@ -177,6 +177,7 @@ export class EntityRegistryNewPage {
 
     const payload: EntityRegistryPayload = {
       ...raw,
+      constitutionDate:      raw.constitutionDate ? raw.constitutionDate : undefined,
       cnpj:                  onlyNumbers(raw.cnpj),
       zipCode:               onlyNumbers(raw.zipCode),
       mainPhone:             onlyNumbers(raw.mainPhone),

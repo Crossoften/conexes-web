@@ -122,7 +122,7 @@ export class EntityRegistryListPage implements OnInit {
   }
 
   protected async onDelete(id: number): Promise<void> {
-    const confirmed = confirm('Confirma a exclusão desta entidade?');
+    const confirmed = confirm('Confirma a exclusão desta organização?');
     if (!confirmed) return;
     const ok = await this.store.deleteEntity(id);
     if (ok) this.closeModal();

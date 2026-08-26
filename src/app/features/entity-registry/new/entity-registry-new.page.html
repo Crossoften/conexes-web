@@ -1,12 +1,12 @@
 <div class="page">
   <div class="page-header">
-    <h1 class="page-title">Cadastro de entidade</h1>
+    <h1 class="page-title">Cadastro da organização</h1>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Dados Gerais da entidade</h2>
-      <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova entidade/filial.</p>
+      <h2 class="card-title">Dados Gerais da organização</h2>
+      <p class="card-subtitle">Preencha todas as informações necessárias para cadastrar uma nova organização.</p>
     </div>
 
     <div class="card-body">
@@ -156,7 +156,7 @@
               <span class="field-hint">Formatos aceitos: .pfx ou .p12 (certificado digital A1), até 8MB.</span>
             </div>
             <div class="form-group">
-              <label>Alterar Logotipo da entidade</label>
+              <label>Alterar Logotipo da organização</label>
               <label class="dropzone" [class.dropzone--done]="logoFileName()">
                 <input type="file" accept="image/png,image/jpeg" (change)="onLogoSelected($event)" hidden>
                 @if (uploadingLogo()) {
