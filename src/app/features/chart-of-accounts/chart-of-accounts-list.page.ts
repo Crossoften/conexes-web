@@ -10,6 +10,12 @@ import { ChartOfAccountsService } from './chart-of-accounts.service';
 import { ChartOfAccountsDetailModalComponent } from './components/chart-of-accounts-detail.modal';
 import { Account, AccountStatus, AccountType, ACCOUNT_STATUS_CONFIG, ACCOUNT_TYPE_LABELS } from './chart-of-accounts.model';
 
+interface TreeRow {
+  node:        any;
+  depth:       number;
+  hasChildren: boolean;
+}
+
 @Component({
   selector: 'app-chart-of-accounts-list',
   standalone: true,
@@ -68,54 +74,96 @@ export class ChartOfAccountsListPage implements OnInit {
     return ACCOUNT_TYPE_LABELS[v] ?? v ?? '—';
   }
 
+  statusVariant(s: any): string { return this.statusConfig[s as AccountStatus]?.variant ?? 'neutral'; }
+  statusLabel(s: any): string { return this.statusConfig[s as AccountStatus]?.label ?? String(s ?? ''); }
+
   readonly pageSizeOptions = [10, 25, 50, 100, 200, 500];
 
-  // ── PC-02: visão em árvore (N níveis) ───────────────────────────────────────
-  readonly viewMode   = signal<'list' | 'tree'>('list');
-  readonly treeRoots  = signal<Account[]>([]);
+  // ── B18: listagem hierárquica única (N níveis) no padrão Centro de custo ────
+  readonly treeRoots   = signal<Account[]>([]);
   readonly treeLoading = signal(false);
-  readonly collapsed  = signal<Set<number>>(new Set());
-
-  toggleView(): void {
-    const next = this.viewMode() === 'list' ? 'tree' : 'list';
-    this.viewMode.set(next);
-    if (next === 'tree' && this.treeRoots().length === 0) this.loadTree();
-  }
+  readonly treeError   = signal<string | null>(null);
+  readonly expanded    = signal<Set<number>>(new Set());
 
   loadTree(): void {
     this.treeLoading.set(true);
+    this.treeError.set(null);
     this.svc.tree().subscribe({
       next: (roots) => { this.treeRoots.set(roots ?? []); this.treeLoading.set(false); },
-      error: () => { this.treeLoading.set(false); },
+      error: (err) => {
+        this.treeLoading.set(false);
+        this.treeError.set(err?.error?.message ?? 'Erro ao carregar plano de contas.');
+      },
     });
   }
 
-  treeStatusVariant(s: any): string { return this.statusConfig[s as AccountStatus]?.variant ?? ''; }
-  treeStatusLabel(s: any): string { return this.statusConfig[s as AccountStatus]?.label ?? String(s ?? ''); }
-
-  hasChildren(n: any): boolean { return !!(n.children && n.children.length); }
-  isCollapsed(id: number): boolean { return this.collapsed().has(id); }
-  toggleNode(id: number): void {
-    const s = new Set(this.collapsed());
-    s.has(id) ? s.delete(id) : s.add(id);
-    this.collapsed.set(s);
+  toggleExpand(id: number): void {
+    const next = new Set(this.expanded());
+    next.has(id) ? next.delete(id) : next.add(id);
+    this.expanded.set(next);
   }
 
-  /** Achata a árvore respeitando os nós recolhidos, com profundidade para indentação. */
-  readonly treeFlat = computed(() => {
-    const out: { node: any; depth: number }[] = [];
-    const walk = (nodes: any[], depth: number) => {
+  /** Ordenação restrita a irmãos para não quebrar a hierarquia. */
+  private sortSiblings(nodes: any[]): any[] {
+    const { column, direction } = this.store.sort();
+    if (!column || !direction) return nodes;
+    return [...nodes].sort((a, b) => {
+      const va = String(a[column] ?? '').toLowerCase();
+      const vb = String(b[column] ?? '').toLowerCase();
+      return direction === 'asc'
+        ? va.localeCompare(vb, 'pt-BR')
+        : vb.localeCompare(va, 'pt-BR');
+    });
+  }
+
+  /** Com busca/filtros ativos a hierarquia é achatada mostrando só os nós que casam. */
+  private readonly searchMatches = computed<any[] | null>(() => {
+    const { search, status, type, costCenter } = this.store.filters();
+    if (!search && !status && !type && !costCenter) return null;
+    const q = search.toLowerCase();
+    const out: any[] = [];
+    const walk = (nodes: any[]) => {
       for (const n of nodes) {
-        out.push({ node: n, depth });
-        if (this.hasChildren(n) && !this.isCollapsed(n.id)) walk(n.children, depth + 1);
+        const ok =
+          (!search || String(n.title ?? '').toLowerCase().includes(q) || String(n.code ?? '').includes(search)) &&
+          (!status || n.status === status) &&
+          (!type   || n.accountType === type) &&
+          (!costCenter || String(n.category ?? '') === costCenter);
+        if (ok) out.push(n);
+        if (n.children?.length) walk(n.children);
       }
     };
-    walk(this.treeRoots(), 0);
+    walk(this.treeRoots());
+    return this.sortSiblings(out);
+  });
+
+  readonly filteredTotal = computed(() =>
+    this.searchMatches()?.length ?? this.treeRoots().length
+  );
+
+  /** Achata a árvore respeitando os nós expandidos, com profundidade para indentação. */
+  readonly treeFlat = computed<TreeRow[]>(() => {
+    const { page, pageSize } = this.store.pagination();
+    const start = (page - 1) * pageSize;
+    const matches = this.searchMatches();
+    if (matches) {
+      return matches.slice(start, start + pageSize).map(node => ({ node, depth: 0, hasChildren: false }));
+    }
+    const exp = this.expanded();
+    const out: TreeRow[] = [];
+    const walk = (nodes: any[], depth: number) => {
+      for (const n of nodes) {
+        const kids = this.sortSiblings(n.children ?? []);
+        out.push({ node: n, depth, hasChildren: kids.length > 0 });
+        if (kids.length && exp.has(n.id)) walk(kids, depth + 1);
+      }
+    };
+    walk(this.sortSiblings(this.treeRoots()).slice(start, start + pageSize), 0);
     return out;
   });
 
   readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize))
+    Math.max(1, Math.ceil(this.filteredTotal() / this.store.pagination().pageSize))
   );
 
   readonly pageNumbers = computed((): (number | '...')[] => {
@@ -138,7 +186,7 @@ export class ChartOfAccountsListPage implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.store.load();
+    this.loadTree();
     this.loadCostCenters();
   }
 
@@ -162,10 +210,6 @@ export class ChartOfAccountsListPage implements OnInit {
   goToPage(p: number | '...'): void {
     if (typeof p === 'number') this.store.setPage(p);
   }
-
-  trackById(_: number, item: Account): number { return item.id; }
-
-  toStr(id: number): string { return String(id); }
 
   // ── Modal ─────────────────────────────────────────────────────────────────
 
@@ -202,7 +246,7 @@ export class ChartOfAccountsListPage implements OnInit {
   }
 
   onSaved(): void {
-    this.store.load();
+    this.loadTree();
     this.closeModal();
   }
 
@@ -252,7 +296,7 @@ export class ChartOfAccountsListPage implements OnInit {
         this.importing.set(false);
         input.value = '';
         alert(res?.message ?? 'Importação concluída.');
-        this.store.load();
+        this.loadTree();
       },
       error: (err) => {
         this.importing.set(false);
@@ -266,7 +310,10 @@ export class ChartOfAccountsListPage implements OnInit {
 
   onDelete(id: number): void {
     if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
-    this.store.deleteById(id);
+    this.svc.delete(id).subscribe({
+      next: () => this.loadTree(),
+      error: (err) => alert(err?.error?.message ?? 'Erro ao excluir conta.'),
+    });
     this.closeModal();
   }
 }
