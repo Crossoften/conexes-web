@@ -6,6 +6,7 @@ import { NgClass } from '@angular/common';
 import { BankAccountsService } from '../bank-accounts.service';
 import { BankAccountsStore } from '../bank-accounts.store';
 import { BankAccountPayload, Bank } from '../bank-accounts.model';
+import { maskCnpj, maskMoney, maskPhone, onlyDigits } from '../../../shared/utils/format';
 
 type BankAccountTab = 'PARAMS' | 'BOLETO';
 
@@ -117,6 +118,24 @@ export class BankAccountNewPage implements OnInit {
     this.activeTab = tab;
   }
 
+  onPhoneInput(event: Event, control: 'telefonePrincipal' | 'telefoneCelular'): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskPhone(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onMoneyInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskMoney(el.value);
+    this.form.get('saldoInicial')?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCnpjInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCnpj(el.value);
+    this.form.get('cnpjConta')?.setValue(el.value, { emitEvent: false });
+  }
+
   resetForm(): void {
     this.form.reset({ dadosDiferentes: false });
     this.activeTab = 'PARAMS';
@@ -156,15 +175,15 @@ export class BankAccountNewPage implements OnInit {
       agency:            v.agenciaDigito           ?? '',
       account:           v.numeroContaDigito       ?? '',
       initialBalance:    this.parseMoney(v.saldoInicial),
-      phone:             v.telefonePrincipal       ?? '',
-      cellPhone:         v.telefoneCelular         ?? '',
+      phone:             onlyDigits(v.telefonePrincipal),
+      cellPhone:         onlyDigits(v.telefoneCelular),
       contactEmail:      v.emailContato            ?? '',
       contactName:       '',                        // CB-02: campo 'Contato' removido da UI
       accountingAccount: v.contaContabil1          ?? '',
       resourceType:      v.tipoRecurso             ?? '',
       isAccountHolderDataDifferent: !!v.dadosDiferentes,
       convPaymentNumber: v.numeroConvenioPagamento ?? '',
-      accountCnpj:       v.cnpjConta              ?? '',
+      accountCnpj:       onlyDigits(v.cnpjConta),
       paymentInterval:   v.intervaloPagamentoCnab1 ?? '',
       cnabType:          v.intervaloPagamentoCnab2 ?? '',
       hash:              v.hashApiPagamentos       ?? '',

@@ -1,5 +1,5 @@
 // src/app/features/bank-accounts/components/bank-account-detail.modal.ts
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, SimpleChanges, signal } from '@angular/core';
 import { NgClass, DecimalPipe, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -10,6 +10,9 @@ import {
   BANK_ACCOUNT_STATUS_OPTIONS,
   BankAccountPayload,
 } from '../bank-accounts.model';
+import { BankAccountsService } from '../bank-accounts.service';
+import { Entity } from '../new/bank-account-new.page';
+import { maskCnpj, maskMoney, maskPhone, formatDecimalBR, parseDecimalBR, onlyDigits } from '../../../shared/utils/format';
 
 type ModalTab = 'GERAIS' | 'PARAMS' | 'BOLETO';
 
@@ -20,7 +23,7 @@ type ModalTab = 'GERAIS' | 'PARAMS' | 'BOLETO';
   templateUrl: './bank-account-detail.modal.html',
   styleUrl: './bank-account-detail.modal.scss',
 })
-export class BankAccountDetailModalComponent implements OnChanges {
+export class BankAccountDetailModalComponent implements OnInit, OnChanges {
   @Input() account: BankAccount | null = null;
   @Input() banks:   Bank[]             = [];
   @Input() mode:    'view' | 'edit'    = 'view';
@@ -38,16 +41,26 @@ export class BankAccountDetailModalComponent implements OnChanges {
   readonly statusConfig   = BANK_ACCOUNT_STATUS_CONFIG;
   readonly statusOptions  = BANK_ACCOUNT_STATUS_OPTIONS;
 
+  readonly entities = signal<Entity[]>([]);
+
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private svc: BankAccountsService) {
     this.form = this.buildForm();
+  }
+
+  ngOnInit(): void {
+    this.svc.getEntities().subscribe({
+      next: entities => this.entities.set(entities),
+      error: () => {},
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['account'] && this.account) {
       this.form.patchValue({
         banco:                    this.account.bankId,
+        fontePagadora:            this.account.payingSourceId ?? '',
         tipoConta:                this.account.accountType,
         status:                   this.account.status,
         // input type=date exige yyyy-MM-dd — fatiamos o ISO (evita input vazio).
@@ -55,16 +68,15 @@ export class BankAccountDetailModalComponent implements OnChanges {
         apelidoConta:             this.account.nickname,
         agenciaDigito:            this.account.agency,
         numeroContaDigito:        this.account.account,
-        saldoInicial:             this.account.initialBalance,
-        telefonePrincipal:        this.account.phone,
-        telefoneCelular:          this.account.cellPhone,
+        saldoInicial:             formatDecimalBR(this.account.initialBalance),
+        telefonePrincipal:        maskPhone(this.account.phone),
+        telefoneCelular:          maskPhone(this.account.cellPhone),
         emailContato:             this.account.contactEmail,
-        contato:                  this.account.contactName,
         contaContabil:            this.account.accountingAccount,
         tipoRecurso:              this.account.resourceType,
         dadosDiferentes:          this.account.isAccountHolderDataDifferent,
         numeroConvenioPagamento:  this.account.convPaymentNumber,
-        cnpjConta:                this.account.accountCnpj,
+        cnpjConta:                maskCnpj(this.account.accountCnpj),
         intervaloPagamento:       this.account.paymentInterval,
         tipoCnab:                 this.account.cnabType,
         hashApi:                  this.account.hash,
@@ -110,6 +122,24 @@ export class BankAccountDetailModalComponent implements OnChanges {
     this.activeTab = tab;
   }
 
+  onPhoneInput(event: Event, control: 'telefonePrincipal' | 'telefoneCelular'): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskPhone(el.value);
+    this.form.get(control)?.setValue(el.value, { emitEvent: false });
+  }
+
+  onMoneyInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskMoney(el.value);
+    this.form.get('saldoInicial')?.setValue(el.value, { emitEvent: false });
+  }
+
+  onCnpjInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = maskCnpj(el.value);
+    this.form.get('cnpjConta')?.setValue(el.value, { emitEvent: false });
+  }
+
   onClose(): void {
     this.close.emit();
   }
@@ -134,23 +164,23 @@ export class BankAccountDetailModalComponent implements OnChanges {
     const payload: BankAccountPayload = {
       bankId:            Number(v.banco)                    || this.account.bankId,
       entityId:          this.account.entityId,
-      payingSourceId:    this.account.payingSourceId,
+      payingSourceId:    Number(v.fontePagadora) > 0 ? Number(v.fontePagadora) : this.account.entityId,
       accountType:       v.tipoConta                        || this.account.accountType,
       status:            v.status                           ?? this.account.status,
       openDate:          v.dataAbertura                     ?? this.account.openDate,
       nickname:          v.apelidoConta                     ?? this.account.nickname,
       agency:            v.agenciaDigito                    ?? this.account.agency,
       account:           v.numeroContaDigito                ?? this.account.account,
-      initialBalance:    Number(v.saldoInicial)             || this.account.initialBalance,
-      phone:             v.telefonePrincipal                ?? this.account.phone,
-      cellPhone:         v.telefoneCelular                  ?? this.account.cellPhone,
+      initialBalance:    parseDecimalBR(v.saldoInicial),
+      phone:             onlyDigits(v.telefonePrincipal),
+      cellPhone:         onlyDigits(v.telefoneCelular),
       contactEmail:      v.emailContato                     ?? this.account.contactEmail,
-      contactName:       v.contato                          ?? this.account.contactName,
+      contactName:       this.account.contactName           ?? '',
       accountingAccount: v.contaContabil                    ?? this.account.accountingAccount,
-      resourceType:      v.tipoRecurso                      ?? this.account.resourceType,
+      resourceType:      (v.tipoRecurso || this.account.resourceType) ?? '',
       isAccountHolderDataDifferent: !!v.dadosDiferentes,
       convPaymentNumber: v.numeroConvenioPagamento          ?? this.account.convPaymentNumber,
-      accountCnpj:       v.cnpjConta                        ?? this.account.accountCnpj,
+      accountCnpj:       onlyDigits(v.cnpjConta),
       paymentInterval:   v.intervaloPagamento               ?? this.account.paymentInterval,
       cnabType:          v.tipoCnab                         ?? this.account.cnabType,
       hash:              v.hashApi                          ?? this.account.hash,
@@ -172,6 +202,7 @@ export class BankAccountDetailModalComponent implements OnChanges {
   private buildForm(): FormGroup {
     return this.fb.group({
       banco:                   ['', Validators.required],
+      fontePagadora:           [''],
       tipoConta:               ['', Validators.required],
       status:                  ['Active'],
       dataAbertura:            ['', Validators.required],
@@ -182,7 +213,6 @@ export class BankAccountDetailModalComponent implements OnChanges {
       telefonePrincipal:       ['', Validators.required],
       telefoneCelular:         ['', Validators.required],
       emailContato:            ['', [Validators.required, Validators.email]],
-      contato:                 [''],
       contaContabil:           [''],
       tipoRecurso:             [''],
       dadosDiferentes:         [false],

@@ -115,10 +115,6 @@
                 <span class="info-value">{{ account?.contactEmail || '—' }}</span>
               </div>
               <div class="info-item col-span-2">
-                <span class="info-label">Contato</span>
-                <span class="info-value">{{ account?.contactName || '—' }}</span>
-              </div>
-              <div class="info-item col-span-2">
                 <span class="info-label">Conta contábil</span>
                 <span class="info-value">{{ account?.accountingAccount || '—' }}</span>
               </div>
@@ -246,56 +242,67 @@
               </div>
               <div class="form-row grid-cols-2">
                 <div class="form-group">
+                  <label class="form-label">Fonte Pagadora <span class="field-hint-inline">(opcional)</span></label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="fontePagadora">
+                      <option value="">Mesma da entidade dona</option>
+                      @for (entity of entities(); track entity.id) {
+                        <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="form-group">
                   <label class="form-label">Apelido da conta <span class="req">*</span></label>
                   <input type="text" class="form-control" formControlName="apelidoConta"
                     [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
                 </div>
+              </div>
+              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Data de abertura <span class="req">*</span></label>
                   <input type="date" class="form-control" formControlName="dataAbertura"
                     [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
                 </div>
-              </div>
-              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Agência + Dígito <span class="req">*</span></label>
                   <input type="text" class="form-control" formControlName="agenciaDigito"
                     [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
                 </div>
+              </div>
+              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Número da conta + Dígito <span class="req">*</span></label>
                   <input type="text" class="form-control" formControlName="numeroContaDigito"
                     [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
                 </div>
-              </div>
-              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Saldo inicial <span class="req">*</span></label>
-                  <input type="text" class="form-control" formControlName="saldoInicial"
+                  <input type="text" class="form-control" placeholder="0,00" formControlName="saldoInicial"
+                    (input)="onMoneyInput($event)"
                     [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Telefone principal <span class="req">*</span></label>
-                  <input type="text" class="form-control" formControlName="telefonePrincipal"
-                    [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
                 </div>
               </div>
               <div class="form-row grid-cols-2">
                 <div class="form-group">
+                  <label class="form-label">Telefone principal <span class="req">*</span></label>
+                  <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefonePrincipal"
+                    (input)="onPhoneInput($event, 'telefonePrincipal')"
+                    [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
+                </div>
+                <div class="form-group">
                   <label class="form-label">Telefone celular <span class="req">*</span></label>
-                  <input type="text" class="form-control" formControlName="telefoneCelular"
+                  <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefoneCelular"
+                    (input)="onPhoneInput($event, 'telefoneCelular')"
                     [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
                 </div>
+              </div>
+              <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">E-mail de contato <span class="req">*</span></label>
                   <input type="email" class="form-control" formControlName="emailContato"
                     [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
-                </div>
-              </div>
-              <div class="form-row grid-cols-2">
-                <div class="form-group">
-                  <label class="form-label">Contato</label>
-                  <input type="text" class="form-control" formControlName="contato">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Conta contábil</label>
@@ -305,7 +312,14 @@
               <div class="form-row grid-cols-2">
                 <div class="form-group">
                   <label class="form-label">Tipo do recurso</label>
-                  <input type="text" class="form-control" formControlName="tipoRecurso">
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="tipoRecurso">
+                      <option value="">Selecione</option>
+                      <option value="Publico">Público</option>
+                      <option value="Privado">Privado</option>
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
                 </div>
               </div>
               <div class="form-row grid-cols-1">
@@ -329,7 +343,8 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">CNPJ Conta</label>
-                  <input type="text" class="form-control" formControlName="cnpjConta">
+                  <input type="text" class="form-control" placeholder="00.000.000/0000-00" formControlName="cnpjConta"
+                    (input)="onCnpjInput($event)">
                 </div>
               </div>
               <div class="form-row grid-cols-2">

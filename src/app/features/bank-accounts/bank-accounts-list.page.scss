@@ -177,6 +177,9 @@
   &:disabled { background: #F9FAFB; color: var(--text-muted); cursor: not-allowed; }
 }
 
+.select-wrap--field { width: 100%; }
+select.field__input { appearance: none; -webkit-appearance: none; padding-right: 36px; width: 100%; cursor: pointer; }
+
 // ── Botão danger ──────────────────────────────
 .btn-danger {
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;

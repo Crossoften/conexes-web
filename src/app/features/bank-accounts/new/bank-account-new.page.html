@@ -120,6 +120,7 @@
             <div class="form-group">
               <label>Saldo inicial <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="0,00" formControlName="saldoInicial"
+                (input)="onMoneyInput($event)"
                 [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
             </div>
           </div>
@@ -128,11 +129,13 @@
             <div class="form-group">
               <label>Telefone principal <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefonePrincipal"
+                (input)="onPhoneInput($event, 'telefonePrincipal')"
                 [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
             </div>
             <div class="form-group">
               <label>Telefone celular <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefoneCelular"
+                (input)="onPhoneInput($event, 'telefoneCelular')"
                 [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
             </div>
             <div class="form-group col-span-2">
@@ -194,7 +197,8 @@
               </div>
               <div class="form-group">
                 <label>CNPJ Conta</label>
-                <input type="text" class="form-control" placeholder="00.000.000/0000-00" formControlName="cnpjConta">
+                <input type="text" class="form-control" placeholder="00.000.000/0000-00" formControlName="cnpjConta"
+                  (input)="onCnpjInput($event)">
               </div>
               <div class="form-group">
                 <label>Intervalo de pagamento CNAB</label>

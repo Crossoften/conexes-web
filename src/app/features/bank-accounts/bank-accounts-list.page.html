@@ -337,14 +337,17 @@
         <!-- BCO-03: classificação Público/Privado -->
         <div class="field">
           <label class="field__label">Tipo</label>
-          <select class="field__input"
-            [value]="bankForm().type || ''"
-            [disabled]="store.bankModal().mode === 'view'"
-            (change)="onBankFormChange('type', $any($event.target).value)">
-            <option value="">Selecione</option>
-            <option value="Publico">Público</option>
-            <option value="Privado">Privado</option>
-          </select>
+          <div class="select-wrap select-wrap--field">
+            <select class="field__input"
+              [value]="bankForm().type || ''"
+              [disabled]="store.bankModal().mode === 'view'"
+              (change)="onBankFormChange('type', $any($event.target).value)">
+              <option value="">Selecione</option>
+              <option value="Publico">Público</option>
+              <option value="Privado">Privado</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </div>
       </div>
       <div class="modal__footer">
