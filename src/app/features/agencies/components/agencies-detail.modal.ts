@@ -12,6 +12,7 @@ import {
 import { onlyDigits } from '../../../shared/utils/format';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { UploadService } from '../../../shared/services/upload.service';
+import { AgenciesService } from '../agencies.service';
 
 @Component({
   selector: 'app-agency-detail-modal',
@@ -33,6 +34,7 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
   private readonly fb     = inject(NonNullableFormBuilder);
   private readonly notify = inject(NotificationService);
   private readonly upload = inject(UploadService);
+  private readonly svc    = inject(AgenciesService);
 
   protected mode: 'view' | 'edit' = 'view';
 
@@ -55,7 +57,6 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
     managingOrgan:   ['', Validators.required],
     phone:           [''],
     email:           ['', Validators.email],
-    transparencyUrl: [''],
     staff:           this.fb.array([] as FormGroup[]),
   });
 
@@ -112,7 +113,6 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
         managingOrgan:   this.agency.managingOrgan  ?? '',
         phone:           this.agency.phone          ?? '',
         email:           this.agency.email          ?? '',
-        transparencyUrl: this.agency.transparencyUrl ?? '',
       });
 
       // Reconstrói a equipe a partir do órgão carregado.
@@ -153,10 +153,22 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
     if (this.agency) this.delete.emit(this.agency.id);
   }
 
-  /** 🌐 Portal da Transparência — abre a URL do órgão (B-OR-01, atendido no back). */
+  /** CV-02: link público (auto-gerado) da página de Transparência deste órgão. */
+  get transparencyLink(): string {
+    return this.agency ? this.svc.buildTransparencyUrl(this.agency.id) : '';
+  }
+
+  /** 🌐 Portal da Transparência — abre a página pública do órgão (link auto-gerado, CV-02). */
   onTransparency(): void {
-    const url = this.agency?.transparencyUrl;
-    if (url) window.open(url, '_blank');
+    if (this.agency) window.open(this.transparencyLink, '_blank');
+  }
+
+  /** Copia o link do Portal da Transparência do órgão para a área de transferência. */
+  copyTransparencyLink(): void {
+    const url = this.transparencyLink;
+    if (!url) return;
+    navigator.clipboard?.writeText(url);
+    this.notify.success('Link do Portal da Transparência copiado.');
   }
 
   // ── Upload de logo ──────────────────────────────────────────────────────────
@@ -255,7 +267,6 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
       managingOrgan:   raw.managingOrgan || undefined,
       phone:           onlyDigits(raw.phone) || undefined,
       email:           raw.email         || undefined,
-      transparencyUrl: raw.transparencyUrl || undefined,
       logo:            this.logoUrl()    || undefined,
       staff,
     };

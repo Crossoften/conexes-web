@@ -30,6 +30,19 @@ export interface TransparencyDetail extends TransparencyPartnership {
   accountabilities: TransparencyAccountability[];
 }
 
+export interface TransparencyGrantor {
+  id: number;
+  name: string;
+  legalName: string;
+  tradeName: string | null;
+  logo: string | null;
+}
+
+export interface TransparencyGrantorPage {
+  grantor: TransparencyGrantor;
+  partnerships: TransparencyPartnership[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class TransparencyService {
   private http = inject(HttpClient);
@@ -41,5 +54,9 @@ export class TransparencyService {
 
   getById(id: number): Observable<TransparencyDetail> {
     return this.http.get<TransparencyDetail>(`${this.api}/partnerships/${id}`);
+  }
+
+  getByGrantor(grantorId: number): Observable<TransparencyGrantorPage> {
+    return this.http.get<TransparencyGrantorPage>(`${this.api}/grantors/${grantorId}`);
   }
 }

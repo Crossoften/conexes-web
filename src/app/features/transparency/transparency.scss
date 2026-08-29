@@ -17,6 +17,7 @@
   padding: 40px 32px; text-align: center;
   background: linear-gradient(135deg, #6d28d9, #9333ea); color: #fff;
 }
+.portal__hero-logo { height: 64px; max-width: 180px; object-fit: contain; margin: 0 auto 14px; display: block; background: #fff; border-radius: 12px; padding: 8px; }
 .portal__hero h1 { font-family: var(--font-display, 'Sora', sans-serif); font-size: 28px; font-weight: 700; }
 .portal__hero p { margin-top: 6px; font-size: 15px; color: #ece7ff; }
 .hero-stats { display: flex; justify-content: center; gap: 40px; margin-top: 24px; flex-wrap: wrap; }

@@ -1,0 +1,69 @@
+<div class="portal">
+  <header class="portal__topbar">
+    <div class="portal__brand">
+      <span class="portal__logo">🏛️</span>
+      <div>
+        <strong>Portal da Transparência</strong>
+        <span class="portal__brand-sub">Conex3s</span>
+      </div>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <main class="portal__main"><p class="portal__msg">Carregando…</p></main>
+  } @else if (error() || !grantor()) {
+    <main class="portal__main"><p class="portal__msg">Órgão não encontrado ou sem dados públicos.</p></main>
+  } @else {
+    <section class="portal__hero">
+      @if (grantor()!.logo) {
+        <img class="portal__hero-logo" [src]="grantor()!.logo" [alt]="'Logotipo de ' + grantor()!.name"
+          (error)="logoImg.style.display='none'" #logoImg>
+      }
+      <h1>{{ grantor()!.name }}</h1>
+      <p>Parcerias, convênios e repasses públicos do órgão.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat__value">{{ all().length }}</span>
+          <span class="hero-stat__label">parcerias publicadas</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__value">{{ money(totalGranted()) }}</span>
+          <span class="hero-stat__label">valor total das parcerias</span>
+        </div>
+      </div>
+    </section>
+
+    <main class="portal__main">
+      <a class="back-link" routerLink="/transparencia">← Voltar ao Portal da Transparência</a>
+
+      <div class="portal__search">
+        <input type="text" class="input" placeholder="Buscar por parceria ou organização…" [(ngModel)]="search">
+      </div>
+
+      @if (filtered().length === 0) {
+        <p class="portal__msg">Nenhuma parceria publicada para este órgão.</p>
+      } @else {
+        <div class="cards">
+          @for (p of filtered(); track p.id) {
+            <a class="pcard" [routerLink]="['/transparencia', p.id]">
+              <div class="pcard__head">
+                <h2 class="pcard__title">{{ p.title }}</h2>
+                <span class="pill" [class]="statusClass(p.accountabilityStatus)">{{ statusLabel(p.accountabilityStatus) }}</span>
+              </div>
+              <div class="pcard__row"><span>Organização</span><strong>{{ p.entity }}</strong></div>
+              <div class="pcard__row"><span>Vigência</span><strong>{{ p.startDate ? (p.startDate | date:'dd/MM/yyyy') : '—' }} — {{ p.endDate ? (p.endDate | date:'dd/MM/yyyy') : '—' }}</strong></div>
+              <div class="pcard__values">
+                <div><span>Valor da parceria</span><strong>{{ money(p.totalValue) }}</strong></div>
+                <div><span>Repassado</span><strong>{{ money(p.receivedValue) }}</strong></div>
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </main>
+
+    <footer class="portal__footer">
+      <p>Dados publicados conforme a Lei de Acesso à Informação. Informações sensíveis e pessoais são preservadas.</p>
+    </footer>
+  }
+</div>

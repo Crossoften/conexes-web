@@ -9,6 +9,12 @@ export const transparencyRoutes: Routes = [
     data: { title: 'Portal da Transparência' },
   },
   {
+    path: 'orgao/:grantorId',
+    loadComponent: () =>
+      import('./transparency-agency.page').then(m => m.TransparencyAgencyPage),
+    data: { title: 'Órgão — Transparência' },
+  },
+  {
     path: ':id',
     loadComponent: () =>
       import('./transparency-detail.page').then(m => m.TransparencyDetailPage),

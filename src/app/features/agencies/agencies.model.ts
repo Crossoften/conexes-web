@@ -37,7 +37,9 @@ export interface Agency {
   phone:            string;
   email:            string;
   logo:             string;
-  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
+  /** @deprecated CV-02: o link do Portal da Transparência agora é gerado automaticamente
+   *  pelo front (AgenciesService.buildTransparencyUrl), não mais cadastrado à mão. */
+  transparencyUrl?: string;
   staff:            AgencyStaff[];
   status?:          AgencyStatus;
   createdAt?:       string;
@@ -59,7 +61,6 @@ export interface AgencyPayload {
   phone:            string;
   email?:           string;
   logo:             string;
-  transparencyUrl?: string;   // Link do Portal da Transparência (Swagger)
   status?:          AgencyStatus;
   staff:            AgencyStaff[];
 }

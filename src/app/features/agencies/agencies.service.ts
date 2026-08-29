@@ -1,6 +1,8 @@
 // src/app/features/agencies/agencies.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Page } from '../../shared/models/list-page.model';
@@ -26,7 +28,21 @@ export interface GrantorCnpjLookup {
 @Injectable({ providedIn: 'root' })
 export class AgenciesService {
   private http = inject(HttpClient);
+  private router = inject(Router);
+  private location = inject(Location);
   private base = `${environment.apiUrl}/v1/grantors`;
+
+  /**
+   * CV-02: link público do Portal da Transparência do órgão, gerado
+   * automaticamente a partir do id. Aponta para a página do PRÓPRIO sistema
+   * (mesma origem e estratégia de rota — hash), dispensando cadastro manual.
+   */
+  buildTransparencyUrl(id: number): string {
+    const path = this.router.serializeUrl(this.router.createUrlTree(['/transparencia/orgao', id]));
+    // prepareExternalUrl aplica o base href e a estratégia de rota (hash → '#/…').
+    const external = this.location.prepareExternalUrl(path);
+    return new URL(external, `${window.location.origin}/`).href;
+  }
 
   /** ORG-CNPJ: reusa a consulta de CNPJ da Receita já disponível em /stakeholders/cnpj. */
   getCnpjData(cnpj: string): Observable<GrantorCnpjLookup> {

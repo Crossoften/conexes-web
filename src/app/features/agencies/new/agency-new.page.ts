@@ -44,7 +44,6 @@ export class AgencyNewPage {
     orgaoGestor:    ['', Validators.required],
     telefoneCelular:[''],
     email:          ['', Validators.email],
-    portalTransparencia: [''],
     staff:          this.fb.array([]),
   });
 
@@ -216,7 +215,6 @@ export class AgencyNewPage {
       managingOrgan: v.orgaoGestor   ?? '',
       phone:           onlyDigits(v.telefoneCelular),
       email:           v.email || undefined,
-      transparencyUrl: v.portalTransparencia || undefined,
       logo:            this.logoUrl(),
       staff,
     };

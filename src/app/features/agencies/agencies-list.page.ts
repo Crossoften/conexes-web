@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AgenciesStore } from './agencies.store';
+import { AgenciesService } from './agencies.service';
 import { Agency, AgencyUpdatePayload, AGENCY_STATUS_CONFIG } from './agencies.model';
 import { AgencyDetailModalComponent } from './components/agencies-detail.modal';
 
@@ -17,6 +18,7 @@ import { AgencyDetailModalComponent } from './components/agencies-detail.modal';
 })
 export class AgenciesListPage implements OnInit {
   readonly store        = inject(AgenciesStore);
+  private readonly svc  = inject(AgenciesService);
   readonly statusConfig = AGENCY_STATUS_CONFIG;
 
   // ORG-INATIV: rótulo e variante do status para exibir badge na listagem.
@@ -143,9 +145,9 @@ export class AgenciesListPage implements OnInit {
     );
   }
 
-  /** 🌐 Portal da Transparência (link por órgão) — B-OR-01, atendido no back. */
+  /** 🌐 Portal da Transparência — abre a página pública do órgão (link auto-gerado, CV-02). */
   onTransparency(item: Agency): void {
-    if (item.transparencyUrl) window.open(item.transparencyUrl, '_blank');
+    window.open(this.svc.buildTransparencyUrl(item.id), '_blank');
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
