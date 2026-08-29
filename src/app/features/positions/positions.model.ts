@@ -2,7 +2,15 @@
 
 // Valores canônicos dos enums do back (sem espaço/acento). Rótulos amigáveis nos maps.
 export type PositionType    = 'ConselhoFiscal' | 'CorpoDiretivo' | 'Responsavel';
-export type PositionPurpose = 'Ajuste' | 'PrestacaoDeContas';
+export type PositionPurpose =
+  | 'Ajuste'
+  | 'PrestacaoDeContas'
+  | 'Aditamento'
+  | 'Prorrogacao'
+  | 'Rescisao'
+  | 'Renovacao'
+  | 'Substituicao'
+  | 'Outros';
 export type PositionStatus  = 'Active' | 'Pending' | 'Inactive';
 
 export const POSITION_TYPE_LABELS: Record<string, string> = {
@@ -18,8 +26,27 @@ export const POSITION_TYPE_LABELS: Record<string, string> = {
 export const POSITION_PURPOSE_LABELS: Record<string, string> = {
   Ajuste:            'Ajuste',
   PrestacaoDeContas: 'Prestação de Contas',
+  Aditamento:        'Aditamento',
+  Prorrogacao:       'Prorrogação',
+  Rescisao:          'Rescisão',
+  Renovacao:         'Renovação',
+  Substituicao:      'Substituição',
+  Outros:            'Outros',
   'Prestação de Contas': 'Prestação de Contas', // legado
 };
+
+// Finalidades sugeridas — os valores casam com o enum GoverningBodyPurpose do back.
+// O cliente ainda precisa confirmar a lista definitiva de finalidades.
+export const POSITION_PURPOSE_OPTIONS: { label: string; value: PositionPurpose }[] = [
+  { label: 'Ajuste',              value: 'Ajuste'            },
+  { label: 'Prestação de Contas', value: 'PrestacaoDeContas' },
+  { label: 'Aditamento',          value: 'Aditamento'        },
+  { label: 'Prorrogação',         value: 'Prorrogacao'       },
+  { label: 'Rescisão',            value: 'Rescisao'          },
+  { label: 'Renovação',           value: 'Renovacao'         },
+  { label: 'Substituição',        value: 'Substituicao'      },
+  { label: 'Outros',              value: 'Outros'            },
+];
 
 export const POSITION_STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
   Active:   { label: 'Ativo',    variant: 'success' },

@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } 
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { PositionsService } from '../positions.service';
-import { PositionPayload, GoverningBodyMember } from '../positions.model';
+import { PositionPayload, GoverningBodyMember, POSITION_PURPOSE_OPTIONS } from '../positions.model';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../shared/services/notification.service';
 
@@ -31,6 +31,8 @@ export class PositionsNewPage implements OnInit {
   readonly entities     = signal<EntityItem[]>([]);
   readonly collaborators = signal<CollaboratorItem[]>([]);
   readonly loadingLists = signal(true);
+
+  readonly purposeOptions = POSITION_PURPOSE_OPTIONS;
 
   isIntegrantesOpen = true;
 

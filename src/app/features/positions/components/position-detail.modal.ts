@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import {
   Position, PositionPayload, PositionStatus, GoverningBodyMember,
   POSITION_TYPE_LABELS, POSITION_PURPOSE_LABELS, POSITION_STATUS_CONFIG, POSITION_STATUS_OPTIONS,
+  POSITION_PURPOSE_OPTIONS,
 } from '../positions.model';
 import { NotificationService } from '../../../shared/services/notification.service';
 
@@ -40,8 +41,9 @@ export class PositionDetailModalComponent implements OnChanges, OnInit {
   readonly collaborators = signal<CollaboratorItem[]>([]);
   readonly loadingLists  = signal(false);
 
-  readonly statusConfig  = POSITION_STATUS_CONFIG;
-  readonly statusOptions = POSITION_STATUS_OPTIONS;
+  readonly statusConfig   = POSITION_STATUS_CONFIG;
+  readonly statusOptions  = POSITION_STATUS_OPTIONS;
+  readonly purposeOptions = POSITION_PURPOSE_OPTIONS;
 
   // Integrantes editáveis localmente. `membersDirty` evita que a resposta tardia
   // do getById (openDetail hidrata o modal em duas levas) apague linhas recém-editadas.
