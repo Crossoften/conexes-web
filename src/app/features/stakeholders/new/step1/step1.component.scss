@@ -71,6 +71,8 @@
 }
 
 .required { color: #EF4444; font-size: 13px; }
+// CF-06: marca campos de vínculo de rateio como não obrigatórios.
+.optional { color: var(--text-secondary, #9CA3AF); font-size: 12px; font-weight: 400; }
 
 .field-error {
   font-size: 11.5px;

@@ -188,6 +188,11 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
     standardApportionment: s1.apportionDefault?.trim() ?? '',
     accountId: s1.accountingAccount ? Number(s1.accountingAccount) : 0,
 
+    // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade)
+    rateioCostCenterId: s1.rateioCostCenter ? Number(s1.rateioCostCenter) : undefined,
+    rateioProjectId:    s1.rateioProject    ? Number(s1.rateioProject)    : undefined,
+    rateioActivityId:   s1.rateioActivity   ? Number(s1.rateioActivity)   : undefined,
+
     addresses: [...buildAddress(s1), ...buildBillingAddress(s1, type)],
     bankData:  buildBankData(s1),
 
@@ -249,5 +254,9 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
 
   // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).
   if (!payload.accountId) delete (payload as { accountId?: number }).accountId;
+  // CF-06: omitir vínculos de rateio quando vazios (opcionais — não travam o cadastro).
+  if (!payload.rateioCostCenterId) delete (payload as { rateioCostCenterId?: number }).rateioCostCenterId;
+  if (!payload.rateioProjectId)    delete (payload as { rateioProjectId?: number }).rateioProjectId;
+  if (!payload.rateioActivityId)   delete (payload as { rateioActivityId?: number }).rateioActivityId;
   return payload;
 }

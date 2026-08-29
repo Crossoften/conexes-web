@@ -4,6 +4,8 @@ import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { StakeholdersService } from '../../stakeholders.service';
+import { PurchasesService } from '../../../purchases/purchases.service';
+import { PurchaseRef } from '../../../purchases/purchases.model';
 import { environment } from '../../../../../environments/environment';
 import { StakeholderView, STAKEHOLDER_TYPE_LABELS, VIEW_TYPES } from '../../stakeholders.model';
 import type { FormSection } from '../stakeholder-new.page';
@@ -34,8 +36,9 @@ export class Step1Component implements OnInit {
   section     = input.required<FormSection>();
   sectionChange = output<FormSection>();
 
-  private svc  = inject(StakeholdersService);
-  private http = inject(HttpClient);
+  private svc     = inject(StakeholdersService);
+  private http    = inject(HttpClient);
+  private lookups = inject(PurchasesService);
 
   readonly sections = FORM_SECTIONS;
 
@@ -48,6 +51,11 @@ export class Step1Component implements OnInit {
   cnpjError    = signal<string | null>(null);
   accountPlans = signal<AccountPlanOption[]>([]);
 
+  // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade).
+  costCenters = signal<PurchaseRef[]>([]);
+  projects    = signal<PurchaseRef[]>([]);
+  activities  = signal<PurchaseRef[]>([]);
+
   ngOnInit(): void {
     // CF-06: conta contábil do rateio lista apenas contas ANALÍTICAS (árvore completa achatada).
     this.http
@@ -56,6 +64,11 @@ export class Step1Component implements OnInit {
         next: res => this.accountPlans.set(flattenAnalytic(res ?? [])),
         error: ()  => this.accountPlans.set([]),
       });
+
+    // CF-06: lookups reaproveitados de Compras (mesmo padrão de accounts-payable-new).
+    this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
+    this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
+    this.lookups.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
   }
 
   get f() { return (this.form() as any).controls; }

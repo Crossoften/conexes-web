@@ -140,6 +140,10 @@ export interface Stakeholder {
   legalNature:           string;
   standardApportionment: string;
   accountId:             number;
+  // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade)
+  rateioCostCenterId?:   number | null;
+  rateioProjectId?:      number | null;
+  rateioActivityId?:     number | null;
   addresses:             StakeholderAddress[];
   bankData:              StakeholderBankData[];
   riskClassification:    StakeholderRiskClassification;

@@ -51,6 +51,11 @@ export function buildStakeholderForm() {
     apportionDefault:  [''],
     accountingAccount: [''],
 
+    // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade)
+    rateioCostCenter:  [''],
+    rateioProject:     [''],
+    rateioActivity:    [''],
+
     // Sub-aba: Dados bancários
     differentHolder:      [false],
     holderPerson:         [''],

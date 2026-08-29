@@ -10,6 +10,8 @@ import {
   STAKEHOLDER_STATUS_CONFIG,
   STAKEHOLDER_TYPE_LABELS,
 } from '../stakeholders.model';
+import { PurchasesService } from '../../purchases/purchases.service';
+import { PurchaseRef } from '../../purchases/purchases.model';
 import { environment } from '../../../../environments/environment';
 
 type ModalTab = 'GERAIS' | 'RISCO' | 'OBSERVACOES';
@@ -32,8 +34,9 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   @Output() delete = new EventEmitter<number>();
   @Output() saved  = new EventEmitter<{ id: number; payload: Partial<StakeholderPayload> }>();
 
-  private readonly fb   = inject(NonNullableFormBuilder);
-  private readonly http = inject(HttpClient);
+  private readonly fb      = inject(NonNullableFormBuilder);
+  private readonly http    = inject(HttpClient);
+  private readonly lookups = inject(PurchasesService);
 
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'GERAIS';
@@ -42,6 +45,11 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   readonly statusConfig  = STAKEHOLDER_STATUS_CONFIG;
   readonly typeLabels    = STAKEHOLDER_TYPE_LABELS;
   readonly accountPlans  = signal<AccountPlanOption[]>([]);
+
+  // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade).
+  readonly costCenters   = signal<PurchaseRef[]>([]);
+  readonly projects      = signal<PurchaseRef[]>([]);
+  readonly activities    = signal<PurchaseRef[]>([]);
 
   /** 5.2: lista de serviços do fornecedor (add/remove múltiplos). */
   services: StakeholderService[] = [];
@@ -76,6 +84,11 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
         next: res => this.accountPlans.set(flattenTree(res ?? [])),
         error: ()  => this.accountPlans.set([]),
       });
+
+    // CF-06: lookups reaproveitados de Compras (Centro de custo / Projeto / Atividade).
+    this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
+    this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
+    this.lookups.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
   }
 
   /** Rótulo "código — título" da conta contábil vinculada (para exibição). */
@@ -83,6 +96,13 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     if (!id) return '—';
     const p = this.accountPlans().find(a => a.id === Number(id));
     return p ? `${p.code} — ${p.title}` : String(id);
+  }
+
+  /** CF-06: rótulo de um vínculo de rateio (Centro de custo / Projeto / Atividade). */
+  refLabel(list: PurchaseRef[], id: number | null | undefined): string {
+    if (!id) return '—';
+    const r = list.find(o => o.id === Number(id));
+    return r ? r.name : String(id);
   }
 
   /** CF-06: a conta contábil do rateio lista apenas contas ANALÍTICAS. */
@@ -122,6 +142,10 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     legalNature:           [''],
     standardApportionment: [''],
     accountId:             [0],
+    // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade)
+    rateioCostCenterId:    [0],
+    rateioProjectId:       [0],
+    rateioActivityId:      [0],
 
     // Endereço [0]
     addrZipCode:    [''],
@@ -236,6 +260,10 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
       legalNature:           s.legalNature,
       standardApportionment: s.standardApportionment,
       accountId:             s.accountId,
+      // CF-06: vínculos opcionais de rateio (0 = "Selecione").
+      rateioCostCenterId:    s.rateioCostCenterId ?? 0,
+      rateioProjectId:       s.rateioProjectId    ?? 0,
+      rateioActivityId:      s.rateioActivityId   ?? 0,
 
       addrZipCode:    addr?.zipCode    ?? '',
       addrStreet:     addr?.street     ?? '',
@@ -516,6 +544,10 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
       legalNature:           v.legalNature,
       standardApportionment: v.standardApportionment,
       accountId:             v.accountId,
+      // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade)
+      rateioCostCenterId:    v.rateioCostCenterId,
+      rateioProjectId:       v.rateioProjectId,
+      rateioActivityId:      v.rateioActivityId,
 
       addresses: this.buildAddresses(v),
 
@@ -540,6 +572,10 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
 
     // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).
     if (!payload.accountId) delete payload.accountId;
+    // CF-06: omitir vínculos de rateio vazios (opcionais — 0 = "Selecione").
+    if (!payload.rateioCostCenterId) delete payload.rateioCostCenterId;
+    if (!payload.rateioProjectId)    delete payload.rateioProjectId;
+    if (!payload.rateioActivityId)   delete payload.rateioActivityId;
 
     this.saved.emit({ id: this.stakeholder.id, payload });
   }

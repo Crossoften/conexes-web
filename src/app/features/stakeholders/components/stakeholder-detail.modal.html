@@ -121,6 +121,19 @@
                   <span class="info-label">Conta contábil</span>
                   <span class="info-value">{{ accountPlanLabel(stakeholder?.accountId) }}</span>
                 </div>
+                <!-- CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade) -->
+                <div class="info-item col-span-2">
+                  <span class="info-label">Centro de custo</span>
+                  <span class="info-value">{{ refLabel(costCenters(), stakeholder?.rateioCostCenterId) }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Projeto</span>
+                  <span class="info-value">{{ refLabel(projects(), stakeholder?.rateioProjectId) }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Atividade</span>
+                  <span class="info-value">{{ refLabel(activities(), stakeholder?.rateioActivityId) }}</span>
+                </div>
                 <div class="info-item col-span-4">
                   <span class="info-label">Dados bancários</span>
                   <span class="info-value">{{ bankSummary || '—' }}</span>
@@ -318,6 +331,43 @@
                       <option [ngValue]="0">Selecione</option>
                       @for (p of analyticAccountPlans(); track p.id) {
                         <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <!-- CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade) -->
+                <div class="field">
+                  <label class="field-label">Centro de custo (opcional)</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="rateioCostCenterId">
+                      <option [ngValue]="0">Selecione</option>
+                      @for (c of costCenters(); track c.id) {
+                        <option [ngValue]="c.id">{{ c.name }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Projeto (opcional)</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="rateioProjectId">
+                      <option [ngValue]="0">Selecione</option>
+                      @for (p of projects(); track p.id) {
+                        <option [ngValue]="p.id">{{ p.name }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">Atividade (opcional)</label>
+                  <div class="select-wrap">
+                    <select class="select" formControlName="rateioActivityId">
+                      <option [ngValue]="0">Selecione</option>
+                      @for (a of activities(); track a.id) {
+                        <option [ngValue]="a.id">{{ a.name }}</option>
                       }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

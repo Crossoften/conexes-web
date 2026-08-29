@@ -272,6 +272,46 @@
           </div>
         </div>
       </div>
+
+      <!-- CF-06: vínculos opcionais de rateio (não obrigatórios — reaproveitados no Contas a Pagar) -->
+      <div class="form-row form-row--3">
+        <div class="field">
+          <label class="field-label">Centro de custo <span class="optional">(opcional)</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="rateioCostCenter">
+              <option value="">Selecione</option>
+              @for (c of costCenters(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Projeto <span class="optional">(opcional)</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="rateioProject">
+              <option value="">Selecione</option>
+              @for (p of projects(); track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Atividade <span class="optional">(opcional)</span></label>
+          <div class="select-wrap">
+            <select class="select" formControlName="rateioActivity">
+              <option value="">Selecione</option>
+              @for (a of activities(); track a.id) {
+                <option [value]="a.id">{{ a.name }}</option>
+              }
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
   }
 
