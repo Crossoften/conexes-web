@@ -232,6 +232,7 @@
             <!-- Tab Edit: Dados do certificado digital (ENT-04) -->
             <div class="tab-content" *ngIf="activeTab === 'certificado'">
               <h3 class="section-subtitle">Dados do certificado digital</h3>
+              <p class="field-hint">Certificado digital A1. Formatos aceitos: <strong>.pfx</strong> ou <strong>.p12</strong> (até 8&nbsp;MB), acompanhado da senha. Usado na integração de consulta e emissão de notas fiscais.</p>
 
               <div class="form-row grid-cols-4">
                 <div class="form-group">
@@ -248,7 +249,7 @@
                 <div class="form-group">
                   <label>Alterar certificado digital</label>
                   <label class="dropzone" [class.dropzone--done]="certFileName()">
-                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.pfx,.p12" (change)="onCertSelected($event)" hidden>
+                    <input type="file" accept=".pfx,.p12,application/x-pkcs12" (change)="onCertSelected($event)" hidden>
                     @if (uploadingCert()) {
                       <span class="dropzone__text">Enviando...</span>
                     } @else if (certFileName()) {

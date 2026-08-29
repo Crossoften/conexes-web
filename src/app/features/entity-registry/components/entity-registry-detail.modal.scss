@@ -1,6 +1,14 @@
 // src/app/features/entity-registry/components/entity-registry-detail.modal.scss
 // Estilos unificados para os modos view e edit — mesma linguagem visual do ecossistema
 
+// MO-02: dica de formatos aceitos do certificado digital
+.field-hint {
+  margin: -4px 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, #6b7280);
+}
+
 // ── Overlay / Container ───────────────────────
 
 .modal-overlay {
