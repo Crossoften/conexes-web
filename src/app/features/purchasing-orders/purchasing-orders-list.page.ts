@@ -39,6 +39,12 @@ export class PurchasingOrdersListPage {
 
   view(item: OrderRow): void { this.store.openDetail(item.apiId); }
 
+  // CP-33: o modal já reflete o pedido atualizado (resposta do recebimento);
+  // aqui só recarregamos a lista para atualizar o status da linha.
+  onReceived(_orderId: number): void {
+    this.store.load();
+  }
+
   statusLabel(status: string): string {
     if (!status) return '—';
     return this.statusConfig[status]?.label ?? status;

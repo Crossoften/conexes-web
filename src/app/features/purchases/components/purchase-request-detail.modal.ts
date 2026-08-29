@@ -210,6 +210,26 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
     if (this.request) this.remove.emit(this.request.id);
   }
 
+  // CP-31: exporta a requisição para Excel estruturado (Blob gerado no back).
+  readonly exporting = signal(false);
+  onExportExcel(): void {
+    const id = this.request?.id;
+    if (!id || this.exporting()) return;
+    this.exporting.set(true);
+    this.svc.generateRequestExcel(id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `requisicao_${this.request?.referenceNumber ?? id}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false),
+    });
+  }
+
   // ── Accessors ───────────────────────────────────────────────────────────────
 
   get code(): string {

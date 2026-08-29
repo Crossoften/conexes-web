@@ -54,6 +54,41 @@
   &--neutral { background: #EEF0F5; color: #4B5563; }
 }
 
-@media (max-width: 640px) { .info-grid { grid-template-columns: 1fr; } }
+// CP-33: controle de recebimento
+.receive-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px;
+  .section-title { margin: 0; }
+}
+.btn-receive {
+  padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid #E9752E; background: #fff; color: #E9752E; transition: all .15s;
+  &:hover:not(:disabled) { background: #FFF3EA; }
+  &:disabled { opacity: .6; cursor: default; }
+  &--solid { background: #E9752E; color: #fff; &:hover:not(:disabled) { background: #d5651f; } }
+  &--ghost { border-color: var(--surface-border, #E5E7EB); color: var(--text-secondary, #6B7280); &:hover:not(:disabled) { background: #F3F4F6; } }
+}
+.receive-form { margin-top: 14px; border: 1px solid var(--surface-border, #EEF0F5); border-radius: 12px; padding: 14px; }
+.receive-error { background: #FEE2E2; color: #DC2626; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin-bottom: 12px; }
+.qty-input {
+  width: 96px; padding: 6px 8px; text-align: right; font-size: 13px;
+  border: 1px solid var(--surface-border, #E5E7EB); border-radius: 8px;
+  &:disabled { background: #F3F4F6; color: #9CA3AF; }
+}
+.receive-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.rf-group { display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 12px; color: var(--text-secondary, #6B7280); font-weight: 500; }
+}
+.rf-input { padding: 8px 10px; font-size: 13px; border: 1px solid var(--surface-border, #E5E7EB); border-radius: 8px; }
+.receive-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+.receipts-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.receipt-item { border: 1px solid var(--surface-border, #EEF0F5); border-radius: 10px; padding: 10px 12px; }
+.receipt-head { display: flex; align-items: center; gap: 10px; }
+.receipt-date { font-size: 13px; font-weight: 600; color: var(--text-primary, #111827); }
+.receipt-nf { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #EEF0F5; color: #4B5563; }
+.receipt-body { font-size: 12.5px; color: var(--text-secondary, #6B7280); margin-top: 3px; }
+.receipt-note { font-style: italic; }
+
+@media (max-width: 640px) { .info-grid { grid-template-columns: 1fr; } .receive-fields { grid-template-columns: 1fr; } }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

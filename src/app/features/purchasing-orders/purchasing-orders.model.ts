@@ -4,12 +4,13 @@
 
 /** Rótulos/variação de badge por status de pedido (fallback prettifica valores desconhecidos). */
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; variant: string }> = {
-  Pending:   { label: 'Pendente',  variant: 'warning' },
-  Open:      { label: 'Aberto',    variant: 'neutral' },
-  Sent:      { label: 'Enviado',   variant: 'neutral' },
-  Completed: { label: 'Concluído', variant: 'success' },
-  Received:  { label: 'Recebido',  variant: 'success' },
-  Cancelled: { label: 'Cancelado', variant: 'danger'  },
+  Pending:    { label: 'Pendente',      variant: 'warning' },
+  Open:       { label: 'Aberto',        variant: 'neutral' },
+  Sent:       { label: 'Enviado',       variant: 'neutral' },
+  InProgress: { label: 'Em recebimento', variant: 'warning' },  // CP-33: recebimento parcial
+  Completed:  { label: 'Concluído',     variant: 'success' },
+  Received:   { label: 'Recebido',      variant: 'success' },
+  Cancelled:  { label: 'Cancelado',     variant: 'danger'  },
 };
 
 export interface OrderRow {

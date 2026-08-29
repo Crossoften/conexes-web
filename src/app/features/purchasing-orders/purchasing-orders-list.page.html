@@ -77,6 +77,7 @@
     <app-order-detail-modal
       [order]="store.selected()"
       [loading]="store.detailLoading()"
+      (received)="onReceived($event)"
       (close)="store.closeDetail()">
     </app-order-detail-modal>
   }

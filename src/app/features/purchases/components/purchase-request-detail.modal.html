@@ -18,6 +18,9 @@
       </div>
 
       <div class="header-actions">
+        <button class="action-btn action-btn--orange" (click)="onExportExcel()" [disabled]="exporting()" title="Exportar para Excel">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 13v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2M10 3v9M6.5 8.5 10 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
           <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>

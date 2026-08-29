@@ -71,6 +71,26 @@ export class QuotationNewPage {
   readonly products         = signal<PurchaseRef[]>([]);
   readonly deliveryLocations = signal<PurchaseRef[]>([]);
 
+  // CP-15: fornecedores sugeridos (levados para a Cotação).
+  readonly suppliers           = signal<PurchaseRef[]>([]);
+  readonly selectedSupplierIds = signal<number[]>([]);
+  readonly selectedSuppliers = computed(() =>
+    this.selectedSupplierIds().map(id => this.suppliers().find(s => s.id === id) ?? { id, name: `#${id}` }),
+  );
+  readonly availableSuppliers = computed(() =>
+    this.suppliers().filter(s => s.id != null && !this.selectedSupplierIds().includes(s.id)),
+  );
+
+  addSupplier(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const id = Number(el.value);
+    if (id && !this.selectedSupplierIds().includes(id)) this.selectedSupplierIds.update(l => [...l, id]);
+    el.value = '';
+  }
+  removeSupplier(id: number): void {
+    this.selectedSupplierIds.update(l => l.filter(x => x !== id));
+  }
+
   readonly form = this.fb.group({
     requesterId:           ['', Validators.required],
     area:                  [''],
@@ -146,6 +166,8 @@ export class QuotationNewPage {
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
     this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v), error: () => {} });
     this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
+    // CP-15: fornecedores tipo Supplier para o seletor de sugeridos.
+    this.svc.getSuppliersOnlyLookup().subscribe({ next: v => this.suppliers.set(v), error: () => {} });
     this.svc.getContracts({ take: 500 }).subscribe({
       next: res => this.contracts.set(res.data.map(c => ({ id: c.id, name: c.title }))),
       error: () => {},
@@ -188,6 +210,11 @@ export class QuotationNewPage {
     // CP-20: reflete a cascata ao editar (Centro de custo → Projeto).
     this.selectedCC.set(r.costCenterId ?? null);
     this.selectedProj.set(r.projectId ?? null);
+
+    // CP-15: carrega os fornecedores sugeridos já vinculados.
+    this.selectedSupplierIds.set(
+      (r.suggestedSuppliers ?? []).map(s => s.supplierId).filter((x): x is number => x != null),
+    );
 
     this.items.clear();
     const list = r.items?.length ? r.items : [];
@@ -296,6 +323,7 @@ export class QuotationNewPage {
     this.form.reset();
     this.items.clear();
     this.items.push(this.newItem());
+    this.selectedSupplierIds.set([]);  // CP-15
     this.activeTab = 'DADOS';
     // §10.4: reaplica a data automática após limpar o formulário.
     if (this.editId == null) this.form.patchValue({ requestDate: this.todayInput() });
@@ -424,6 +452,8 @@ export class QuotationNewPage {
       supplierCount:         this.num(v.supplierCount),
       contractId:            this.num(v.contractId),
       deliveryLocationId:    this.num(v.deliveryLocationId),
+      // CP-15: fornecedores sugeridos vinculados à requisição.
+      supplierIds:           this.selectedSupplierIds(),
       items,
     };
   }

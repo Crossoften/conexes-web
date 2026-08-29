@@ -32,6 +32,8 @@ import {
   AwardPayload,
   PurchaseOrder,
   PurchaseOrderListParams,
+  PurchaseOrderReceipt,
+  CreateReceiptPayload,
   ApprovalLimit,
 } from './purchases.model';
 
@@ -232,6 +234,17 @@ export class PurchasesService {
     return this.lookup('/v1/stakeholders', 'name');
   }
 
+  /** CP-15: fornecedores (stakeholders tipo Supplier) sugeridos para a requisição/cotação. */
+  getSuppliersOnlyLookup(): Observable<PurchaseRef[]> {
+    const params = new HttpParams().set('take', '500').set('type', 'Supplier');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/stakeholders`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows.map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['tradeName'] ?? r['id']) }));
+      }));
+  }
+
   /** FE-4: alçadas de COMPRAS — para filtrar aprovadores por nível/faixa. */
   getApprovalLimits(): Observable<ApprovalLimit[]> {
     // type=COMPRAS: as alçadas financeiras (FINANCEIRO) não valem para aprovação de requisição.
@@ -371,6 +384,16 @@ export class PurchasesService {
 
   getOrderById(id: number): Observable<PurchaseOrder> {
     return this.http.get<PurchaseOrder>(`${this.base}/orders/${id}`);
+  }
+
+  // CP-33: registrar recebimento (total/parcial) do pedido — devolve o pedido atualizado.
+  createOrderReceipt(orderId: number, payload: CreateReceiptPayload): Observable<PurchaseOrder> {
+    return this.http.post<PurchaseOrder>(`${this.base}/orders/${orderId}/receipts`, payload);
+  }
+
+  // CP-33: listar os recebimentos já registrados de um pedido.
+  getOrderReceipts(orderId: number): Observable<PurchaseOrderReceipt[]> {
+    return this.http.get<PurchaseOrderReceipt[]>(`${this.base}/orders/${orderId}/receipts`);
   }
 
   // ── Contratos ─────────────────────────────────────────────────────────────────

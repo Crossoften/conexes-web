@@ -93,6 +93,14 @@ export interface PurchaseRequestItem {
   product?: PurchaseRef | null;
 }
 
+// CP-15: fornecedor sugerido vinculado à requisição (alimenta a Cotação).
+export interface PurchaseSuggestedSupplier {
+  id?: number;
+  purchaseRequestId?: number;
+  supplierId: number;
+  supplier?: PurchaseRef | null;
+}
+
 // ── Requisição de compra (resposta inferida) ──────────────────────────────────
 
 export interface PurchaseRequest {
@@ -136,6 +144,7 @@ export interface PurchaseRequest {
   deliveryLocation?: PurchaseDeliveryLocation | null;
   contract?: PurchaseRef | null;
   items?: PurchaseRequestItem[];
+  suggestedSuppliers?: PurchaseSuggestedSupplier[];  // CP-15
   createdAt?: string;
   updatedAt?: string;
 }
@@ -273,6 +282,7 @@ export interface CreatePurchaseRequestPayload {
   subProjectId?: number;
   activity?: string;
   supplierCount?: number;
+  supplierIds?: number[];  // CP-15: fornecedores sugeridos vinculados à requisição
   newDeliveryLocation?: DeliveryLocationPayload;
   items: PurchaseRequestItemPayload[];
 }
@@ -391,6 +401,30 @@ export interface AwardPayload {
 
 // ── Pedido de Compra (Etapas 5/6 — /orders) ───────────────────────────────────
 
+// CP-33: item do pedido de compra (traz a quantidade já recebida).
+export interface PurchaseOrderItem {
+  id?:                 number;
+  itemId?:             number | null;
+  name:                string;
+  quantity:            number;
+  unit?:               string | null;
+  unitValue?:          number | null;
+  totalValue?:         number | null;
+  receivedQty?:        number | null;
+  estimatedUnitValue?: number | null;
+  finalUnitValue?:     number | null;
+}
+
+// CP-33: recebimento (total/parcial) registrado para um pedido de compra.
+export interface PurchaseOrderReceipt {
+  id:             number;
+  orderId?:       number;
+  receivedAt?:    string;
+  invoiceNumber?: string | null;
+  note?:          string | null;
+  items?:         { orderItemId: number; quantity: number }[];
+}
+
 export interface PurchaseOrder {
   id:                 number;
   purchaseRequestId?: number;
@@ -399,8 +433,21 @@ export interface PurchaseOrder {
   number?:            string | null;
   totalValue?:        number | null;
   status?:            string | null;
-  items?:             PurchaseRequestItem[];
+  items?:             PurchaseOrderItem[];
+  receipts?:          PurchaseOrderReceipt[];  // CP-33
   createdAt?:         string;
+}
+
+// CP-33: payload do registro de recebimento.
+export interface ReceiveItemPayload {
+  orderItemId: number;
+  quantity:    number;
+}
+
+export interface CreateReceiptPayload {
+  invoiceNumber?: string;
+  note?:          string;
+  items:          ReceiveItemPayload[];
 }
 
 export interface PurchaseOrderListParams {
