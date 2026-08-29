@@ -1,8 +1,6 @@
 // src/app/features/agencies/agencies.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Location } from '@angular/common';
-import { Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Page } from '../../shared/models/list-page.model';
@@ -28,8 +26,6 @@ export interface GrantorCnpjLookup {
 @Injectable({ providedIn: 'root' })
 export class AgenciesService {
   private http = inject(HttpClient);
-  private router = inject(Router);
-  private location = inject(Location);
   private base = `${environment.apiUrl}/v1/grantors`;
 
   /**
@@ -38,10 +34,10 @@ export class AgenciesService {
    * (mesma origem e estratégia de rota — hash), dispensando cadastro manual.
    */
   buildTransparencyUrl(id: number): string {
-    const path = this.router.serializeUrl(this.router.createUrlTree(['/transparencia/orgao', id]));
-    // prepareExternalUrl aplica o base href e a estratégia de rota (hash → '#/…').
-    const external = this.location.prepareExternalUrl(path);
-    return new URL(external, `${window.location.origin}/`).href;
+    // CV-02: deriva a base da URL atual do app (…/conex3s/), robusto ao base-href do deploy.
+    // O app usa hash routing, então tudo antes do '#' é a base pública servida.
+    const base = window.location.href.split('#')[0].replace(/[?#].*$/, '');
+    return `${base}#/transparencia/orgao/${id}`;
   }
 
   /** ORG-CNPJ: reusa a consulta de CNPJ da Receita já disponível em /stakeholders/cnpj. */
