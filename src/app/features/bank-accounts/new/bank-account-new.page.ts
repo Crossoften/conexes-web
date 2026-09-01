@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { BankAccountsService } from '../bank-accounts.service';
 import { BankAccountsStore } from '../bank-accounts.store';
-import { BankAccountPayload, Bank } from '../bank-accounts.model';
+import { BankAccountPayload, Bank, AccountPlanOption } from '../bank-accounts.model';
 import { maskCnpj, maskMoney, maskPhone, onlyDigits } from '../../../shared/utils/format';
 
 type BankAccountTab = 'PARAMS' | 'BOLETO';
@@ -34,6 +34,8 @@ export class BankAccountNewPage implements OnInit {
   readonly entities     = signal<Entity[]>([]);
   readonly banks        = signal<Bank[]>([]);
   readonly loadingLists = signal(true);
+  // CB-fix: contas analíticas do Plano de Contas para o select "Conta contábil".
+  readonly accountPlans = signal<AccountPlanOption[]>([]);
 
   // BCO-05: typeahead de banco (busca por código ou nome; lista padronizada dos 71 bancos BC).
   readonly bankQuery = signal('');
@@ -109,6 +111,12 @@ export class BankAccountNewPage implements OnInit {
         this.loadingLists.set(false);
       },
       error: () => this.loadingLists.set(false),
+    });
+
+    // CB-fix: contas analíticas do Plano de Contas para o select "Conta contábil".
+    this.svc.getAnalyticAccounts().subscribe({
+      next: accounts => this.accountPlans.set(accounts),
+      error: () => this.accountPlans.set([]),
     });
   }
 

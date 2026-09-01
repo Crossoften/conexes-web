@@ -3,15 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { BankAccount, BankAccountPayload, BankAccountsListResponse, Bank, BankPayload } from './bank-accounts.model';
+import { BankAccount, BankAccountPayload, BankAccountsListResponse, Bank, BankPayload, AccountPlanOption } from './bank-accounts.model';
 import { Entity } from './new/bank-account-new.page';
 
 @Injectable({ providedIn: 'root' })
 export class BankAccountsService {
   private http         = inject(HttpClient);
-  private base         = `${environment.apiUrl}/v1/institutional/bank-accounts`;
-  private banksBase    = `${environment.apiUrl}/v1/institutional/banks`;
-  private entitiesBase = `${environment.apiUrl}/v1/institutional/entities`;
+  private base           = `${environment.apiUrl}/v1/institutional/bank-accounts`;
+  private banksBase      = `${environment.apiUrl}/v1/institutional/banks`;
+  private entitiesBase   = `${environment.apiUrl}/v1/institutional/entities`;
+  private accountPlanBase = `${environment.apiUrl}/v1/account-plan`;
 
   // ── Contas bancárias ──────────────────────────────────────────────────────
 
@@ -74,4 +75,26 @@ export class BankAccountsService {
   getEntities(): Observable<Entity[]> {
     return this.http.get<Entity[]>(this.entitiesBase);
   }
+
+  // ── Plano de contas (para popular select "Conta contábil") ────────────────
+
+  /** CB-fix: contas ANALÍTICAS do plano de contas (árvore achatada), como no rateio do contato. */
+  getAnalyticAccounts(): Observable<AccountPlanOption[]> {
+    return this.http
+      .get<AccountPlanOption[]>(`${this.accountPlanBase}/tree`)
+      .pipe(map(res => flattenAnalytic(res ?? [])));
+  }
+}
+
+/** CB-fix: achata a árvore do plano de contas mantendo apenas as contas analíticas. */
+function flattenAnalytic(nodes: AccountPlanOption[]): AccountPlanOption[] {
+  const out: AccountPlanOption[] = [];
+  const walk = (list: AccountPlanOption[]) => {
+    for (const n of list) {
+      if (n.accountType === 'Analitica') out.push({ id: n.id, code: n.code, title: n.title, accountType: n.accountType });
+      if (n.children?.length) walk(n.children);
+    }
+  };
+  walk(nodes);
+  return out;
 }

@@ -51,6 +51,15 @@ export interface Bank {
   type?:  string;
 }
 
+// CB-fix: opção do Plano de Contas usada no select "Conta contábil" (só contas analíticas).
+export interface AccountPlanOption {
+  id:           number;
+  code:         string;
+  title:        string;
+  accountType?: string | null;
+  children?:    AccountPlanOption[];
+}
+
 // ── Payload de criação ────────────────────────────────────────────────────────
 
 export interface BankAccountPayload {

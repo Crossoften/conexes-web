@@ -9,6 +9,7 @@ import {
   BANK_ACCOUNT_STATUS_CONFIG,
   BANK_ACCOUNT_STATUS_OPTIONS,
   BankAccountPayload,
+  AccountPlanOption,
 } from '../bank-accounts.model';
 import { BankAccountsService } from '../bank-accounts.service';
 import { Entity } from '../new/bank-account-new.page';
@@ -42,6 +43,8 @@ export class BankAccountDetailModalComponent implements OnInit, OnChanges {
   readonly statusOptions  = BANK_ACCOUNT_STATUS_OPTIONS;
 
   readonly entities = signal<Entity[]>([]);
+  // CB-fix: contas analíticas do Plano de Contas para o select "Conta contábil".
+  readonly accountPlans = signal<AccountPlanOption[]>([]);
 
   form: FormGroup;
 
@@ -53,6 +56,12 @@ export class BankAccountDetailModalComponent implements OnInit, OnChanges {
     this.svc.getEntities().subscribe({
       next: entities => this.entities.set(entities),
       error: () => {},
+    });
+
+    // CB-fix: contas analíticas do Plano de Contas para o select "Conta contábil".
+    this.svc.getAnalyticAccounts().subscribe({
+      next: accounts => this.accountPlans.set(accounts),
+      error: () => this.accountPlans.set([]),
     });
   }
 

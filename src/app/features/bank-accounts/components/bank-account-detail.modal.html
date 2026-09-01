@@ -304,9 +304,18 @@
                   <input type="email" class="form-control" formControlName="emailContato"
                     [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
                 </div>
+                <!-- CB-fix: Conta contábil agora é um select das contas analíticas do Plano de Contas -->
                 <div class="form-group">
                   <label class="form-label">Conta contábil</label>
-                  <input type="text" class="form-control" formControlName="contaContabil">
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="contaContabil">
+                      <option value="">Selecione</option>
+                      @for (acc of accountPlans(); track acc.id) {
+                        <option [value]="acc.code">{{ acc.code }} — {{ acc.title }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
                 </div>
               </div>
               <div class="form-row grid-cols-2">

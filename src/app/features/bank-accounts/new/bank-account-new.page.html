@@ -147,9 +147,18 @@
 
           <!-- CB-02: removido "Contato" (redundante com telefone/e-mail) e a 2ª "Conta contábil" duplicada -->
           <div class="form-row grid-cols-4">
+            <!-- CB-fix: Conta contábil agora é um select das contas analíticas do Plano de Contas -->
             <div class="form-group">
               <label>Conta contábil</label>
-              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="contaContabil1">
+              <div class="select-wrap">
+                <select class="form-control" formControlName="contaContabil1">
+                  <option value="">Selecione</option>
+                  @for (acc of accountPlans(); track acc.id) {
+                    <option [value]="acc.code">{{ acc.code }} — {{ acc.title }}</option>
+                  }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
             <!-- CB-03: tipo do recurso como Público/Privado -->
             <div class="form-group">
