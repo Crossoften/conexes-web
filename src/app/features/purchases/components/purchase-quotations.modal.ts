@@ -67,7 +67,10 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     this.resetForm();
     if (!id) return;
     this.load();
-    if (this.canRegister && this.suppliers().length === 0) {
+    // CP-fix (Bug 1): carrega o lookup de fornecedores em qualquer etapa (não só ao
+    // registrar). Assim o fallback de nome funciona também na Etapa 4, mesmo que alguma
+    // cotação venha sem o supplier no include (ex.: fornecedor removido do cadastro).
+    if (this.suppliers().length === 0) {
       this.svc.getSuppliersLookup().subscribe({ next: s => this.suppliers.set(s), error: () => {} });
     }
   }
@@ -125,9 +128,22 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
 
   onClose(): void { this.close.emit(); }
 
-  /** Mostra aprovar/reprovar só para propostas ainda em aberto. */
+  /** CP-15: placeholder do fornecedor sugerido, ainda sem proposta preenchida. */
+  isAwaitingProposal(q: PurchaseQuotation): boolean {
+    return q.status === 'Pending' && (q.unitValue ?? 0) === 0 && (q.totalValue ?? 0) === 0;
+  }
+
+  /** Mostra aprovar/reprovar só para propostas ainda em aberto e já preenchidas. */
   isPending(q: PurchaseQuotation): boolean {
-    return q.status === 'Pending' || q.status === 'Sent';
+    return (q.status === 'Pending' || q.status === 'Sent') && !this.isAwaitingProposal(q);
+  }
+
+  /** Rótulo por linha (trata o placeholder do fornecedor sugerido). */
+  rowStatusLabel(q: PurchaseQuotation): string {
+    return this.isAwaitingProposal(q) ? 'Aguardando proposta' : this.statusLabel(q.status);
+  }
+  rowStatusVariant(q: PurchaseQuotation): string {
+    return this.isAwaitingProposal(q) ? 'neutral' : this.statusVariant(q.status);
   }
 
   supplierName(q: PurchaseQuotation): string {

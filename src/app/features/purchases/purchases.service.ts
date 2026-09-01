@@ -245,6 +245,25 @@ export class PurchasesService {
       }));
   }
 
+  /**
+   * CP-fix: contratos de repasses e parcerias (/v1/partnerships) para o select
+   * "Contrato vinculado" da requisição. Rótulo = nº do termo + título do contrato.
+   * O id selecionado é salvo em `partnershipId` (FK de Partnership na requisição).
+   */
+  getPartnershipsLookup(): Observable<PurchaseRef[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/partnerships`, { params })
+      .pipe(map(res => {
+        const rows = Array.isArray(res) ? res : res.data ?? [];
+        return rows.map(r => {
+          const code = (r['contractCode'] as string | null) ?? '';
+          const label = (r['contractName'] as string | null) ?? (r['client'] as string | null) ?? (r['title'] as string | null) ?? `#${r['id']}`;
+          return { id: Number(r['id']), name: code ? `${code} — ${label}` : String(label) };
+        });
+      }));
+  }
+
   /** FE-4: alçadas de COMPRAS — para filtrar aprovadores por nível/faixa. */
   getApprovalLimits(): Observable<ApprovalLimit[]> {
     // type=COMPRAS: as alçadas financeiras (FINANCEIRO) não valem para aprovação de requisição.

@@ -71,9 +71,12 @@ export class PurchaseAwardModalComponent implements OnChanges {
 
   setMode(mode: AwardMode): void { this.mode = mode; }
 
-  /** Propostas elegíveis para adjudicação (exclui as reprovadas). */
+  /** Propostas elegíveis para adjudicação (exclui reprovadas e placeholders sem proposta). */
   eligible(): PurchaseQuotation[] {
-    return this.quotations().filter(q => q.status !== 'Rejected');
+    return this.quotations().filter(
+      q => q.status !== 'Rejected' &&
+        !(q.status === 'Pending' && (q.unitValue ?? 0) === 0 && (q.totalValue ?? 0) === 0),
+    );
   }
 
   /** Itens com id numérico garantido (base do modo by_item). */

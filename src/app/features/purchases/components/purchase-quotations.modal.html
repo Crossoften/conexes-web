@@ -112,7 +112,7 @@
                   <td class="right">{{ q.discount != null ? fmtCurrency(q.discount) : '—' }}</td>
                   <td>{{ q.deliveryTime || '—' }}</td>
                   <td>{{ q.paymentConditions || '—' }}</td>
-                  <td><span class="q-badge q-badge--{{ statusVariant(q.status) }}">{{ statusLabel(q.status) }}</span></td>
+                  <td><span class="q-badge q-badge--{{ rowStatusVariant(q) }}">{{ rowStatusLabel(q) }}</span></td>
                   @if (canApproveQuote) {
                     <td class="right">
                       @if (isPending(q)) {
