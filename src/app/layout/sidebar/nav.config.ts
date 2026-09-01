@@ -57,7 +57,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'contracts',
     children: [
       { label: 'Cadastrar órgãos',       route: '/agencies' },
-      { label: 'Plano de trabalho',      route: '/work-plans', disabled: true, badge: 'Em breve' },
+      { label: 'Plano de trabalho',      route: '/work-plans' },
       { label: 'Repasses e informações', route: '/contract-transfers' },
     ],
   },
@@ -94,12 +94,10 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    // PR-01: módulo bloqueado com "Em breve" até o cliente enviar as orientações.
+    // Prestação de contas liberado nesta versão (mantém-se apenas Configurações gerais bloqueado).
     label: 'Prestação de contas',
     route: '/accountability',
     icon:  'accountability',
-    disabled: true,
-    badge: 'Em breve',
   },
   // IT-01/HI-05: o módulo individual "Integrações" foi ELIMINADO do menu (diretriz confirmada no
   // Dossiê Consolidado 24/08). Cada função migrou para o módulo dono do processo (Compras/Financeiro);
