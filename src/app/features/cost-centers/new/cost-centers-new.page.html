@@ -97,7 +97,8 @@
                     {{ loadingLists() ? 'Carregando...' : 'Selecione' }}
                   </option>
                   @for (entity of entities(); track entity.id) {
-                    <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
+                    <!-- CC-fix: o value é o nome legível (coluna payingSource é String) — assim o campo persiste, recarrega e é exibido corretamente na visualização. -->
+                    <option [value]="entity.tradeName || entity.legalName">{{ entity.tradeName || entity.legalName }}</option>
                   }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

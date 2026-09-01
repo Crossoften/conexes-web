@@ -107,13 +107,19 @@ export const CostCentersStore = signalStore(
       const projectIds  = new Set(all.filter(i => !isCC(i)).map(p => p.id));
       const byCostCenter    = new Map<number, CostCenter[]>();
       const byParentProject = new Map<number, CostCenter[]>();
+      // CC-fix: só é raiz quem NÃO tem pai presente nesta página. Guardamos os ids
+      // encaixados sob algum pai para não recuperá-los como "órfãos" quando o pai
+      // estiver apenas recolhido — era esse o bug do filho aparecendo solto no topo.
+      const childIds = new Set<number>();
 
       for (const i of all) {
         if (isCC(i)) continue;
         if (i.parentProjectId != null && projectIds.has(i.parentProjectId)) {
           const arr = byParentProject.get(i.parentProjectId) ?? []; arr.push(i); byParentProject.set(i.parentProjectId, arr);
+          childIds.add(i.id);
         } else if (i.costCenterId != null && ccIds.has(i.costCenterId)) {
           const arr = byCostCenter.get(i.costCenterId) ?? []; arr.push(i); byCostCenter.set(i.costCenterId, arr);
+          childIds.add(i.id);
         }
       }
 
@@ -121,18 +127,18 @@ export const CostCentersStore = signalStore(
         isCC(n) ? (byCostCenter.get(n.id) ?? []) : (byParentProject.get(n.id) ?? []);
 
       const out: { node: CostCenter; depth: number; hasChildren: boolean; key: string }[] = [];
-      const placed = new Set<number>();
       const exp = expanded();
       const walk = (n: CostCenter, depth: number) => {
-        placed.add(n.id);
         const kids = childrenOf(n);
         out.push({ node: n, depth, hasChildren: kids.length > 0, key: key(n) });
         if (kids.length && exp.has(key(n))) for (const k of kids) walk(k, depth + 1);
       };
 
+      // CC-fix: raízes = Centros de Custo + não-CC sem pai na página (órfãos reais).
+      // Os filhos de um pai presente só entram via walk quando o pai está expandido,
+      // nunca como linha solta no topo.
       for (const r of all.filter(isCC)) walk(r, 0);
-      // projetos órfãos (pai fora da página) entram no topo
-      for (const i of all) { if (!isCC(i) && !placed.has(i.id)) walk(i, 0); }
+      for (const i of all) { if (!isCC(i) && !childIds.has(i.id)) walk(i, 0); }
       return out;
     });
 
