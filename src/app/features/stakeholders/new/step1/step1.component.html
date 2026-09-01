@@ -146,7 +146,8 @@
     <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
     @if (isClient) {
       <h4 class="subsection-title" style="margin:16px 0 8px;">Endereço de faturamento</h4>
-      <div class="form-row form-row--address">
+      <!-- CF-fix: 4 campos (sem Tipo/Subtipo) — grade própria p/ Endereço largo e Nro estreito -->
+      <div class="form-row form-row--address-billing">
         <div class="field">
           <label class="field-label">CEP</label>
           <input class="input" type="text" placeholder="00000-000" formControlName="billingZipCode">
