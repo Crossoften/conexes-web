@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { UsersService } from '../../users.service';
-import { PermissionProfile, EntityLite } from '../../users.model';
+import { PermissionProfile, EntityLite, PositionOption } from '../../users.model';
 
 @Component({
   selector: 'app-user-new',
@@ -23,6 +23,7 @@ export class UserNewPage implements OnInit {
   readonly profiles        = signal<PermissionProfile[]>([]);
   readonly profilesLoading = signal(false);
   readonly entities        = signal<EntityLite[]>([]);
+  readonly positions       = signal<PositionOption[]>([]);   // US-fix: catálogo de cargos
 
   entityLabel(e: EntityLite): string {
     return e.tradeName || e.legalName || (e.cnpj ? `CNPJ ${e.cnpj}` : `Entidade #${e.id}`);
@@ -49,6 +50,7 @@ export class UserNewPage implements OnInit {
   ngOnInit(): void {
     this.loadProfiles();
     this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
+    this.svc.getPositions().subscribe({ next: p => this.positions.set(p), error: () => {} });
   }
 
   private loadProfiles(): void {

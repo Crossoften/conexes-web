@@ -7,7 +7,7 @@ import { map } from 'rxjs';
 import {
   User, UserPayload, UserUpdatePayload, UserFilters,
   PermissionProfile, PermissionProfilePayload, PermissionProfileUpdatePayload, PermissionProfileFilters,
-  PaginatedResponse, EntityLite, ModulePermission, DEFAULT_MODULES,
+  PaginatedResponse, EntityLite, PositionOption, ModulePermission, DEFAULT_MODULES,
 } from './users.model';
 
 /** Linha em branco da matriz de permissões. */
@@ -27,6 +27,13 @@ export class UsersService {
   getEntities(): Observable<EntityLite[]> {
     return this.http
       .get<EntityLite[] | { data?: EntityLite[] }>(`${environment.apiUrl}/v1/institutional/entities`)
+      .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
+  }
+
+  /** US-fix: catálogo de cargos (GET /v1/positions) para o select de Cargo. Envelope tolerante (data/array). */
+  getPositions(): Observable<PositionOption[]> {
+    return this.http
+      .get<PositionOption[] | { data?: PositionOption[] }>(`${environment.apiUrl}/v1/positions`, { params: { take: 999 } })
       .pipe(map(res => (Array.isArray(res) ? res : res?.data ?? [])));
   }
 

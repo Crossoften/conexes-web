@@ -87,6 +87,12 @@ export interface EntityLite {
   city?:      string;
 }
 
+/** US-fix: item de cargo (/v1/positions) para o select de Cargo do usuário. */
+export interface PositionOption {
+  id:   number;
+  name: string;
+}
+
 export interface UserFilters {
   skip?:   number;
   take?:   number;

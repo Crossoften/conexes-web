@@ -62,6 +62,11 @@ export class UsersListPage implements OnInit {
     this.store.loadUsers();
   }
 
+  // US-fix: a coluna "Módulos" conta módulos distintos, não linhas de permissão (uma por submenu).
+  moduleCount(item: PermissionProfile): number {
+    return new Set((item.permissions ?? []).map(p => p.module)).size;
+  }
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   onUserSearch(value: string): void {

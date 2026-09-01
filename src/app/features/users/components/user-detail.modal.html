@@ -176,7 +176,16 @@
                 </div>
                 <div class="field">
                   <label class="field-label">Cargo</label>
-                  <input class="input" type="text" formControlName="jobTitle">
+                  <div class="select-wrap">
+                    <select class="select" formControlName="jobTitle">
+                      <option value="">Selecione um cargo</option>
+                      @if (customJobTitle) { <option [value]="customJobTitle">{{ customJobTitle }}</option> }
+                      @for (pos of positions(); track pos.id) {
+                        <option [value]="pos.name">{{ pos.name }}</option>
+                      }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
                 </div>
                 <div class="field">
                   <label class="field-label">Área</label>

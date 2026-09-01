@@ -6,7 +6,7 @@ import {
   User, UserUpdatePayload,
   ModulePermission, DEFAULT_MODULES,
   USER_STATUS_CONFIG, USER_ROLE_LABELS,
-  PermissionProfile, EntityLite,
+  PermissionProfile, EntityLite, PositionOption,
 } from '../users.model';
 import { UsersService } from '../users.service';
 
@@ -36,11 +36,18 @@ export class UserDetailModalComponent implements OnInit {
   readonly statusConfig = USER_STATUS_CONFIG;
   readonly roleLabels   = USER_ROLE_LABELS;
 
-  readonly profiles = signal<PermissionProfile[]>([]);
-  readonly entities = signal<EntityLite[]>([]);
+  readonly profiles  = signal<PermissionProfile[]>([]);
+  readonly entities  = signal<EntityLite[]>([]);
+  readonly positions = signal<PositionOption[]>([]);   // US-fix: catálogo de cargos
 
   entityLabel(e: EntityLite): string {
     return e.tradeName || e.legalName || (e.cnpj ? `CNPJ ${e.cnpj}` : `Entidade #${e.id}`);
+  }
+
+  // US-fix: mantém no select um cargo antigo (texto livre) que não esteja no catálogo.
+  get customJobTitle(): string | null {
+    const v = this.form.get('jobTitle')?.value ?? '';
+    return v && !this.positions().some(p => p.name === v) ? v : null;
   }
 
   readonly roleOptions = [
@@ -86,6 +93,7 @@ export class UserDetailModalComponent implements OnInit {
   constructor() {
     this.svc.getProfiles({ take: 100 }).subscribe({ next: r => this.profiles.set(r.data ?? (r as any)), error: () => {} });
     this.svc.getEntities().subscribe({ next: e => this.entities.set(e), error: () => {} });
+    this.svc.getPositions().subscribe({ next: p => this.positions.set(p), error: () => {} });
     this.svc.getModulesCatalog().subscribe({
       // BK-2: se o usuário já editou a matriz, não reaplica (não apaga marcações).
       next: c => { if (c.length) { this.catalogBase = c; const u = this.user(); if (u && !this.matrixDirty) this.applyModules(u); } },
