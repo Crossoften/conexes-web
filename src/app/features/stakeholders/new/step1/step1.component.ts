@@ -17,8 +17,7 @@ export const FORM_SECTIONS: { key: FormSection; label: string }[] = [
   { key: 'rateio',      label: 'Dados de rateio' },
   { key: 'bancario',    label: 'Dados bancários' },
   { key: 'contato',     label: 'Dados de contato' },
-  // FORN-fix: aba de impostos/retenções removida do cadastro de fornecedor
-  // (gerida só na tela independente de Tributos e retenções).
+  { key: 'impostos',    label: 'Cadastro de impostos e retenções' },
   { key: 'privacidade', label: 'Privacidade e segurança da informação' },
   { key: 'compliance',  label: 'Política de compliance' },
 ];

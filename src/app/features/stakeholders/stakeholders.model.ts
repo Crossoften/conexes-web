@@ -148,9 +148,7 @@ export interface Stakeholder {
   bankData:              StakeholderBankData[];
   riskClassification:    StakeholderRiskClassification;
   contacts:              StakeholderContact[];
-  // FORN-fix: dados fiscais são geridos só na tela de Tributos e retenções — o
-  // cadastro de fornecedor não escreve mais este bloco (opcional na resposta).
-  taxesAndServices?:     StakeholderTaxesAndServices;
+  taxesAndServices:      StakeholderTaxesAndServices;
   createdAt:             string;
   updatedAt:             string;
 }

@@ -212,15 +212,6 @@
 .col-span-2 { grid-column: span 2; }
 .col-span-4 { grid-column: span 4; }
 
-// FORN-fix: subtítulo de seção dentro do info-grid (ex.: "Dados bancários" no modo view).
-.info-section-title {
-  grid-column: 1 / -1;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary, #111827);
-  margin-top: 8px;
-}
-
 .info-item {
   display: flex;
   flex-direction: column;

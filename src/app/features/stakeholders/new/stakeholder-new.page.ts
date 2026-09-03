@@ -13,9 +13,8 @@ import { NotificationService } from '../../../shared/services/notification.servi
 import { StakeholderView } from '../stakeholders.model';
 
 /** Seções do formulário (barra única de abas, layout aprovado). */
-// FORN-fix: 'impostos' removido — o cadastro de fornecedor não gere mais dados fiscais.
 export type FormSection =
-  | 'rateio' | 'bancario' | 'contato' | 'privacidade' | 'compliance';
+  | 'rateio' | 'bancario' | 'contato' | 'impostos' | 'privacidade' | 'compliance';
 
 @Component({
   selector: 'app-stakeholder-new',
