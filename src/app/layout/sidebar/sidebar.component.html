@@ -30,7 +30,7 @@
 
   <!-- Nav -->
   <nav class="sidebar__nav" aria-label="Menu principal">
-    @for (item of navItems; track item.label) {
+    @for (item of navItems(); track item.label) {
       <div
         class="nav-item"
         [class.nav-item--open]="isOpen(item)">

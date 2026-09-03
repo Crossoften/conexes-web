@@ -30,9 +30,25 @@ interface MySelfResponse {
   updatedAt:     string;
   /** Papéis de alçada de compras derivados de /approval-limits (Swagger). */
   purchaseRoles?: string[];
+  /** PERM-fix: permissões efetivas (perfil + diretas) mescladas pelo back em /my-self. */
+  effectivePermissions?: EffectivePermission[];
 }
 
 // ── Model interno do front ────────────────────────────────────────────────────
+
+/**
+ * PERM-fix: permissão efetiva de um par module/subMenu, conforme o back mescla
+ * em /my-self (mergeEffectivePermissions). subMenu é nulo em permissões de módulo.
+ */
+export interface EffectivePermission {
+  module:      string;
+  subMenu:     string | null;
+  canView:     boolean;
+  canCreate:   boolean;
+  canEdit:     boolean;
+  canDelete:   boolean;
+  isUnlimited: boolean;
+}
 
 export interface AuthUser {
   id:            string;
@@ -45,6 +61,8 @@ export interface AuthUser {
   avatar:        string | null;
   /** Papéis de alçada de compras (vazio quando o usuário não tem alçadas). */
   purchaseRoles: string[];
+  /** PERM-fix: permissões efetivas do usuário (vazio quando ainda não carregou). */
+  effectivePermissions: EffectivePermission[];
 }
 
 // ── Chaves do localStorage ────────────────────────────────────────────────────
@@ -103,6 +121,7 @@ export class AuthService {
       status:        me.status,
       avatar:        null,
       purchaseRoles: me.purchaseRoles ?? [],
+      effectivePermissions: me.effectivePermissions ?? [],
     };
 
     this._user.set(user);
@@ -133,6 +152,7 @@ export class AuthService {
         status:        me.status,
         avatar:        current?.avatar ?? null,
         purchaseRoles: me.purchaseRoles ?? [],
+        effectivePermissions: me.effectivePermissions ?? [],
       };
       this._user.set(user);
       localStorage.setItem(STORAGE_USER, JSON.stringify(user));
@@ -165,7 +185,11 @@ export class AuthService {
   private loadUserFromStorage(): AuthUser | null {
     try {
       const raw = localStorage.getItem(STORAGE_USER);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as AuthUser;
+      // PERM-fix: sessões salvas antes deste campo não têm effectivePermissions —
+      // normaliza para [] (nega por padrão até o refreshProfile do bootstrap).
+      return { ...parsed, effectivePermissions: parsed.effectivePermissions ?? [] };
     } catch {
       return null;
     }

@@ -5,6 +5,8 @@ import { NgClass } from '@angular/common';
 import { NAV_ITEMS, NavItem } from './nav.config';
 import { SidebarIconComponent } from './sidebar-icon.component';
 import { AuthService } from '../../core/auth/auth.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
+import { resolveRoutePermission } from './permission-map';
 
 @Component({
   selector: 'app-sidebar',
@@ -18,7 +20,34 @@ export class SidebarComponent {
 
   private router = inject(Router);
   readonly auth  = inject(AuthService);
-  readonly navItems = NAV_ITEMS;
+  private perms  = inject(PermissionsService);
+
+  // PERM-fix: menu filtrado pelo Perfil de Permissão do usuário. Recalcula quando
+  // /my-self atualiza (auth.user()). Master vê tudo; itens sem mapeamento ficam
+  // visíveis a todos; grupos sem nenhum filho habilitado e permitido são ocultados.
+  readonly navItems = computed<NavItem[]>(() => {
+    this.auth.user();
+    return NAV_ITEMS
+      .map(item => this.filterItem(item))
+      .filter((item): item is NavItem => item !== null);
+  });
+
+  private canSeeRoute(route?: string): boolean {
+    const perm = resolveRoutePermission(route);
+    if (!perm) return true; // rota sem mapeamento → visível a todos
+    return this.perms.canView(perm.module, perm.subMenu);
+  }
+
+  private filterItem(item: NavItem): NavItem | null {
+    if (!item.children) {
+      return this.canSeeRoute(item.route) ? item : null;
+    }
+    const children = item.children.filter(c => this.canSeeRoute(c.route));
+    // Só mantém o grupo se sobrar ao menos um filho habilitado (itens "Em breve"
+    // desabilitados não seguram o grupo sozinhos).
+    const hasEnabledChild = children.some(c => !c.disabled);
+    return hasEnabledChild ? { ...item, children } : null;
+  }
 
   private openItem = signal<string | null>(this.getDefaultOpen());
 
