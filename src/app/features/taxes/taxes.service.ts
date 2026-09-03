@@ -1,9 +1,9 @@
 // src/app/features/taxes/taxes.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Tax, TaxPayload, StakeholderItem, ScopeOptions, ScopeOption } from './taxes.model';
+import { Tax, TaxPayload, StakeholderItem, ScopeOptions, ScopeOption, OPERATION_NATURES } from './taxes.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaxesService {
@@ -28,17 +28,23 @@ export class TaxesService {
     return this.http.get<Tax>(`${this.base}/stakeholder/${id}`);
   }
 
-  // Naturezas distintas já cadastradas, para o select do formulário
-  // (GET /operation-nature do back é busca por ?q= e não lista o catálogo todo).
+  // Opções do select "Natureza da operação": catálogo padrão (NFS-e/ABRASF) mesclado
+  // com as naturezas já cadastradas nos registros. Antes só derivava do distinct dos
+  // registros — em base limpa o select ficava vazio (TRIB-fix). O GET /operation-nature
+  // do back é busca por ?q= (auto-preenchimento), não lista o catálogo, então a fonte
+  // do catálogo é este constante do front. Se a lista falhar, ainda retorna o catálogo.
   getOperationNatures(): Observable<string[]> {
-    return this.getAll().pipe(map(list => {
-      const seen = new Set<string>();
-      for (const t of list) {
-        const n = (t.operationNature ?? '').trim();
-        if (n) seen.add(n);
-      }
-      return [...seen].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    }));
+    return this.getAll().pipe(
+      map(list => {
+        const seen = new Set<string>(OPERATION_NATURES);
+        for (const t of list) {
+          const n = (t.operationNature ?? '').trim();
+          if (n) seen.add(n);
+        }
+        return [...seen].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      }),
+      catchError(() => of([...OPERATION_NATURES].sort((a, b) => a.localeCompare(b, 'pt-BR')))),
+    );
   }
 
   // POST é createOrUpdate (upsert por stakeholderId) — serve para criar E editar.

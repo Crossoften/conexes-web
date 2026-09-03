@@ -364,3 +364,85 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+
+// ── Modal de exclusão ─────────────────────────
+/* TRIB-fix: o modal "Excluir configuração" usava .modal-backdrop/.modal/.modal__*
+   sem nenhum estilo neste .scss, caindo como caixa inline no fim da listagem.
+   Shell de overlay fixo + BEM do modal, no mesmo padrão das demais telas
+   (ex.: Alçadas de aprovação). O .btn-outline (Cancelar) já existe acima. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 40, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 160ms ease-out;
+}
+.modal {
+  background: var(--surface-primary, #fff);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: var(--shadow-modal, 0 20px 60px rgba(124,58,237,.18), 0 8px 24px rgba(0,0,0,.08));
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  animation: modalUp 200ms cubic-bezier(.4, 0, .2, 1);
+  &--sm { max-width: 420px; }
+}
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--surface-border-mid, #EDE9FE);
+}
+.modal__title {
+  font-family: var(--font-display, 'Sora', sans-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary, #1E1B4B);
+  margin: 0;
+}
+.modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #9CA3AF);
+  display: flex;
+  transition: color 160ms;
+  &:hover { color: var(--status-danger-text, #991B1B); }
+}
+.modal__body { padding: 22px; }
+.modal__confirm-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary, #6B7280);
+  margin: 0;
+}
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--surface-border-mid, #EDE9FE);
+}
+.btn-danger {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm, 8px);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: var(--status-danger-text, #DC2626);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 160ms;
+  &:hover:not(:disabled) { opacity: .9; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }

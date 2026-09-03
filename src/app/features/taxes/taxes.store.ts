@@ -244,24 +244,40 @@ export class TaxesStore {
     const modal = this.state().detailModal;
     if (!modal.tax) return;
 
+    const targetId = payload.stakeholderId || modal.tax.stakeholderId;
+
     this.state.update(s => ({ ...s, detailModal: { ...s.detailModal, saving: true, error: null } }));
 
     // POST createOrUpdate (upsert por stakeholderId) — o contrato não tem PATCH/{id}.
-    this.svc.save({ ...payload, stakeholderId: payload.stakeholderId || modal.tax.stakeholderId }).subscribe({
-      next: () => {
+    this.svc.save({ ...payload, stakeholderId: targetId }).subscribe({
+      next: saved => {
+        // TRIB-fix: reflete a edição a partir da RESPOSTA autoritativa do POST
+        // (o registro já gravado, com os serviços) em vez de disparar um novo GET da
+        // lista — que o navegador/proxy pode revalidar e servir de cache (304),
+        // fazendo a edição "não persistir" na tela mesmo com o back tendo gravado.
+        const rec = (saved && typeof saved === 'object' && 'id' in saved)
+          ? (saved as Tax)
+          : null;
+
+        if (rec) {
+          this.state.update(s => {
+            const exists = s.items.some(i => i.stakeholderId === rec.stakeholderId);
+            const items = exists
+              ? s.items.map(i => i.stakeholderId === rec.stakeholderId ? { ...i, ...rec } : i)
+              : [rec, ...s.items];
+            return { ...s, items, detailModal: { ...s.detailModal, open: false, saving: false } };
+          });
+          return;
+        }
+
+        // Rede de segurança: se a resposta não trouxe o registro, refaz a busca.
         this.svc.getAll().subscribe({
-          next: items => {
-            this.state.update(s => ({
-              ...s, items,
-              detailModal: { ...s.detailModal, open: false, saving: false },
-            }));
-          },
-          error: () => {
-            this.state.update(s => ({
-              ...s,
-              detailModal: { ...s.detailModal, open: false, saving: false },
-            }));
-          },
+          next: items => this.state.update(s => ({
+            ...s, items, detailModal: { ...s.detailModal, open: false, saving: false },
+          })),
+          error: () => this.state.update(s => ({
+            ...s, detailModal: { ...s.detailModal, open: false, saving: false },
+          })),
         });
       },
       error: err => {

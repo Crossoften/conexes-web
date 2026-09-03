@@ -82,6 +82,20 @@ export interface TaxPayload {
   status?:         TaxStatus;
 }
 
+// ── Naturezas da operação (catálogo padrão) ────────────────────────────────────
+// TRIB-fix: o select "Natureza da operação" ficava vazio em base limpa porque as
+// opções eram derivadas só dos registros já cadastrados (distinct do back). Este
+// catálogo padrão da NFS-e (layout ABRASF) garante opções mesmo sem histórico; as
+// naturezas já usadas nos registros são mescladas a ele em tempo de execução.
+export const OPERATION_NATURES: string[] = [
+  'Tributação no município',
+  'Tributação fora do município',
+  'Isenção',
+  'Imune',
+  'Exigibilidade suspensa por decisão judicial',
+  'Exigibilidade suspensa por procedimento administrativo',
+];
+
 // ── Labels e configs de UI ────────────────────────────────────────────────────
 
 export const TAX_STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {
