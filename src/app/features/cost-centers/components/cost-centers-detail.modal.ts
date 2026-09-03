@@ -98,7 +98,23 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       this.patchForm(this.item);
       this.mode = this.initialMode;
       this.errorMsg.set(null);
+      // CC-persist: a listagem (findAll) não traz `linkedAccounts` (é uma relação
+      // que só o findOne inclui). Sem buscar o registro completo, a composição de
+      // contas some ao abrir a edição e é apagada ao salvar. Recarrega tudo aqui.
+      this.loadFullItem(this.item);
     }
+  }
+
+  /** CC-persist: busca o registro completo (com `linkedAccounts`) e reaplica no form/view. */
+  private loadFullItem(item: CostCenter): void {
+    this.svc.getById(item.id, resolveEntityType(item)).subscribe({
+      next: full => {
+        const merged = { ...item, ...full } as CostCenter;
+        this.item = merged;
+        this.patchForm(merged);
+      },
+      error: () => {},
+    });
   }
 
   // ── Form ──────────────────────────────────────────────────────────────────
@@ -119,7 +135,10 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       parentProjectId:     c.parentProjectId     ?? null,
       status:              c.status              ?? 'Active',
     });
-    this.linkedAccounts = c.linkedAccounts ? [...c.linkedAccounts] : [];
+    // CC-persist: normaliza para { origin, accountPlanId }. O findOne devolve o
+    // ProjectAccount inteiro (id, projectId, accountPlan) e reenviar esses campos
+    // extras no PATCH quebraria o `create` do Prisma.
+    this.linkedAccounts = (c.linkedAccounts ?? []).map(a => ({ origin: a.origin, accountPlanId: a.accountPlanId }));
   }
 
   // ── Contas vinculadas ─────────────────────────────────────────────────────
