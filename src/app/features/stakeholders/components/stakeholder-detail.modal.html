@@ -68,6 +68,10 @@
                   <span class="info-value">{{ stakeholder?.name || '—' }}</span>
                 </div>
                 <div class="info-item">
+                  <span class="info-label">Nome fantasia</span>
+                  <span class="info-value">{{ stakeholder?.tradeName || '—' }}</span>
+                </div>
+                <div class="info-item">
                   <span class="info-label">Tipo</span>
                   <span class="info-value">{{ typeLabel || '—' }}</span>
                 </div>
@@ -134,9 +138,43 @@
                   <span class="info-label">Atividade</span>
                   <span class="info-value">{{ refLabel(activities(), stakeholder?.rateioActivityId) }}</span>
                 </div>
-                <div class="info-item col-span-4">
-                  <span class="info-label">Dados bancários</span>
-                  <span class="info-value">{{ bankSummary || '—' }}</span>
+                <!-- FORN-fix: dados bancários completos (antes só um resumo de uma linha). -->
+                <div class="info-section-title">Dados bancários</div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Nome do correntista</span>
+                  <span class="info-value">{{ primaryBankData?.accountName || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Documento do correntista</span>
+                  <span class="info-value">{{ primaryBankData?.accountDocument || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Banco</span>
+                  <span class="info-value">{{ primaryBankData?.bank || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Agência</span>
+                  <span class="info-value">{{ bankAgencyDisplay || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Conta</span>
+                  <span class="info-value">{{ bankAccountDisplay || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Tipo de conta</span>
+                  <span class="info-value">{{ bankAccountTypeLabel || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Forma de pagamento</span>
+                  <span class="info-value">{{ bankPaymentMethodLabel || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Tipo PIX</span>
+                  <span class="info-value">{{ bankPixTypeLabel || '—' }}</span>
+                </div>
+                <div class="info-item col-span-2">
+                  <span class="info-label">Chave PIX</span>
+                  <span class="info-value">{{ primaryBankData?.pixKey || '—' }}</span>
                 </div>
               </div>
             </div>
@@ -624,136 +662,16 @@
                 </div>
               </div>
 
-              <h3 class="edit-section-title">Cadastro de impostos e retenções</h3>
-              <div class="edit-grid">
-                <div class="field field--wide">
-                  <label class="field-label">Código de Classificação do Serviço</label>
-                  <input class="input" type="text" placeholder="Digite o código..." formControlName="serviceClassCode">
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Título do Serviço</label>
-                  <input class="input" type="text" formControlName="serviceTitle">
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Natureza da Operação</label>
-                  <input class="input" type="text" formControlName="operationNature">
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Total das Retenções</label>
-                  <input class="input" type="text" formControlName="totalRetentions" readonly>
-                </div>
-              </div>
-
-              <h4 class="edit-subsection-title">Alíquotas</h4>
-              <div class="edit-grid">
-                <div class="field">
-                  <label class="field-label">IRRF — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="irfAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">IRRF — Código</label>
-                  <input class="input" type="text" placeholder="Código" formControlName="irfCode">
-                </div>
-                <div class="field">
-                  <label class="field-label">PIS — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="pisAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">PIS — Código</label>
-                  <input class="input" type="text" placeholder="Código" formControlName="pisCode">
-                </div>
-                <div class="field">
-                  <label class="field-label">PCC — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="pccAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">PCC — Código</label>
-                  <input class="input" type="text" placeholder="Código" formControlName="pccCode">
-                </div>
-                <div class="field">
-                  <label class="field-label">COFINS — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="cofinsAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">COFINS — Código</label>
-                  <input class="input" type="text" placeholder="Código" formControlName="cofinsCode">
-                </div>
-                <div class="field">
-                  <label class="field-label">INSS — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="inssAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">CSLL — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="csllAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">IBS — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="ibsAliquot">
-                </div>
-                <div class="field">
-                  <label class="field-label">CBS — Alíquota (%)</label>
-                  <input class="input" type="number" formControlName="cbsAliquot">
-                </div>
-              </div>
-
-              <h4 class="edit-subsection-title">Serviços</h4>
-
-              <!-- Lista de serviços já adicionados -->
-              @if (services.length) {
-                <div class="linked-list">
-                  @for (s of services; track $index) {
-                    <div class="linked-list__item">
-                      <span class="linked-list__account">{{ s.name }}</span>
-                      <span class="linked-list__origin">{{ s.hasRetention ? 'Com retenção' : 'Sem retenção' }}</span>
-                      <button type="button" class="icon-btn" title="Remover" (click)="removeService($index)">
-                        <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
-
-              <!-- Novo serviço -->
-              <div class="edit-grid">
-                <div class="field field--wide">
-                  <label class="field-label">Nome do serviço</label>
-                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceName">
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Descrição do serviço</label>
-                  <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceDescription">
-                </div>
-                <div class="field">
-                  <label class="field-label">Código externo</label>
-                  <input class="input" type="text" formControlName="serviceExternalCode">
-                </div>
-                <div class="field">
-                  <label class="field-label">Órgão concedente</label>
-                  <input class="input" type="text" formControlName="serviceGrantorOrgan">
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Possui retenção?</label>
-                  <div class="select-wrap">
-                    <select class="select" formControlName="serviceHasRetention">
-                      <option [ngValue]="false">Não</option>
-                      <option [ngValue]="true">Sim</option>
-                    </select>
-                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </div>
-                </div>
-                <div class="field field--wide">
-                  <label class="field-label">Órgão acessor / vínculo</label>
-                  <input class="input" type="text" formControlName="serviceAccessorOrgan">
-                </div>
-              </div>
-              <div class="edit-grid">
-                <button type="button" class="btn-add-service" (click)="addService()">+ Adicionar serviço</button>
-              </div>
+              <!-- FORN-fix: seção "Cadastro de impostos e retenções" removida do
+                   fornecedor — dados fiscais são geridos só na tela de Tributos e retenções. -->
 
             </div>
           }
 
           <!-- ── Footer ────────────────────────────────────────────────── -->
+          @if (addressError) {
+            <p class="edit-error">{{ addressError }}</p>
+          }
           @if (bankError) {
             <p class="edit-error">{{ bankError }}</p>
           }

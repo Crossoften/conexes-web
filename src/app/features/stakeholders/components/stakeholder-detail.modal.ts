@@ -5,8 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   Stakeholder,
+  StakeholderAddress,
   StakeholderPayload,
-  StakeholderService,
   STAKEHOLDER_STATUS_CONFIG,
   STAKEHOLDER_TYPE_LABELS,
 } from '../stakeholders.model';
@@ -41,40 +41,38 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'GERAIS';
   bankError: string | null = null;
+  // FORN-fix: endereço "completo ou vazio" na edição (endereço é opcional, igual ao cadastro).
+  addressError: string | null = null;
 
   readonly statusConfig  = STAKEHOLDER_STATUS_CONFIG;
   readonly typeLabels    = STAKEHOLDER_TYPE_LABELS;
   readonly accountPlans  = signal<AccountPlanOption[]>([]);
 
+  // FORN-fix: rótulos pt-BR dos enums bancários para o modo de visualização.
+  private readonly accountTypeLabels: Record<string, string> = {
+    Checking: 'Conta Corrente', Savings: 'Conta Poupança',
+    Salary: 'Conta Salário', Payment: 'Conta Pagamento',
+  };
+  private readonly pixTypeLabels: Record<string, string> = {
+    CPF: 'CPF', CNPJ: 'CNPJ', Email: 'E-mail', Phone: 'Telefone', RandomKey: 'Chave aleatória',
+  };
+  private readonly paymentMethodLabels: Record<string, string> = {
+    EletronicTransferSameOwner: 'Transferência eletrônica (mesmo titular)',
+    EletronicTransferOtherOwner: 'Transferência eletrônica (outro titular)',
+    TEDSameOwner: 'TED (mesmo titular)', TEDOtherOwner: 'TED (outro titular)',
+    DOCSameOwner: 'DOC (mesmo titular)', DOCOtherOwner: 'DOC (outro titular)',
+    BoletoSameBank: 'Boleto (mesmo banco)', BoletoOtherBank: 'Boleto (outro banco)',
+    PIX: 'PIX', UtilityBill: 'Conta de consumo',
+    DARFWithBarcode: 'DARF com código de barras', DARFWithoutBarcode: 'DARF sem código de barras',
+    GARE: 'GARE', SP_ICMS: 'SP ICMS', GNRE_StateTaxes: 'GNRE (tributos estaduais)',
+    GPS: 'GPS', FGTS: 'FGTS', IPVA: 'IPVA', DPVAT: 'DPVAT', IPTU: 'IPTU',
+    INSS_MunicipalTaxes: 'INSS / Tributos municipais',
+  };
+
   // CF-06: vínculos opcionais de rateio (Centro de custo / Projeto / Atividade).
   readonly costCenters   = signal<PurchaseRef[]>([]);
   readonly projects      = signal<PurchaseRef[]>([]);
   readonly activities    = signal<PurchaseRef[]>([]);
-
-  /** 5.2: lista de serviços do fornecedor (add/remove múltiplos). */
-  services: StakeholderService[] = [];
-
-  addService(): void {
-    const v = this.form.getRawValue();
-    const name = (v.serviceName ?? '').trim();
-    if (!name) return;
-    this.services = [...this.services, {
-      name,
-      description:   (v.serviceDescription  ?? '').trim(),
-      externalCode:  (v.serviceExternalCode ?? '').trim(),
-      grantorOrgan:  (v.serviceGrantorOrgan ?? '').trim(),
-      hasRetention:  !!v.serviceHasRetention,
-      accessorOrgan: (v.serviceAccessorOrgan ?? '').trim(),
-    }];
-    this.form.patchValue({
-      serviceName: '', serviceDescription: '', serviceExternalCode: '',
-      serviceGrantorOrgan: '', serviceHasRetention: false, serviceAccessorOrgan: '',
-    });
-  }
-
-  removeService(index: number): void {
-    this.services = this.services.filter((_, i) => i !== index);
-  }
 
   ngOnInit(): void {
     // 5.1: conta contábil vira select do Plano de Contas (mostra código — título).
@@ -195,30 +193,8 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     contactCellphone:   [''],
     contactPosition:    [''],
     contactObservation: [''],
-
-    // Impostos e serviços
-    serviceClassCode:     [''],
-    serviceTitle:         [''],
-    operationNature:      [''],
-    totalRetentions:      [0],
-    irfAliquot:           [0],
-    irfCode:              [''],
-    pisAliquot:           [0],
-    pisCode:              [''],
-    pccAliquot:           [0],
-    pccCode:              [''],
-    cofinsAliquot:        [0],
-    cofinsCode:           [''],
-    inssAliquot:          [0],
-    csllAliquot:          [0],
-    ibsAliquot:           [0],
-    cbsAliquot:           [0],
-    serviceName:          [''],
-    serviceDescription:   [''],
-    serviceExternalCode:  [''],
-    serviceGrantorOrgan:  [''],
-    serviceHasRetention:  [false],
-    serviceAccessorOrgan: [''],
+    // FORN-fix: os controles de impostos/alíquotas/serviços saíram do modal — dados
+    // fiscais são geridos só na tela de Tributos e retenções.
   });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -237,7 +213,6 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     const bank    = s.bankData?.[0];
     const contact = s.contacts?.[0];
     const risk    = s.riskClassification;
-    const tax     = s.taxesAndServices;
 
     // patchValue ignora controls disabled, então setamos code diretamente
     this.form.controls['code'].setValue(s.code ?? '');
@@ -308,32 +283,7 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
       contactCellphone:   contact?.cellphone   ?? '',
       contactPosition:    contact?.position    ?? '',
       contactObservation: contact?.observation ?? '',
-
-      serviceClassCode:     tax?.serviceClassCode     ?? '',
-      serviceTitle:         tax?.serviceTitle         ?? '',
-      operationNature:      tax?.operationNature      ?? '',
-      totalRetentions:      tax?.totalRetentions      ?? 0,
-      irfAliquot:           tax?.irfAliquot           ?? 0,
-      irfCode:              tax?.irfCode              ?? '',
-      pisAliquot:           tax?.pisAliquot           ?? 0,
-      pisCode:              tax?.pisCode              ?? '',
-      pccAliquot:           tax?.pccAliquot           ?? 0,
-      pccCode:              tax?.pccCode              ?? '',
-      cofinsAliquot:        tax?.cofinsAliquot        ?? 0,
-      cofinsCode:           tax?.cofinsCode           ?? '',
-      inssAliquot:          tax?.inssAliquot          ?? 0,
-      csllAliquot:          tax?.csllAliquot          ?? 0,
-      ibsAliquot:           tax?.ibsAliquot           ?? 0,
-      cbsAliquot:           tax?.cbsAliquot           ?? 0,
-      // 5.2: campos de "novo serviço" começam vazios; a lista existente vai em `services`.
-      serviceName:          '',
-      serviceDescription:   '',
-      serviceExternalCode:  '',
-      serviceGrantorOrgan:  '',
-      serviceHasRetention:  false,
-      serviceAccessorOrgan: '',
     });
-    this.services = [...(tax?.services ?? [])];
   }
 
   // ── Accessors para modo view ───────────────────────────────────────────────
@@ -372,32 +322,40 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     return ['Customer', 'Donor', 'SupportedProject'].includes(this.form.getRawValue().type as string);
   }
 
-  /** FE-S6: endereço principal (sem isBilling) + faturamento (isBilling=true) quando cliente e completo. */
-  private buildAddresses(v: any) {
+  /**
+   * FORN-fix: endereço "completo ou vazio" também na edição (alinha com o cadastro).
+   * O back exige todos os campos obrigatórios quando um endereço é enviado; então só
+   * mandamos o endereço principal quando o bloco está completo — senão o array vai sem
+   * ele e a edição salva sem endereço (endereço é opcional, igual ao cadastro).
+   * FE-S6: o endereço de faturamento (isBilling) segue o mesmo critério, só p/ clientes.
+   */
+  private buildAddresses(v: any): StakeholderAddress[] {
+    const mainComplete = !!(v.addrZipCode && v.addrStreet && v.addrNumber
+      && v.addrDistrict && v.addrCity && v.addrState);
     // B-13: não enviar isBilling no endereço principal — só o de faturamento leva a flag.
-    const main = {
-      zipCode:    v.addrZipCode    ?? '',
-      street:     v.addrStreet     ?? '',
-      number:     v.addrNumber     ?? '',
+    const main: StakeholderAddress[] = mainComplete ? [{
+      zipCode:    v.addrZipCode,
+      street:     v.addrStreet,
+      number:     v.addrNumber,
       complement: v.addrComplement ?? '',
-      district:   v.addrDistrict   ?? '',
-      city:       v.addrCity       ?? '',
-      state:      v.addrState      ?? '',
-    };
+      district:   v.addrDistrict,
+      city:       v.addrCity,
+      state:      v.addrState,
+    }] : [];
+
     const billComplete = !!(v.billZipCode && v.billStreet && v.billNumber && v.billDistrict && v.billCity && v.billState);
-    if (this.isClient && billComplete) {
-      return [main, {
-        zipCode:    v.billZipCode,
-        street:     v.billStreet,
-        number:     v.billNumber,
-        complement: v.billComplement ?? '',
-        district:   v.billDistrict,
-        city:       v.billCity,
-        state:      v.billState,
-        isBilling:  true,
-      }];
-    }
-    return [main];
+    const billing: StakeholderAddress[] = (this.isClient && billComplete) ? [{
+      zipCode:    v.billZipCode,
+      street:     v.billStreet,
+      number:     v.billNumber,
+      complement: v.billComplement ?? '',
+      district:   v.billDistrict,
+      city:       v.billCity,
+      state:      v.billState,
+      isBilling:  true,
+    }] : [];
+
+    return [...main, ...billing];
   }
 
   get fullAddress(): string {
@@ -411,11 +369,32 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     return this.stakeholder?.bankData?.[0] ?? null;
   }
 
-  get bankSummary(): string {
+  // FORN-fix: rótulos pt-BR dos enums bancários (modo view mostra todos os campos).
+  get bankAccountTypeLabel(): string {
     const b = this.primaryBankData;
-    if (!b) return '';
-    return [b.bank, `Ag. ${b.agency}`, `C/C ${b.account}-${b.accountDigit}`]
-      .filter(Boolean).join(' — ');
+    return b?.accountType ? (this.accountTypeLabels[b.accountType] ?? b.accountType) : '';
+  }
+
+  get bankPixTypeLabel(): string {
+    const b = this.primaryBankData;
+    return b?.pixType ? (this.pixTypeLabels[b.pixType] ?? b.pixType) : '';
+  }
+
+  get bankPaymentMethodLabel(): string {
+    const b = this.primaryBankData;
+    return b?.paymentMethod ? (this.paymentMethodLabels[b.paymentMethod] ?? b.paymentMethod) : '';
+  }
+
+  get bankAgencyDisplay(): string {
+    const b = this.primaryBankData;
+    if (!b?.agency) return '';
+    return b.agencyDigit ? `${b.agency}-${b.agencyDigit}` : b.agency;
+  }
+
+  get bankAccountDisplay(): string {
+    const b = this.primaryBankData;
+    if (!b?.account) return '';
+    return b.accountDigit ? `${b.account}-${b.accountDigit}` : b.account;
   }
 
   get primaryContact() {
@@ -432,17 +411,20 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     this.mode = 'view';
     this.activeTab = 'GERAIS';
     this.bankError = null;
+    this.addressError = null;
     this.close.emit();
   }
 
   onEdit(): void {
     this.mode = 'edit';
     this.bankError = null;
+    this.addressError = null;
   }
 
   onCancelEdit(): void {
     this.mode = 'view';
     this.bankError = null;
+    this.addressError = null;
     if (this.stakeholder) this.patchForm(this.stakeholder);
   }
 
@@ -468,6 +450,21 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
     if (!this.stakeholder) return;
 
     const v = this.form.getRawValue(); // getRawValue inclui campos disabled (code)
+
+    // ── Endereço: bloco completo OU vazio ─────────────────────────────────────
+    // FORN-fix: endereço é opcional na edição (igual ao cadastro). Se o usuário
+    // preencheu parte, exige o conjunto obrigatório (evita o 400 do back); se deixou
+    // tudo em branco, salva sem endereço. buildAddresses só envia quando completo.
+    const addrParts = [v.addrZipCode, v.addrStreet, v.addrNumber, v.addrDistrict, v.addrCity, v.addrState];
+    const filled = (x: any) => !!(x && String(x).trim());
+    const anyAddrFilled = addrParts.some(filled) || filled(v.addrComplement);
+    const addrComplete  = addrParts.every(filled);
+    if (anyAddrFilled && !addrComplete) {
+      this.addressError = 'Endereço incompleto: preencha CEP, logradouro, número, bairro, cidade e estado — ou deixe todos em branco.';
+      this.activeTab = 'GERAIS';
+      return;
+    }
+    this.addressError = null;
 
     // ── Dados bancários: bloco completo OU vazio ──────────────────────────────
     // O back (CreateStakeholderBankDataDto) exige o conjunto obrigatório mesmo no
@@ -565,9 +562,10 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
         complianceObservations:   v.complianceObservations   ?? '',
       },
 
-      // KWN-03 (Opção A): o cadastro do fornecedor NÃO escreve mais os dados
-      // fiscais — a tela de Impostos e Retenções é a dona. Omitir o bloco faz o
-      // back preservar a linha existente (só mexe quando taxesAndServices !== undefined).
+      // FORN-fix: o cadastro do fornecedor NÃO escreve mais os dados fiscais — a
+      // tela de Tributos e retenções é a única dona. O payload omite taxesAndServices
+      // e o back também deixou de gravá-lo, então editar o fornecedor nunca mexe na
+      // linha de Tributos (fornecedor 100% desatrelado).
     };
 
     // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).

@@ -1,7 +1,6 @@
 // src/app/features/stakeholders/new/step3/step3.component.ts
 import { Component, input } from '@angular/core';
 import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
-import { StakeholderService } from '../../stakeholders.model';
 import type { FormSection } from '../stakeholder-new.page';
 
 @Component({
@@ -23,35 +22,6 @@ export class Step3Component {
     return ctrl?.invalid && ctrl?.touched;
   }
 
-  // ── Serviços (lista dinâmica — 5.2) ────────────────────────────────────────
-  get servicesList(): StakeholderService[] {
-    return this.f['services']?.value ?? [];
-  }
-
-  addService(): void {
-    const name = (this.f['serviceName']?.value ?? '').trim();
-    if (!name) return;
-    const item: StakeholderService = {
-      name,
-      description:   (this.f['serviceDesc']?.value    ?? '').trim(),
-      externalCode:  (this.f['serviceExtCode']?.value ?? '').trim(),
-      grantorOrgan:  (this.f['serviceGrantor']?.value ?? '').trim(),
-      hasRetention:  !!this.f['serviceRedemption']?.value,
-      accessorOrgan: (this.f['serviceLinked']?.value  ?? '').trim(),
-    };
-    this.f['services']?.setValue([...this.servicesList, item]);
-    this.f['serviceName']?.setValue('');
-    this.f['serviceDesc']?.setValue('');
-    this.f['serviceExtCode']?.setValue('');
-    this.f['serviceGrantor']?.setValue('');
-    this.f['serviceRedemption']?.setValue(false);
-    this.f['serviceLinked']?.setValue('');
-  }
-
-  removeService(index: number): void {
-    this.f['services']?.setValue(this.servicesList.filter((_, i) => i !== index));
-  }
-
   /** Telefone: (00) 00000-0000 */
   applyPhoneMask(event: Event, controlName: string): void {
     const input  = event.target as HTMLInputElement;
@@ -71,16 +41,4 @@ export class Step3Component {
     if (nav.includes(event.key)) return true;
     return /^\d$/.test(event.key);
   }
-
-  readonly aliquotFields = [
-    { aliq: 'aliqIRRF',   aliqLabel: 'Alíquota % IRRF',   cod: 'codIRRF',   codLabel: 'Cód. IRRF'   },
-    { aliq: 'aliqPIS',    aliqLabel: 'Alíquota % PIS',    cod: 'codPIS',    codLabel: 'Cód. PIS'    },
-    { aliq: 'aliqPCC',    aliqLabel: 'Alíquota % PCC',    cod: 'codPCC',    codLabel: 'Cód. PCC'    },
-    { aliq: 'aliqCOFINS', aliqLabel: 'Alíquota % COFINS', cod: 'codCOFINS', codLabel: 'Cód. COFINS' },
-    { aliq: 'aliqINSS',   aliqLabel: 'Alíquota % INSS',   cod: 'codINSS',   codLabel: 'Cód. INSS'   },
-    { aliq: 'aliqCSLL',   aliqLabel: 'Alíquota % CSLL',   cod: 'codCSLL',   codLabel: 'Cód. CSLL'   },
-    { aliq: 'aliqISS',    aliqLabel: 'Alíquota % ISS',    cod: 'codISS',    codLabel: 'Cód. ISS'    },
-    { aliq: 'aliqIBS',    aliqLabel: 'Alíquota % IBS',    cod: 'codIBS',    codLabel: 'Cód. IBS'    },
-    { aliq: 'aliqCBS',    aliqLabel: 'Alíquota % CBS',    cod: 'codCBS',    codLabel: 'Cód. CBS'    },
-  ];
 }

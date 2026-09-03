@@ -1,167 +1,49 @@
 <!-- src/app/features/stakeholders/new/step3/step3.component.html -->
-@if (section() === 'contato' || section() === 'impostos') {
+<!-- FORN-fix: a seção de impostos/retenções saiu do cadastro de fornecedor (agora só
+     na tela de Tributos e retenções). Restou apenas a seção de dados de contato. -->
+@if (section() === 'contato') {
 <div class="step" [formGroup]="$any(form())">
 
   <!-- Seção: Dados de contato -->
-  @if (section() === 'contato') {
-    <div class="sub-section">
-      <h3 class="sub-title">Dados de contato</h3>
+  <div class="sub-section">
+    <h3 class="sub-title">Dados de contato</h3>
 
-      <div class="field" [class.field--error]="isInvalid('contactName')">
-        <label class="field-label">Nome do contato</label>
-        <input class="input" type="text" placeholder="Digite o nome do contato..." formControlName="contactName">
-        @if (isInvalid('contactName')) {
-          <span class="field-error">Campo obrigatório</span>
-        }
-      </div>
+    <div class="field" [class.field--error]="isInvalid('contactName')">
+      <label class="field-label">Nome do contato</label>
+      <input class="input" type="text" placeholder="Digite o nome do contato..." formControlName="contactName">
+      @if (isInvalid('contactName')) {
+        <span class="field-error">Campo obrigatório</span>
+      }
+    </div>
 
-      <div class="form-row form-row--3">
-        <div class="field">
-          <label class="field-label">Telefone principal</label>
-          <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactPhone"
-            (input)="applyPhoneMask($event, 'contactPhone')"
-            (keydown)="onlyNumbers($event)">
-        </div>
-        <div class="field">
-          <label class="field-label">Telefone celular</label>
-          <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactMobile"
-            (input)="applyPhoneMask($event, 'contactMobile')"
-            (keydown)="onlyNumbers($event)">
-        </div>
-        <div class="field" [class.field--error]="isInvalid('contactEmail')">
-          <label class="field-label">E-mail de contato</label>
-          <input class="input" type="email" placeholder="email@exemplo.com" formControlName="contactEmail">
-          @if (isInvalid('contactEmail')) {
-            <span class="field-error">E-mail inválido</span>
-          }
-        </div>
-      </div>
-
+    <div class="form-row form-row--3">
       <div class="field">
-        <label class="field-label">Observações</label>
-        <input class="input" type="text" placeholder="Digite aqui..." formControlName="observations">
+        <label class="field-label">Telefone principal</label>
+        <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactPhone"
+          (input)="applyPhoneMask($event, 'contactPhone')"
+          (keydown)="onlyNumbers($event)">
       </div>
-
-    </div>
-  }
-
-  <!-- Seção: Impostos e retenções -->
-  @if (section() === 'impostos') {
-    <div class="sub-section">
-      <h3 class="sub-title">Cadastro de impostos e retenções</h3>
-      <p class="sub-desc">Preencha e configure todas as informações necessárias.</p>
-
-      <div class="form-row form-row--2">
-        <div class="field">
-          <label class="field-label">Código de Classificação do Serviço</label>
-          <input class="input" type="text" placeholder="Digite o código..." formControlName="serviceClassCode">
-        </div>
-        <div class="field">
-          <label class="field-label">Título do Serviço</label>
-          <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceTitle">
-        </div>
+      <div class="field">
+        <label class="field-label">Telefone celular</label>
+        <input class="input" type="text" placeholder="(00) 00000-0000" formControlName="contactMobile"
+          (input)="applyPhoneMask($event, 'contactMobile')"
+          (keydown)="onlyNumbers($event)">
       </div>
-
-      <div class="retention-box">
-        <h4 class="retention-title">Configuração de Retenção de Impostos</h4>
-
-        <div class="field">
-          <label class="field-label">Buscar por Natureza da Operação</label>
-          <input class="input" type="text" placeholder="Buscar" formControlName="searchNatureOp">
-        </div>
-
-        <label class="checkbox-wrap">
-          <span class="checkbox">
-            <input type="checkbox" class="checkbox__input" formControlName="manualAliquots">
-            <span class="checkbox__box"></span>
-          </span>
-          <span class="checkbox-label">Definir Alíquotas Manualmente</span>
-        </label>
-
-        <div class="field">
-          <label class="field-label">Resumo / Total das Retenções</label>
-          <input class="input input--filled" type="text" placeholder="Valor preenchido"
-                 formControlName="totalRetentions" readonly>
-        </div>
-
-        <div class="aliquots">
-          <h4 class="aliquots-title">Alíquotas</h4>
-          <div class="aliquots-grid">
-            @for (item of aliquotFields; track item.aliq) {
-              <div class="field">
-                <label class="field-label">{{ item.aliqLabel }}</label>
-                <input class="input" type="text" placeholder="%" [formControlName]="item.aliq"
-                  (keydown)="onlyNumbers($event)">
-              </div>
-              <div class="field">
-                <label class="field-label">{{ item.codLabel }}</label>
-                <input class="input" type="text" placeholder="Código" [formControlName]="item.cod">
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      <div class="services-box">
-        <h4 class="retention-title">Serviços</h4>
-
-        <!-- Serviços já adicionados -->
-        @if (servicesList.length) {
-          <div class="services-list">
-            @for (s of servicesList; track $index) {
-              <div class="services-list__item">
-                <span class="services-list__name">{{ s.name }}</span>
-                <span class="services-list__tag">{{ s.hasRetention ? 'Com retenção' : 'Sem retenção' }}</span>
-                <button type="button" class="services-list__remove" title="Remover" (click)="removeService($index)">
-                  <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
-                </button>
-              </div>
-            }
-          </div>
+      <div class="field" [class.field--error]="isInvalid('contactEmail')">
+        <label class="field-label">E-mail de contato</label>
+        <input class="input" type="email" placeholder="email@exemplo.com" formControlName="contactEmail">
+        @if (isInvalid('contactEmail')) {
+          <span class="field-error">E-mail inválido</span>
         }
-
-        <!-- Novo serviço -->
-        <div class="form-row form-row--4">
-          <div class="field">
-            <label class="field-label">Nome</label>
-            <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceName">
-          </div>
-          <div class="field">
-            <label class="field-label">Descrição</label>
-            <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceDesc">
-          </div>
-          <div class="field">
-            <label class="field-label">Código Externo</label>
-            <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceExtCode">
-          </div>
-          <div class="field">
-            <label class="field-label">Órgão Concessor</label>
-            <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceGrantor">
-          </div>
-        </div>
-
-        <div class="form-row form-row--4">
-          <div class="field">
-            <label class="field-label">Possui retenção?</label>
-            <div class="select-wrap">
-              <select class="select" formControlName="serviceRedemption">
-                <option [ngValue]="false">Não</option>
-                <option [ngValue]="true">Sim</option>
-              </select>
-              <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-          </div>
-          <div class="field field--wide-3">
-            <label class="field-label">Órgão acessor / vínculo (órgão concessor, centro de custo, projeto, atividade)</label>
-            <input class="input" type="text" placeholder="Digite aqui..." formControlName="serviceLinked">
-          </div>
-        </div>
-
-        <button type="button" class="btn-add-service" (click)="addService()">+ Adicionar serviço</button>
       </div>
-
     </div>
-  }
+
+    <div class="field">
+      <label class="field-label">Observações</label>
+      <input class="input" type="text" placeholder="Digite aqui..." formControlName="observations">
+    </div>
+
+  </div>
 
 </div>
 }

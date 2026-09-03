@@ -209,47 +209,9 @@ export function mapFormToPayload(formValue: any): StakeholderPayload {
 
     contacts: buildContacts(s3),
 
-    taxesAndServices: {
-      serviceClassCode:    s3.serviceClassCode?.trim()  ?? '',
-      serviceTitle:        s3.serviceTitle?.trim()       ?? '',
-      operationNature:     s3.searchNatureOp?.trim()     ?? '',
-      totalRetentions:     Number(s3.totalRetentions)   || 0,
-      irfAliquot:          Number(s3.aliqIRRF)          || 0,
-      irfCode:             s3.codIRRF?.trim()            ?? '',
-      pisAliquot:          Number(s3.aliqPIS)            || 0,
-      pisCode:             s3.codPIS?.trim()              ?? '',
-      pccAliquot:          Number(s3.aliqPCC)            || 0,
-      pccCode:             s3.codPCC?.trim()              ?? '',
-      cofinsAliquot:       Number(s3.aliqCOFINS)         || 0,
-      cofinsCode:          s3.codCOFINS?.trim()           ?? '',
-      inssAliquot:         Number(s3.aliqINSS)           || 0,
-      // KWN-03C: campos que o fornecedor coletava mas o save descartava (zerava
-      // ISS/códigos ao editar). Agora vão junto para não sobrescrever com vazio.
-      inssCode:            s3.codINSS?.trim()             ?? '',
-      csllAliquot:         Number(s3.aliqCSLL)           || 0,
-      csllCode:            s3.codCSLL?.trim()             ?? '',
-      issAliquot:          Number(s3.aliqISS)            || 0,
-      issCode:             s3.codISS?.trim()              ?? '',
-      ibsAliquot:          Number(s3.aliqIBS)            || 0,
-      ibsCode:             s3.codIBS?.trim()              ?? '',
-      cbsAliquot:          Number(s3.aliqCBS)            || 0,
-      cbsCode:             s3.codCBS?.trim()              ?? '',
-      manualAliquots:      !!s3.manualAliquots,
-      // 5.2: lista de serviços (array) + um "novo serviço" preenchido não adicionado.
-      services: [
-        ...(s3.services ?? []),
-        ...(s3.serviceName?.trim()
-          ? [{
-              name:          s3.serviceName.trim(),
-              description:   s3.serviceDesc?.trim()      ?? '',
-              externalCode:  s3.serviceExtCode?.trim()   ?? '',
-              grantorOrgan:  s3.serviceGrantor?.trim()   ?? '',
-              hasRetention:  !!s3.serviceRedemption,
-              accessorOrgan: s3.serviceLinked?.trim()    ?? '',
-            }]
-          : []),
-      ],
-    },
+    // FORN-fix: o cadastro de fornecedor não monta mais dados fiscais. A tela
+    // independente de Tributos e retenções é a única dona desses campos, então o
+    // payload não envia taxesAndServices (o back também deixou de gravá-lo).
   };
 
   // B-13: omitir accountId quando não há conta contábil (evita FK inválida/500 no back).

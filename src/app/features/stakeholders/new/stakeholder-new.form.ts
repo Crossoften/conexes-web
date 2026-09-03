@@ -1,7 +1,6 @@
 // src/app/features/stakeholders/new/stakeholder-new.form.ts
 import { inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { StakeholderService } from '../stakeholders.model';
 
 export function buildStakeholderForm() {
   const fb = inject(FormBuilder);
@@ -87,34 +86,14 @@ export function buildStakeholderForm() {
   });
 
   // ── Etapa 3 — tudo opcional para navegação ─────────────────
+  // FORN-fix: os campos fiscais (impostos/alíquotas/serviços) saíram do cadastro de
+  // fornecedor — a tela de Tributos e retenções é a dona deles. Sobra só o contato.
   const step3 = fb.group({
     contactName:      [''],
     contactPhone:     [''],
     contactMobile:    [''],
     contactEmail:     [''],
     observations:     [''],
-    serviceClassCode: [''],
-    serviceTitle:     [''],
-    searchNatureOp:   [''],
-    manualAliquots:   [false],
-    totalRetentions:  [''],
-    aliqIRRF:   [''], codIRRF:   [''],
-    aliqPIS:    [''], codPIS:    [''],
-    aliqPCC:    [''], codPCC:    [''],
-    aliqCOFINS: [''], codCOFINS: [''],
-    aliqINSS:   [''], codINSS:   [''],
-    aliqCSLL:   [''], codCSLL:   [''],
-    aliqISS:    [''], codISS:    [''],
-    aliqIBS:    [''], codIBS:    [''],
-    aliqCBS:    [''], codCBS:    [''],
-    // Campos de "novo serviço" (draft) + a lista de serviços adicionados (5.2).
-    serviceName:       [''],
-    serviceDesc:       [''],
-    serviceExtCode:    [''],
-    serviceGrantor:    [''],
-    serviceRedemption: [false],
-    serviceLinked:     [''],
-    services:          [[] as StakeholderService[]],
   });
 
   return fb.group({ step1, step2, step3 });
