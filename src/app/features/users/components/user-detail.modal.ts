@@ -164,7 +164,6 @@ export class UserDetailModalComponent implements OnInit {
       jobTitle:            u.jobTitle ?? '',
       area:                u.area     ?? '',
       phone:               u.phone    ?? '',
-      role:                u.role     ?? '',
       status:              u.status   ?? '',
       password:            '',
       entityId:            u.entityId ?? null,
