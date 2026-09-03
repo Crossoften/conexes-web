@@ -5,6 +5,9 @@ export interface NavChild {
   route:     string;
   disabled?: boolean;
   badge?:    string;
+  // PERM-fix: override de permissão quando a rota é compartilhada por 2 menus
+  // (ex.: Documentos fiscais/Notas fiscais usam a mesma rota, módulos diferentes).
+  perm?:     { module: string; subMenu?: string };
 }
 
 export interface NavItem {
@@ -73,7 +76,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Recebimento',   route: '/purchase-receiving' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
       // IT-05: Documentos fiscais dentro de Compras (o módulo Integrações deixou de existir).
-      { label: 'Documentos fiscais', route: '/integrations/fiscal-documents' },
+      { label: 'Documentos fiscais', route: '/integrations/fiscal-documents', perm: { module: 'Compras' } },
       // HI-07: telas de relatórios removidas de todos os módulos (haverá uma Central de Relatórios futura).
     ],
   },
@@ -88,7 +91,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Contas a receber',             route: '/accounts-receivable' },
       { label: 'Orçamentos',                   route: '/budgets' },
       // IT-03/IT-04/IT-06/IT-07: funções de Integrações realocadas para o Financeiro (o módulo isolado foi eliminado).
-      { label: 'Notas fiscais e cobranças',    route: '/integrations/fiscal-documents' },
+      { label: 'Notas fiscais e cobranças',    route: '/integrations/fiscal-documents', perm: { module: 'Financeiro' } },
       { label: 'Conexão bancária e extrato',   route: '/integrations/bank-integrations' },
       // HI-07: relatórios financeiros removidos do menu (Central de Relatórios futura).
     ],

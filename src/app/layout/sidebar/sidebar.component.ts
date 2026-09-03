@@ -32,17 +32,19 @@ export class SidebarComponent {
       .filter((item): item is NavItem => item !== null);
   });
 
-  private canSeeRoute(route?: string): boolean {
-    const perm = resolveRoutePermission(route);
-    if (!perm) return true; // rota sem mapeamento → visível a todos
+  private canSee(node: { route?: string; perm?: { module: string; subMenu?: string } }): boolean {
+    // PERM-fix: override explícito do item de menu tem precedência sobre o mapa de rota
+    // (necessário quando dois menus de módulos diferentes compartilham a mesma rota).
+    const perm = node.perm ?? resolveRoutePermission(node.route);
+    if (!perm) return true; // sem mapeamento → visível a todos
     return this.perms.canView(perm.module, perm.subMenu);
   }
 
   private filterItem(item: NavItem): NavItem | null {
     if (!item.children) {
-      return this.canSeeRoute(item.route) ? item : null;
+      return this.canSee(item) ? item : null;
     }
-    const children = item.children.filter(c => this.canSeeRoute(c.route));
+    const children = item.children.filter(c => this.canSee(c));
     // Só mantém o grupo se sobrar ao menos um filho habilitado (itens "Em breve"
     // desabilitados não seguram o grupo sozinhos).
     const hasEnabledChild = children.some(c => !c.disabled);
