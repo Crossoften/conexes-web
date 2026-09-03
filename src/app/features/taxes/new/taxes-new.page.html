@@ -23,7 +23,7 @@
             Dados gerais e serviços
           </button>
           <button type="button" class="segmented-tab-btn" [class.active]="activeTab === 'ALIQUOTAS'"
-            [disabled]="!hasRetencao()" (click)="setTab('ALIQUOTAS')">
+            (click)="setTab('ALIQUOTAS')">
             Alíquotas
           </button>
         </div>

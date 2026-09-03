@@ -111,11 +111,6 @@ export class TaxesNewPage implements OnInit {
       this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
     });
 
-    // Aba Alíquotas só fica acessível com o toggle de retenção marcado.
-    this.form.get('definirAliquotasManual')?.valueChanges.subscribe(v => {
-      if (!v && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAL';
-    });
-
     this.svc.getStakeholders().subscribe({
       next: (res: any) => {
         const list = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
@@ -226,7 +221,6 @@ export class TaxesNewPage implements OnInit {
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   setTab(tab: TaxTab): void {
-    if (tab === 'ALIQUOTAS' && !this.hasRetencao()) return;
     this.activeTab = tab;
   }
 
