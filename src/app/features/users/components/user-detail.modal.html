@@ -91,10 +91,6 @@
                   <span class="info-label">Área</span>
                   <span class="info-value">{{ user()?.area || '—' }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">Perfil de acesso</span>
-                  <span class="info-value">{{ roleLabel }}</span>
-                </div>
               </div>
             </div>
           }
@@ -190,17 +186,6 @@
                 <div class="field">
                   <label class="field-label">Área</label>
                   <input class="input" type="text" formControlName="area">
-                </div>
-                <div class="field">
-                  <label class="field-label">Perfil de acesso <span class="required">*</span></label>
-                  <div class="select-wrap">
-                    <select class="select" formControlName="role">
-                      @for (opt of roleOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                      }
-                    </select>
-                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </div>
                 </div>
                 <div class="field">
                   <label class="field-label">Status</label>

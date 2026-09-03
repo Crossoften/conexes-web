@@ -77,7 +77,8 @@ export class UserDetailModalComponent implements OnInit {
     jobTitle:            [''],
     area:                [''],
     phone:               [''],
-    role:                ['', Validators.required],
+    // US-fix: 'Perfil de acesso' (role) removido do cadastro/edição — o acesso é
+    // definido apenas pelo Perfil de Permissão vinculado.
     status:              [''],
     password:            [''],
     entityId:            this.fb.control<number | null>(null),
@@ -258,7 +259,6 @@ export class UserDetailModalComponent implements OnInit {
       jobTitle:          v.jobTitle   || undefined,
       area:              v.area       || undefined,
       phone:             v.phone      || undefined,
-      role:              v.role,
       status:            v.status     as any,
     };
 
