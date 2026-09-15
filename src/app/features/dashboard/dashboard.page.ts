@@ -40,14 +40,14 @@ export class DashboardComponent implements OnInit {
   readonly recent = signal<DashboardAccountability[]>([]);
 
   readonly kpis: KpiCard[] = [
-    { key: 'stakeholders',     label: 'Stakeholders',            icon: '👥', route: '/stakeholders',   tone: 'purple'  },
-    { key: 'partnerships',     label: 'Parcerias',               icon: '🤝', route: '/work-plans',     tone: 'info'    },
+    { key: 'stakeholders',     label: 'Contatos',                icon: '👥', route: '/stakeholders',   tone: 'purple'  },
+    { key: 'partnerships',     label: 'Convênios e parcerias',   icon: '🤝', route: '/work-plans',     tone: 'info'    },
     { key: 'payablesOpen',     label: 'Contas a pagar em aberto', icon: '💸', route: '/accounts-payable', tone: 'orange' },
     { key: 'accountabilities', label: 'Prestações de contas',    icon: '📋', route: '/accountability', tone: 'success' },
   ];
 
   readonly shortcuts: Shortcut[] = [
-    { label: 'Novo stakeholder',   desc: 'Cadastrar fornecedor, cliente ou doador', icon: '➕', route: '/stakeholders/new' },
+    { label: 'Novo contato',       desc: 'Cadastrar fornecedor, cliente ou doador', icon: '➕', route: '/stakeholders/new' },
     { label: 'Contas a pagar',     desc: 'Lançamentos e pagamentos',                icon: '💸', route: '/accounts-payable' },
     { label: 'Análise de notas',   desc: 'Validar notas vindas do compras',         icon: '🧾', route: '/invoice-review' },
     { label: 'Prestação de contas', desc: 'Acompanhar processos de prestação',      icon: '📋', route: '/accountability' },

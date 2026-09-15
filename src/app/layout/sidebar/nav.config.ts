@@ -60,7 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'contracts',
     children: [
       { label: 'Cadastrar órgãos',       route: '/agencies' },
-      { label: 'Plano de trabalho',      route: '/work-plans' },
+      { label: 'Plano de trabalho',      route: '/work-plans', disabled: true, badge: 'Em breve' },
       { label: 'Repasses e informações', route: '/contract-transfers' },
     ],
   },
