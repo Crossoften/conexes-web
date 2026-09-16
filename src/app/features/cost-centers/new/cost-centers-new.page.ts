@@ -163,7 +163,8 @@ export class CostCentersNewPage implements OnInit {
     this.linkedAccounts = this.linkedAccounts.filter((_, i) => i !== index);
   }
 
-  getAccountLabel(id: number): string {
+  getAccountLabel(id: number | undefined): string {
+    if (id == null) return '—';
     const a = this.bankAccounts().find((p: any) => p.id === id);
     if (!a) return String(id);
     const nome  = a.nickname ?? a.apelido ?? a.bankName ?? a.bank?.name ?? a.name ?? 'Conta';

@@ -30,6 +30,7 @@ export class CostCenterCreateModalComponent implements OnInit {
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
   readonly accountPlans = signal<AccountPlanItem[]>([]);
+  readonly bankAccounts = signal<any[]>([]);   // CC-04: contas bancárias p/ a composição
   readonly entities     = signal<EntityItem[]>([]);
   readonly loadingLists = signal(true);
 
@@ -63,6 +64,14 @@ export class CostCenterCreateModalComponent implements OnInit {
       error: () => checkDone(),
     });
 
+    // CC-04: contas bancárias para a composição de contas vinculadas.
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
+    ).subscribe({
+      next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
+      error: () => {},
+    });
+
     this.http.get<EntityItem[] | { data?: EntityItem[] }>(
       `${environment.apiUrl}/v1/institutional/entities`, { params: { take: '1000' } },
     ).subscribe({
@@ -82,8 +91,8 @@ export class CostCenterCreateModalComponent implements OnInit {
   addLinkedAccount(): void {
     if (!this.selectedLinkedAccount) return;
     const id = Number(this.selectedLinkedAccount);
-    if (this.linkedAccounts.some(a => a.accountPlanId === id)) return;
-    this.linkedAccounts = [...this.linkedAccounts, { origin: this.selectedLinkedOrigin, accountPlanId: id }];
+    if (this.linkedAccounts.some(a => a.bankAccountId === id)) return;
+    this.linkedAccounts = [...this.linkedAccounts, { origin: this.selectedLinkedOrigin, bankAccountId: id }];
     this.selectedLinkedAccount = '';
   }
 
@@ -91,9 +100,13 @@ export class CostCenterCreateModalComponent implements OnInit {
     this.linkedAccounts = this.linkedAccounts.filter((_, i) => i !== index);
   }
 
-  getAccountLabel(id: number): string {
-    const a = this.accountPlans().find(p => p.id === id);
-    return a ? `${a.code} — ${a.title}` : String(id);
+  getAccountLabel(id: number | undefined): string {
+    if (id == null) return '—';
+    const a = this.bankAccounts().find((p: any) => p.id === id);
+    if (!a) return String(id);
+    const nome  = a.nickname ?? a.apelido ?? a.bankName ?? a.bank?.name ?? a.name ?? 'Conta';
+    const conta = [a.agency ?? a.agencia, a.accountNumber ?? a.conta ?? a.number].filter(Boolean).join(' / ');
+    return conta ? `${nome} — ${conta}` : String(nome);
   }
 
   onClose(): void { this.close.emit(); }

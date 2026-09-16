@@ -181,7 +181,8 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     window.open(`${base}#/bank-accounts/new`, '_blank');
   }
 
-  getAccountLabel(id: number): string {
+  getAccountLabel(id: number | undefined): string {
+    if (id == null) return '—';
     const a = this.bankAccounts().find((p: any) => p.id === id);
     if (!a) return String(id);
     const nome  = a.nickname ?? a.apelido ?? a.bankName ?? a.bank?.name ?? a.name ?? 'Conta';
