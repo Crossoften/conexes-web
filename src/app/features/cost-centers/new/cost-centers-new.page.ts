@@ -37,6 +37,7 @@ export class CostCentersNewPage implements OnInit {
   readonly loading      = signal(false);
   readonly errorMsg     = signal<string | null>(null);
   readonly accountPlans = signal<AccountPlanItem[]>([]);
+  readonly projects     = signal<{ id: number; name: string }[]>([]);   // CC-03: projetos p/ escolher o pai de uma Atividade avulsa
   readonly entities     = signal<EntityItem[]>([]);
   readonly loadingLists = signal(true);
 
@@ -104,6 +105,17 @@ export class CostCentersNewPage implements OnInit {
     ).subscribe({
       next: res => { this.entities.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
+    });
+
+    // CC-03: projetos disponíveis como pai ao cadastrar uma Atividade avulsa (não gateia loadingLists).
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/projects`, { params: { type: 'projeto', take: '500' } },
+    ).subscribe({
+      next: res => {
+        const list = Array.isArray(res) ? res : res?.data ?? [];
+        this.projects.set(list.map((p: any) => ({ id: Number(p.id), name: p.title ?? p.name ?? String(p.id) })));
+      },
+      error: () => {},
     });
   }
 

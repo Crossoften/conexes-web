@@ -36,6 +36,7 @@
                   <option value="">Selecione</option>
                   <option value="centro_de_custo">Centro de Custo</option>
                   <option value="projeto">Projeto</option>
+                  <option value="atividade">Atividade</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -55,6 +56,24 @@
             </div>
 
           </div>
+
+          <!-- CC-03: ao cadastrar uma Atividade avulsa, escolher o Projeto pai -->
+          @if (form.get('projectType')?.value === 'atividade' && !form.get('parentProjectId')?.value) {
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Projeto pai <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="parentProjectId">
+                    <option [ngValue]="null">Selecione o projeto</option>
+                    @for (p of projects(); track p.id) {
+                      <option [ngValue]="p.id">{{ p.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+          }
 
           <!-- CC-01: classificação contábil (Sintética/Analítica) -->
           <div class="form-row grid-cols-3">

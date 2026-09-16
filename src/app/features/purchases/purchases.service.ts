@@ -195,7 +195,21 @@ export class PurchasesService {
   }
 
   getAccountPlansLookup(): Observable<PurchaseRef[]> {
-    return this.lookup('/v1/account-plan', 'title');
+    // CP-19: Categoria deve listar as contas ANALÍTICAS do plano de contas (não só as raízes
+    // Receitas/Despesas). Busca a árvore e achata apenas as analíticas — igual ao bank-accounts.
+    return this.http
+      .get<any[]>(`${environment.apiUrl}/v1/account-plan/tree`)
+      .pipe(map(res => {
+        const out: PurchaseRef[] = [];
+        const walk = (list: any[]) => {
+          for (const n of list ?? []) {
+            if (n.accountType === 'Analitica') out.push({ id: Number(n.id), name: `${n.code} — ${n.title}` });
+            if (n.children?.length) walk(n.children);
+          }
+        };
+        walk(res ?? []);
+        return out;
+      }));
   }
 
   /** Lookup de produtos/serviços — inclui group/unit/costBase (BK-6: auto-preencher o item). */
