@@ -138,7 +138,7 @@
                   }
                 </td>
 
-                <td class="td td--mono" [style.paddingLeft.px]="row.depth * 22 + 16">{{ row.node.levelNumber || row.node.code }}</td>
+                <td class="td td--mono" [style.paddingLeft.px]="row.depth * 22 + 16">{{ row.node.code }}</td>
                 <td class="td td--name">{{ row.node.title }}</td>
                 <td class="td">{{ accountTypeLabel(row.node.accountType) }}</td>
                 <td class="td">{{ linkedName(row.node.category) }}</td>

@@ -89,7 +89,15 @@ export class ChartOfAccountsListPage implements OnInit {
     this.treeLoading.set(true);
     this.treeError.set(null);
     this.svc.tree().subscribe({
-      next: (roots) => { this.treeRoots.set(roots ?? []); this.treeLoading.set(false); },
+      next: (roots) => {
+        this.treeRoots.set(roots ?? []);
+        // PC-02: abrir as subcontas existentes por padrão (o cliente não as enxergava na listagem).
+        const ids = new Set<number>();
+        const walk = (nodes: any[]) => nodes.forEach(n => { if (n.children?.length) { ids.add(n.id); walk(n.children); } });
+        walk(roots ?? []);
+        this.expanded.set(ids);
+        this.treeLoading.set(false);
+      },
       error: (err) => {
         this.treeLoading.set(false);
         this.treeError.set(err?.error?.message ?? 'Erro ao carregar plano de contas.');
