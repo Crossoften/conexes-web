@@ -5,7 +5,7 @@ import { filter, map, startWith } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { TopbarComponent } from '../topbar/topbar.component';
-import { NAV_ITEMS } from '../sidebar/nav.config';
+import { NAV_ITEMS, ORG_NAV_ITEM } from '../sidebar/nav.config';
 
 @Component({
   selector: 'app-shell',
@@ -30,7 +30,9 @@ export class ShellComponent {
 
   breadcrumb = computed(() => {
     const url = this.currentUrl();
-    for (const item of NAV_ITEMS) {
+    // HI-03: /positions virou aba dentro de Colaboradores (Minha Organização).
+    if (url.startsWith('/positions')) return { parent: 'Minha Organização', current: 'Corpo diretivo' };
+    for (const item of [...NAV_ITEMS, ORG_NAV_ITEM]) {
       if (item.children) {
         const child = item.children.find(c => url.startsWith(c.route));
         if (child) return { parent: item.label, current: child.label };

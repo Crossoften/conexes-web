@@ -83,3 +83,22 @@
   &--danger  { background: #FEE2E2; color: #DC2626; border-color: #FECACA; }
   &--neutral { background: #F3F4F6; color: #6B7280; border-color: #E5E7EB; }
 }
+
+/* HI-03: abas do módulo unificado (Colaboradores/Dirigentes | Corpo diretivo) */
+.module-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid #E2E5EA;
+}
+.module-tab {
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7482;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  &:hover { color: #14181F; }
+  &--active { color: #901633; border-bottom-color: #901633; }
+}

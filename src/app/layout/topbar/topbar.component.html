@@ -30,6 +30,32 @@
       </svg>
     </button>
 
+    <!-- HI-03: "Minha Organização" na barra superior (dropdown), após notificações e antes do avatar. -->
+    @if (orgItems().length) {
+      <div class="topbar__user">
+        <button class="topbar__btn" type="button"
+                (click)="toggleOrgMenu()"
+                [attr.aria-expanded]="orgMenuOpen()"
+                aria-haspopup="menu" title="Minha Organização" aria-label="Minha Organização">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+            <path d="M3 18V5.5L9 3l6 2.5V18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M2 18h16M7 9h1.5M11.5 9h1.5M7 12.5h1.5M11.5 12.5h1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        @if (orgMenuOpen()) {
+          <div class="topbar__menu" role="menu">
+            <div class="topbar__menu-header">
+              <span class="topbar__menu-name">Minha Organização</span>
+            </div>
+            @for (item of orgItems(); track item.route) {
+              <a class="topbar__menu-item" role="menuitem"
+                 [routerLink]="item.route" (click)="orgMenuOpen.set(false)">{{ item.label }}</a>
+            }
+          </div>
+        }
+      </div>
+    }
+
     <div class="topbar__divider" aria-hidden="true"></div>
 
     <div class="topbar__user">

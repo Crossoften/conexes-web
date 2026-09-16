@@ -46,16 +46,6 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label: 'Minha Organização',
-    icon:  'entities',
-    children: [
-      { label: 'Cadastro da organização',      route: '/entity-registry' },
-      { label: 'Contas bancárias e bancos',    route: '/bank-accounts' },
-      { label: 'Colaboradores e dirigentes',   route: '/employees' },
-      { label: 'Corpo diretivo',               route: '/positions' },
-    ],
-  },
-  {
     label: 'Convênios e parcerias',
     icon:  'contracts',
     children: [
@@ -111,3 +101,15 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'profile',
   },
 ];
+
+// HI-03: "Minha Organização" saiu do menu lateral e passou para a barra superior (topbar).
+// "Corpo diretivo" deixou de ser item solto — virou uma aba dentro de "Colaboradores e dirigentes".
+export const ORG_NAV_ITEM: NavItem = {
+  label: 'Minha Organização',
+  icon:  'entities',
+  children: [
+    { label: 'Cadastro da organização',    route: '/entity-registry' },
+    { label: 'Contas bancárias e bancos',  route: '/bank-accounts' },
+    { label: 'Colaboradores e dirigentes', route: '/employees' },
+  ],
+};
