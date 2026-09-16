@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { ApprovalTiersService } from '../approval-tiers.service';
 import { ApprovalTierPayload, ApprovalTierType, ApprovalScopeOption } from '../approval-tiers.model';
+import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 interface UserItem { id: number; name: string; email?: string; }
 interface LevelOption { value: string; label: string; }
@@ -12,7 +13,7 @@ interface LevelOption { value: string; label: string; }
 @Component({
   selector: 'app-approval-tiers-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CurrencyMaskDirective],
   templateUrl: './approval-tiers-new.page.html',
   styleUrl: './approval-tiers-new.page.scss',
 })

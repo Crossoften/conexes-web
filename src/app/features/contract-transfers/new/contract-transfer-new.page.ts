@@ -2,6 +2,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, AbstractControl, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { ContractTransfersService } from '../contract-transfers.service';
 import {
   PartnershipPayload,
@@ -43,6 +44,7 @@ export class ContractTransferNewPage implements OnInit {
 
   // ── Anexos (arquivos vinculados ao contrato — /files) ───────────────────────
   readonly files            = signal<PartnershipFile[]>([]);
+  readonly stagedFiles      = signal<PartnershipFile[]>([]);   // CV-07: anexos segurados no cliente durante o cadastro (antes de existir id)
   readonly filesLoading     = signal(false);
   readonly fileUploading    = signal(false);
   readonly newFileUrl       = signal<string>('');
@@ -222,22 +224,30 @@ export class ContractTransferNewPage implements OnInit {
 
   addAnexo(): void {
     const id = this.partnershipId();
-    if (!id) return;
     if (!this.newFileUrl()) {
       this.notify.error('Selecione um arquivo antes de adicionar.');
       return;
     }
-    this.svc.addFile(id, {
+    const anexo = {
       fileUrl:     this.newFileUrl(),
       fileKey:     this.newFileKey(),
       description: this.newFileDescription() || undefined,
-    }).subscribe({
+    };
+    const limpar = () => {
+      this.newFileUrl.set(''); this.newFileKey.set(''); this.newFileName.set(''); this.newFileDescription.set('');
+    };
+    // CV-07: cadastro novo (sem id) → segura o anexo no cliente; é associado ao salvar a parceria.
+    if (!id) {
+      const nome = this.newFileName();
+      this.stagedFiles.update(list => [...list, { id: -(list.length + 1), fileName: nome, ...anexo } as PartnershipFile]);
+      this.notify.success('Anexo adicionado — será salvo junto com a parceria.');
+      limpar();
+      return;
+    }
+    this.svc.addFile(id, anexo).subscribe({
       next: () => {
         this.notify.success('Anexo adicionado.');
-        this.newFileUrl.set('');
-        this.newFileKey.set('');
-        this.newFileName.set('');
-        this.newFileDescription.set('');
+        limpar();
         this.loadFiles(id);
       },
       error: err => {
@@ -249,7 +259,7 @@ export class ContractTransferNewPage implements OnInit {
 
   removeAnexo(fileId: number): void {
     const id = this.partnershipId();
-    if (!id) return;
+    if (!id) { this.stagedFiles.update(list => list.filter(f => f.id !== fileId)); return; }
     if (!window.confirm('Remover este anexo?')) return;
     this.svc.deleteFile(id, fileId).subscribe({
       next: () => { this.notify.success('Anexo removido.'); this.loadFiles(id); },
@@ -541,10 +551,21 @@ export class ContractTransferNewPage implements OnInit {
 
     this.loading.set(true);
     request.subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.notify.success(id ? 'Parceria atualizada com sucesso.' : 'Parceria cadastrada com sucesso.');
-        this.router.navigate(['/contract-transfers']);
+      next: (saved: any) => {
+        const finish = () => {
+          this.loading.set(false);
+          this.notify.success(id ? 'Parceria atualizada com sucesso.' : 'Parceria cadastrada com sucesso.');
+          this.router.navigate(['/contract-transfers']);
+        };
+        // CV-07: ao criar, associa os anexos que ficaram segurados no cliente durante o cadastro.
+        const staged = this.stagedFiles();
+        if (!id && staged.length && saved?.id) {
+          forkJoin(staged.map(f => this.svc.addFile(saved.id, {
+            fileUrl: f.fileUrl, fileKey: (f as any).fileKey, description: f.description || undefined,
+          }))).subscribe({ next: finish, error: finish });
+        } else {
+          finish();
+        }
       },
       error: err => {
         this.loading.set(false);

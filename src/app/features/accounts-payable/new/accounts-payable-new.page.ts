@@ -6,6 +6,7 @@ import { NgClass } from '@angular/common';
 import { AccountsPayableService } from '../accounts-payable.service';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 type MainTab = 'GERAIS' | 'RATEIO' | 'IMPOSTOS' | 'ANEXOS';
 type SubTab = 'COMPETENCIA' | 'CLASSIFICACAO';
@@ -14,7 +15,7 @@ interface Ref { id: number; name: string; }
 @Component({
   selector: 'app-accounts-payable-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CurrencyMaskDirective],
   templateUrl: './accounts-payable-new.page.html',
   styleUrl: './accounts-payable-new.page.scss',
 })
