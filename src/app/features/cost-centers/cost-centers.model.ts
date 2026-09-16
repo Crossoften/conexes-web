@@ -5,8 +5,9 @@ export type CostCenterStatus = 'Active' | 'Inactive' | 'Pending';
 // ── Sub-modelos ───────────────────────────────────────────────────────────────
 
 export interface LinkedAccount {
-  origin:        string;
-  accountPlanId: number;
+  origin:         string;
+  accountPlanId?: number;   // legado (plano de contas)
+  bankAccountId?: number;   // CC-04: novo vínculo com Conta Bancária
 }
 
 export interface CostCenterChild {

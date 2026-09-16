@@ -105,7 +105,7 @@
                     @for (linked of item!.linkedAccounts; track $index) {
                       <span class="linked-view-item">
                         <span class="linked-view-origin">{{ linked.origin }}</span>
-                        <span class="linked-view-account">{{ getAccountLabel(linked.accountPlanId) }}</span>
+                        <span class="linked-view-account">{{ getAccountLabel(linked.bankAccountId) }}</span>
                       </span>
                     }
                   </div>
@@ -244,18 +244,18 @@
               <h3 class="edit-section-title">Composição de contas vinculadas</h3>
 
               <div class="linked-box">
-                <div class="linked-box__label">Origem (Caixa)</div>
+                <div class="linked-box__label">Conta Bancária</div>
 
                 <div class="linked-box__input">
                   <div class="field">
-                    <label class="field-label">Selecionar conta</label>
+                    <label class="field-label">Selecionar conta bancária</label>
                     <div class="select-wrap">
                       <select class="select"
                         [(ngModel)]="selectedLinkedAccount"
                         [ngModelOptions]="{ standalone: true }">
                         <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
-                        @for (plan of accountPlans(); track plan.id) {
-                          <option [value]="plan.id">{{ plan.code }} — {{ plan.title }}</option>
+                        @for (acc of bankAccounts(); track acc.id) {
+                          <option [value]="acc.id">{{ getAccountLabel(acc.id) }}</option>
                         }
                       </select>
                       <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -279,7 +279,7 @@
                   @for (linked of linkedAccounts; track $index) {
                     <div class="linked-list__item">
                       <span class="linked-list__origin">{{ linked.origin }}</span>
-                      <span class="linked-list__account">{{ getAccountLabel(linked.accountPlanId) }}</span>
+                      <span class="linked-list__account">{{ getAccountLabel(linked.bankAccountId) }}</span>
                       <button type="button" class="icon-btn" title="Remover" (click)="removeLinkedAccount($index)">
                         <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
                       </button>

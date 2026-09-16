@@ -45,6 +45,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   readonly loading       = signal(false);
   readonly errorMsg      = signal<string | null>(null);
   readonly accountPlans  = signal<AccountPlanItem[]>([]);
+  readonly bankAccounts  = signal<any[]>([]);   // CC-04: contas bancárias p/ a composição vinculada
   readonly entities      = signal<EntityItem[]>([]);
   readonly loadingLists  = signal(true);
 
@@ -83,6 +84,14 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     ).subscribe({
       next: res => { this.accountPlans.set(Array.isArray(res) ? res : res?.data ?? []); checkDone(); },
       error: () => checkDone(),
+    });
+
+    // CC-04: contas bancárias para a composição de contas vinculadas.
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
+    ).subscribe({
+      next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
+      error: () => {},
     });
 
     this.http.get<EntityItem[] | { data?: EntityItem[] }>(
@@ -138,7 +147,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     // CC-persist: normaliza para { origin, accountPlanId }. O findOne devolve o
     // ProjectAccount inteiro (id, projectId, accountPlan) e reenviar esses campos
     // extras no PATCH quebraria o `create` do Prisma.
-    this.linkedAccounts = (c.linkedAccounts ?? []).map(a => ({ origin: a.origin, accountPlanId: a.accountPlanId }));
+    this.linkedAccounts = (c.linkedAccounts ?? []).map((a: any) => ({ origin: a.origin, accountPlanId: a.accountPlanId, bankAccountId: a.bankAccountId }));
   }
 
   // ── Contas vinculadas ─────────────────────────────────────────────────────
@@ -154,10 +163,10 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   addLinkedAccount(): void {
     if (!this.selectedLinkedAccount) return;
     const id = Number(this.selectedLinkedAccount);
-    if (this.linkedAccounts.some(a => a.accountPlanId === id)) return;
+    if (this.linkedAccounts.some(a => a.bankAccountId === id)) return;
     this.linkedAccounts = [
       ...this.linkedAccounts,
-      { origin: this.selectedLinkedOrigin, accountPlanId: id },
+      { origin: this.selectedLinkedOrigin, bankAccountId: id },
     ];
     this.selectedLinkedAccount = '';
   }
@@ -173,8 +182,11 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   }
 
   getAccountLabel(id: number): string {
-    const a = this.accountPlans().find(p => p.id === id);
-    return a ? `${a.code} — ${a.title}` : String(id);
+    const a = this.bankAccounts().find((p: any) => p.id === id);
+    if (!a) return String(id);
+    const nome  = a.nickname ?? a.apelido ?? a.bankName ?? a.bank?.name ?? a.name ?? 'Conta';
+    const conta = [a.agency ?? a.agencia, a.accountNumber ?? a.conta ?? a.number].filter(Boolean).join(' / ');
+    return conta ? `${nome} — ${conta}` : String(nome);
   }
 
   // ── Accessors view ────────────────────────────────────────────────────────

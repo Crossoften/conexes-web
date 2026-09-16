@@ -38,6 +38,7 @@ export class CostCentersNewPage implements OnInit {
   readonly errorMsg     = signal<string | null>(null);
   readonly accountPlans = signal<AccountPlanItem[]>([]);
   readonly projects     = signal<{ id: number; name: string }[]>([]);   // CC-03: projetos p/ escolher o pai de uma Atividade avulsa
+  readonly bankAccounts = signal<any[]>([]);                            // CC-04: contas bancárias p/ a composição vinculada
   readonly entities     = signal<EntityItem[]>([]);
   readonly loadingLists = signal(true);
 
@@ -117,6 +118,14 @@ export class CostCentersNewPage implements OnInit {
       },
       error: () => {},
     });
+
+    // CC-04: contas bancárias para a composição de contas vinculadas.
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
+    ).subscribe({
+      next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
+      error: () => {},
+    });
   }
 
   // ── Contas vinculadas ─────────────────────────────────────────────────────
@@ -132,10 +141,10 @@ export class CostCentersNewPage implements OnInit {
   addLinkedAccount(): void {
     if (!this.selectedLinkedAccount) return;
     const id = Number(this.selectedLinkedAccount);
-    if (this.linkedAccounts.some(a => a.accountPlanId === id)) return;
+    if (this.linkedAccounts.some(a => a.bankAccountId === id)) return;
     this.linkedAccounts = [
       ...this.linkedAccounts,
-      { origin: this.selectedLinkedOrigin, accountPlanId: id },
+      { origin: this.selectedLinkedOrigin, bankAccountId: id },
     ];
     this.selectedLinkedAccount = '';
   }
@@ -155,8 +164,11 @@ export class CostCentersNewPage implements OnInit {
   }
 
   getAccountLabel(id: number): string {
-    const a = this.accountPlans().find(p => p.id === id);
-    return a ? `${a.code} — ${a.title}` : String(id);
+    const a = this.bankAccounts().find((p: any) => p.id === id);
+    if (!a) return String(id);
+    const nome  = a.nickname ?? a.apelido ?? a.bankName ?? a.bank?.name ?? a.name ?? 'Conta';
+    const conta = [a.agency ?? a.agencia, a.accountNumber ?? a.conta ?? a.number].filter(Boolean).join(' / ');
+    return conta ? `${nome} — ${conta}` : String(nome);
   }
 
   // ── Form ─────────────────────────────────────────────────────────────────
