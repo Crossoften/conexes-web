@@ -217,6 +217,18 @@
                 </div>
               </div>
 
+              <!-- CV-05: status Ativo/Inativo editável direto no cadastro do órgão -->
+              <div class="form-row grid-cols-4">
+                <div class="form-group">
+                  <label>Status <span class="req">*</span></label>
+                  <select class="form-control" formControlName="status">
+                    <option value="Active">Ativo</option>
+                    <option value="Pending">Pendente</option>
+                    <option value="Inactive">Inativo</option>
+                  </select>
+                </div>
+              </div>
+
               <div class="form-row grid-cols-4">
                 <div class="form-group">
                   <label>Órgão Gestor <span class="req">*</span></label>

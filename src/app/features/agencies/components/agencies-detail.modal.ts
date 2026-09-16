@@ -57,6 +57,7 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
     managingOrgan:   ['', Validators.required],
     phone:           [''],
     email:           ['', Validators.email],
+    status:          ['Active'],
     staff:           this.fb.array([] as FormGroup[]),
   });
 
@@ -113,6 +114,7 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
         managingOrgan:   this.agency.managingOrgan  ?? '',
         phone:           this.agency.phone          ?? '',
         email:           this.agency.email          ?? '',
+        status:          this.agency.status         ?? 'Active',
       });
 
       // Reconstrói a equipe a partir do órgão carregado.
@@ -267,6 +269,7 @@ export class AgencyDetailModalComponent implements OnChanges, OnInit {
       managingOrgan:   raw.managingOrgan || undefined,
       phone:           onlyDigits(raw.phone) || undefined,
       email:           raw.email         || undefined,
+      status:          (raw.status as any) || undefined,
       logo:            this.logoUrl()    || undefined,
       staff,
     };
