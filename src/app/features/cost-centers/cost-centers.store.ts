@@ -170,7 +170,7 @@ export const CostCentersStore = signalStore(
             items:   Array.isArray(res) ? res : (res.data ?? []),
             pagination: {
               ...store.pagination(),
-              total: Array.isArray(res) ? (res as CostCenter[]).length : (res.total ?? 0),
+              total: Array.isArray(res) ? (res as CostCenter[]).length : ((res as any).count ?? (res as any).total ?? 0),
             },
             loading: false,
           }),
@@ -209,7 +209,7 @@ export const CostCentersStore = signalStore(
         svc.getAll({ ...buildParams(), name, skip: 1 }).subscribe({
           next: res => patchState(store, {
             items:      Array.isArray(res) ? res : (res.data ?? []),
-            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : (res.total ?? 0) },
+            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : ((res as any).count ?? (res as any).total ?? 0) },
             loading: false,
           }),
           error: err => patchState(store, { loading: false, error: err?.error?.message ?? 'Erro ao carregar registros.' }),
@@ -224,7 +224,7 @@ export const CostCentersStore = signalStore(
         svc.getAll({ ...buildParams(), type, skip: 1 }).subscribe({
           next: res => patchState(store, {
             items:      Array.isArray(res) ? res : (res.data ?? []),
-            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : (res.total ?? 0) },
+            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : ((res as any).count ?? (res as any).total ?? 0) },
             loading: false,
           }),
           error: err => patchState(store, { loading: false, error: err?.error?.message ?? 'Erro ao carregar registros.' }),
@@ -238,7 +238,7 @@ export const CostCentersStore = signalStore(
         svc.getAll({ ...buildParams(), skip: page }).subscribe({
           next: res => patchState(store, {
             items:      Array.isArray(res) ? res : (res.data ?? []),
-            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : (res.total ?? 0) },
+            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : ((res as any).count ?? (res as any).total ?? 0) },
             loading: false,
           }),
           error: err => patchState(store, { loading: false, error: err?.error?.message ?? 'Erro ao carregar registros.' }),
@@ -250,7 +250,7 @@ export const CostCentersStore = signalStore(
         svc.getAll({ ...buildParams(), take: pageSize, skip: 1 }).subscribe({
           next: res => patchState(store, {
             items:      Array.isArray(res) ? res : (res.data ?? []),
-            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : (res.total ?? 0) },
+            pagination: { ...store.pagination(), total: Array.isArray(res) ? (res as CostCenter[]).length : ((res as any).count ?? (res as any).total ?? 0) },
             loading: false,
           }),
           error: err => patchState(store, { loading: false, error: err?.error?.message ?? 'Erro ao carregar registros.' }),

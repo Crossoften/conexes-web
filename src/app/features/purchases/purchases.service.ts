@@ -216,7 +216,8 @@ export class PurchasesService {
         return rows.map(r => ({
           id:       Number(r['id']),
           name:     String(r['name'] ?? r['title'] ?? r['id']),
-          group:    pick(r, 'group', 'groupName', 'productGroup'),
+          // CP-11/CP-17/CP-28: grupo do cadastro (string legada OU relação productGroup.name).
+          group:    pick(r, 'group', 'groupName') ?? ((r['productGroup'] as Record<string, unknown> | undefined)?.['name'] as string ?? null),
           unit:     pick(r, 'measure', 'unit', 'unitOfMeasure', 'measureUnit'),
           costBase: num(r['costBase'] ?? r['cost'] ?? r['price'] ?? r['basePrice']),
           // CP-17: fabricante do cadastro (string direta ou relação manufacturerRef.name).
