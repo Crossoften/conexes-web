@@ -208,3 +208,13 @@
 
   </div>
 </div>
+<!-- ── CP-02: modal de visualização/edição de produto ou serviço ─────────────── -->
+@if (showProductModal() && selectedProduct()) {
+  <app-product-detail-modal
+    [item]="selectedProduct()"
+    [initialMode]="productModalMode()"
+    (close)="onProductModalClose()"
+    (saved)="onProductSaved()"
+    (deleted)="onProductDeleted($event)">
+  </app-product-detail-modal>
+}

@@ -5,12 +5,13 @@ import { NgClass } from '@angular/common';
 import { PurchasingRegistriesStore } from './purchasing-registries.store';
 import { PurchasingRegistriesService } from './purchasing-registries.service';
 import { RegistryStatus, REGISTRY_STATUS_CONFIG, Product, DeliveryLocation } from './purchasing-registries.model';
+import { ProductDetailModalComponent } from './components/product-detail.modal';
 import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-purchasing-registries-list',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, ProductDetailModalComponent],
   providers: [PurchasingRegistriesStore],
   templateUrl: './purchasing-registries-list.page.html',
   styleUrl: './purchasing-registries-list.page.scss',
@@ -157,8 +158,37 @@ export class PurchasingRegistriesListPage {
   removeProduct(item: Product)      { if (confirm(`Excluir "${item.productName}"?`)) this.store.removeProduct(item.apiId); }
   removeLocation(item: DeliveryLocation) { if (confirm(`Excluir o local "${item.name}"?`)) this.store.removeLocation(item.apiId); }
 
-  editProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId]); }
-  viewProduct(item: Product)        { this.router.navigate(['/purchasing-registries/edit', item.apiId], { queryParams: { view: 1 } }); }      // CP-03
+  // ── CP-02: visualizar/editar produto em modal (padrão de Contatos) ─────────
+  readonly selectedProduct = signal<Product | null>(null);
+  readonly showProductModal = signal(false);
+  readonly productModalMode = signal<'view' | 'edit'>('view');
+
+  private openProductModal(item: Product, mode: 'view' | 'edit'): void {
+    this.productModalMode.set(mode);
+    this.selectedProduct.set(item);
+    this.showProductModal.set(true);
+  }
+
+  editProduct(item: Product)        { this.openProductModal(item, 'edit'); }
+  viewProduct(item: Product)        { this.openProductModal(item, 'view'); }   // CP-03
+
+  onProductModalClose(): void {
+    this.showProductModal.set(false);
+    this.selectedProduct.set(null);
+  }
+
+  onProductSaved(): void {
+    this.onProductModalClose();
+    this.store.load();
+  }
+
+  onProductDeleted(apiId: number): void {
+    const item = this.selectedProduct();
+    if (!confirm(`Excluir "${item?.productName ?? 'este item'}"?`)) return;
+    this.onProductModalClose();
+    this.store.removeProduct(apiId);
+  }
+
   duplicateProduct(item: Product)   { this.router.navigate(['/purchasing-registries/new'], { queryParams: { duplicate: item.apiId } }); }   // CP-05
   editLocation(item: DeliveryLocation) { this.router.navigate(['/purchasing-registries/locations/edit', item.apiId]); }
 }

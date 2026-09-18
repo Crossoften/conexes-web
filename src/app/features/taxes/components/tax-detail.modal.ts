@@ -68,10 +68,6 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
     this.form.valueChanges.subscribe(() => {
       this.form.get('resumoRetencoes')?.setValue(formatDecimalBR(this.computeTotal()), { emitEvent: false });
     });
-    // Aba Alíquotas só fica acessível com o toggle de retenção marcado.
-    this.form.get('definirAliquotasManual')?.valueChanges.subscribe(v => {
-      if (this.mode === 'edit' && !v && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAIS';
-    });
   }
 
   ngOnInit(): void {
@@ -146,7 +142,8 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
       }
     }
 
-    if (!this.hasRetencao() && this.activeTab === 'ALIQUOTAS') this.activeTab = 'GERAIS';
+    // TX-01: a aba Alíquotas não é mais fechada automaticamente — ela existe
+    // independentemente do toggle de retenção manual.
   }
 
   // ── Accessors ─────────────────────────────────────────────────────────────
@@ -172,7 +169,6 @@ export class TaxDetailModalComponent implements OnChanges, OnInit {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   setTab(tab: ModalTab): void {
-    if (tab === 'ALIQUOTAS' && !this.hasRetencao()) return;
     this.activeTab = tab;
   }
 
