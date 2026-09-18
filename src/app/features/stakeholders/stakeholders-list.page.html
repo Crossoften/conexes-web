@@ -15,20 +15,18 @@
 
     <div class="controls-section">
 
-      <div class="vision-group">
-        <label>Selecione a visão</label>
-        <!-- CF-02: seletor em pílula (toggle), padrão visual do sistema. -->
-        <div class="pill-toggle" role="tablist" aria-label="Visão de contatos">
-          @for (opt of viewOptions; track opt.value) {
-            <button type="button" class="pill-toggle__btn"
-              role="tab"
-              [class.pill-toggle__btn--active]="store.filters().view === opt.value"
-              [attr.aria-selected]="store.filters().view === opt.value"
-              (click)="onViewChange(opt.value)">
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+      <!-- CF-02: exatamente o seletor de Usuários e Permissões — duas áreas
+           proporcionais ocupando a largura do card, sem rótulo acima. -->
+      <div class="tabs-pill" role="tablist" aria-label="Visão de contatos">
+        @for (opt of viewOptions; track opt.value) {
+          <button type="button" class="tab-btn"
+            role="tab"
+            [class.active]="store.filters().view === opt.value"
+            [attr.aria-selected]="store.filters().view === opt.value"
+            (click)="onViewChange(opt.value)">
+            {{ opt.label }}
+          </button>
+        }
       </div>
 
       <div class="filter-bar">
