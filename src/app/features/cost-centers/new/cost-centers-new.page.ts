@@ -44,6 +44,10 @@ export class CostCentersNewPage implements OnInit {
 
   // Preenchido quando a tela é aberta via "Adicionar Subnível" a partir de um pai.
   readonly parentName = signal<string | null>(null);
+  // CC-03 fix: o pai veio pronto da query string ("Adicionar Subnível") — nesse caso
+  // o select de "Projeto pai" nem aparece. Antes a condição do template olhava o
+  // VALOR do campo, então escolher um projeto fazia o próprio campo sumir.
+  readonly parentLocked = signal(false);
 
   // Contas vinculadas gerenciadas separadamente (array dinâmico)
   linkedAccounts: LinkedAccount[] = [];
@@ -79,6 +83,7 @@ export class CostCentersNewPage implements OnInit {
         parentProjectId: Number(parentProjectId),
       });
       this.parentName.set(qp.get('parentName'));
+      this.parentLocked.set(true);
     } else if (parentId) {
       // Subnível Projeto: vinculado ao Centro de Custo pai via costCenterId.
       this.form.patchValue({
@@ -86,7 +91,12 @@ export class CostCentersNewPage implements OnInit {
         costCenterId: Number(parentId),
       });
       this.parentName.set(qp.get('parentName'));
+      this.parentLocked.set(true);
     }
+
+    // CC-03: Atividade avulsa exige o Projeto pai; nos demais tipos o campo nem existe.
+    this.form.get('projectType')?.valueChanges.subscribe(() => this.syncParentValidator());
+    this.syncParentValidator();
 
     let loaded = 0;
     const checkDone = () => { if (++loaded >= 2) this.loadingLists.set(false); };
@@ -126,6 +136,15 @@ export class CostCentersNewPage implements OnInit {
       next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
       error: () => {},
     });
+  }
+
+  /** CC-03: "Projeto pai" só é obrigatório na Atividade avulsa (sem pai na query string). */
+  private syncParentValidator(): void {
+    const ctrl = this.form.get('parentProjectId');
+    if (!ctrl) return;
+    const required = this.form.get('projectType')?.value === 'atividade' && !this.parentLocked();
+    required ? ctrl.setValidators([Validators.required]) : ctrl.clearValidators();
+    ctrl.updateValueAndValidity({ emitEvent: false });
   }
 
   // ── Contas vinculadas ─────────────────────────────────────────────────────

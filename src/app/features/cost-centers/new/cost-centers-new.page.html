@@ -57,13 +57,16 @@
 
           </div>
 
-          <!-- CC-03: ao cadastrar uma Atividade avulsa, escolher o Projeto pai -->
-          @if (form.get('projectType')?.value === 'atividade' && !form.get('parentProjectId')?.value) {
+          <!-- CC-03: ao cadastrar uma Atividade avulsa, escolher o Projeto pai.
+               A condição olha `parentLocked()` (pai veio da query string), nunca o valor
+               do próprio campo — senão o select sumia assim que o projeto era escolhido. -->
+          @if (form.get('projectType')?.value === 'atividade' && !parentLocked()) {
             <div class="form-row grid-cols-3">
               <div class="form-group">
                 <label>Projeto pai <span class="req">*</span></label>
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="parentProjectId">
+                  <select class="form-control" formControlName="parentProjectId"
+                    [class.is-invalid]="form.get('parentProjectId')?.invalid && form.get('parentProjectId')?.touched">
                     <option [ngValue]="null">Selecione o projeto</option>
                     @for (p of projects(); track p.id) {
                       <option [ngValue]="p.id">{{ p.name }}</option>

@@ -155,7 +155,8 @@
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                       </a>
                     }
-                    @if (row.node.type === 'projeto' || row.node.type === 'atividade') {
+                    <!-- Só Projeto recebe subnível: o back recusa Atividade como pai de Atividade. -->
+                    @if (row.node.type === 'projeto') {
                       <a class="icon-btn" title="Adicionar subnível (atividade)"
                         [routerLink]="['/cost-centers/new']"
                         [queryParams]="{ type: 'atividade', parentProjectId: row.node.id, parentName: row.node.name || row.node.title }">
