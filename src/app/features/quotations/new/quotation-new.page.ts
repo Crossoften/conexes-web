@@ -169,8 +169,15 @@ export class QuotationNewPage {
     this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
     // CP-15: fornecedores tipo Supplier para o seletor de sugeridos.
     this.svc.getSuppliersOnlyLookup().subscribe({ next: v => this.suppliers.set(v), error: () => {} });
-    // CP-fix (Bug 2): "Contrato vinculado" traz os contratos de repasses e parcerias.
-    this.svc.getPartnershipsLookup().subscribe({ next: v => this.contracts.set(v), error: () => {} });
+    // item 5 (reteste 22.09): "Contrato" traz os contratos de FORNECEDOR (Contract),
+    // não instrumentos de Convênios/Parcerias.
+    this.svc.getContracts({ take: 500 }).subscribe({
+      next: res => this.contracts.set((res.data ?? []).map(c => ({
+        id: c.id,
+        name: [c.number, c.title].filter(Boolean).join(' — ') + (c.stakeholder?.name ? ` (${c.stakeholder.name})` : ''),
+      }))),
+      error: () => {},
+    });
   }
 
   private loadForEdit(id: number): void {
@@ -201,8 +208,8 @@ export class QuotationNewPage {
       exclusiveSupplier:     r.exclusiveSupplier ?? false,
       withoutSubsidy:        r.withoutSubsidy ?? false,
       supplierCount:         r.supplierCount != null ? String(r.supplierCount) : '',
-      // CP-fix (Bug 2): o select reflete o repasse/parceria vinculado (partnershipId).
-      contractId:            r.partnershipId != null ? String(r.partnershipId) : '',
+      // item 5: o select reflete o contrato de fornecedor vinculado (contractId).
+      contractId:            r.contractId != null ? String(r.contractId) : '',
       deliveryLocationId:    r.deliveryLocationId != null ? String(r.deliveryLocationId) : '',
     });
 
@@ -472,8 +479,8 @@ export class QuotationNewPage {
       exclusiveSupplier:     v.exclusiveSupplier,
       withoutSubsidy:        v.withoutSubsidy,
       supplierCount:         this.num(v.supplierCount),
-      // CP-fix (Bug 2): o "Contrato vinculado" referencia repasses/parcerias → partnershipId.
-      partnershipId:         this.num(v.contractId),
+      // item 5: "Contrato" referencia o contrato de fornecedor → contractId.
+      contractId:            this.num(v.contractId),
       deliveryLocationId:    this.num(v.deliveryLocationId),
       // CP-15: fornecedores sugeridos vinculados à requisição.
       supplierIds:           this.selectedSupplierIds(),

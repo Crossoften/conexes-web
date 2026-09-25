@@ -5,6 +5,7 @@ import { PurchasingRegistriesNewPage } from './new/purchasing-registries-new.pag
 import { DeliveryLocationNewPage } from './new/delivery-location-new.page';
 import { CadastrosAuxiliaresPage } from './auxiliares/cadastros-auxiliares.page';
 import { UnitMeasuresPage } from '../unit-measures/unit-measures.page';
+import { SupplierContractsPage } from '../supplier-contracts/supplier-contracts.page';
 
 export const purchasingRegistriesRoutes: Routes = [
   { path: '', component: PurchasingRegistriesListPage },
@@ -14,6 +15,9 @@ export const purchasingRegistriesRoutes: Routes = [
 
   // item 10: cadastro de Unidades de Medida + conversões
   { path: 'unidades', component: UnitMeasuresPage },
+
+  // item 5: cadastro de contratos de fornecedor
+  { path: 'contratos', component: SupplierContractsPage },
 
   // Produtos e serviços
   { path: 'new',        component: PurchasingRegistriesNewPage },

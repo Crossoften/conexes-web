@@ -124,6 +124,8 @@ export class PurchasingRegistriesListPage {
   goAux() { this.router.navigate(['/purchasing-registries/auxiliares']); }
   // item 10: cadastro de Unidades de Medida + conversões.
   goUnits() { this.router.navigate(['/purchasing-registries/unidades']); }
+  // item 5: cadastro de contratos de fornecedor.
+  goContracts() { this.router.navigate(['/purchasing-registries/contratos']); }
 
   readonly statusOptions: { label: string; value: RegistryStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
