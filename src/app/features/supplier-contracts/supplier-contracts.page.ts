@@ -94,6 +94,10 @@ import { PurchaseContract, PurchaseRef } from '../purchases/purchases.model';
     :host { display:block; }
     .right { text-align:right; }
     .error-banner { background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
+    /* estilo escopado do select (o global fica no .scss das outras telas; aqui é inline) */
+    .select-wrap { position: relative; display: block; }
+    .select-wrap select.form-control { appearance: none; -webkit-appearance: none; padding-right: 34px; }
+    .select-chevron { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted,#9CA3AF); pointer-events: none; }
   `],
 })
 export class SupplierContractsPage {

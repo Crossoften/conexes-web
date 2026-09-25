@@ -114,6 +114,10 @@ import { UnitMeasuresService, UnitMeasure } from './unit-measures.service';
     .um-chip { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid var(--surface-border,#E5E7EB); border-radius:999px; background:#f4f6f9; font-size:13px; font-weight:600; color:var(--text-primary,#111827); }
     .um-chip button { border:none; background:none; cursor:pointer; color:#dc2626; font-size:16px; line-height:1; padding:0; }
     .error-banner { background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
+    /* estilo escopado do select (o global fica no .scss das outras telas; aqui é inline) */
+    .select-wrap { position: relative; display: block; }
+    .select-wrap select.form-control { appearance: none; -webkit-appearance: none; padding-right: 34px; }
+    .select-chevron { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted,#9CA3AF); pointer-events: none; }
   `],
 })
 export class UnitMeasuresPage {
