@@ -85,7 +85,8 @@
 
             <div class="form-group">
               <label>Valor custo base</label>
-              <input type="number" step="0.01" class="form-control" placeholder="0,00" formControlName="costBase">
+              <!-- item 21 (reteste 22.09): máscara monetária BR. -->
+              <input type="text" inputmode="decimal" appCurrencyMask class="form-control" placeholder="0,00" formControlName="costBase">
             </div>
 
             @if (!isService()) {

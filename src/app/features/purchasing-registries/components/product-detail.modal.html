@@ -196,7 +196,7 @@
 
                 <div class="field">
                   <label class="field-label">Valor custo base</label>
-                  <input type="number" step="0.01" class="input" placeholder="0,00" formControlName="costBase">
+                  <input type="text" inputmode="decimal" appCurrencyMask class="input" placeholder="0,00" formControlName="costBase">
                 </div>
 
                 @if (!isService()) {

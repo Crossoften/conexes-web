@@ -3,11 +3,12 @@ import { Component, computed, inject } from '@angular/core';
 import { PurchasingOrdersStore } from './purchasing-orders.store';
 import { OrderRow, ORDER_STATUS_CONFIG } from './purchasing-orders.model';
 import { OrderDetailModalComponent } from './components/order-detail.modal';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-purchasing-orders-list',
   standalone: true,
-  imports: [OrderDetailModalComponent],
+  imports: [OrderDetailModalComponent, TooltipDirective],
   providers: [PurchasingOrdersStore],
   templateUrl: './purchasing-orders-list.page.html',
   styleUrl: './purchasing-orders-list.page.scss',

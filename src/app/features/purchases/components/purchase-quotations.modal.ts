@@ -7,6 +7,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { NotificationService } from '../../../shared/services/notification.service';
 import { PurchasesService } from '../purchases.service';
 import { PurchaseQuotation, PurchaseRef, QuotationStatus } from '../purchases.model';
+import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string }> = {
   Pending:  { label: 'Pendente',  variant: 'neutral' },
@@ -18,7 +19,7 @@ const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string
 @Component({
   selector: 'app-purchase-quotations-modal',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CurrencyMaskDirective],
   templateUrl: './purchase-quotations.modal.html',
   styleUrl: './purchase-quotations.modal.scss',
 })

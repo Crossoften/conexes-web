@@ -6,11 +6,12 @@ import { PurchasingRegistriesService } from '../purchasing-registries.service';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { PurchaseRef } from '../../purchases/purchases.model';
 import { ApiProductService, ProductServicePayload, RegistryStatus } from '../purchasing-registries.model';
+import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 @Component({
   selector: 'app-purchasing-registries-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, CurrencyMaskDirective],
   templateUrl: './purchasing-registries-new.page.html',
   styleUrl: './purchasing-registries-new.page.scss',
 })
@@ -123,7 +124,7 @@ export class PurchasingRegistriesNewPage {
       groupId:         v.groupId ? Number(v.groupId) : undefined,
       manufacturerId:  v.manufacturerId ? Number(v.manufacturerId) : undefined,
       measure:       v.measure || undefined,
-      costBase:      v.costBase !== '' ? Number(v.costBase) : undefined,
+      costBase:      v.costBase !== '' && v.costBase != null ? Number(v.costBase) : undefined,
       origin:        v.origin || undefined,
       accountPlanId: v.accountPlanId !== '' ? Number(v.accountPlanId) : undefined,
       description:   v.description || undefined,

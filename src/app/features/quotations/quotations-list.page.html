@@ -168,59 +168,59 @@
                 <!-- Ações por etapa -->
                 <td class="td td--center">
                   <div class="action-icons">
-                    <button class="icon-btn" title="Visualizar" (click)="view(item)">
+                    <button class="icon-btn" appTooltip="Visualizar" aria-label="Visualizar" (click)="view(item)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
                         <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
                       </svg>
                     </button>
                     @if (canQuotations) {
-                      <button class="icon-btn" title="Cotações" (click)="openQuotations(item)">
+                      <button class="icon-btn" appTooltip="Cotações" aria-label="Cotações" (click)="openQuotations(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
                       </button>
                     }
                     @if (canAward()) {
-                      <button class="icon-btn icon-btn--ok" title="Adjudicar" (click)="openAward(item)">
+                      <button class="icon-btn icon-btn--ok" appTooltip="Adjudicar" aria-label="Adjudicar" (click)="openAward(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.5L7 22l5-3 5 3-1.5-9.5"/></svg>
                       </button>
                     }
                     @if (canEdit) {
-                      <button class="icon-btn" title="Editar" (click)="edit(item)">
+                      <button class="icon-btn" appTooltip="Editar" aria-label="Editar" (click)="edit(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     }
                     @if (canSubmit) {
-                      <button class="icon-btn icon-btn--ok" title="Enviar para aprovação" (click)="submit(item)">
+                      <button class="icon-btn icon-btn--ok" appTooltip="Enviar para aprovação" aria-label="Enviar para aprovação" (click)="submit(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                       </button>
                     }
                     @if (canApprove()) {
-                      <button class="icon-btn icon-btn--ok" [title]="routeStage === 3 ? 'Concluir aprovação da cotação (avança para Pedido)' : 'Aprovar'" (click)="approve(item)">
+                      <button class="icon-btn icon-btn--ok" [appTooltip]="routeStage === 3 ? 'Concluir aprovação da cotação (avança para Pedido)' : 'Aprovar'" [attr.aria-label]="routeStage === 3 ? 'Concluir aprovação da cotação (avança para Pedido)' : 'Aprovar'" (click)="approve(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     }
                     @if (canReject()) {
-                      <button class="icon-btn icon-btn--danger" title="Reprovar" (click)="reject(item)">
+                      <button class="icon-btn icon-btn--danger" appTooltip="Reprovar" aria-label="Reprovar" (click)="reject(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                       </button>
                     }
                     @if (canRequestChanges()) {
-                      <button class="icon-btn icon-btn--warn" title="Solicitar ajustes" (click)="requestChanges(item)">
+                      <button class="icon-btn icon-btn--warn" appTooltip="Solicitar ajustes" aria-label="Solicitar ajustes" (click)="requestChanges(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 15.5V17h1.5l8-8-1.5-1.5-8 8zM13.5 6l1.5 1.5 1.2-1.2a1 1 0 0 0 0-1.4l-.1-.1a1 1 0 0 0-1.4 0L13.5 6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
                       </button>
                     }
                     @if (canExportQuotation) {
-                      <button class="icon-btn icon-btn--ok" title="Enviar cotação para aprovação (avançar p/ Etapa 4)" (click)="exportToQuotation(item)">
+                      <button class="icon-btn icon-btn--ok" appTooltip="Enviar cotação para aprovação (avançar p/ Etapa 4)" aria-label="Enviar cotação para aprovação (avançar p/ Etapa 4)" (click)="exportToQuotation(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
                       </button>
                     }
                     @if (canCopy) {
-                      <button class="icon-btn" title="Duplicar" (click)="copy(item)">
+                      <button class="icon-btn" appTooltip="Duplicar" aria-label="Duplicar" (click)="copy(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                       </button>
                     }
                     @if (canComplete) {
-                      <button class="icon-btn icon-btn--ok" title="Concluir" (click)="complete(item)">
+                      <button class="icon-btn icon-btn--ok" appTooltip="Concluir" aria-label="Concluir" (click)="complete(item)">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     }
@@ -228,7 +228,7 @@
                     <!-- Ações secundárias no menu "⋮" -->
                     @if (hasRowMenu()) {
                       <div class="menu-wrap">
-                        <button class="icon-btn" title="Mais opções" (click)="toggleMenu(item.id, $event)">
+                        <button class="icon-btn" appTooltip="Mais opções" aria-label="Mais opções" (click)="toggleMenu(item.id, $event)">
                           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                         </button>
                         @if (menuOpenId() === item.id) {
@@ -339,7 +339,7 @@
   <!-- item 11: confirmação de avanço de etapa / ações que alteram dados ou status -->
   @if (confirmState(); as c) {
     <app-confirm-dialog
-      [title]="c.title" [message]="c.message" [confirmLabel]="c.confirmLabel" [danger]="c.danger"
+      [appTooltip]="c.title" [attr.aria-label]="c.title" [message]="c.message" [confirmLabel]="c.confirmLabel" [danger]="c.danger"
       (confirm)="onConfirmProceed()" (cancel)="onConfirmCancel()">
     </app-confirm-dialog>
   }

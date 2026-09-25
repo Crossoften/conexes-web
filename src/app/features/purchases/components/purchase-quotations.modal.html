@@ -43,21 +43,22 @@
                   @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
                 </select>
               </label>
+              <!-- item 21 (reteste 22.09): máscara monetária BR (R$ 1.448,00) — antes eram type=number crus. -->
               <label class="field">
                 <span class="field-label">Valor unitário *</span>
-                <input class="field-input" type="number" step="0.01" min="0" formControlName="unitValue">
+                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="unitValue">
               </label>
               <label class="field">
                 <span class="field-label">Valor total *</span>
-                <input class="field-input" type="number" step="0.01" min="0" formControlName="totalValue">
+                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="totalValue">
               </label>
               <label class="field">
                 <span class="field-label">Frete</span>
-                <input class="field-input" type="number" step="0.01" min="0" formControlName="freight">
+                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="freight">
               </label>
               <label class="field">
                 <span class="field-label">Desconto</span>
-                <input class="field-input" type="number" step="0.01" min="0" formControlName="discount">
+                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="discount">
               </label>
               <label class="field">
                 <span class="field-label">Prazo de entrega</span>

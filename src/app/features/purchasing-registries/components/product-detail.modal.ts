@@ -11,6 +11,7 @@ import {
   RegistryStatus,
   REGISTRY_STATUS_CONFIG,
 } from '../purchasing-registries.model';
+import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 /**
  * CP-02: visualização e edição de produto/serviço no padrão de modal usado em
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-product-detail-modal',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CurrencyMaskDirective],
   templateUrl: './product-detail.modal.html',
   styleUrl: './product-detail.modal.scss',
 })
@@ -191,7 +192,7 @@ export class ProductDetailModalComponent implements OnInit, OnChanges {
       groupId:        v.groupId ? Number(v.groupId) : undefined,
       manufacturerId: v.manufacturerId ? Number(v.manufacturerId) : undefined,
       measure:        v.measure || undefined,
-      costBase:       v.costBase !== '' ? Number(v.costBase) : undefined,
+      costBase:       v.costBase !== '' && v.costBase != null ? Number(v.costBase) : undefined,
       origin:         v.origin || undefined,
       accountPlanId:  v.accountPlanId !== '' ? Number(v.accountPlanId) : undefined,
       description:    v.description || undefined,

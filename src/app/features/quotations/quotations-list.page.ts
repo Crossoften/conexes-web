@@ -12,11 +12,12 @@ import { PurchaseQuotationsModalComponent } from '../purchases/components/purcha
 import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, ConfirmDialogComponent],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, ConfirmDialogComponent, TooltipDirective],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',

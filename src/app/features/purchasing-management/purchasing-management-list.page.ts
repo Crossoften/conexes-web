@@ -9,11 +9,12 @@ import { PurchaseRequestDetailModalComponent } from '../purchases/components/pur
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
 import { PurchaseActionKind, PurchaseActionResult } from '../purchases/purchases.model';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
+import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-purchasing-management-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent],
+  imports: [FormsModule, NgClass, RouterLink, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, TooltipDirective],
   providers: [PurchasingManagementStore],
   templateUrl: './purchasing-management-list.page.html',
   styleUrl: './purchasing-management-list.page.scss',
