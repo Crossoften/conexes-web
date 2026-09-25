@@ -22,9 +22,8 @@
       <!-- ── Ação: registrar proposta (Etapa 3) ─────────────────────────── -->
       @if (canRegister) {
         <div class="q-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <button type="button" class="btn-primary" (click)="toggleForm()">
-            {{ showForm() ? 'Cancelar' : '+ Registrar proposta' }}
-          </button>
+          <!-- item 12/16: a proposta é registrada pela ação na linha de cada fornecedor da requisição (sem lista geral). -->
+          <span style="font-size:13px; color:var(--text-secondary,#6B7280); margin-right:auto;">Registre a proposta pela ação na linha de cada fornecedor.</span>
           <!-- CP-36: importar propostas por planilha -->
           <button type="button" class="btn-outline btn-outline--orange" (click)="downloadQuotTemplate()" style="padding:8px 12px;">Baixar modelo</button>
           <label class="btn-outline btn-outline--orange" style="padding:8px 12px; cursor:pointer;">
@@ -37,11 +36,9 @@
           <form class="q-form" [formGroup]="form" (ngSubmit)="submit()">
             <div class="q-grid">
               <label class="field">
-                <span class="field-label">Fornecedor *</span>
-                <select class="field-input" formControlName="supplierId">
-                  <option [ngValue]="0">Selecione o fornecedor</option>
-                  @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
-                </select>
+                <span class="field-label">Fornecedor</span>
+                <!-- item 12: fornecedor fixo (veio da linha da requisição) — sem lista geral. -->
+                <input class="field-input" [value]="formSupplier()?.name || ''" disabled>
               </label>
               <!-- item 21 (reteste 22.09): máscara monetária BR (R$ 1.448,00) — antes eram type=number crus. -->
               <label class="field">
@@ -73,7 +70,8 @@
                 <input class="field-input" type="text" formControlName="observation">
               </label>
             </div>
-            <div class="q-form-actions">
+            <div class="q-form-actions" style="display:flex; gap:8px;">
+              <button type="button" class="btn-outline btn-outline--orange" (click)="closeForm()" [disabled]="submitting()">Cancelar</button>
               <button type="submit" class="btn-primary" [disabled]="submitting()">
                 {{ submitting() ? 'Salvando…' : 'Salvar proposta' }}
               </button>
@@ -100,7 +98,7 @@
                 <th>Prazo</th>
                 <th>Condições</th>
                 <th>Status</th>
-                @if (canApproveQuote) { <th class="right">Ações</th> }
+                @if (canApproveQuote || canRegister) { <th class="right">Ações</th> }
               </tr>
             </thead>
             <tbody>
@@ -114,16 +112,24 @@
                   <td>{{ q.deliveryTime || '—' }}</td>
                   <td>{{ q.paymentConditions || '—' }}</td>
                   <td><span class="q-badge q-badge--{{ rowStatusVariant(q) }}">{{ rowStatusLabel(q) }}</span></td>
-                  @if (canApproveQuote) {
+                  @if (canApproveQuote || canRegister) {
                     <td class="right">
-                      @if (isPending(q)) {
+                      <!-- item 16: registrar/editar a proposta do fornecedor da linha (Etapa 3). -->
+                      @if (canRegister) {
+                        <button type="button" class="q-icon q-icon--ok" [title]="isAwaitingProposal(q) ? 'Registrar proposta' : 'Editar proposta'" (click)="openProposal(q)">
+                          <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                      }
+                      <!-- Aprovar/reprovar propostas preenchidas (Etapa 4). -->
+                      @if (canApproveQuote && isPending(q)) {
                         <button type="button" class="q-icon q-icon--ok" title="Aprovar" (click)="approve(q)">
                           <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                         <button type="button" class="q-icon q-icon--danger" title="Reprovar" (click)="reject(q)">
                           <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                         </button>
-                      } @else { <span class="q-muted">—</span> }
+                      }
+                      @if (!canRegister && canApproveQuote && !isPending(q)) { <span class="q-muted">—</span> }
                     </td>
                   }
                 </tr>

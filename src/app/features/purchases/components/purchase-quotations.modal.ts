@@ -87,7 +87,27 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     });
   }
 
-  toggleForm(): void { this.showForm.update(v => !v); }
+  // item 16 (reteste 22.09): registrar/editar a proposta de UM fornecedor da requisição.
+  // item 12: o fornecedor vem da linha (já vinculado à requisição) — sem lista geral.
+  readonly formSupplier = signal<{ id: number; name: string } | null>(null);
+
+  openProposal(q: PurchaseQuotation): void {
+    const awaiting = this.isAwaitingProposal(q);
+    this.formSupplier.set({ id: q.supplierId, name: this.supplierName(q) });
+    this.form.reset({
+      supplierId:        q.supplierId,
+      unitValue:         awaiting ? 0 : (q.unitValue ?? 0),
+      totalValue:        awaiting ? 0 : (q.totalValue ?? 0),
+      freight:           q.freight ?? 0,
+      discount:          q.discount ?? 0,
+      deliveryTime:      q.deliveryTime ?? '',
+      paymentConditions: q.paymentConditions ?? '',
+      observation:       q.observation ?? '',
+    });
+    this.showForm.set(true);
+  }
+
+  closeForm(): void { this.showForm.set(false); this.formSupplier.set(null); this.resetForm(); }
 
   submit(): void {
     const id = this.requestId;
@@ -107,11 +127,11 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
       paymentConditions: v.paymentConditions || undefined,
       observation:       v.observation       || undefined,
     }).subscribe({
-      next: created => {
-        this.quotations.update(list => [...list, created]);
+      next: () => {
+        // item 15: recarrega do back (upsert por requisição+fornecedor evita duplicata na lista).
         this.submitting.set(false);
-        this.showForm.set(false);
-        this.resetForm();
+        this.closeForm();
+        this.load();
       },
       error: err => { this.submitting.set(false); this.error.set(this.msg(err, 'Erro ao registrar a cotação.')); },
     });
