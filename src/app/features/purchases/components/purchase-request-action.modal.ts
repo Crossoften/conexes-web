@@ -8,6 +8,7 @@ import {
   PurchaseActionResult,
   ApproverLevel,
   ApprovalLimit,
+  PURCHASE_REQUEST_STATUS_CONFIG,
 } from '../purchases.model';
 
 interface ActionConfig {
@@ -156,6 +157,23 @@ export class PurchaseRequestActionModalComponent implements OnChanges {
 
   fmtText(value?: string | null): string {
     return value && value.trim() ? value : 'N/A';
+  }
+
+  // item 6 (reteste 22.09): a tela de cancelamento deve identificar claramente a
+  // requisição (nº, título, tipo, data, valor, status, demandante, Projeto/CC).
+  fmtDate(iso?: string | null): string {
+    if (!iso) return 'N/A';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString('pt-BR');
+  }
+
+  fmtCurrency(value?: number | null): string {
+    return (value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  get statusLabel(): string {
+    const s = this.request?.status;
+    return s ? (PURCHASE_REQUEST_STATUS_CONFIG[s]?.label ?? s) : 'N/A';
   }
 
   onSubmit(): void {

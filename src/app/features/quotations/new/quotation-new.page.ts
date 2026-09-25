@@ -37,6 +37,8 @@ export class QuotationNewPage {
   readonly isEdit    = signal<boolean>(this.editId != null);
   readonly saving    = signal(false);
   readonly errorMsg  = signal<string | null>(null);
+  // item 1 (reteste 22.09): nº de referência é gerado no back; exibido em modo edição.
+  readonly refNumber = signal<string | null>(null);
 
   // Lookups
   readonly users            = signal<PurchaseRef[]>([]);
@@ -103,7 +105,6 @@ export class QuotationNewPage {
     justification:         ['', Validators.required],
     contractorObligations: [''],
     commercialConditions:  [''],
-    payingSource:          [''],
     projectId:             [''],
     activityId:            [''],
     costCenterId:          [''],
@@ -192,7 +193,6 @@ export class QuotationNewPage {
       justification:         r.justification ?? '',
       contractorObligations: r.contractorObligations ?? '',
       commercialConditions:  r.commercialConditions ?? '',
-      payingSource:          r.payingSource ?? '',
       projectId:             r.projectId != null ? String(r.projectId) : '',
       activityId:            this.activities().find(a => a.name === (r as any).activity)?.id?.toString() ?? '',
       costCenterId:          r.costCenterId != null ? String(r.costCenterId) : '',
@@ -205,6 +205,9 @@ export class QuotationNewPage {
       contractId:            r.partnershipId != null ? String(r.partnershipId) : '',
       deliveryLocationId:    r.deliveryLocationId != null ? String(r.deliveryLocationId) : '',
     });
+
+    // item 1: exibe o nº de referência já gerado ao editar.
+    this.refNumber.set(r.referenceNumber ?? null);
 
     // CP-20: reflete a cascata ao editar (Centro de custo → Projeto).
     this.selectedCC.set(r.costCenterId ?? null);
@@ -439,7 +442,6 @@ export class QuotationNewPage {
       justification:         v.justification || undefined,
       contractorObligations: v.contractorObligations || undefined,
       commercialConditions:  v.commercialConditions || undefined,
-      payingSource:          v.payingSource || undefined,
       projectId:             this.num(v.projectId),
       costCenterId:          this.num(v.costCenterId),
       accountPlanId:         this.num(v.accountPlanId),

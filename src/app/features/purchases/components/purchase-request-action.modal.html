@@ -29,12 +29,17 @@
       <h3 class="section-title">Dados gerais</h3>
       <div class="info-box">
         <div class="info-grid">
+          <div class="info-item"><span class="info-label">Nº da requisição</span><span class="info-value">{{ fmtText(request?.referenceNumber) }}</span></div>
+          <div class="info-item"><span class="info-label">Título</span><span class="info-value">{{ fmtText(request?.title) }}</span></div>
+          <div class="info-item"><span class="info-label">Tipo de pedido</span><span class="info-value">{{ fmtText(request?.orderType) }}</span></div>
+          <div class="info-item"><span class="info-label">Status</span><span class="info-value">{{ statusLabel }}</span></div>
+          <div class="info-item"><span class="info-label">Data da requisição</span><span class="info-value">{{ fmtDate(request?.requestDate) }}</span></div>
+          <div class="info-item"><span class="info-label">Valor global estimado</span><span class="info-value">{{ fmtCurrency(request?.estimatedValue) }}</span></div>
           <div class="info-item"><span class="info-label">Solicitante</span><span class="info-value">{{ fmtText(request?.requester?.name) }}</span></div>
+          <div class="info-item"><span class="info-label">Demandante</span><span class="info-value">{{ fmtText(request?.requester?.name) }}</span></div>
           <div class="info-item"><span class="info-label">Área do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.area ?? request?.area) }}</span></div>
           <div class="info-item"><span class="info-label">E-mail do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.email) }}</span></div>
-          <div class="info-item"><span class="info-label">Nro Referência</span><span class="info-value">{{ fmtText(request?.referenceNumber) }}</span></div>
-          <div class="info-item"><span class="info-label">Demandante</span><span class="info-value">N/A</span></div>
-          <div class="info-item"><span class="info-label">Projeto/Centro de Custo</span><span class="info-value">{{ fmtText(request?.project?.name ?? request?.costCenter?.name) }}</span></div>
+          <div class="info-item"><span class="info-label">Projeto / Centro de Custo</span><span class="info-value">{{ fmtText((request?.project?.title ?? request?.project?.name) ?? (request?.costCenter?.name ?? request?.costCenter?.title)) }}</span></div>
         </div>
       </div>
 

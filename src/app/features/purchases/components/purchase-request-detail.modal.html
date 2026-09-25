@@ -89,10 +89,9 @@
             <h3 class="section-title">Fonte e alocação</h3>
             <div class="info-box">
               <div class="info-grid info-grid--3">
-                <div class="info-item"><span class="info-label">Fonte pagadora</span><span class="info-value">{{ fmtText(request.payingSource) }}</span></div>
-                <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request.project?.name) }}</span></div>
-                <div class="info-item"><span class="info-label">Centro de custo</span><span class="info-value">{{ fmtText(request.costCenter?.name) }}</span></div>
-                <div class="info-item"><span class="info-label">Categoria (plano de contas)</span><span class="info-value">{{ fmtText(request.accountPlan?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request.project?.title ?? request.project?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Centro de custo</span><span class="info-value">{{ fmtText(request.costCenter?.name ?? request.costCenter?.title) }}</span></div>
+                <div class="info-item"><span class="info-label">Categoria (plano de contas)</span><span class="info-value">{{ fmtText(request.accountPlan?.title ?? request.accountPlan?.name) }}</span></div>
                 <div class="info-item"><span class="info-label">Atividade</span><span class="info-value">{{ fmtText(request.activity) }}</span></div>
               </div>
             </div>
@@ -101,10 +100,28 @@
             <div class="info-box">
               <div class="info-grid info-grid--3">
                 <div class="info-item"><span class="info-label">Fornecedor único</span><span class="info-value">{{ fmtBool(request.uniqueSupplier) }}</span></div>
-                <div class="info-item"><span class="info-label">Qtd. de fornecedores</span><span class="info-value">{{ request.supplierCount ?? 'N/A' }}</span></div>
-                <!-- CP-fix (Bug 2): "Contrato vinculado" agora é repasse/parceria (partnershipId); mostra o termo/título vinculado. -->
-                <div class="info-item"><span class="info-label">Contrato</span><span class="info-value">{{ fmtText(request.contract?.name ?? $any(request.partnership)?.termNumber ?? $any(request.partnership)?.title) }}</span></div>
+                <div class="info-item"><span class="info-label">Qtd. de fornecedores</span><span class="info-value">{{ request.supplierCount ?? (request.suggestedSuppliers?.length ?? 'N/A') }}</span></div>
+                <!-- item 5/7: contrato de fornecedor (Contract.title); enquanto não religado, cai no repasse/parceria vinculado. -->
+                <div class="info-item"><span class="info-label">Contrato</span><span class="info-value">{{ fmtText(request.contract?.title ?? request.contract?.name ?? $any(request.partnership)?.termNumber ?? $any(request.partnership)?.title) }}</span></div>
               </div>
+            </div>
+
+            <!-- item 7: identificar os fornecedores vinculados (Nome/Razão Social + CNPJ), não só a quantidade. -->
+            <h3 class="section-title">Fornecedores considerados</h3>
+            <div class="items-wrap">
+              <table class="items-table">
+                <thead><tr><th>Fornecedor / Razão Social</th><th>CNPJ/CPF</th></tr></thead>
+                <tbody>
+                  @for (s of request.suggestedSuppliers ?? []; track s.id) {
+                    <tr>
+                      <td>{{ fmtText(s.supplier?.name) }}</td>
+                      <td>{{ fmtText(s.supplier?.document) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td class="empty" colspan="2">Nenhum fornecedor vinculado.</td></tr>
+                  }
+                </tbody>
+              </table>
             </div>
           }
 

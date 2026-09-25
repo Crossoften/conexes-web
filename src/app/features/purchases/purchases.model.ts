@@ -62,6 +62,11 @@ export const PURCHASE_REQUEST_STATUS_CONFIG: Record<PurchaseRequestStatus, Purch
 export interface PurchaseRef {
   id?: number;
   name: string;
+  // CP (reteste 22.09 · item 7): Project e AccountPlan expõem `title` (não `name`) e
+  // o fornecedor expõe `document` (CNPJ/CPF) — a visualização mostrava N/A por ler `name`.
+  title?: string | null;
+  document?: string | null;
+  termNumber?: string | null;
   email?: string | null;
   area?: string | null;
   // BK-6: campos extras do produto/serviço para auto-preencher o item.

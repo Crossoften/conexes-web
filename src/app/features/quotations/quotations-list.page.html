@@ -335,4 +335,12 @@
       (close)="store.closeAward()">
     </app-purchase-award-modal>
   }
+
+  <!-- item 11: confirmação de avanço de etapa / ações que alteram dados ou status -->
+  @if (confirmState(); as c) {
+    <app-confirm-dialog
+      [title]="c.title" [message]="c.message" [confirmLabel]="c.confirmLabel" [danger]="c.danger"
+      (confirm)="onConfirmProceed()" (cancel)="onConfirmCancel()">
+    </app-confirm-dialog>
+  }
 </div>

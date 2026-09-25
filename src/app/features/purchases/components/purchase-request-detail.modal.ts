@@ -22,18 +22,55 @@ const ACTION_LABELS: Record<string, string> = {
   SET_APPROVERS:   'Aprovadores definidos',
   AWARD:           'Adjudicação',
   COMPLETE:        'Concluída',
+  // CP (reteste 22.09 · item 8): ações que apareciam cruas em inglês no histórico.
+  APPROVE_LEVEL:      'Aprovação de nível',
+  APPROVE_QUOTATION:  'Cotação aprovada',
+  REJECT_QUOTATION:   'Cotação reprovada',
+  EXPORT_TO_QUOTATION:'Exportada para cotação',
+  ORDER_RECEIPT:      'Recebimento registrado',
+  COPY:               'Cópia',
+  DELETE:             'Exclusão',
 };
 
-/** Rótulos amigáveis para os campos que aparecem em `changes`. */
+/** Rótulos amigáveis para os campos que aparecem em `changes`.
+ *  CP (reteste 22.09 · item 8): o histórico vazava nomes crus de campos Prisma em
+ *  inglês (Order Type, Paying Source, Expected Delivery Date...). Cobrimos todos os
+ *  campos da requisição para o histórico ficar 100% em português. */
 const FIELD_LABELS: Record<string, string> = {
-  status:       'Status',
-  stage:        'Etapa',
-  currentStage: 'Etapa',
-  buyerId:      'Comprador',
-  requesterId:  'Requisitante',
-  title:        'Título',
-  estimatedValue: 'Valor estimado',
-  reason:       'Motivo',
+  status:               'Status',
+  stage:                'Etapa',
+  currentStage:         'Etapa',
+  buyerId:              'Comprador',
+  requesterId:          'Requisitante',
+  title:                'Título',
+  orderType:            'Tipo de pedido',
+  requestDate:          'Data da requisição',
+  expectedDeliveryDate: 'Data prevista de entrega',
+  estimatedValue:       'Valor global estimado',
+  description:          'Descrição',
+  justification:        'Justificativa',
+  commercialConditions: 'Condições comerciais',
+  contractorObligations:'Obrigações da contratada',
+  contractedObligations:'Obrigações contratadas',
+  payingSource:         'Fonte pagadora',
+  activity:             'Atividade',
+  area:                 'Área',
+  uniqueSupplier:       'Fornecedor único',
+  exclusiveSupplier:    'Fornecedor exclusivo',
+  withoutSubsidy:       'Sem repasse/subsídio',
+  subProjectId:         'Subprojeto',
+  copiedFromId:         'Copiada de',
+  copiedFrom:           'Copiada de',
+  referenceNumber:      'Número de referência',
+  projectId:            'Projeto',
+  costCenterId:         'Centro de custo',
+  accountPlanId:        'Categoria/Conta',
+  partnershipId:        'Convênio/Parceria',
+  contractId:           'Contrato',
+  deliveryLocationId:   'Local de entrega',
+  supplierCount:        'Qtd. de fornecedores',
+  cancelReason:         'Motivo do cancelamento',
+  reason:               'Motivo',
 };
 
 @Component({
@@ -79,6 +116,8 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
   private static readonly HIDDEN_FIELDS = new Set([
     'items', 'approvalFlow', 'group', 'attachments', 'quotations', 'deliveryLocation',
     'accountPlan', 'costCenter', 'project', 'subProject', 'contract', 'buyer', 'requester',
+    // CP (reteste 22.09 · item 8): coleções relacionais que vazavam como "Files/Orders/Approvers".
+    'files', 'orders', 'approvers', 'suggestedSuppliers', 'partnership',
     'id', 'createdAt', 'updatedAt',
   ]);
 

@@ -40,7 +40,7 @@
                 </div>
               </div>
               <div class="form-group"><label>Área requisitante</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="area"></div>
-              <div class="form-group"><label>Número de Referência</label><input type="text" class="form-control disabled-bg" value="Automático" disabled></div>
+              <div class="form-group"><label>Número de Referência</label><input type="text" class="form-control disabled-bg" [value]="refNumber() || 'Automático'" disabled></div>
             </div>
           </div>
 
@@ -70,14 +70,13 @@
 
         <!-- ══ FONTE ══════════════════════════════════════════════════════ -->
         @if (activeTab === 'FONTE') {
-          <h3 class="section-title">Fonte Pagadora</h3>
-          <p class="section-subtitle">Preencha todas as informações necessárias.</p>
+          <h3 class="section-title">Fonte e alocação</h3>
+          <!-- item 2 (reteste 22.09): "Fonte Pagadora" removida — a fonte é determinada pelos vínculos
+               Centro de Custo → Projeto → Atividade → Categoria/Conta. -->
+          <p class="section-subtitle">A fonte é determinada pela alocação abaixo: Centro de custo → Projeto → Atividade → Categoria/Conta.</p>
           <div class="form-grid mb-8">
-            <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Fonte Pagadora</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="payingSource"></div>
-            </div>
             <!-- CP-19/CP-20: sequência Centro de custo → Projeto → Atividade → Categoria, com filtros dependentes -->
-            <div class="form-row grid-cols-4 mt-4">
+            <div class="form-row grid-cols-4">
               <div class="form-group">
                 <label>Centro de custo</label>
                 <div class="select-wrap">

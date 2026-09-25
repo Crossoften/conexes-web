@@ -11,11 +11,12 @@ import { PurchaseRequestActionModalComponent } from '../purchases/components/pur
 import { PurchaseQuotationsModalComponent } from '../purchases/components/purchase-quotations.modal';
 import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, ConfirmDialogComponent],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',
@@ -141,21 +142,46 @@ export class QuotationsListPage {
   // ── Handlers de ação ────────────────────────────────────────────────────────
   view(item: Quotation)    { this.store.openDetail(item.apiId); }
   edit(item: Quotation)    { this.router.navigate(['/quotations/edit', item.apiId]); }
-  submit(item: Quotation)  { this.store.submit(item.apiId); }
-  approve(item: Quotation) { this.store.approve(item.apiId); }
   reject(item: Quotation)  { this.store.openAction('reject', item.apiId); }
   requestChanges(item: Quotation) { this.store.openAction('request-changes', item.apiId); }
   cancel(item: Quotation)  { this.store.openAction('cancel', item.apiId); }
-  complete(item: Quotation) { this.store.complete(item.apiId); }
-  exportToQuotation(item: Quotation) { this.store.exportToQuotation(item.apiId); }
   openQuotations(item: Quotation) { this.store.openQuotations(item); }
   openAward(item: Quotation) { this.store.openAward(item); }
-  copy(item: Quotation)    { this.store.copy(item.apiId); }
   excel(item: Quotation)   { this.store.exportExcel(item.apiId); }
   pdf(item: Quotation)     { this.store.exportPdf(item.apiId); }
-  remove(item: Quotation)  { this.store.remove(item.apiId); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
+
+  // ── item 11: confirmação antes de avançar etapa / alterar dados ou status ────
+  readonly confirmState = signal<{ title: string; message: string; confirmLabel: string; danger: boolean; run: () => void } | null>(null);
+
+  private ask(title: string, message: string, confirmLabel: string, run: () => void, danger = false): void {
+    this.confirmState.set({ title, message, confirmLabel, danger, run });
+  }
+  onConfirmProceed(): void { const c = this.confirmState(); this.confirmState.set(null); c?.run(); }
+  onConfirmCancel():  void { this.confirmState.set(null); }
+
+  submit(item: Quotation) {
+    this.ask('Enviar para aprovação', `Enviar a requisição ${item.typeId} para aprovação? Ela avança para a próxima etapa.`, 'Enviar', () => this.store.submit(item.apiId));
+  }
+  approve(item: Quotation) {
+    const msg = this.routeStage === 3
+      ? `Concluir a aprovação da cotação de ${item.typeId} e avançar para Pedido?`
+      : `Aprovar a requisição ${item.typeId} e avançar de etapa?`;
+    this.ask('Confirmar aprovação', msg, 'Aprovar', () => this.store.approve(item.apiId));
+  }
+  exportToQuotation(item: Quotation) {
+    this.ask('Enviar cotação para aprovação', `Enviar a cotação de ${item.typeId} para aprovação (avança para a Etapa 4)?`, 'Enviar', () => this.store.exportToQuotation(item.apiId));
+  }
+  complete(item: Quotation) {
+    this.ask('Concluir pedido', `Concluir o pedido de ${item.typeId}? O processo é finalizado.`, 'Concluir', () => this.store.complete(item.apiId));
+  }
+  copy(item: Quotation) {
+    this.ask('Duplicar requisição', `Criar uma cópia da requisição ${item.typeId}?`, 'Duplicar', () => this.store.copy(item.apiId));
+  }
+  remove(item: Quotation) {
+    this.ask('Excluir requisição', `Excluir a requisição ${item.typeId}? Esta ação não pode ser desfeita.`, 'Excluir', () => this.store.remove(item.apiId), true);
+  }
 
   // ── Menu "⋮" de ações secundárias (Excel, PDF, Cancelar, Excluir) ───────────
   readonly hasRowMenu = computed(() => this.canExcel || this.canPdf || this.canCancel() || this.canDelete);
