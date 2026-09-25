@@ -255,6 +255,8 @@ export class QuotationNewPage {
         for (const it of (res.items || [])) {
           const g = this.newItem();
           g.patchValue({
+            // item 4: vincula ao cadastro central quando a planilha casa por Código/Nome.
+            productId: it.productId != null ? String(it.productId) : '',
             name: it.name ?? '',
             quantity: it.quantity != null ? String(it.quantity) : '',
             unit: it.unit ?? '',
@@ -317,6 +319,25 @@ export class QuotationNewPage {
     if (prod.unit != null)       item.get('unit')?.setValue(prod.unit);
     if (prod.fabricante != null) item.get('manufacturer')?.setValue(prod.fabricante);  // CP-17
     if (prod.costBase != null)   item.get('estimatedUnitValue')?.setValue(formatDecimalBR(prod.costBase));
+  }
+
+  // item 3 (reteste 22.09): busca de produto por nome (datalist) reutilizando o cadastro
+  // central — evita rolar um <select> com centenas de itens e reduz duplicidade.
+  productNameById(id: unknown): string {
+    const p = this.products().find(x => String(x.id) === String(id));
+    return p?.name ?? '';
+  }
+  onItemProductPick(event: Event, index: number): void {
+    const val  = (event.target as HTMLInputElement).value.trim();
+    const found = this.products().find(p => (p.name ?? '').toLowerCase() === val.toLowerCase());
+    const item = this.items.at(index) as FormGroup;
+    if (found) {
+      item.get('productId')?.setValue(String(found.id));
+      this.onItemProduct(index);           // reusa o cadastro: autofill nome/grupo/unidade/valor
+    } else {
+      item.get('productId')?.setValue('');  // texto livre: item sem vínculo
+      if (val) item.get('name')?.setValue(val);
+    }
   }
 
   resetForm(): void {

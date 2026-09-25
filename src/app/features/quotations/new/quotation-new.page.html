@@ -189,6 +189,10 @@
         @if (activeTab === 'ITENS') {
           <h3 class="section-title">Itens e serviços</h3>
           <p class="section-subtitle">Adicione ao menos um item à requisição.</p>
+          <!-- item 3: datalist compartilhado com o cadastro central (busca por nome). -->
+          <datalist id="prod-datalist">
+            @for (p of products(); track p.id) { <option [value]="p.name"></option> }
+          </datalist>
 
           <div class="items-list mb-8" formArrayName="items">
             @for (item of items.controls; track item; let i = $index) {
@@ -204,15 +208,13 @@
                   <div class="form-row grid-cols-3">
                     <div class="form-group">
                       <label>Produto/Serviço</label>
-                      <!-- CMP-07: inclusão rápida de produto sem sair da requisição -->
+                      <!-- item 3 (reteste 22.09): busca por nome (datalist) reutilizando o cadastro central;
+                           CMP-07: "+" faz inclusão rápida sem sair da requisição. -->
                       <div style="display:flex; gap:6px; align-items:center;">
-                        <div class="select-wrap" style="flex:1;">
-                          <select class="form-control" formControlName="productId" (change)="onItemProduct(i)">
-                            <option value="">Selecione</option>
-                            @for (p of products(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
-                          </select>
-                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
+                        <input class="form-control" style="flex:1;" list="prod-datalist"
+                          [value]="productNameById(item.get('productId')?.value) || item.get('name')?.value || ''"
+                          (change)="onItemProductPick($event, i)"
+                          placeholder="Buscar produto por nome…">
                         <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar produto" (click)="quickAddProduct()" style="padding:8px 12px;">+</button>
                       </div>
                     </div>
