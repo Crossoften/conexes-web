@@ -8,6 +8,10 @@
         <h2>Cotações</h2>
         <p>Propostas de fornecedores para a requisição {{ requestCode }}.</p>
       </div>
+      <!-- DOC-COT + item 18: exportar o documento/mapa da cotação -->
+      <button type="button" class="btn-outline btn-outline--orange" style="padding:7px 12px; margin-right:8px;" (click)="downloadCotacaoPdf()" [disabled]="exportingPdf()">
+        {{ exportingPdf() ? 'Gerando…' : 'Exportar cotação (PDF)' }}
+      </button>
       <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
         <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>

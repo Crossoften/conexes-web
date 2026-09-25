@@ -4,6 +4,7 @@ import { PurchasingOrdersStore } from './purchasing-orders.store';
 import { OrderRow, ORDER_STATUS_CONFIG } from './purchasing-orders.model';
 import { OrderDetailModalComponent } from './components/order-detail.modal';
 import { TooltipDirective } from '../../shared/directives/tooltip.directive';
+import { PurchasesService } from '../purchases/purchases.service';
 
 @Component({
   selector: 'app-purchasing-orders-list',
@@ -15,6 +16,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 })
 export class PurchasingOrdersListPage {
   readonly store = inject(PurchasingOrdersStore);
+  private readonly purchasesSvc = inject(PurchasesService);
   readonly statusConfig = ORDER_STATUS_CONFIG;
 
   readonly totalPages = computed(() =>
@@ -39,6 +41,14 @@ export class PurchasingOrdersListPage {
   goToPage(p: number): void { this.store.setPage(p); }
 
   view(item: OrderRow): void { this.store.openDetail(item.apiId); }
+
+  // DOC-PED: exporta o Pedido de Compra em PDF (padrão do modelo).
+  pdf(item: OrderRow): void {
+    this.purchasesSvc.generateOrderPdf(item.apiId).subscribe({
+      next: blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pedido-${item.apiId}.pdf`; a.click(); URL.revokeObjectURL(url); },
+      error: () => {},
+    });
+  }
 
   // CP-33: o modal já reflete o pedido atualizado (resposta do recebimento);
   // aqui só recarregamos a lista para atualizar o status da linha.

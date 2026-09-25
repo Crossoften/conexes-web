@@ -346,6 +346,14 @@ export class PurchasesService {
   generateRequestPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/requests/${id}/pdf`, { responseType: 'blob' });
   }
+  // DOC-COT + item 18: documento/mapa da cotação de uma requisição.
+  generateQuotationMapPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/requests/${id}/quotation-pdf`, { responseType: 'blob' });
+  }
+  // DOC-PED: documento do pedido de compra.
+  generateOrderPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/orders/${id}/pdf`, { responseType: 'blob' });
+  }
 
   /** FE-8: adjudicação (Etapa 4) — by_supplier (1 pedido) ou by_item (N pedidos). */
   award(id: number, payload: AwardPayload): Observable<PurchaseRequest> {

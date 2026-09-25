@@ -167,6 +167,21 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
 
   onClose(): void { this.close.emit(); }
 
+  // DOC-COT + item 18: exporta o documento/mapa da cotação em PDF.
+  readonly exportingPdf = signal(false);
+  downloadCotacaoPdf(): void {
+    if (!this.requestId || this.exportingPdf()) return;
+    this.exportingPdf.set(true);
+    this.svc.generateQuotationMapPdf(this.requestId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `cotacao-${this.requestCode || this.requestId}.pdf`; a.click();
+        URL.revokeObjectURL(url); this.exportingPdf.set(false);
+      },
+      error: () => { this.exportingPdf.set(false); this.notify.error('Não foi possível gerar o PDF da cotação.'); },
+    });
+  }
+
   /** CP-15: placeholder do fornecedor sugerido, ainda sem proposta preenchida. */
   isAwaitingProposal(q: PurchaseQuotation): boolean {
     return q.status === 'Pending' && (q.unitValue ?? 0) === 0 && (q.totalValue ?? 0) === 0;
