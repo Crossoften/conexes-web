@@ -3,10 +3,10 @@
 // FE-7 — Gerenciamento de cotações (propostas de fornecedores) de uma requisição.
 // Etapa 3 (Cotação): registrar propostas. Etapa 4 (Cotação em aprovação): aprovar/reprovar.
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { PurchasesService } from '../purchases.service';
-import { PurchaseQuotation, PurchaseRef, QuotationStatus } from '../purchases.model';
+import { PurchaseQuotation, PurchaseRequestItem, PurchaseRef, QuotationStatus } from '../purchases.model';
 import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 
 const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string }> = {
@@ -19,7 +19,7 @@ const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string
 @Component({
   selector: 'app-purchase-quotations-modal',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyMaskDirective],
+  imports: [ReactiveFormsModule, FormsModule, CurrencyMaskDirective],
   templateUrl: './purchase-quotations.modal.html',
   styleUrl: './purchase-quotations.modal.scss',
 })
@@ -46,14 +46,19 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
 
   readonly form = this.fb.group({
     supplierId:        [0, [Validators.required, Validators.min(1)]],
-    unitValue:         [0, [Validators.required, Validators.min(0.01)]],
-    totalValue:        [0, [Validators.required, Validators.min(0.01)]],
     freight:           [0],
     discount:          [0],
     deliveryTime:      [''],
     paymentConditions: [''],
     observation:       [''],
   });
+
+  // item 13 (reteste 22.09): itens da requisição + valores por item da proposta em edição.
+  readonly requestItems = signal<PurchaseRequestItem[]>([]);
+  propItems: { requestItemId: number; name: string; quantity: number; unit: string; unitValue: number }[] = [];
+
+  subtotalNow(): number { return this.propItems.reduce((s, r) => s + (r.quantity || 0) * (Number(r.unitValue) || 0), 0); }
+  grandTotalNow(): number { const v = this.form.getRawValue(); return this.subtotalNow() + (Number(v.freight) || 0) - (Number(v.discount) || 0); }
 
   private loadedFor: number | null = null;
 
@@ -68,6 +73,9 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     this.resetForm();
     if (!id) return;
     this.load();
+    // item 13: itens da requisição para montar a proposta por item.
+    this.requestItems.set([]);
+    this.svc.getRequestById(id).subscribe({ next: r => this.requestItems.set(r.items ?? []), error: () => {} });
     // CP-fix (Bug 1): carrega o lookup de fornecedores em qualquer etapa (não só ao
     // registrar). Assim o fallback de nome funciona também na Etapa 4, mesmo que alguma
     // cotação venha sem o supplier no include (ex.: fornecedor removido do cadastro).
@@ -92,12 +100,18 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
   readonly formSupplier = signal<{ id: number; name: string } | null>(null);
 
   openProposal(q: PurchaseQuotation): void {
-    const awaiting = this.isAwaitingProposal(q);
     this.formSupplier.set({ id: q.supplierId, name: this.supplierName(q) });
+    // item 13: uma linha por item da requisição, pré-preenchida com o valor já proposto (se houver).
+    const qiMap = new Map((q.items ?? []).map(it => [it.purchaseRequestItemId, it]));
+    this.propItems = this.requestItems().map(ri => ({
+      requestItemId: ri.id!,
+      name: ri.name,
+      quantity: ri.quantity,
+      unit: ri.unit,
+      unitValue: qiMap.get(ri.id!)?.unitValue ?? 0,
+    }));
     this.form.reset({
       supplierId:        q.supplierId,
-      unitValue:         awaiting ? 0 : (q.unitValue ?? 0),
-      totalValue:        awaiting ? 0 : (q.totalValue ?? 0),
       freight:           q.freight ?? 0,
       discount:          q.discount ?? 0,
       deliveryTime:      q.deliveryTime ?? '',
@@ -113,19 +127,23 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     const id = this.requestId;
     if (!id) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    // item 13: exige valor em ao menos um item da requisição.
+    const filled = this.propItems.filter(r => Number(r.unitValue) > 0);
+    if (!filled.length) { this.error.set('Informe o valor de ao menos um item da requisição.'); return; }
     const v = this.form.getRawValue();
     this.submitting.set(true);
     this.error.set(null);
     this.svc.createQuotation({
       purchaseRequestId: id,
-      supplierId:        v.supplierId,
-      unitValue:         v.unitValue,
-      totalValue:        v.totalValue,
+      supplierId:        this.formSupplier()?.id ?? v.supplierId,
+      unitValue:         this.subtotalNow(),   // subtotal (Σ item)
+      totalValue:        this.grandTotalNow(), // subtotal + frete − desconto
       freight:           v.freight   || undefined,
       discount:          v.discount  || undefined,
       deliveryTime:      v.deliveryTime      || undefined,
       paymentConditions: v.paymentConditions || undefined,
       observation:       v.observation       || undefined,
+      items:             filled.map(r => ({ purchaseRequestItemId: r.requestItemId, unitValue: Number(r.unitValue), quantity: r.quantity })),
     }).subscribe({
       next: () => {
         // item 15: recarrega do back (upsert por requisição+fornecedor evita duplicata na lista).
@@ -179,7 +197,8 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
   statusVariant(s: QuotationStatus): string { return this.statusConfig[s]?.variant ?? 'neutral'; }
 
   private resetForm(): void {
-    this.form.reset({ supplierId: 0, unitValue: 0, totalValue: 0, freight: 0, discount: 0, deliveryTime: '', paymentConditions: '', observation: '' });
+    this.form.reset({ supplierId: 0, freight: 0, discount: 0, deliveryTime: '', paymentConditions: '', observation: '' });
+    this.propItems = [];
   }
 
   private msg(err: unknown, fallback: string): string {

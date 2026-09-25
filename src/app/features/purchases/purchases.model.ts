@@ -165,6 +165,15 @@ export interface PurchaseDeliveryLocation {
 
 // ── Cotação (resposta inferida) ───────────────────────────────────────────────
 
+export interface PurchaseQuotationItem {
+  id: number;
+  quotationId: number;
+  purchaseRequestItemId: number;
+  quantity: number;
+  unitValue: number;
+  totalValue: number;
+}
+
 export interface PurchaseQuotation {
   id: number;
   purchaseRequestId: number;
@@ -178,6 +187,7 @@ export interface PurchaseQuotation {
   paymentConditions?: string;
   observation?: string;
   status: QuotationStatus;
+  items?: PurchaseQuotationItem[];   // item 13: valores por item
   createdAt?: string;
 }
 
@@ -294,6 +304,13 @@ export interface CreatePurchaseRequestPayload {
 
 export type UpdatePurchaseRequestPayload = Partial<CreatePurchaseRequestPayload>;
 
+// item 13 (reteste 22.09): valor de um item da requisição na proposta do fornecedor.
+export interface CreateQuotationItemPayload {
+  purchaseRequestItemId: number;
+  unitValue: number;
+  quantity?: number;
+}
+
 export interface CreateQuotationPayload {
   purchaseRequestId: number;
   supplierId: number;
@@ -305,6 +322,7 @@ export interface CreateQuotationPayload {
   paymentConditions?: string;
   observation?: string;
   status?: QuotationStatus;
+  items?: CreateQuotationItemPayload[];   // item 13: valores por item
 }
 
 export interface CreateContractPayload {

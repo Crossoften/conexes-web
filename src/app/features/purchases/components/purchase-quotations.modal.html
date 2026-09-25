@@ -35,42 +35,50 @@
         @if (showForm()) {
           <form class="q-form" [formGroup]="form" (ngSubmit)="submit()">
             <div class="q-grid">
-              <label class="field">
+              <label class="field field--wide">
                 <span class="field-label">Fornecedor</span>
                 <!-- item 12: fornecedor fixo (veio da linha da requisição) — sem lista geral. -->
                 <input class="field-input" [value]="formSupplier()?.name || ''" disabled>
               </label>
-              <!-- item 21 (reteste 22.09): máscara monetária BR (R$ 1.448,00) — antes eram type=number crus. -->
-              <label class="field">
-                <span class="field-label">Valor unitário *</span>
-                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="unitValue">
-              </label>
-              <label class="field">
-                <span class="field-label">Valor total *</span>
-                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="totalValue">
-              </label>
-              <label class="field">
-                <span class="field-label">Frete</span>
-                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="freight">
-              </label>
-              <label class="field">
-                <span class="field-label">Desconto</span>
-                <input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="discount">
-              </label>
-              <label class="field">
-                <span class="field-label">Prazo de entrega</span>
-                <input class="field-input" type="text" placeholder="ex.: 15 dias" formControlName="deliveryTime">
-              </label>
-              <label class="field field--wide">
-                <span class="field-label">Condições de pagamento</span>
-                <input class="field-input" type="text" formControlName="paymentConditions">
-              </label>
-              <label class="field field--wide">
-                <span class="field-label">Observação</span>
-                <input class="field-input" type="text" formControlName="observation">
-              </label>
             </div>
-            <div class="q-form-actions" style="display:flex; gap:8px;">
+
+            <!-- item 13 (reteste 22.09): a proposta informa o valor de CADA item da requisição. -->
+            <div class="q-table-wrap" style="margin:14px 0;">
+              <table class="q-table">
+                <thead>
+                  <tr><th>Item / Serviço</th><th class="right">Qtd.</th><th>Unidade</th><th class="right">Valor unit. *</th><th class="right">Total do item</th></tr>
+                </thead>
+                <tbody>
+                  @for (row of propItems; track row.requestItemId) {
+                    <tr>
+                      <td>{{ row.name }}</td>
+                      <td class="right">{{ row.quantity }}</td>
+                      <td>{{ row.unit }}</td>
+                      <td class="right"><input class="field-input" style="max-width:130px; text-align:right;" type="text" inputmode="decimal" appCurrencyMask [(ngModel)]="row.unitValue" [ngModelOptions]="{ standalone: true }"></td>
+                      <td class="right">{{ fmtCurrency((row.quantity || 0) * (row.unitValue || 0)) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td class="empty" colspan="5">Esta requisição não possui itens.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="q-grid">
+              <!-- item 21: máscara monetária BR nos valores da proposta. -->
+              <label class="field"><span class="field-label">Frete</span><input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="freight"></label>
+              <label class="field"><span class="field-label">Desconto</span><input class="field-input" type="text" inputmode="decimal" appCurrencyMask formControlName="discount"></label>
+              <label class="field"><span class="field-label">Prazo de entrega</span><input class="field-input" type="text" placeholder="ex.: 15 dias" formControlName="deliveryTime"></label>
+              <label class="field field--wide"><span class="field-label">Condições de pagamento</span><input class="field-input" type="text" formControlName="paymentConditions"></label>
+              <label class="field field--wide"><span class="field-label">Observação</span><input class="field-input" type="text" formControlName="observation"></label>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:24px; margin-top:12px; font-size:14px; color:var(--text-primary,#111827);">
+              <span>Subtotal: <strong>{{ fmtCurrency(subtotalNow()) }}</strong></span>
+              <span>Total (frete − desconto): <strong>{{ fmtCurrency(grandTotalNow()) }}</strong></span>
+            </div>
+
+            <div class="q-form-actions" style="display:flex; gap:8px; margin-top:12px;">
               <button type="button" class="btn-outline btn-outline--orange" (click)="closeForm()" [disabled]="submitting()">Cancelar</button>
               <button type="submit" class="btn-primary" [disabled]="submitting()">
                 {{ submitting() ? 'Salvando…' : 'Salvar proposta' }}
