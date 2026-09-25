@@ -125,6 +125,15 @@ export class PurchasingRegistriesService {
   deleteLocation(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/v1/delivery-locations/${id}`);
   }
+  // item 9 (reteste 22.09): modelo e importação PRÓPRIOS de Locais de Entrega.
+  importLocations(file: File): Observable<{ message: string; criadas: number; total: number }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.base}/v1/delivery-locations/import`, form);
+  }
+  downloadLocationsTemplate(): Observable<Blob> {
+    return this.http.get(`${this.base}/v1/delivery-locations/import/template`, { responseType: 'blob' });
+  }
 
   // ── Fornecedores e Centros de Custo (somente listagem) ──────────────────────
   listSuppliers(params: RegistryListParams = {}): Observable<Page<ApiStakeholder>> {

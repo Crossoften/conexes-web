@@ -4,12 +4,16 @@ import { PurchasingRegistriesListPage } from './purchasing-registries-list.page'
 import { PurchasingRegistriesNewPage } from './new/purchasing-registries-new.page';
 import { DeliveryLocationNewPage } from './new/delivery-location-new.page';
 import { CadastrosAuxiliaresPage } from './auxiliares/cadastros-auxiliares.page';
+import { UnitMeasuresPage } from '../unit-measures/unit-measures.page';
 
 export const purchasingRegistriesRoutes: Routes = [
   { path: '', component: PurchasingRegistriesListPage },
 
   // POS-05: gestão de grupos e fabricantes
   { path: 'auxiliares', component: CadastrosAuxiliaresPage },
+
+  // item 10: cadastro de Unidades de Medida + conversões
+  { path: 'unidades', component: UnitMeasuresPage },
 
   // Produtos e serviços
   { path: 'new',        component: PurchasingRegistriesNewPage },

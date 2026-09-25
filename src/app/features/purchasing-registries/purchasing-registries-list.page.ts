@@ -48,23 +48,30 @@ export class PurchasingRegistriesListPage {
 
   // CP-06: importação em massa de produtos/serviços por planilha.
   readonly importing = signal(false);
+  // item 9 (reteste 22.09): modelo/import PRÓPRIOS por aba — Locais de Entrega
+  // deixou de reaproveitar o modelo de Produtos.
   downloadTemplate(): void {
-    this.svc.downloadProductsTemplate().subscribe({
+    const isLoc = this.store.activeTab() === 'LOCATIONS';
+    const req$    = isLoc ? this.svc.downloadLocationsTemplate() : this.svc.downloadProductsTemplate();
+    const fileName = isLoc ? 'modelo-locais-de-entrega.xlsx' : 'modelo-produtos-servicos.xlsx';
+    req$.subscribe({
       next: (blob: Blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url; link.download = 'modelo-produtos-servicos.xlsx';
+        link.href = url; link.download = fileName;
         link.click(); URL.revokeObjectURL(url);
       },
       error: () => {},
     });
   }
-  onImportProducts(event: Event): void {
+  onImport(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const isLoc = this.store.activeTab() === 'LOCATIONS';
     this.importing.set(true);
-    this.svc.importProducts(file).subscribe({
+    const req$ = isLoc ? this.svc.importLocations(file) : this.svc.importProducts(file);
+    req$.subscribe({
       next: res => { this.importing.set(false); input.value = ''; alert(res?.message ?? 'Importação concluída.'); this.store.load(); },
       error: err => { this.importing.set(false); input.value = ''; alert(err?.error?.message ?? 'Falha ao importar a planilha.'); },
     });
@@ -80,6 +87,12 @@ export class PurchasingRegistriesListPage {
   canExport(): boolean {
     const k = this.tableKind();
     return k === 'PRODUCTS' || k === 'SERVICES';
+  }
+
+  // item 9: importar/baixar modelo só nas abas com cadastro (Produtos, Serviços, Locais).
+  canImport(): boolean {
+    const k = this.tableKind();
+    return k === 'PRODUCTS' || k === 'SERVICES' || k === 'LOCATIONS';
   }
 
   fmtMoney(v: number | null | undefined): string {
@@ -109,6 +122,8 @@ export class PurchasingRegistriesListPage {
 
   // POS-05: gestão de grupos e fabricantes.
   goAux() { this.router.navigate(['/purchasing-registries/auxiliares']); }
+  // item 10: cadastro de Unidades de Medida + conversões.
+  goUnits() { this.router.navigate(['/purchasing-registries/unidades']); }
 
   readonly statusOptions: { label: string; value: RegistryStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },

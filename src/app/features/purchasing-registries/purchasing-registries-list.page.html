@@ -4,6 +4,8 @@
     <h1 class="page-title">Cadastro de produtos e serviços</h1>
     <div style="display:flex; gap:10px; align-items:center;">
     <button class="btn-outline btn-pill" type="button" (click)="goAux()">Grupos e fabricantes</button>
+    <!-- item 10: cadastro de Unidades de Medida + conversões -->
+    <button class="btn-outline btn-pill" type="button" (click)="goUnits()">Unidades de medida</button>
     @if (newRoute()) {
       <button class="btn-novo" (click)="goNew()">
         <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
@@ -57,12 +59,14 @@
         </svg>
       </button>
 
-      <!-- CP-06: importação em massa de produtos/serviços -->
-      <button class="btn-outline btn-pill" type="button" (click)="downloadTemplate()">Baixar modelo</button>
-      <label class="btn-outline btn-pill" style="cursor:pointer;" [class.is-loading]="importing()">
-        {{ importing() ? 'Importando…' : 'Importar planilha' }}
-        <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImportProducts($event)" [disabled]="importing()">
-      </label>
+      <!-- item 9: modelo/importação por aba (Produtos/Serviços e Locais têm modelos próprios) -->
+      @if (canImport()) {
+        <button class="btn-outline btn-pill" type="button" (click)="downloadTemplate()">Baixar modelo</button>
+        <label class="btn-outline btn-pill" style="cursor:pointer;" [class.is-loading]="importing()">
+          {{ importing() ? 'Importando…' : 'Importar planilha' }}
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImport($event)" [disabled]="importing()">
+        </label>
+      }
     </div>
 
     @if (store.loading()) {
