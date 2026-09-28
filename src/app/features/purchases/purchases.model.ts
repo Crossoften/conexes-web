@@ -74,6 +74,7 @@ export interface PurchaseRef {
   unit?: string | null;
   costBase?: number | null;
   fabricante?: string | null;      // CP-17: fabricante herdado do cadastro do produto
+  code?: string | null;            // Menus ajustes 28.09 · #3: busca do item por código
   // CP-20: cascata de alocação (Centro de custo → Projeto → Atividade).
   costCenterId?: number | null;
   parentProjectId?: number | null;
@@ -150,6 +151,10 @@ export interface PurchaseRequest {
   contract?: PurchaseRef | null;
   items?: PurchaseRequestItem[];
   suggestedSuppliers?: PurchaseSuggestedSupplier[];  // CP-15
+  // Menus ajustes 28.09 · #8: o detalhe já traz cotações e pedidos — o histórico usa
+  // para mostrar "Pedido nº …"/fornecedor em vez de ids crus.
+  quotations?: PurchaseQuotation[];
+  orders?: PurchaseOrder[];
   createdAt?: string;
   updatedAt?: string;
 }

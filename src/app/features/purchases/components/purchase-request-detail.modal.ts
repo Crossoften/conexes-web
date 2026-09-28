@@ -70,8 +70,49 @@ const FIELD_LABELS: Record<string, string> = {
   deliveryLocationId:   'Local de entrega',
   supplierCount:        'Qtd. de fornecedores',
   cancelReason:         'Motivo do cancelamento',
+  cancelledAt:          'Data do cancelamento',
   reason:               'Motivo',
+  // Menus ajustes 28.09 · #8: campos gravados por Adjudicação, Recebimento, aprovação da
+  // cotação e aprovação por nível — saíam crus como "Mode", "Order Id", "Receipt Id"...
+  mode:                 'Modalidade',
+  orderId:              'Pedido de compra',
+  orderIds:             'Pedidos de compra',
+  supplierId:           'Fornecedor',
+  receiptId:            'Recebimento',
+  invoiceNumber:        'Nota fiscal',
+  quotationId:          'Cotação',
+  level:                'Nível de aprovação',
+  nextLevel:            'Próximo nível',
 };
+
+/** Modalidade da Adjudicação (`mode`). */
+const AWARD_MODE_LABELS: Record<string, string> = {
+  by_supplier: 'Por fornecedor',
+  by_item:     'Por item',
+};
+
+/** No Recebimento, `status` é o do Pedido de Compra (não o da requisição). */
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  Open:       'Aberto',
+  InProgress: 'Parcialmente recebido',
+  Completed:  'Recebido',
+  Cancelled:  'Cancelado',
+};
+
+/** Na aprovação/reprovação da cotação, `status` é o da Cotação. */
+const QUOTATION_STATUS_LABELS: Record<string, string> = {
+  Pending:  'Pendente',
+  Sent:     'Enviada',
+  Approved: 'Aprovada',
+  Rejected: 'Reprovada',
+};
+
+const QUOTATION_ACTIONS = new Set(['APPROVE_QUOTATION', 'REJECT_QUOTATION']);
+
+/** Ações que registram um evento, não uma edição: o back grava o contexto em `oldData`
+ *  (ex.: `mode`, `orderId`) e o resultado em `newData`, então "de → para" virava
+ *  "3 → —". Nelas cada campo mostra só o valor. */
+const EVENT_ACTIONS = new Set(['AWARD', 'ORDER_RECEIPT', 'APPROVE_LEVEL', ...QUOTATION_ACTIONS]);
 
 @Component({
   selector: 'app-purchase-request-detail-modal',
@@ -307,8 +348,9 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
   }
 
   /** Converte `changes` em pares legíveis (rótulo + valor). */
-  changeEntries(changes?: unknown): { label: string; value: string }[] {
+  changeEntries(changes?: unknown, action?: string | null): { label: string; value: string }[] {
     if (!changes) return [];
+    const isEvent = !!action && EVENT_ACTIONS.has(action);
 
     // Formato atual do back: array de diffs { field, from, to } → "de → para".
     if (Array.isArray(changes)) {
@@ -317,8 +359,10 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
           !!c && typeof c === 'object' && 'field' in c
           && !PurchaseRequestDetailModalComponent.HIDDEN_FIELDS.has((c as { field: string }).field))
         .map(c => ({
-          label: this.fieldLabel(c.field),
-          value: `${this.changeValue(c.field, c.from)} → ${this.changeValue(c.field, c.to)}`,
+          label: this.fieldLabel(c.field, action),
+          value: isEvent && (c.from == null || c.to == null)
+            ? this.changeValue(c.field, c.to ?? c.from, action)
+            : `${this.changeValue(c.field, c.from, action)} → ${this.changeValue(c.field, c.to, action)}`,
         }));
     }
 
@@ -327,26 +371,65 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
       return Object.entries(changes as Record<string, unknown>)
         .filter(([key]) => !PurchaseRequestDetailModalComponent.HIDDEN_FIELDS.has(key))
         .map(([key, val]) => ({
-          label: this.fieldLabel(key),
-          value: this.changeValue(key, val),
+          label: this.fieldLabel(key, action),
+          value: this.changeValue(key, val, action),
         }));
     }
 
     return [];
   }
 
-  private fieldLabel(key: string): string {
+  private fieldLabel(key: string, action?: string | null): string {
+    if (key === 'status' && action === 'ORDER_RECEIPT') return 'Status do pedido';
+    if (key === 'status' && action && QUOTATION_ACTIONS.has(action)) return 'Status da cotação';
     return FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase()).trim();
   }
 
-  private changeValue(key: string, val: unknown): string {
+  private changeValue(key: string, val: unknown, action?: string | null): string {
     if (val === null || val === undefined || val === '') return '—';
-    if (key === 'status') return this.statusConfig[val as keyof typeof this.statusConfig]?.label ?? String(val);
+    if (key === 'status') {
+      const s = String(val);
+      if (action === 'ORDER_RECEIPT') return ORDER_STATUS_LABELS[s] ?? s;
+      if (action && QUOTATION_ACTIONS.has(action)) return QUOTATION_STATUS_LABELS[s] ?? s;
+      return this.statusConfig[s as keyof typeof this.statusConfig]?.label ?? s;
+    }
+    if (key === 'mode') return AWARD_MODE_LABELS[String(val)] ?? String(val);
+    if (key === 'orderId') return this.orderLabel(val);
+    if (key === 'orderIds' && Array.isArray(val)) return val.map(v => this.orderLabel(v)).join(' · ');
+    if (key === 'supplierId') return this.supplierLabel(val);
+    if (key === 'quotationId') return this.quotationLabel(val);
+    if (key === 'receiptId') return `nº ${val}`;
+    if (key === 'level' || key === 'nextLevel') return `Nível ${val}`;
     if (PurchaseRequestDetailModalComponent.USER_FIELDS.has(key)) return this.userName(val);
+    // "true/false" também é inglês na tela.
+    if (typeof val === 'boolean') return this.fmtBool(val);
+    if (typeof val === 'string' && /(Date|At)$/.test(key) && /^\d{4}-\d{2}-\d{2}T/.test(val)) return this.fmtDate(val);
     // Rede de segurança: nunca vaza JSON cru se algum objeto escapar do HIDDEN_FIELDS.
     if (Array.isArray(val)) return `${val.length} ${val.length === 1 ? 'item' : 'itens'}`;
     if (typeof val === 'object') return '—';
     return String(val);
+  }
+
+  /** Pedido pelo nº (e fornecedor) quando a requisição já o traz; senão, pelo id. */
+  private orderLabel(val: unknown): string {
+    const order = this.request?.orders?.find(o => o.id === Number(val));
+    if (!order) return `#${val}`;
+    const num = order.number ? `nº ${order.number}` : `#${order.id}`;
+    return order.supplier?.name ? `${num} — ${order.supplier.name}` : num;
+  }
+
+  private supplierLabel(val: unknown): string {
+    const id = Number(val);
+    const r = this.request;
+    const name = r?.orders?.find(o => o.supplierId === id)?.supplier?.name
+      ?? r?.quotations?.find(q => q.supplierId === id)?.supplier?.name
+      ?? r?.suggestedSuppliers?.find(s => s.supplierId === id)?.supplier?.name;
+    return name ?? `Fornecedor #${val}`;
+  }
+
+  private quotationLabel(val: unknown): string {
+    const q = this.request?.quotations?.find(x => x.id === Number(val));
+    return q?.supplier?.name ? `#${val} — ${q.supplier.name}` : `#${val}`;
   }
 
   /** Resolve um id de usuário em nome (fallback: "Usuário #id" enquanto o lookup não chega). */

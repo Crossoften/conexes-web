@@ -190,10 +190,6 @@
         @if (activeTab === 'ITENS') {
           <h3 class="section-title">Itens e serviços</h3>
           <p class="section-subtitle">Adicione ao menos um item à requisição.</p>
-          <!-- item 3: datalist compartilhado com o cadastro central (busca por nome). -->
-          <datalist id="prod-datalist">
-            @for (p of products(); track p.id) { <option [value]="p.name"></option> }
-          </datalist>
 
           <div class="items-list mb-8" formArrayName="items">
             @for (item of items.controls; track item; let i = $index) {
@@ -209,14 +205,39 @@
                   <div class="form-row grid-cols-3">
                     <div class="form-group">
                       <label>Produto/Serviço</label>
-                      <!-- item 3 (reteste 22.09): busca por nome (datalist) reutilizando o cadastro central;
+                      <!-- Menus ajustes 28.09 · #3: o <datalist> do reteste 22.09 dependia do navegador e
+                           não mostrava opções ao digitar. Agora a lista é nossa: filtra por nome ou código
+                           a cada tecla, a seta abre o cadastro inteiro (seletor) e ↑ ↓ Enter escolhem.
                            CMP-07: "+" faz inclusão rápida sem sair da requisição. -->
-                      <div style="display:flex; gap:6px; align-items:center;">
-                        <input class="form-control" style="flex:1;" list="prod-datalist"
-                          [value]="productNameById(item.get('productId')?.value) || item.get('name')?.value || ''"
-                          (change)="onItemProductPick($event, i)"
-                          placeholder="Buscar produto por nome…">
-                        <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar produto" (click)="quickAddProduct()" style="padding:8px 12px;">+</button>
+                      <div class="product-picker">
+                        <div class="typeahead">
+                          <input #productInput class="form-control" type="text" autocomplete="off"
+                            role="combobox" aria-autocomplete="list" [attr.aria-expanded]="productRow() === i"
+                            formControlName="productQuery"
+                            (input)="onProductQuery(i)"
+                            (focus)="openProductList(i)"
+                            (blur)="onProductBlur(i)"
+                            (keydown)="onProductKeydown($event, i)"
+                            placeholder="Digite o nome ou o código…">
+                          <button type="button" class="typeahead__toggle" tabindex="-1" title="Ver todos os produtos e serviços"
+                            (mousedown)="$event.preventDefault(); toggleProductList(i, productInput)">
+                            <svg viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                          @if (productRow() === i) {
+                            <ul class="typeahead__list" role="listbox">
+                              @for (p of productMatches(i); track p.id; let k = $index) {
+                                <li class="typeahead__item" role="option" [class.is-active]="k === productHighlight()"
+                                  (mousedown)="$event.preventDefault(); pickProduct(i, p)" (mouseenter)="productHighlight.set(k)">
+                                  <span class="typeahead__name">{{ p.name }}</span>
+                                  @if (productMeta(p)) { <span class="typeahead__meta">{{ productMeta(p) }}</span> }
+                                </li>
+                              } @empty {
+                                <li class="typeahead__empty">Nenhum produto ou serviço encontrado. Use o + para cadastrar.</li>
+                              }
+                            </ul>
+                          }
+                        </div>
+                        <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar produto" (click)="quickAddProduct(i)" style="padding:8px 12px;">+</button>
                       </div>
                     </div>
                     <div class="form-group"><label>Nome do item <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="item.get('name')?.invalid && item.get('name')?.touched"></div>

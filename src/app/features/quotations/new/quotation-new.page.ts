@@ -137,6 +137,7 @@ export class QuotationNewPage {
   private newItem(): FormGroup {
     return this.fb.group({
       productId:          [''],
+      productQuery:       [''],   // texto da busca de produto (#3) — não vai no payload
       name:               ['', Validators.required],
       quantity:           ['', Validators.required],
       unit:               ['', Validators.required],
@@ -165,7 +166,7 @@ export class QuotationNewPage {
     this.svc.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
     this.svc.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
-    this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v), error: () => {} });
+    this.svc.getProductsServicesLookup().subscribe({ next: v => { this.products.set(v); this.syncProductQueries(); }, error: () => {} });
     this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
     // CP-15: fornecedores tipo Supplier para o seletor de sugeridos.
     this.svc.getSuppliersOnlyLookup().subscribe({ next: v => this.suppliers.set(v), error: () => {} });
@@ -237,6 +238,7 @@ export class QuotationNewPage {
   private itemFrom(it: PurchaseRequestItem): FormGroup {
     return this.fb.group({
       productId:          [it.productId != null ? String(it.productId) : ''],
+      productQuery:       [it.productId != null ? (it.product?.name || this.productNameById(it.productId)) : ''],
       name:               [it.name ?? '', Validators.required],
       quantity:           [it.quantity != null ? String(it.quantity) : '', Validators.required],
       unit:               [it.unit ?? '', Validators.required],
@@ -264,6 +266,7 @@ export class QuotationNewPage {
           g.patchValue({
             // item 4: vincula ao cadastro central quando a planilha casa por Código/Nome.
             productId: it.productId != null ? String(it.productId) : '',
+            productQuery: it.productId != null ? this.productNameById(it.productId) : '',
             name: it.name ?? '',
             quantity: it.quantity != null ? String(it.quantity) : '',
             unit: it.unit ?? '',
@@ -292,7 +295,9 @@ export class QuotationNewPage {
     const unit = parseFloat(raw) || 0;
     return formatDecimalBR(qty * unit);
   }
-  removeItem(index: number) { if (this.items.length > 1) this.items.removeAt(index); }
+  removeItem(index: number) {
+    if (this.items.length > 1) { this.items.removeAt(index); this.productRow.set(null); }
+  }
 
   // BK-6: "Área Requisitante" puxa a área do usuário selecionado.
   onRequesterChange(): void {
@@ -328,22 +333,115 @@ export class QuotationNewPage {
     if (prod.costBase != null)   item.get('estimatedUnitValue')?.setValue(formatDecimalBR(prod.costBase));
   }
 
-  // item 3 (reteste 22.09): busca de produto por nome (datalist) reutilizando o cadastro
-  // central — evita rolar um <select> com centenas de itens e reduz duplicidade.
+  // item 3 (reteste 22.09): busca de produto reutilizando o cadastro central — evita rolar
+  // um <select> com centenas de itens e reduz duplicidade.
   productNameById(id: unknown): string {
     const p = this.products().find(x => String(x.id) === String(id));
     return p?.name ?? '';
   }
-  onItemProductPick(event: Event, index: number): void {
-    const val  = (event.target as HTMLInputElement).value.trim();
-    const found = this.products().find(p => (p.name ?? '').toLowerCase() === val.toLowerCase());
+
+  // Menus ajustes 28.09 · #3: typeahead com lista própria. Só uma linha fica aberta por vez.
+  readonly productRow       = signal<number | null>(null);
+  readonly productHighlight = signal(0);
+
+  private norm(s: string): string {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  /** Produtos cujo nome ou código contém o texto digitado (sem acento/caixa); os que começam
+   *  com o texto vêm primeiro. Sem texto, a lista inteira — o campo também é um seletor. */
+  productMatches(index: number): PurchaseRef[] {
+    const q = this.norm(String(this.items.at(index)?.get('productQuery')?.value ?? ''));
+    const list = this.products();
+    if (!q) return list.slice(0, 50);
+    const starts = (p: PurchaseRef) => (this.norm(p.name).startsWith(q) || this.norm(p.code ?? '').startsWith(q) ? 0 : 1);
+    return list
+      .filter(p => this.norm(`${p.code ?? ''} ${p.name}`).includes(q))
+      .sort((a, b) => starts(a) - starts(b))
+      .slice(0, 50);
+  }
+
+  productMeta(p: PurchaseRef): string {
+    return [p.code, p.unit, p.group].filter(Boolean).join(' · ');
+  }
+
+  openProductList(index: number): void {
+    this.productRow.set(index);
+    this.productHighlight.set(0);
+  }
+
+  toggleProductList(index: number, input: HTMLInputElement): void {
+    if (this.productRow() === index) { this.productRow.set(null); return; }
+    input.focus();
+    this.openProductList(index);
+  }
+
+  onProductQuery(index: number): void {
+    // Digitar desfaz o vínculo anterior: só vale o produto escolhido na lista.
     const item = this.items.at(index) as FormGroup;
-    if (found) {
-      item.get('productId')?.setValue(String(found.id));
-      this.onItemProduct(index);           // reusa o cadastro: autofill nome/grupo/unidade/valor
-    } else {
-      item.get('productId')?.setValue('');  // texto livre: item sem vínculo
-      if (val) item.get('name')?.setValue(val);
+    if (item.get('productId')?.value) item.get('productId')?.setValue('');
+    this.openProductList(index);
+  }
+
+  pickProduct(index: number, p: PurchaseRef): void {
+    const item = this.items.at(index) as FormGroup;
+    item.get('productId')?.setValue(String(p.id));
+    item.get('productQuery')?.setValue(p.name ?? '');
+    this.onItemProduct(index);           // reusa o cadastro: autofill nome/grupo/unidade/valor
+    this.productRow.set(null);
+  }
+
+  onProductKeydown(event: KeyboardEvent, index: number): void {
+    const open = this.productRow() === index;
+    const list = open ? this.productMatches(index) : [];
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (!open) { this.openProductList(index); return; }
+        this.productHighlight.set(Math.min(this.productHighlight() + 1, list.length - 1));
+        this.scrollActiveOption();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.productHighlight.set(Math.max(this.productHighlight() - 1, 0));
+        this.scrollActiveOption();
+        break;
+      case 'Enter':
+        if (open && list[this.productHighlight()]) {
+          event.preventDefault();
+          this.pickProduct(index, list[this.productHighlight()]);
+        }
+        break;
+      case 'Escape':
+        if (open) { event.preventDefault(); this.productRow.set(null); }
+        break;
+    }
+  }
+
+  private scrollActiveOption(): void {
+    setTimeout(() => document.querySelector('.typeahead__item.is-active')?.scrollIntoView({ block: 'nearest' }));
+  }
+
+  onProductBlur(index: number): void {
+    // Espera o mousedown de uma opção ser processado antes de fechar.
+    setTimeout(() => {
+      if (this.productRow() === index) this.productRow.set(null);
+      const item = this.items.at(index) as FormGroup | undefined;
+      if (!item || item.get('productId')?.value) return;
+      const q = String(item.get('productQuery')?.value ?? '').trim();
+      if (!q) return;
+      // Texto igual ao nome de um produto do cadastro: vincula (reuso do cadastro central).
+      const exact = this.products().find(p => this.norm(p.name) === this.norm(q));
+      if (exact) { this.pickProduct(index, exact); return; }
+      item.get('name')?.setValue(q);      // texto livre: item sem vínculo
+    }, 150);
+  }
+
+  /** Edição: os produtos podem chegar depois do formulário — preenche o texto da busca. */
+  private syncProductQueries(): void {
+    for (const ctrl of this.items.controls) {
+      const id = ctrl.get('productId')?.value;
+      if (id && !ctrl.get('productQuery')?.value) ctrl.get('productQuery')?.setValue(this.productNameById(id));
     }
   }
 
@@ -426,11 +524,19 @@ export class QuotationNewPage {
   }
 
   // ── CMP-07: inclusão rápida de produto/local sem sair da requisição ───────
-  quickAddProduct(): void {
-    const name = (prompt('Nome do novo produto/serviço:') || '').trim();
+  quickAddProduct(index: number): void {
+    const typed = String(this.items.at(index)?.get('productQuery')?.value ?? '').trim();
+    const name = (prompt('Nome do novo produto/serviço:', typed) || '').trim();
     if (!name) return;
     this.svc.createProductQuick(name).subscribe({
-      next: p => this.svc.getProductsServicesLookup().subscribe({ next: v => this.products.set(v) }),
+      next: created => this.svc.getProductsServicesLookup().subscribe({
+        next: v => {
+          this.products.set(v);
+          // #3: o produto recém-cadastrado já fica escolhido no item.
+          const p = v.find(x => x.id === created?.id) ?? v.find(x => this.norm(x.name) === this.norm(name));
+          if (p) this.pickProduct(index, p);
+        },
+      }),
       error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o produto.'),
     });
   }
