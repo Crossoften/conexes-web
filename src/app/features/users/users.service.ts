@@ -97,6 +97,11 @@ export class UsersService {
     return this.http.patch<User>(`${this.baseUsers}/${id}`, payload);
   }
 
+  /** Reenvia o convite de primeiro acesso de um usuário Pendente. */
+  resendInvite(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUsers}/${id}/resend-invite`, {});
+  }
+
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUsers}/${id}`);
   }

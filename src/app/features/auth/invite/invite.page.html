@@ -1,0 +1,146 @@
+<!-- src/app/features/auth/invite/invite.page.html -->
+<div class="auth-shell">
+  <div class="auth-card">
+
+    <div class="auth-card__logo">
+      <img src="assets/images/logo-conexao.png" alt="Conex3s"
+           (error)="$any($event.target).style.display='none'">
+      <span>Conex</span><strong>3s</strong>
+    </div>
+
+    <!-- Validando o link -->
+    @if (checking()) {
+      <div class="state">
+        <div class="state__spinner" aria-hidden="true"></div>
+        <p class="auth-card__subtitle" style="margin-bottom:0">Validando seu convite…</p>
+      </div>
+    }
+
+    <!-- Link inválido ou expirado -->
+    @else if (invalidMsg()) {
+      <h1 class="auth-card__title">Convite indisponível</h1>
+      <div class="banner banner--error" role="alert">{{ invalidMsg() }}</div>
+      <p class="auth-card__subtitle">
+        Peça ao administrador que reenvie o convite para o seu e-mail.
+      </p>
+      <div class="auth-card__footer">
+        <a routerLink="/auth/login">← Ir para o login</a>
+      </div>
+    }
+
+    <!-- Cadastro concluído -->
+    @else if (done()) {
+      <h1 class="auth-card__title">Tudo certo!</h1>
+      <div class="banner banner--success" role="status">
+        Cadastro concluído. Já pode entrar com a sua nova senha.
+      </div>
+      <button class="btn-primary" type="button" (click)="goToLogin()">Ir para o login</button>
+    }
+
+    <!-- Formulário -->
+    @else {
+      <h1 class="auth-card__title">Bem-vindo, {{ invite()?.name }}!</h1>
+      <p class="auth-card__subtitle">
+        Sua conta foi criada por um administrador.<br>
+        Crie sua senha para concluir o cadastro.
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <div class="field">
+          <label class="field__label" for="email">E-mail</label>
+          <input class="field__input" id="email" type="email"
+                 [value]="invite()?.email" disabled>
+          <span class="field__hint">Este é o e-mail que você usará para entrar.</span>
+        </div>
+
+        <!-- Senha -->
+        <div class="field" [class.field--error]="password.invalid && password.touched">
+          <label class="field__label" for="password">Crie sua senha</label>
+          <div class="field__input-wrap">
+            <input class="field__input" id="password"
+                   [type]="showPassword() ? 'text' : 'password'"
+                   formControlName="password" autocomplete="new-password"
+                   placeholder="Mínimo de 6 caracteres">
+            <button type="button" class="field__eye" (click)="togglePassword()"
+                    [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'">
+              @if (!showPassword()) {
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                  <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                  <path d="M3 3l14 14M10 4c4.5 0 8 4 8.5 6-.7 2-2.5 4.2-5 5.3M6.5 6.6C4.5 7.7 2.5 9.7 1.5 10c.5 2 4 6 8.5 6 1.5 0 3-.4 4.2-1"/>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (password.invalid && password.touched) {
+            <span class="field__error" role="alert">
+              {{ password.errors?.['required'] ? 'Senha obrigatória' : 'Mínimo de 6 caracteres' }}
+            </span>
+          }
+        </div>
+
+        <!-- Confirmar -->
+        <div class="field" [class.field--error]="(confirmPassword.invalid || form.errors?.['mismatch']) && confirmPassword.touched">
+          <label class="field__label" for="confirmPassword">Confirme a senha</label>
+          <input class="field__input" id="confirmPassword"
+                 [type]="showPassword() ? 'text' : 'password'"
+                 formControlName="confirmPassword" autocomplete="new-password"
+                 placeholder="Repita a senha">
+          @if (confirmPassword.touched) {
+            @if (confirmPassword.errors?.['required']) {
+              <span class="field__error" role="alert">Confirmação obrigatória</span>
+            } @else if (form.errors?.['mismatch']) {
+              <span class="field__error" role="alert">As senhas não conferem</span>
+            }
+          }
+        </div>
+
+        <p class="auth-card__section">Complete seu cadastro (opcional)</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="surname">Sobrenome</label>
+            <input class="field__input" id="surname" type="text" formControlName="surname">
+          </div>
+          <div class="field">
+            <label class="field__label" for="phone">Telefone</label>
+            <input class="field__input" id="phone" type="tel" formControlName="phone"
+                   placeholder="(00) 00000-0000">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="document">CPF</label>
+            <input class="field__input" id="document" type="text" formControlName="document"
+                   placeholder="000.000.000-00">
+          </div>
+          <div class="field">
+            <label class="field__label" for="jobTitle">Cargo</label>
+            <input class="field__input" id="jobTitle" type="text" formControlName="jobTitle">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="area">Área / Setor</label>
+          <input class="field__input" id="area" type="text" formControlName="area">
+        </div>
+
+        @if (errorMsg()) {
+          <div class="banner banner--error" role="alert">{{ errorMsg() }}</div>
+        }
+
+        <button class="btn-primary" type="submit" [disabled]="saving()">
+          @if (saving()) { <span class="btn-spinner" aria-hidden="true"></span> }
+          @else { Concluir cadastro }
+        </button>
+      </form>
+    }
+
+  </div>
+</div>

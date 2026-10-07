@@ -106,6 +106,18 @@ export class UsersListPage implements OnInit {
     });
   }
 
+  /** Reenvia o convite de primeiro acesso (link expirado ou e-mail não recebido). */
+  onResendInvite(user: User): void {
+    if (!confirm(`Reenviar o convite de acesso para ${user.email}?`)) return;
+    this.svc.resendInvite(user.id).subscribe({
+      next: res => this.showToast(res?.message ?? 'Convite reenviado.', 'success'),
+      error: err => {
+        const msg = err?.error?.message ?? 'Erro ao reenviar o convite.';
+        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'error');
+      },
+    });
+  }
+
   onUserDeleted(id: number): void {
     if (!confirm('Deseja excluir este usuário?')) return;
     this.store.deleteUser(id).subscribe({
