@@ -97,9 +97,13 @@
             </div>
             <div class="form-group">
               <label>Senha</label>
-              <input type="password" class="form-control" placeholder="Deixe em branco para gerar automaticamente"
+              <input type="password" class="form-control" placeholder="Deixe em branco para enviar um convite"
                 formControlName="password">
-              <span class="field-hint">Se em branco, o sistema gera uma senha e envia por e-mail ao usuário.</span>
+              <span class="field-hint">
+                Em branco (recomendado): o usuário recebe por e-mail um link de convite, válido por 48 horas,
+                para criar a própria senha. A conta fica <strong>Pendente</strong> até ele concluir.
+                Preenchendo aqui, a conta já nasce ativa com esta senha e nenhum e-mail é enviado.
+              </span>
             </div>
           </div>
 
