@@ -9,16 +9,12 @@ export const authRoutes: Routes = [
     data: { title: 'Entrar — Conex3s' },
   },
   {
-    path: 'register',
-    loadComponent: () =>
-      import('./register/register.page').then(m => m.RegisterPage),
-    data: { title: 'Criar conta' },
-  },
-  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage),
     data: { title: 'Recuperar senha' },
   },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
+  // Cadastro é feito pelo gerencial (admin): qualquer rota antiga de auth volta pro login.
+  { path: '**', redirectTo: 'login' },
 ];
