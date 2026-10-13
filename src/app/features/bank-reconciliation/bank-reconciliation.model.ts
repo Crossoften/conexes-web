@@ -38,6 +38,7 @@ export interface ReconciliationItem {
   dayOfWeek: string;
   description: string;
   amount: string;
+  rawDate?: string | null; // ISO original — usado no filtro por período
   bankDetails?: BankAccountInfo; // Para a aba PENDENTES
   movementGroups?: MovementGroup[]; // Para a aba MOVIMENTAÇÕES
 }

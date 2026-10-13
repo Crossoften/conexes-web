@@ -16,6 +16,26 @@ function weekday(iso?: string | null): string {
   return isNaN(d.getTime()) ? '' : WEEKDAY[d.getDay()];
 }
 
+/** Intervalo [start, end] (inclusive) a partir do período selecionado. */
+function periodRange(period: string, customStart: string, customEnd: string): { start: Date | null; end: Date | null } {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  switch (period) {
+    case 'THIS_MONTH': return { start: new Date(y, m, 1), end: endOfDay(new Date(y, m + 1, 0)) };
+    case 'LAST_MONTH': return { start: new Date(y, m - 1, 1), end: endOfDay(new Date(y, m, 0)) };
+    case 'LAST_90':    return { start: startOfDay(new Date(now.getTime() - 90 * 864e5)), end: endOfDay(now) };
+    case 'THIS_YEAR':  return { start: new Date(y, 0, 1), end: endOfDay(new Date(y, 11, 31)) };
+    case 'CUSTOM': {
+      const s = customStart ? startOfDay(new Date(customStart + 'T00:00:00')) : null;
+      const e = customEnd ? endOfDay(new Date(customEnd + 'T00:00:00')) : null;
+      return { start: isNaN(s?.getTime() ?? NaN) ? null : s, end: isNaN(e?.getTime() ?? NaN) ? null : e };
+    }
+    default: return { start: null, end: null }; // '' / ALL = sem filtro
+  }
+}
+
 const EMPTY_ACCOUNT: BankAccountInfo = { bankName: '—', agency: '—', account: '—', balance: 'R$ 0,00' };
 
 interface State {
@@ -28,7 +48,7 @@ interface State {
   loading: boolean;
   error: string | null;
   activeTab: ReconciliationTab;
-  filters: { globalSearch: string; period: string; type: string; itemSearch: string };
+  filters: { globalSearch: string; period: string; type: string; itemSearch: string; customStart: string; customEnd: string };
   pagination: { page: number; pageSize: number };
   expandedIds: Set<string>;
   expandedInnerIds: Set<string>; // Gerencia a expansão das sub-tabelas em Movimentações
@@ -48,7 +68,7 @@ export class BankReconciliationStore {
     loading: false,
     error: null,
     activeTab: 'PENDING',
-    filters: { globalSearch: '', period: '', type: '', itemSearch: '' },
+    filters: { globalSearch: '', period: '', type: '', itemSearch: '', customStart: '', customEnd: '' },
     pagination: { page: 1, pageSize: 10 },
     expandedIds: new Set(),
     expandedInnerIds: new Set(),
@@ -84,12 +104,12 @@ export class BankReconciliationStore {
       account: `C/C ${data.account.account}`, balance: brl.format(data.account.balance ?? 0),
     };
     const pendingItems: ReconciliationItem[] = (data.pendingReconciliations ?? []).map(p => ({
-      id: `p-${p.id}`, date: fmtDate(p.date), dayOfWeek: weekday(p.date),
+      id: `p-${p.id}`, date: fmtDate(p.date), dayOfWeek: weekday(p.date), rawDate: p.date,
       description: 'Lançamento pendente de conciliação', amount: brl.format(p.value ?? 0),
       bankDetails: accInfo,
     }));
     const movementItems: ReconciliationItem[] = (data.movements ?? []).map(m => ({
-      id: `m-${m.id}`, date: fmtDate(m.date), dayOfWeek: weekday(m.date),
+      id: `m-${m.id}`, date: fmtDate(m.date), dayOfWeek: weekday(m.date), rawDate: m.date,
       description: m.bankDescription ?? '—', amount: brl.format(m.bankValue ?? 0),
       movementGroups: [{
         id: `g-${m.id}`,
@@ -139,6 +159,19 @@ export class BankReconciliationStore {
         item.dayOfWeek.toLowerCase().includes(term) ||
         (item.description ?? '').toLowerCase().includes(term));
     }
+
+    // Filtro por período (Este mês, Mês passado, Últimos 90 dias, Este ano, Personalizado).
+    const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
+    if (start || end) {
+      result = result.filter(item => {
+        if (!item.rawDate) return false;
+        const d = new Date(item.rawDate);
+        if (isNaN(d.getTime())) return false;
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
     return result;
   });
 
@@ -157,8 +190,10 @@ export class BankReconciliationStore {
   }
 
   setGlobalSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, globalSearch: search } })); }
-  setPeriod(period: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, period } })); }
-  setType(type: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, type } })); }
+  setPeriod(period: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, period }, pagination: { ...s.pagination, page: 1 } })); }
+  setCustomStart(d: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, customStart: d }, pagination: { ...s.pagination, page: 1 } })); }
+  setCustomEnd(d: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, customEnd: d }, pagination: { ...s.pagination, page: 1 } })); }
+  setType(type: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } })); }
   
   setItemSearch(search: string) { 
     this.state.update(s => ({ ...s, filters: { ...s.filters, itemSearch: search }, pagination: { ...s.pagination, page: 1 } })); 

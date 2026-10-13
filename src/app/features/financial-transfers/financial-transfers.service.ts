@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateBankTransferPayload, BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
+import { CreateBankTransferPayload, CreateBankEntryPayload, BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 function fmtDate(iso?: string | null): string {
@@ -78,6 +78,22 @@ export class FinancialTransfersService {
   /** FIN-001: cria a transferência (POST /v1/banking/transfers). */
   createTransfer(payload: CreateBankTransferPayload): Observable<unknown> {
     return this.http.post<unknown>(this.base, payload);
+  }
+
+  /** Lançamento avulso (POST /v1/banking/entries). */
+  createEntry(payload: CreateBankEntryPayload): Observable<unknown> {
+    return this.http.post<unknown>(this.entriesUrl, payload);
+  }
+
+  /**
+   * Importa em lote por planilha, conforme a visão:
+   * TRANSFERS → POST /v1/banking/transfers/import · ENTRIES → POST /v1/banking/entries/import.
+   */
+  importFile(file: File, view: TransferView): Observable<unknown> {
+    const url = `${view === 'ENTRIES' ? this.entriesUrl : this.base}/import`;
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<unknown>(url, form);
   }
 
   /** Exclui conforme a visão: transferência ou lançamento bancário. */

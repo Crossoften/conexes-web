@@ -40,6 +40,10 @@ export class FinancialTransfersListPage implements OnInit {
 
   readonly pageSizeOptions = [10, 25, 50];
 
+  readonly isEntries = computed(() => this.store.filters().view === 'ENTRIES');
+  readonly newRoute  = computed(() => this.isEntries() ? 'new-entry' : 'new');
+  readonly newLabel  = computed(() => this.isEntries() ? 'Novo lançamento' : 'Nova transferência');
+
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
 
   readonly pageNumbers = computed((): (number | '...')[] => {
@@ -86,5 +90,36 @@ export class FinancialTransfersListPage implements OnInit {
     if (!n) return;
     if (!confirm(`Excluir ${n} registro(s) selecionado(s)? Esta ação não pode ser desfeita.`)) return;
     this.store.deleteSelected();
+  }
+
+  /** Importa a planilha escolhida (conforme a visão atual) e limpa o input. */
+  onImportFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) this.store.importFile(file);
+    input.value = '';
+  }
+
+  /** Exporta a lista filtrada atual para CSV (abre no Excel). */
+  onExport() {
+    const rows = this.store.sortedItems();
+    if (!rows.length) { alert('Não há registros para exportar nesta visão.'); return; }
+    const isEntries = this.isEntries();
+    const header = isEntries
+      ? ['Código', 'Descrição', 'Conta', 'Tipo', 'Data', 'Valor']
+      : ['Código', 'Descrição', 'Origem', 'Destino', 'Data', 'Valor'];
+    const esc = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [header.map(esc).join(';')];
+    for (const r of rows) {
+      lines.push([r.code, r.description, r.origin, r.destination, r.operationDate, r.value].map(esc).join(';'));
+    }
+    // BOM + CRLF para o Excel abrir com acentuação e separador corretos.
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${isEntries ? 'lancamentos' : 'transferencias'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

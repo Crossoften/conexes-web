@@ -20,8 +20,12 @@ export class BankReconciliationPage implements OnInit {
   }
 
   readonly periodOptions = [
-    { label: 'Selecione o período', value: '' },
+    { label: 'Todo o período', value: '' },
     { label: 'Este mês', value: 'THIS_MONTH' },
+    { label: 'Mês passado', value: 'LAST_MONTH' },
+    { label: 'Últimos 90 dias', value: 'LAST_90' },
+    { label: 'Este ano', value: 'THIS_YEAR' },
+    { label: 'Personalizado', value: 'CUSTOM' },
   ];
 
   readonly typeOptions = [

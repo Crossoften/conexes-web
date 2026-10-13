@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { FinancialTransfersListPage } from './financial-transfers-list.page';
 import { FinancialTransferNewPage } from './new/financial-transfer-new.page';
+import { FinancialEntryNewPage } from './new-entry/financial-entry-new.page';
 
 export const financialTransfersRoutes: Routes = [
   {
@@ -11,5 +12,9 @@ export const financialTransfersRoutes: Routes = [
   {
     path: 'new',
     component: FinancialTransferNewPage
+  },
+  {
+    path: 'new-entry',
+    component: FinancialEntryNewPage
   }
 ];

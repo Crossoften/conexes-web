@@ -30,3 +30,16 @@ export interface CreateBankTransferPayload {
   differentCreditDate?: boolean;
   observation?:        string;
 }
+
+// ── Lançamento avulso (POST /v1/banking/entries) ──────────────────────────────
+export type BankEntryType = 'Credit' | 'Debit';
+
+export interface CreateBankEntryPayload {
+  bankAccountId: number;
+  description:   string;
+  amount:        number;
+  type:          BankEntryType;   // Crédito (entrada) / Débito (saída)
+  category?:     string;
+  date:          string;          // ISO 8601
+  observation?:  string;
+}

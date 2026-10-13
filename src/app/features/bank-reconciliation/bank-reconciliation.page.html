@@ -18,6 +18,11 @@
       </select>
     </div>
 
+    @if (store.filters().period === 'CUSTOM') {
+      <input class="select select--pill" type="date" [value]="store.filters().customStart" (change)="store.setCustomStart($any($event.target).value)" aria-label="Data inicial">
+      <input class="select select--pill" type="date" [value]="store.filters().customEnd" (change)="store.setCustomEnd($any($event.target).value)" aria-label="Data final">
+    }
+
     <div class="select-wrap">
       <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
         @for (opt of typeOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }

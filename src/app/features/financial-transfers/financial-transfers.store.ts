@@ -150,4 +150,16 @@ export class FinancialTransfersStore {
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir em lote.'),
     });
   }
+
+  /** Importa transferências/lançamentos por planilha (conforme a visão ativa). */
+  importFile(file: File): void {
+    this.state.update(s => ({ ...s, loading: true }));
+    this.svc.importFile(file, this.currentView).subscribe({
+      next: () => { this.notify.success('Planilha importada com sucesso.'); this.load(); },
+      error: err => {
+        this.state.update(s => ({ ...s, loading: false }));
+        this.notify.error(err?.error?.message ?? 'Não foi possível importar a planilha.');
+      },
+    });
+  }
 }
