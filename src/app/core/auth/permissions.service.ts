@@ -35,6 +35,13 @@ export class PermissionsService {
     return this.auth.user()?.effectivePermissions ?? [];
   }
 
+  // "Ilimitado" (isUnlimited) = acesso total DENTRO do escopo da permissão: quando ligado,
+  // as quatro ações (ver/criar/editar/excluir) valem, como o rótulo promete. Não concede
+  // acesso a módulos/telas sem entrada própria (não é bypass global — isso é só do Master).
+  private rowAllows(p: EffectivePermission, action: PermissionAction): boolean {
+    return !!p[action] || !!p.isUnlimited;
+  }
+
   private can(action: PermissionAction, module: string, subMenu?: string): boolean {
     if (this.isMaster()) return true;
 
@@ -43,10 +50,10 @@ export class PermissionsService {
 
     if (subMenu) {
       const row = perms.find(p => p.module === module && p.subMenu === subMenu);
-      return !!row?.[action];
+      return row ? this.rowAllows(row, action) : false;
     }
 
-    // Nível de módulo: permite se QUALQUER subMenu do módulo tiver a ação marcada.
-    return perms.some(p => p.module === module && !!p[action]);
+    // Nível de módulo: permite se QUALQUER subMenu do módulo tiver a ação (ou Ilimitado).
+    return perms.some(p => p.module === module && this.rowAllows(p, action));
   }
 }
