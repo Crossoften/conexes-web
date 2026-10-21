@@ -125,26 +125,14 @@
                       <label>Parcelar<span class="req">*</span></label>
                       <div class="select-wrap"><select class="form-control" formControlName="parcelar"><option value="Sim">Sim</option><option value="Nao">Não</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                     </div>
-                    <div class="form-group">
-                      <label>Parcelas<span class="req">*</span></label>
-                      <div class="select-wrap"><select class="form-control" formControlName="parcelas"><option value="">Selecione</option>@for (n of parcelaOptions; track n) {<option [value]="n">{{ n }}x</option>}</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                    </div>
-                    <div class="form-group" style="padding-bottom: 12px;">
-                      <label class="checkbox-inline">
-                        <div class="checkbox">
-                          <input type="checkbox" class="checkbox__input" formControlName="definirValorVencimento">
-                          <span class="checkbox__box"></span>
-                        </div>
-                        Definir valor e vencimento
-                      </label>
-                    </div>
+                    @if (form.get('parcelar')?.value === 'Sim') {
+                      <div class="form-group">
+                        <label>Parcelas<span class="req">*</span></label>
+                        <input type="number" min="2" step="1" class="form-control" placeholder="Nº de parcelas" formControlName="parcelas">
+                      </div>
+                    }
                   </div>
-      
-                  <div class="form-row grid-cols-3">
-                    <div class="form-group"><label>Parcela</label><input type="text" class="form-control disabled-bg" formControlName="parcelaDetalhe"></div>
-                    <div class="form-group"><label>Vencimento</label><input type="text" class="form-control disabled-bg" formControlName="vencimentoDetalhe"></div>
-                    <div class="form-group"><label>Valor</label><input type="text" class="form-control disabled-bg" formControlName="valorDetalhe"></div>
-                  </div>
+                  <!-- CP-20 (definir valor/vencimento por parcela) pendente: edição por parcela ainda não implementada. -->
                 </div>
               </div>
             }
