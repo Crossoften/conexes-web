@@ -3,6 +3,8 @@ import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { BudgetsStore } from './budgets.store';
+import { BudgetsService } from './budgets.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { Budget, BUDGET_STATUS_CONFIG } from './budgets.model';
 import { RouterLink } from "@angular/router";
 
@@ -16,7 +18,21 @@ import { RouterLink } from "@angular/router";
 })
 export class BudgetsListPage implements OnInit {
   readonly store = inject(BudgetsStore);
+  private svc = inject(BudgetsService);
+  private notify = inject(NotificationService);
   readonly statusConfig = BUDGET_STATUS_CONFIG;
+
+  // Botão Exportar estava sem ação.
+  onExport(): void {
+    this.svc.exportExcel().subscribe({
+      next: b => {
+        const url = URL.createObjectURL(b);
+        const a = document.createElement('a'); a.href = url; a.download = `orcamentos_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.notify.error('Falha ao exportar.'),
+    });
+  }
 
   ngOnInit(): void {
     this.store.load();
