@@ -229,7 +229,7 @@
           Reiniciar formulário
         </button>
 
-        <button type="submit" class="btn-solid btn-solid--orange" [disabled]="saving()">
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()" [disabled]="saving()">
           {{ saving() ? 'Salvando…' : 'Salvar' }}
         </button>
       </div>
