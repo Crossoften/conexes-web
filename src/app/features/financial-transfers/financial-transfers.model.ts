@@ -42,4 +42,5 @@ export interface CreateBankEntryPayload {
   category?:     string;
   date:          string;          // ISO 8601
   observation?:  string;
+  stakeholderId?: number;         // LB-12: fornecedor (opcional)
 }

@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
 import { BankAccountOption, CreateBankEntryPayload } from '../financial-transfers.model';
+import { PurchasesService } from '../../purchases/purchases.service';
 import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
 /** Lançamento bancário avulso (crédito/débito) — POST /v1/banking/entries. */
@@ -18,11 +19,19 @@ import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 export class FinancialEntryNewPage implements OnInit {
   private fb     = inject(FormBuilder);
   private svc    = inject(FinancialTransfersService);
+  private lookups = inject(PurchasesService);
   private router = inject(Router);
 
   readonly accounts = signal<BankAccountOption[]>([]);
+  readonly suppliers = signal<{ id: number; name: string }[]>([]);
   readonly loading  = signal(false);
   readonly errorMsg = signal<string | null>(null);
+
+  // LB-03: categoria vira lista de seleção (era digitação livre).
+  readonly categorias = [
+    'Rendimento de aplicação financeira', 'Tarifa bancária', 'Pacote de serviços bancários',
+    'Impostos', 'Outras tarifas', 'Estornos', 'Ajuste de saldo de projeto', 'Outros',
+  ];
 
   form: FormGroup = this.fb.group({
     bankAccountId: ['', Validators.required],
@@ -31,6 +40,7 @@ export class FinancialEntryNewPage implements OnInit {
     amount:        ['', Validators.required],
     date:          ['', Validators.required],
     category:      [''],
+    stakeholderId: [''],   // LB-12: fornecedor (opcional)
     observations:  [''],
   });
 
@@ -38,6 +48,10 @@ export class FinancialEntryNewPage implements OnInit {
     this.svc.getBankAccounts().subscribe({
       next: list => this.accounts.set(list),
       error: ()   => this.accounts.set([]),
+    });
+    this.lookups.getSuppliersLookup().subscribe({
+      next: v => this.suppliers.set(v as { id: number; name: string }[]),
+      error: () => this.suppliers.set([]),
     });
   }
 
@@ -96,12 +110,13 @@ export class FinancialEntryNewPage implements OnInit {
       category:      v.category || undefined,
       date,
       observation:   v.observations || undefined,
+      stakeholderId: v.stakeholderId ? Number(v.stakeholderId) : undefined,
     };
 
     this.loading.set(true);
     this.errorMsg.set(null);
     this.svc.createEntry(payload).subscribe({
-      next: () => { this.loading.set(false); this.router.navigate(['/financial-transfers']); },
+      next: () => { this.loading.set(false); this.router.navigate(['/financial-transfers'], { queryParams: { view: 'entries' } }); },
       error: err => {
         this.loading.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar o lançamento. Tente novamente.';

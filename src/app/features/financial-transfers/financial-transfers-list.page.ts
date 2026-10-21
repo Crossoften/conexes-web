@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
 import { FinancialTransfer, TransferStatus, TransferType, TransferView } from './financial-transfers.model';
-import { RouterLink } from "@angular/router";
+import { RouterLink, ActivatedRoute } from "@angular/router";
 
 @Component({
   selector: 'app-financial-transfers-list',
@@ -16,9 +16,13 @@ import { RouterLink } from "@angular/router";
 })
 export class FinancialTransfersListPage implements OnInit {
   readonly store = inject(FinancialTransfersStore);
+  private route = inject(ActivatedRoute);
 
   ngOnInit(): void {
-    this.store.load();
+    // LB: ao voltar de salvar um lançamento avulso, mantém a visão Lançamentos (não cai em Transferências).
+    const view = this.route.snapshot.queryParamMap.get('view');
+    if (view === 'entries') this.store.setView('ENTRIES');
+    else this.store.load();
   }
 
   readonly viewOptions: { label: string; value: TransferView }[] = [
