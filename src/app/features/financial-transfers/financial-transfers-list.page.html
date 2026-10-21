@@ -17,7 +17,7 @@
       <div class="select-wrap">
         <select class="select select--view" [value]="store.filters().view" (change)="store.setView($any($event.target).value)">
           @for (opt of viewOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
+            <option [value]="opt.value" [selected]="opt.value === store.filters().view">{{ opt.label }}</option>
           }
         </select>
         <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
