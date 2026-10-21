@@ -43,6 +43,9 @@ const STATUS_LABEL: Record<string, string> = {
   Paid: 'Pago',
   Cancelled: 'Cancelado',
   Reconciled: 'Conciliado',
+  UnderReview: 'Em análise',   // #588 COMP-20: aparecia "UnderReview" em inglês
+  Returned: 'Devolvido',
+  Renegotiated: 'Renegociado',
 };
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
