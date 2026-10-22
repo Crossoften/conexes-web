@@ -15,6 +15,7 @@ export interface PurchasingReq {
   group:        string;
   requester:    string;
   stage:        string;
+  stageNum:     number;   // COMP-11: nº da etapa atual, para a esteira da lista
   reqDate:      string;
   deliveryDate: string;
   status:       PurchaseRequestStatus;

@@ -28,6 +28,9 @@ export class PurchasingManagementListPage {
     this.store.load();
   }
 
+  // COMP-11: esteira de etapas (1..6) para colorir a etapa atual na lista.
+  readonly stageTrack = [1, 2, 3, 4, 5, 6];
+
   readonly stageOptions = [
     { label: 'Selecione a etapa', value: '' },
     { label: 'Etapa 1', value: '1' },
