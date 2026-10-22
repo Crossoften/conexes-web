@@ -102,9 +102,11 @@
               
               <td class="td td--center">
                 <div class="action-icons">
-                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  @if (!isEntries()) {
+                  <button class="icon-btn" title="Duplicar" (click)="onDuplicate(item)"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                  }
                   <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Duplicar"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
                 </div>
               </td>
             </tr>
@@ -138,3 +140,26 @@
     </div>
   </div>
 </div>
+
+<!-- TR-03: visualização read-only da transferência -->
+@if (viewItem(); as t) {
+  <div (click)="closeView()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
+    <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+        <h2 style="font-size:16px;font-weight:700;color:#111827;margin:0;">{{ isEntries() ? 'Lançamento' : 'Transferência' }} {{ t.code }}</h2>
+        <button type="button" (click)="closeView()" aria-label="Fechar" style="border:none;background:transparent;font-size:15px;cursor:pointer;color:#6B7280;">✕</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#111827;">
+        <div><span style="color:#6B7280;">Descrição:</span> {{ t.description }}</div>
+        <div><span style="color:#6B7280;">{{ isEntries() ? 'Conta' : 'Origem' }}:</span> {{ t.origin }}</div>
+        <div><span style="color:#6B7280;">{{ isEntries() ? 'Tipo' : 'Destino' }}:</span> {{ t.destination }}</div>
+        <div><span style="color:#6B7280;">Data:</span> {{ t.operationDate }}</div>
+        <div><span style="color:#6B7280;">Valor:</span> {{ t.value }}</div>
+        @if (t.observation) { <div><span style="color:#6B7280;">Observações:</span> {{ t.observation }}</div> }
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}

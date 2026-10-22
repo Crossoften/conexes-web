@@ -13,6 +13,12 @@ export interface FinancialTransfer {
   value: string;
   status: TransferStatus;
   type: TransferType;
+  // TR-04 (duplicar): valores crus para pré-preencher o formulário.
+  originAccountId?: number;
+  destinationAccountId?: number;
+  rawAmount?: number;
+  rawDate?: string;
+  observation?: string;
 }
 
 // ── FIN-001: cadastro de transferência (POST /v1/banking/transfers) ───────────

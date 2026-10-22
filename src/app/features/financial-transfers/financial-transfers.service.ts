@@ -42,6 +42,11 @@ export class FinancialTransfersService {
       value: brl.format(r.amount ?? 0),
       status: 'COMPLETED',
       type: 'TED',
+      originAccountId: r.originAccountId ?? undefined,
+      destinationAccountId: r.destinationAccountId ?? undefined,
+      rawAmount: r.amount ?? undefined,
+      rawDate: r.operationDate ?? undefined,
+      observation: r.observation ?? undefined,
     };
   }
 

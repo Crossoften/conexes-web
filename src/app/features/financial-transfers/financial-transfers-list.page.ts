@@ -1,10 +1,10 @@
 // src/app/features/financial-transfers/financial-transfers-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
 import { FinancialTransfer, TransferStatus, TransferType, TransferView } from './financial-transfers.model';
-import { RouterLink, ActivatedRoute } from "@angular/router";
+import { RouterLink, ActivatedRoute, Router } from "@angular/router";
 
 @Component({
   selector: 'app-financial-transfers-list',
@@ -17,6 +17,17 @@ import { RouterLink, ActivatedRoute } from "@angular/router";
 export class FinancialTransfersListPage implements OnInit {
   readonly store = inject(FinancialTransfersStore);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  // TR-03: visualização read-only da transferência.
+  readonly viewItem = signal<FinancialTransfer | null>(null);
+  openView(item: FinancialTransfer): void { this.viewItem.set(item); }
+  closeView(): void { this.viewItem.set(null); }
+
+  // TR-04: duplicar abre o formulário de nova transferência com os dados do registro.
+  onDuplicate(item: FinancialTransfer): void {
+    this.router.navigate(['/financial-transfers/new'], { state: { duplicate: item } });
+  }
 
   ngOnInit(): void {
     // LB: ao voltar de salvar um lançamento avulso, mantém a visão Lançamentos (não cai em Transferências).

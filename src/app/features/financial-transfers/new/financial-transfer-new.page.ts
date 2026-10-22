@@ -39,6 +39,19 @@ export class FinancialTransferNewPage implements OnInit {
       next: list => this.accounts.set(list),
       error: ()   => this.accounts.set([]),
     });
+
+    // TR-04: duplicar — o formulário abre pré-preenchido com os dados do registro de origem.
+    const dup = (history.state && history.state.duplicate) || null;
+    if (dup) {
+      this.form.patchValue({
+        description: dup.description && dup.description !== '—' ? dup.description : '',
+        origin: dup.originAccountId ? String(dup.originAccountId) : '',
+        destination: dup.destinationAccountId ? String(dup.destinationAccountId) : '',
+        operationDate: typeof dup.rawDate === 'string' ? dup.rawDate.slice(0, 10) : '',
+        transferValue: dup.rawAmount != null ? Number(dup.rawAmount).toFixed(2).replace('.', ',') : '',
+        observations: dup.observation ?? '',
+      });
+    }
   }
 
   /** Máscara monetária BR no valor. */
