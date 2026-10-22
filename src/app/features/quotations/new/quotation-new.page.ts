@@ -86,7 +86,11 @@ export class QuotationNewPage {
   addSupplier(event: Event): void {
     const el = event.target as HTMLSelectElement;
     const id = Number(el.value);
-    if (id && !this.selectedSupplierIds().includes(id)) this.selectedSupplierIds.update(l => [...l, id]);
+    if (id) {
+      // COMP-06: com Fornecedor único, só um fornecedor sugerido é aceito (substitui).
+      if (this.form.get('uniqueSupplier')?.value) this.selectedSupplierIds.set([id]);
+      else if (!this.selectedSupplierIds().includes(id)) this.selectedSupplierIds.update(l => [...l, id]);
+    }
     el.value = '';
   }
   removeSupplier(id: number): void {
@@ -127,6 +131,28 @@ export class QuotationNewPage {
     if (this.editId != null) this.loadForEdit(this.editId);
     // §10.4: em criação, "Data da Requisição" é automática (hoje), campo readonly.
     else this.form.patchValue({ requestDate: this.todayInput() });
+    this.setupExclusiveSupplier();
+  }
+
+  // COMP-06: Fornecedor único / exclusivo / sem subsídio são excludentes (só um por vez).
+  // Com "Fornecedor único": Qtd. de Fornecedores não se aplica e só 1 fornecedor sugerido.
+  private setupExclusiveSupplier(): void {
+    const flags = ['uniqueSupplier', 'exclusiveSupplier', 'withoutSubsidy'];
+    for (const name of flags) {
+      this.form.get(name)?.valueChanges.subscribe(val => {
+        if (val) for (const other of flags) if (other !== name) this.form.get(other)?.setValue(false, { emitEvent: false });
+      });
+    }
+    this.form.get('uniqueSupplier')?.valueChanges.subscribe(val => {
+      const qtd = this.form.get('supplierCount');
+      if (val) {
+        qtd?.setValue('', { emitEvent: false }); qtd?.disable({ emitEvent: false });
+        const ids = this.selectedSupplierIds();
+        if (ids.length > 1) this.selectedSupplierIds.set([ids[0]]);
+      } else {
+        qtd?.enable({ emitEvent: false });
+      }
+    });
   }
 
   /** §10.4: data de hoje no formato do input date (YYYY-MM-DD). */
