@@ -28,6 +28,11 @@ export class AccountsPayableListPage implements OnInit {
   readonly payBusy = signal(false);
 
   openPay(item: PayableAccount): void { this.payItem.set(item); }
+
+  // CP-03: visualização read-only do lançamento.
+  readonly viewItem = signal<PayableAccount | null>(null);
+  openView(item: PayableAccount): void { this.viewItem.set(item); }
+  closeView(): void { this.viewItem.set(null); }
   closePay(): void { this.payItem.set(null); }
 
   onBaixaConfirm(r: BaixaResult): void {
