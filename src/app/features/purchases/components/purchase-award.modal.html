@@ -73,10 +73,10 @@
           }
         }
 
-        <!-- Justificativa opcional -->
+        <!-- COMP-15: justificativa obrigatória -->
         <label class="field">
-          <span class="field-label">Justificativa (opcional)</span>
-          <textarea class="field-input field-textarea" rows="2" [(ngModel)]="reason" placeholder="Motivo da escolha"></textarea>
+          <span class="field-label">Justificativa <span class="req">*</span></span>
+          <textarea class="field-input field-textarea" rows="2" [(ngModel)]="reason" placeholder="Motivo da escolha da proposta vencedora"></textarea>
         </label>
 
         <div class="award-actions">

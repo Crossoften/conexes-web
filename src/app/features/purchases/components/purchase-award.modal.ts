@@ -98,6 +98,8 @@ export class PurchaseAwardModalComponent implements OnChanges {
 
   get canSubmit(): boolean {
     if (this.submitting()) return false;
+    // COMP-15: a justificativa é obrigatória para adjudicar.
+    if (!this.reason.trim()) return false;
     return this.mode === 'by_supplier' ? this.supplierQuotationId > 0 : this.allItemsSelected();
   }
 
@@ -112,7 +114,7 @@ export class PurchaseAwardModalComponent implements OnChanges {
             mode: 'by_item',
             selections: this.awardItems().map(i => ({ itemId: i.id, quotationId: this.selections[i.id] })),
           };
-    if (this.reason.trim()) payload.reason = this.reason.trim();
+    payload.reason = this.reason.trim(); // COMP-15: sempre envia a justificativa (obrigatória)
 
     this.submitting.set(true);
     this.error.set(null);
