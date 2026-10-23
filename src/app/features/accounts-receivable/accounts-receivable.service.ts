@@ -77,7 +77,7 @@ export class AccountsReceivableService {
   }
 
   /** FIN-01: registra recebimento (baixa) total ou parcial. */
-  registerReceipt(id: number, payload: { amount?: number; receiptDate: string; bankAccountId?: number; note?: string }): Observable<ApiAccountReceivable> {
+  registerReceipt(id: number, payload: { amount?: number; receiptDate: string; bankAccountId?: number; note?: string; interest?: number; fine?: number; discount?: number }): Observable<ApiAccountReceivable> {
     return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/receipts`, payload);
   }
 

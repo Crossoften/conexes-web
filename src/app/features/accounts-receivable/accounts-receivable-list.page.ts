@@ -38,7 +38,11 @@ export class AccountsReceivableListPage implements OnInit {
     const item = this.rcvItem();
     if (!item) return;
     this.rcvBusy.set(true);
-    this.svc.registerReceipt(Number(item.id), { amount: r.amount, receiptDate: r.date, note: r.note }).subscribe({
+    // CR-03: o recebimento leva juros, multa, desconto e conta bancária.
+    this.svc.registerReceipt(Number(item.id), {
+      amount: r.amount, receiptDate: r.date, note: r.note,
+      bankAccountId: r.bankAccountId, interest: r.interest, fine: r.fine, discount: r.discount,
+    }).subscribe({
       next: () => { this.rcvBusy.set(false); this.rcvItem.set(null); this.notify.success('Recebimento registrado com sucesso.'); this.store.load(); },
       error: err => { this.rcvBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar o recebimento.'); },
     });

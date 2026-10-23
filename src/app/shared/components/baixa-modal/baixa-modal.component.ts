@@ -7,7 +7,15 @@ export interface BaixaResult {
   amount: number;
   date: string;
   note?: string;
+  // CP-09 / CR-03: acréscimos e abatimento da baixa.
+  bankAccountId?: number;
+  interest?: number;
+  fine?: number;
+  discount?: number;
 }
+
+/** Conta bancária para o seletor da baixa. */
+export interface BaixaConta { id: number; label: string }
 
 // Modal de baixa (pagamento/recebimento) total ou parcial — FIN-01.
 // Reutilizado por Contas a Pagar (kind='pagar') e Contas a Receber (kind='receber').
@@ -26,12 +34,48 @@ export interface BaixaResult {
           <p class="baixa-title">{{ title }}</p>
           <p class="baixa-saldo">Saldo em aberto: <strong>R$ {{ balance | number:'1.2-2':'pt-BR' }}</strong></p>
 
+          <!-- CP-09 / CR-03: juros, multa e desconto. Juros e multa aumentam o
+               que se desembolsa; desconto diminui. Nenhum dos três amortiza o
+               título além do principal. -->
+          <div class="baixa-grid">
+            <div>
+              <label class="baixa-lbl">Juros</label>
+              <input class="baixa-input" type="number" step="0.01" min="0" [(ngModel)]="interest" (ngModelChange)="recalcular()">
+            </div>
+            <div>
+              <label class="baixa-lbl">Multa</label>
+              <input class="baixa-input" type="number" step="0.01" min="0" [(ngModel)]="fine" (ngModelChange)="recalcular()">
+            </div>
+            <div>
+              <label class="baixa-lbl">Desconto</label>
+              <input class="baixa-input" type="number" step="0.01" min="0" [(ngModel)]="discount" (ngModelChange)="recalcular()">
+            </div>
+          </div>
+
+          <p class="baixa-saldo" style="margin-top:10px;">
+            Total devido: <strong>R$ {{ totalDevido() | number:'1.2-2':'pt-BR' }}</strong>
+            @if (acrescimo() !== 0) {
+              <span class="baixa-hint" style="display:block;margin-top:2px;">
+                saldo R$ {{ balance | number:'1.2-2':'pt-BR' }}
+                {{ acrescimo() > 0 ? '+' : '−' }} R$ {{ (acrescimo() > 0 ? acrescimo() : -acrescimo()) | number:'1.2-2':'pt-BR' }}
+              </span>
+            }
+          </p>
+
           <label class="baixa-lbl">Valor {{ kind === 'receber' ? 'recebido' : 'pago' }}</label>
-          <input class="baixa-input" type="number" step="0.01" [(ngModel)]="amount" [max]="balance" min="0.01">
-          <p class="baixa-hint">Informe um valor menor para baixa parcial. Máximo: R$ {{ balance | number:'1.2-2':'pt-BR' }}.</p>
+          <input class="baixa-input" type="number" step="0.01" [(ngModel)]="amount" min="0.01">
+          <p class="baixa-hint">Informe um valor menor para baixa parcial. Máximo: R$ {{ totalDevido() | number:'1.2-2':'pt-BR' }}.</p>
 
           <label class="baixa-lbl">Data</label>
           <input class="baixa-input" type="date" [(ngModel)]="date">
+
+          @if (contas.length) {
+            <label class="baixa-lbl">Conta bancária</label>
+            <select class="baixa-input" [(ngModel)]="bankAccountId">
+              <option [ngValue]="null">Selecione (opcional)</option>
+              @for (c of contas; track c.id) { <option [ngValue]="c.id">{{ c.label }}</option> }
+            </select>
+          }
 
           <label class="baixa-lbl">Observação (opcional)</label>
           <input class="baixa-input" type="text" [(ngModel)]="note" placeholder="Ex.: PIX, TED...">
@@ -60,6 +104,7 @@ export interface BaixaResult {
     .baixa-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--surface-border-mid,#E5E7EB); border-radius: 50px; font-size: 13.5px; outline: none; }
     .baixa-input:focus { border-color: var(--brand-purple-mid,#7C3AED); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
     .baixa-hint { font-size: 11px; color: var(--text-muted,#9CA3AF); margin-top: 2px; }
+    .baixa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
     .baixa-err { font-size: 12.5px; color: #DC2626; margin-top: 8px; }
     .baixa-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--surface-border,#E5E7EB); }
     .baixa-btn { padding: 9px 18px; border-radius: 50px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
@@ -73,26 +118,62 @@ export class BaixaModalComponent {
   @Input() balance = 0;
   @Input() kind: 'pagar' | 'receber' = 'pagar';
   @Input() busy = false;
+  /** CP-09 / CR-03: contas bancárias para o seletor (vazio esconde o campo). */
+  @Input() contas: BaixaConta[] = [];
   @Output() confirm = new EventEmitter<BaixaResult>();
   @Output() cancel = new EventEmitter<void>();
 
   amount: number | null = null;
   date = new Date().toISOString().slice(0, 10);
   note = '';
+  bankAccountId: number | null = null;
+  interest = 0;
+  fine = 0;
+  discount = 0;
   readonly error = signal<string | null>(null);
 
+  /** Juros + multa − desconto. */
+  acrescimo(): number {
+    const n = (v: any) => Math.max(0, Number(v) || 0);
+    return Math.round((n(this.interest) + n(this.fine) - n(this.discount)) * 100) / 100;
+  }
+
+  /** Saldo + acréscimos. É o teto da baixa. */
+  totalDevido(): number {
+    return Math.round((this.balance + this.acrescimo()) * 100) / 100;
+  }
+
+  /** Mantém o valor colado no total devido enquanto o usuário não o edita. */
+  recalcular(): void {
+    this.amount = this.totalDevido();
+  }
+
   ngOnChanges(): void {
-    // Ao abrir, sugere o saldo total como valor (quitação); o usuário reduz p/ parcial.
-    if (this.amount == null && this.balance > 0) this.amount = Number(this.balance.toFixed(2));
+    // Ao abrir, sugere o total devido como valor (quitação); o usuário reduz p/ parcial.
+    if (this.amount == null && this.balance > 0) this.amount = this.totalDevido();
   }
 
   onConfirm(): void {
     const value = Number(this.amount);
+    const devido = this.totalDevido();
     if (!value || value <= 0) { this.error.set('Informe um valor maior que zero.'); return; }
-    if (value > this.balance + 0.005) { this.error.set('Valor maior que o saldo em aberto.'); return; }
+    if (value > devido + 0.005) { this.error.set(`Valor maior que o total devido (R$ ${devido.toFixed(2)}).`); return; }
+    // O que sobra depois dos acréscimos é o que amortiza o título.
+    if (value - this.acrescimo() <= 0.005) {
+      this.error.set('O valor informado não cobre os juros e a multa.');
+      return;
+    }
     if (!this.date) { this.error.set('Informe a data.'); return; }
     this.error.set(null);
-    this.confirm.emit({ amount: value, date: this.date, note: this.note || undefined });
+    this.confirm.emit({
+      amount: value,
+      date: this.date,
+      note: this.note || undefined,
+      bankAccountId: this.bankAccountId ?? undefined,
+      interest: Number(this.interest) || 0,
+      fine: Number(this.fine) || 0,
+      discount: Number(this.discount) || 0,
+    });
   }
 
   onCancel(): void { this.cancel.emit(); }

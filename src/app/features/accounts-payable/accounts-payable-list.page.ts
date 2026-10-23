@@ -40,7 +40,11 @@ export class AccountsPayableListPage implements OnInit {
     const item = this.payItem();
     if (!item) return;
     this.payBusy.set(true);
-    this.svc.registerPayment(Number(item.id), { amount: r.amount, paymentDate: r.date, note: r.note }).subscribe({
+    // CP-09: a baixa leva juros, multa, desconto e conta bancária.
+    this.svc.registerPayment(Number(item.id), {
+      amount: r.amount, paymentDate: r.date, note: r.note,
+      bankAccountId: r.bankAccountId, interest: r.interest, fine: r.fine, discount: r.discount,
+    }).subscribe({
       next: () => { this.payBusy.set(false); this.payItem.set(null); this.notify.success('Baixa registrada com sucesso.'); this.store.load(); },
       error: err => { this.payBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar a baixa.'); },
     });

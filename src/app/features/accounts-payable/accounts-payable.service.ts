@@ -110,7 +110,7 @@ export class AccountsPayableService {
   }
 
   /** FIN-01: registra baixa (pagamento) total ou parcial. */
-  registerPayment(id: number, payload: { amount?: number; paymentDate: string; bankAccountId?: number; installmentId?: number; note?: string }): Observable<ApiAccountPayable> {
+  registerPayment(id: number, payload: { amount?: number; paymentDate: string; bankAccountId?: number; installmentId?: number; note?: string; interest?: number; fine?: number; discount?: number }): Observable<ApiAccountPayable> {
     return this.http.post<ApiAccountPayable>(`${this.base}/${id}/payments`, payload);
   }
 
