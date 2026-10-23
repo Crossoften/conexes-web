@@ -24,6 +24,9 @@ export class AccountsPayableListPage implements OnInit {
   private notify = inject(NotificationService);
   private router = inject(Router);
 
+  /** CP-09: contas bancárias para o seletor do modal de baixa. */
+  readonly contasBancarias = signal<{ id: number; label: string }[]>([]);
+
   // FIN-01: baixa (pagamento) total ou parcial.
   readonly payItem = signal<PayableAccount | null>(null);
   readonly payBusy = signal(false);
@@ -67,6 +70,11 @@ export class AccountsPayableListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+    // CP-09: contas para o seletor da baixa.
+    this.svc.getBankAccounts().subscribe({
+      next: v => this.contasBancarias.set(v),
+      error: () => this.contasBancarias.set([]),
+    });
   }
 
   readonly viewOptions = [

@@ -24,6 +24,9 @@ export class AccountsReceivableListPage implements OnInit {
   private notify = inject(NotificationService);
   private router = inject(Router);
 
+  /** CR-03: contas bancárias para o seletor do modal de recebimento. */
+  readonly contasBancarias = signal<{ id: number; label: string }[]>([]);
+
   // FA-09: cadastro manual de conta a receber.
   goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
 
@@ -87,6 +90,11 @@ export class AccountsReceivableListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
+    // CR-03: contas para o seletor do recebimento.
+    this.svc.getBankAccounts().subscribe({
+      next: v => this.contasBancarias.set(v),
+      error: () => this.contasBancarias.set([]),
+    });
   }
 
   readonly viewOptions = [

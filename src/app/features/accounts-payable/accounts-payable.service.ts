@@ -144,6 +144,19 @@ export class AccountsPayableService {
     return this.http.post(`${this.base}/${id}/send-to-remittance`, {});
   }
 
+  /** CP-09: contas bancárias para o seletor do modal de baixa. */
+  getBankAccounts(): Observable<{ id: number; label: string }[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/institutional/bank-accounts`).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(r => ({
+          id: Number(r.id),
+          label: r.nickname || (r.bankName ? `${r.bankName} — ${r.account ?? ''}` : `Conta #${r.id}`),
+        }));
+      }),
+    );
+  }
+
   /** D9: a exportação leva os mesmos filtros da tela — antes baixava a base inteira. */
   exportExcel(filters: AdvancedFilters = {} as AdvancedFilters): Observable<Blob> {
     return this.http.get(`${this.base}/export/excel`, { params: this.filterParams(filters), responseType: 'blob' });

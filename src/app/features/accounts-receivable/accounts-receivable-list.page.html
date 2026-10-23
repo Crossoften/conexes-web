@@ -181,6 +181,7 @@
     kind="receber"
     [title]="r.contractorName + ' · ' + r.value"
     [balance]="r.balanceNum"
+    [contas]="contasBancarias()"
     [busy]="rcvBusy()"
     (confirm)="onReceiveConfirm($event)"
     (cancel)="closeReceive()">

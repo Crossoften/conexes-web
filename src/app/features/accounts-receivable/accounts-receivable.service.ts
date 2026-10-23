@@ -77,6 +77,19 @@ export class AccountsReceivableService {
   }
 
   /** FIN-01: registra recebimento (baixa) total ou parcial. */
+  /** CR-03: contas bancárias para o seletor do modal de recebimento. */
+  getBankAccounts(): Observable<{ id: number; label: string }[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/institutional/bank-accounts`).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(r => ({
+          id: Number(r.id),
+          label: r.nickname || (r.bankName ? `${r.bankName} — ${r.account ?? ''}` : `Conta #${r.id}`),
+        }));
+      }),
+    );
+  }
+
   registerReceipt(id: number, payload: { amount?: number; receiptDate: string; bankAccountId?: number; note?: string; interest?: number; fine?: number; discount?: number }): Observable<ApiAccountReceivable> {
     return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/receipts`, payload);
   }
