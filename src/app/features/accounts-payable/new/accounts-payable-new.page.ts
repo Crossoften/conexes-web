@@ -1,8 +1,8 @@
 // src/app/features/accounts-payable/new/accounts-payable-new.page.ts
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { AccountsPayableService } from '../accounts-payable.service';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -15,7 +15,7 @@ interface Ref { id: number; name: string; }
 @Component({
   selector: 'app-accounts-payable-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass, CurrencyMaskDirective],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CurrencyMaskDirective, CurrencyPipe, DecimalPipe],
   templateUrl: './accounts-payable-new.page.html',
   styleUrl: './accounts-payable-new.page.scss',
 })
@@ -40,6 +40,8 @@ export class AccountsPayableNewPage implements OnInit {
   readonly suppliers    = signal<Ref[]>([]);
   readonly accountPlans = signal<Ref[]>([]);
   readonly costCenters  = signal<Ref[]>([]);
+  // CP-18: o rateio multilinha classifica também por projeto/atividade.
+  readonly projects     = signal<Ref[]>([]);
 
   anexos = [
     { id: 1, nome: 'Nota fiscal' },
@@ -69,11 +71,13 @@ export class AccountsPayableNewPage implements OnInit {
       dataFimContrato: [{ value: '', disabled: true }],
 
       // -- Rateio e parcelamento (opcionais) --
+      // CP-18/D2: o rateio virou multilinha (era uma linha só, e o percentual
+      // aceitava 1000). `categoria`/`projetoCentroCusto` seguem como a
+      // classificação principal do título.
       categoria: [''],
       projetoCentroCusto: [''],
       subprojeto: [''],
-      rateio: [''],
-      valorRateio: [''],
+      rateios: this.fb.array([]),
 
       parcelar: ['Nao'],
       parcelas: [''],
@@ -136,11 +140,40 @@ export class AccountsPayableNewPage implements OnInit {
     this.lookups.getSuppliersLookup().subscribe({ next: v => this.suppliers.set(v as Ref[]), error: () => {} });
     this.lookups.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v as Ref[]), error: () => {} });
     this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v as Ref[]), error: () => {} });
+    this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v as Ref[]), error: () => {} });
 
     // CP-12: recalcula o líquido quando muda o bruto ou qualquer alíquota de retenção.
     for (const c of ['valorBruto', ...this.TAX_DEFS.map(d => d.ctrl)]) {
       this.form.get(c)?.valueChanges.subscribe(() => this.recalcLiquido());
     }
+  }
+
+  // ── CP-18 / D2: rateio multilinha ──────────────────────────────────────────
+  get rateios(): FormArray { return this.form.get('rateios') as FormArray; }
+
+  adicionarRateio(): void {
+    // A primeira linha já nasce com a classificação principal escolhida acima.
+    const primeira = this.rateios.length === 0;
+    this.rateios.push(this.fb.group({
+      costCenterId:  [primeira ? (this.form.get('projetoCentroCusto')?.value ?? '') : ''],
+      projectId:     [''],
+      accountPlanId: [primeira ? (this.form.get('categoria')?.value ?? '') : ''],
+      percentage:    [''],
+    }));
+  }
+
+  removerRateio(i: number): void { this.rateios.removeAt(i); }
+
+  somaPercentual(): number {
+    return this.rateios.controls.reduce((s, c) => s + (Number(c.get('percentage')?.value) || 0), 0);
+  }
+
+  /** Valor em reais que cada linha representa sobre o líquido do título. */
+  valorDaLinha(i: number): number {
+    const bruto = this.form.get('valorLiquido')?.value || this.form.get('valorBruto')?.value || '';
+    const total = Number(String(bruto).replace(/\./g, '').replace(',', '.')) || 0;
+    const pct = Number(this.rateios.at(i).get('percentage')?.value) || 0;
+    return Math.round(total * pct) / 100;
   }
 
   setMainTab(tab: MainTab) { this.activeMainTab = tab; }
@@ -174,13 +207,22 @@ export class AccountsPayableNewPage implements OnInit {
     if (v.dataCadastro) payload.competencyDate = v.dataCadastro;
     if (v.observacoes) payload.observation = v.observacoes;
 
-    // Rateio (opcional): só envia se houver categoria ou centro de custo escolhidos
-    if (v.categoria || v.projetoCentroCusto) {
+    // CP-18/D2: rateio multilinha. Quando o usuário não abre nenhuma linha mas
+    // escolheu a classificação principal, mantém o comportamento anterior —
+    // uma linha de 100% com essa classificação.
+    if (this.rateios.length) {
+      payload.rateios = this.rateios.controls.map(c => ({
+        accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
+        costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
+        projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
+        percentage:    Number(c.get('percentage')?.value) || 0,
+      }));
+    } else if (v.categoria || v.projetoCentroCusto) {
       payload.rateios = [{
         accountPlanId: v.categoria ? Number(v.categoria) : undefined,
         costCenterId: v.projetoCentroCusto ? Number(v.projetoCentroCusto) : undefined,
-        percentage: v.rateio ? num(v.rateio) : 100,
-        amount: v.valorRateio ? num(v.valorRateio) : num(v.valorLiquido),
+        percentage: 100,
+        amount: num(v.valorLiquido),
       }];
     }
 
@@ -214,6 +256,13 @@ export class AccountsPayableNewPage implements OnInit {
       this.notify.error('Preencha os campos obrigatórios (fornecedor, histórico, datas e valores).');
       // Se o campo pendente estiver em outra aba, volta para Dados gerais.
       this.activeMainTab = 'GERAIS';
+      return;
+    }
+    // CP-18/D2: a soma do rateio não pode passar de 100% (o backend recusa de novo).
+    const soma = this.somaPercentual();
+    if (this.rateios.length && Math.round(soma * 100) > 10000) {
+      this.notify.error(`A soma dos percentuais do rateio é ${soma.toFixed(2)}% — não pode passar de 100%.`);
+      this.activeMainTab = 'RATEIO';
       return;
     }
     this.saving.set(true);
