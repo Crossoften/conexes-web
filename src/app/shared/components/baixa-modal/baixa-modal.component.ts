@@ -12,10 +12,21 @@ export interface BaixaResult {
   interest?: number;
   fine?: number;
   discount?: number;
+  // D6: parcela escolhida (ausente = baixa no título).
+  installmentId?: number;
 }
 
 /** Conta bancária para o seletor da baixa. */
 export interface BaixaConta { id: number; label: string }
+
+/** D6: parcela do título, para a baixa mirar uma delas. */
+export interface BaixaParcela {
+  id: number;
+  installment: number;
+  dueDate: string;
+  amount: number;
+  amountPaid: number;
+}
 
 // Modal de baixa (pagamento/recebimento) total ou parcial — FIN-01.
 // Reutilizado por Contas a Pagar (kind='pagar') e Contas a Receber (kind='receber').
@@ -32,7 +43,23 @@ export interface BaixaConta { id: number; label: string }
         </div>
         <div class="baixa-body">
           <p class="baixa-title">{{ title }}</p>
-          <p class="baixa-saldo">Saldo em aberto: <strong>R$ {{ balance | number:'1.2-2':'pt-BR' }}</strong></p>
+
+          <!-- D6: quando o título tem parcelas, a baixa pode mirar uma delas.
+               O saldo exibido passa a ser o da parcela escolhida. -->
+          @if (parcelas.length) {
+            <label class="baixa-lbl" style="margin-top:0;">O que baixar</label>
+            <select class="baixa-input" [(ngModel)]="installmentId" (ngModelChange)="onParcelaChange()">
+              <option [ngValue]="null">Título inteiro — saldo R$ {{ balance | number:'1.2-2':'pt-BR' }}</option>
+              @for (p of parcelas; track p.id) {
+                <option [ngValue]="p.id" [disabled]="saldoDaParcela(p) <= 0.005">
+                  {{ p.installment }}ª parcela · vence {{ p.dueDate }} · saldo R$ {{ saldoDaParcela(p) | number:'1.2-2':'pt-BR' }}
+                  @if (saldoDaParcela(p) <= 0.005) { (quitada) }
+                </option>
+              }
+            </select>
+          }
+
+          <p class="baixa-saldo">Saldo em aberto: <strong>R$ {{ saldoBase() | number:'1.2-2':'pt-BR' }}</strong></p>
 
           <!-- CP-09 / CR-03: juros, multa e desconto. Juros e multa aumentam o
                que se desembolsa; desconto diminui. Nenhum dos três amortiza o
@@ -120,6 +147,8 @@ export class BaixaModalComponent {
   @Input() busy = false;
   /** CP-09 / CR-03: contas bancárias para o seletor (vazio esconde o campo). */
   @Input() contas: BaixaConta[] = [];
+  /** D6: parcelas do título (vazio esconde o seletor e baixa o título inteiro). */
+  @Input() parcelas: BaixaParcela[] = [];
   @Output() confirm = new EventEmitter<BaixaResult>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -127,10 +156,23 @@ export class BaixaModalComponent {
   date = new Date().toISOString().slice(0, 10);
   note = '';
   bankAccountId: number | null = null;
+  installmentId: number | null = null;
   interest = 0;
   fine = 0;
   discount = 0;
   readonly error = signal<string | null>(null);
+
+  /** D6: saldo que resta numa parcela. */
+  saldoDaParcela(p: BaixaParcela): number {
+    return Math.round((p.amount - (p.amountPaid ?? 0)) * 100) / 100;
+  }
+
+  /** D6: o saldo de referência é o da parcela escolhida, ou o do título. */
+  saldoBase(): number {
+    if (this.installmentId == null) return this.balance;
+    const p = this.parcelas.find(x => x.id === this.installmentId);
+    return p ? this.saldoDaParcela(p) : this.balance;
+  }
 
   /** Juros + multa − desconto. */
   acrescimo(): number {
@@ -138,14 +180,20 @@ export class BaixaModalComponent {
     return Math.round((n(this.interest) + n(this.fine) - n(this.discount)) * 100) / 100;
   }
 
-  /** Saldo + acréscimos. É o teto da baixa. */
+  /** Saldo (do título ou da parcela) + acréscimos. É o teto da baixa. */
   totalDevido(): number {
-    return Math.round((this.balance + this.acrescimo()) * 100) / 100;
+    return Math.round((this.saldoBase() + this.acrescimo()) * 100) / 100;
   }
 
   /** Mantém o valor colado no total devido enquanto o usuário não o edita. */
   recalcular(): void {
     this.amount = this.totalDevido();
+  }
+
+  /** D6: trocar de parcela muda o saldo de referência e o valor sugerido. */
+  onParcelaChange(): void {
+    this.error.set(null);
+    this.recalcular();
   }
 
   ngOnChanges(): void {
@@ -173,6 +221,7 @@ export class BaixaModalComponent {
       interest: Number(this.interest) || 0,
       fine: Number(this.fine) || 0,
       discount: Number(this.discount) || 0,
+      installmentId: this.installmentId ?? undefined,
     });
   }
 

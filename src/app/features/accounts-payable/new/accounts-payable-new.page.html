@@ -192,11 +192,55 @@
                     @if (form.get('parcelar')?.value === 'Sim') {
                       <div class="form-group">
                         <label>Parcelas<span class="req">*</span></label>
-                        <input type="number" min="2" step="1" class="form-control" placeholder="Nº de parcelas" formControlName="parcelas">
+                        <input type="number" min="2" step="1" class="form-control" placeholder="Nº de parcelas"
+                               formControlName="parcelas" (change)="gerarParcelas()">
+                      </div>
+                      <div class="form-group">
+                        <button type="button" class="btn-outline btn-outline--orange" (click)="gerarParcelas()">
+                          Gerar parcelas
+                        </button>
                       </div>
                     }
                   </div>
-                  <!-- CP-20 (definir valor/vencimento por parcela) pendente: edição por parcela ainda não implementada. -->
+
+                  <!-- CP-20: cada parcela com valor e vencimento próprios. -->
+                  @if (form.get('parcelar')?.value === 'Sim' && parcelasLista.length) {
+                    <div formArrayName="parcelasLista" style="margin-top:12px;">
+                      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                          <tr style="background:#F4F4F8;">
+                            <th style="text-align:left;padding:7px 10px;border:1px solid #E5E7EB;width:90px;">Parcela</th>
+                            <th style="text-align:left;padding:7px 10px;border:1px solid #E5E7EB;">Vencimento</th>
+                            <th style="text-align:left;padding:7px 10px;border:1px solid #E5E7EB;">Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (linha of parcelasLista.controls; track $index; let i = $index) {
+                            <tr [formGroupName]="i">
+                              <td style="padding:5px 10px;border:1px solid #E5E7EB;">{{ i + 1 }}ª</td>
+                              <td style="padding:5px 10px;border:1px solid #E5E7EB;">
+                                <input type="date" class="form-control" formControlName="dueDate">
+                              </td>
+                              <td style="padding:5px 10px;border:1px solid #E5E7EB;">
+                                <input type="number" step="0.01" min="0" class="form-control" formControlName="amount">
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+
+                      <p style="font-size:13px;margin:8px 0 0;" [style.color]="diferencaParcelas() !== 0 ? '#B91C1C' : '#6B7280'">
+                        Soma das parcelas: <strong>{{ somaParcelas() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+                        @if (diferencaParcelas() !== 0) {
+                          — difere do título em
+                          {{ (diferencaParcelas() > 0 ? diferencaParcelas() : -diferencaParcelas()) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                          <button type="button" class="btn-outline" (click)="ajustarUltimaParcela()" style="margin-left:8px;padding:4px 10px;">
+                            Ajustar na última
+                          </button>
+                        }
+                      </p>
+                    </div>
+                  }
                 </div>
               </div>
             }

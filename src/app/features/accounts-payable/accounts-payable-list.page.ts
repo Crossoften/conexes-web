@@ -6,7 +6,7 @@ import { AccountsPayableStore } from './accounts-payable.store';
 import { AccountsPayableService } from './accounts-payable.service';
 import { PayableAccount, AdvancedFilters } from './accounts-payable.model';
 import { Router, RouterLink } from "@angular/router";
-import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
+import { BaixaModalComponent, BaixaResult, BaixaParcela } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
 
@@ -31,7 +31,26 @@ export class AccountsPayableListPage implements OnInit {
   readonly payItem = signal<PayableAccount | null>(null);
   readonly payBusy = signal(false);
 
-  openPay(item: PayableAccount): void { this.payItem.set(item); }
+  /** D6: as parcelas do título aberto, para a baixa poder mirar uma delas. */
+  readonly payParcelas = signal<BaixaParcela[]>([]);
+
+  openPay(item: PayableAccount): void {
+    this.payItem.set(item);
+    this.payParcelas.set([]);
+    // D6: busca o detalhe para saber se o título tem parcelas.
+    this.svc.getById(Number(item.id)).subscribe({
+      next: (r: any) => this.payParcelas.set(
+        (r.installments ?? []).map((p: any) => ({
+          id: p.id,
+          installment: p.installment,
+          dueDate: p.dueDate ? new Date(p.dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—',
+          amount: p.amount ?? 0,
+          amountPaid: p.amountPaid ?? 0,
+        })),
+      ),
+      error: () => this.payParcelas.set([]),
+    });
+  }
 
   // CP-03: visualização read-only do lançamento.
   readonly viewItem = signal<PayableAccount | null>(null);
@@ -47,6 +66,8 @@ export class AccountsPayableListPage implements OnInit {
     this.svc.registerPayment(Number(item.id), {
       amount: r.amount, paymentDate: r.date, note: r.note,
       bankAccountId: r.bankAccountId, interest: r.interest, fine: r.fine, discount: r.discount,
+      // D6: quando o usuário escolhe uma parcela, a baixa mira nela.
+      installmentId: r.installmentId,
     }).subscribe({
       next: () => { this.payBusy.set(false); this.payItem.set(null); this.notify.success('Baixa registrada com sucesso.'); this.store.load(); },
       error: err => { this.payBusy.set(false); this.notify.error(err?.error?.message ?? 'Falha ao registrar a baixa.'); },

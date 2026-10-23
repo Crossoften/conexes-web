@@ -87,6 +87,8 @@ export class AccountsPayableNewPage implements OnInit {
 
       parcelar: ['Nao'],
       parcelas: [''],
+      // CP-20: as parcelas geradas ficam editáveis uma a uma (valor e vencimento).
+      parcelasLista: this.fb.array([]),
       definirValorVencimento: [false],
       parcelaDetalhe: [{ value: '', disabled: true }],
       vencimentoDetalhe: [{ value: '', disabled: true }],
@@ -204,6 +206,53 @@ export class AccountsPayableNewPage implements OnInit {
     });
   }
 
+  // ── CP-20: editor de parcelas ──────────────────────────────────────────────
+  get parcelasLista(): FormArray { return this.form.get('parcelasLista') as FormArray; }
+
+  /** Total do título (líquido, caindo para o bruto). */
+  private totalDoTitulo(): number {
+    const v = this.form.getRawValue();
+    return this.numOf(v.valorLiquido) || this.numOf(v.valorBruto);
+  }
+
+  /**
+   * CP-20: (re)gera as parcelas a partir da quantidade, com vencimentos mensais.
+   * A última absorve o arredondamento, para a soma bater com o total.
+   * Chamado quando muda a quantidade — depois disso o usuário edita à vontade.
+   */
+  gerarParcelas(): void {
+    const n = Number(this.form.get('parcelas')?.value);
+    this.parcelasLista.clear();
+    if (!n || n < 2) return;
+
+    const total = this.totalDoTitulo();
+    const primeira = this.form.get('dataEmissao2')?.value;
+    for (const p of this.buildInstallments(total, n, primeira)) {
+      this.parcelasLista.push(this.fb.group({
+        installment: [p.installment],
+        dueDate: [p.dueDate],
+        amount: [p.amount],
+      }));
+    }
+  }
+
+  somaParcelas(): number {
+    return this.round2(this.parcelasLista.controls.reduce((s, c) => s + (Number(c.get('amount')?.value) || 0), 0));
+  }
+
+  /** Diferença entre a soma das parcelas e o total do título. */
+  diferencaParcelas(): number {
+    return this.round2(this.somaParcelas() - this.totalDoTitulo());
+  }
+
+  /** Joga a diferença na última parcela, para fechar a soma. */
+  ajustarUltimaParcela(): void {
+    if (!this.parcelasLista.length) return;
+    const ultima = this.parcelasLista.at(this.parcelasLista.length - 1);
+    const novo = this.round2((Number(ultima.get('amount')?.value) || 0) - this.diferencaParcelas());
+    ultima.get('amount')?.setValue(novo);
+  }
+
   // ── CP-18 / D2: rateio multilinha ──────────────────────────────────────────
   get rateios(): FormArray { return this.form.get('rateios') as FormArray; }
 
@@ -282,12 +331,18 @@ export class AccountsPayableNewPage implements OnInit {
       }];
     }
 
-    // FIN-02: parcelamento — divide o título em N parcelas com vencimentos mensais,
-    // preservando o valor total (a última parcela absorve o arredondamento).
+    // FIN-02 / CP-20: parcelamento. Se o usuário editou as parcelas na tabela,
+    // manda exatamente o que ele deixou; senão, gera as N mensais na hora.
     const nParcelas = Number(v.parcelas);
     if (v.parcelar === 'Sim' && nParcelas >= 2) {
       const total = num(v.valorLiquido) || num(v.valorBruto);
-      payload.installments = this.buildInstallments(total, nParcelas, v.dataEmissao2);
+      payload.installments = this.parcelasLista.length
+        ? this.parcelasLista.controls.map((c, i) => ({
+            installment: Number(c.get('installment')?.value) || i + 1,
+            dueDate: c.get('dueDate')?.value,
+            amount: Number(c.get('amount')?.value) || 0,
+          }))
+        : this.buildInstallments(total, nParcelas, v.dataEmissao2);
     }
     return payload;
   }

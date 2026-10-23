@@ -267,6 +267,7 @@
     [title]="p.company + ' · ' + p.value"
     [balance]="p.balanceNum"
     [contas]="contasBancarias()"
+    [parcelas]="payParcelas()"
     [busy]="payBusy()"
     (confirm)="onBaixaConfirm($event)"
     (cancel)="closePay()">
