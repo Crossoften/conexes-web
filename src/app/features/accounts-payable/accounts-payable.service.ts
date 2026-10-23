@@ -37,6 +37,18 @@ export interface PayableListResult {
   pages: number;
 }
 
+/** Resposta de GET /accounts-payable/summary (FIN-N04). */
+interface PayableSummaryLine { total: number; count: number }
+export interface PayableSummary {
+  total: PayableSummaryLine;
+  open: PayableSummaryLine;
+  partiallyPaid: PayableSummaryLine;
+  underReview: PayableSummaryLine;
+  paid: PayableSummaryLine;
+  balance: number;
+  byStatus: { status: string; total: number; count: number }[];
+}
+
 const STATUS_LABEL: Record<string, string> = {
   Open: 'Em aberto',
   PartiallyPaid: 'Parcialmente pago',
@@ -56,17 +68,27 @@ export class AccountsPayableService {
   private base = `${environment.apiUrl}/v1/accounts-payable`;
 
   // ── Listagem ────────────────────────────────────────────────────────────
-  getAll(filters: AdvancedFilters = {} as AdvancedFilters, take = 10, skip = 0): Observable<PayableListResult> {
-    let params = new HttpParams().set('take', take).set('skip', skip);
-
-    if (filters.status)         params = params.set('status', filters.status);
-    if (filters.supplier)       params = params.set('supplierId', filters.supplier);
+  /** Monta os query params de filtro (compartilhado por listagem, resumo e exportação). */
+  private filterParams(filters: AdvancedFilters = {} as AdvancedFilters): HttpParams {
+    let params = new HttpParams();
+    if (filters.status)           params = params.set('status', filters.status);
+    if (filters.supplier)         params = params.set('supplierId', filters.supplier);
     if (filters.remittanceStatus) params = params.set('remittanceStatus', filters.remittanceStatus);
-    if (filters.expenseType)    params = params.set('expenseType', filters.expenseType);
-    if (filters.paymentType)    params = params.set('paymentMethod', filters.paymentType);
-    if (filters.contract)       params = params.set('contractId', filters.contract);
-    if (filters.requisition)    params = params.set('purchaseRequestId', filters.requisition);
-    if (filters.payingAccount)  params = params.set('bankAccountId', filters.payingAccount);
+    if (filters.expenseType)      params = params.set('expenseType', filters.expenseType);
+    if (filters.paymentType)      params = params.set('paymentMethod', filters.paymentType);
+    if (filters.contract)         params = params.set('contractId', filters.contract);
+    if (filters.requisition)      params = params.set('purchaseRequestId', filters.requisition);
+    if (filters.payingAccount)    params = params.set('bankAccountId', filters.payingAccount);
+    return params;
+  }
+
+  /**
+   * `page` é o NÚMERO DA PÁGINA (1-based), não um offset: o back inteiro usa
+   * `skip` como página (`skip: (page - 1) * limit`). O front mandava offset, então
+   * a página 2 pulava para o registro 91 e vinha vazia.
+   */
+  getAll(filters: AdvancedFilters = {} as AdvancedFilters, take = 10, page = 1): Observable<PayableListResult> {
+    const params = this.filterParams(filters).set('take', take).set('skip', Math.max(1, page));
 
     return this.http.get<ListEnvelope<ApiAccountPayable>>(this.base, { params }).pipe(
       map(res => ({
@@ -122,19 +144,29 @@ export class AccountsPayableService {
     return this.http.post(`${this.base}/${id}/send-to-remittance`, {});
   }
 
-  exportExcel(): Observable<Blob> {
-    return this.http.get(`${this.base}/export/excel`, { responseType: 'blob' });
+  /** D9: a exportação leva os mesmos filtros da tela — antes baixava a base inteira. */
+  exportExcel(filters: AdvancedFilters = {} as AdvancedFilters): Observable<Blob> {
+    return this.http.get(`${this.base}/export/excel`, { params: this.filterParams(filters), responseType: 'blob' });
   }
 
-  // ── Resumo (sem endpoint dedicado): computa a partir da página carregada ──
-  buildSummaries(items: PayableAccount[], raw: ApiAccountPayable[]): SummaryCard[] {
-    const totalNet = raw.reduce((acc, r) => acc + (r.netAmount ?? r.amount ?? 0), 0);
-    const abertos = raw.filter(r => r.status === 'Open').reduce((a, r) => a + (r.netAmount ?? r.amount ?? 0), 0);
-    const pagos = raw.filter(r => r.status === 'Paid').reduce((a, r) => a + (r.netAmount ?? r.amount ?? 0), 0);
+  // ── Resumo: vem agregado do back (respeita filtros e não só a página atual) ──
+  getSummary(filters: AdvancedFilters = {} as AdvancedFilters): Observable<SummaryCard[]> {
+    return this.http.get<PayableSummary>(`${this.base}/summary`, { params: this.filterParams(filters) }).pipe(
+      map(s => this.buildSummaries(s)),
+    );
+  }
+
+  /**
+   * FIN-N04: os cards somavam zero porque o store chamava este método com uma lista
+   * vazia. Agora recebem o agregado do servidor.
+   */
+  buildSummaries(s: PayableSummary): SummaryCard[] {
     return [
-      { title: 'Total de contas', credit: brl.format(0), debit: brl.format(totalNet) },
-      { title: 'Em aberto', credit: brl.format(0), debit: brl.format(abertos) },
-      { title: 'Pago', credit: brl.format(0), debit: brl.format(pagos) },
+      { title: `Total de contas (${s.total.count})`, credit: brl.format(0), debit: brl.format(s.total.total) },
+      { title: `Em aberto (${s.open.count})`, credit: brl.format(0), debit: brl.format(s.open.total) },
+      { title: `Em análise (${s.underReview.count})`, credit: brl.format(0), debit: brl.format(s.underReview.total) },
+      { title: `Pago (${s.paid.count})`, credit: brl.format(s.paid.total), debit: brl.format(0) },
+      { title: 'Saldo a pagar', credit: brl.format(0), debit: brl.format(s.balance) },
     ];
   }
 
@@ -159,8 +191,11 @@ export class AccountsPayableService {
   });
 }
 
+// FIN-N03: emissão/vencimento/cadastro são datas civis, gravadas à meia-noite UTC.
+// Sem timeZone:'UTC' o navegador em UTC−3 renderizava o dia anterior (18/10 → 17/10).
+// Mesma convenção já usada em financial-transfers.service.ts e na exportação do back.
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }

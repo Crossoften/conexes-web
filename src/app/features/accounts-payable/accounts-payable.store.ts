@@ -49,18 +49,24 @@ export class AccountsPayableStore {
     const { page, pageSize } = this.state().pagination;
     const filters = this.state().filters;
     this.state.update(s => ({ ...s, loading: true, error: null }));
-    this.svc.getAll(filters, pageSize, (page - 1) * pageSize).subscribe({
+    // `page` vai como número da página: o back usa `skip` como página, não offset.
+    this.svc.getAll(filters, pageSize, page).subscribe({
       next: res => this.state.update(s => ({
         ...s,
         items: res.items,
         total: res.total,
-        summaries: this.svc.buildSummaries(res.items, []),
         loading: false,
       })),
       error: () => this.state.update(s => ({
         ...s, items: [], total: 0, loading: false,
         error: 'Não foi possível carregar as contas a pagar.',
       })),
+    });
+    // FIN-N04: resumo agregado no servidor — soma a base filtrada inteira,
+    // não apenas a página exibida. Falha no resumo não derruba a listagem.
+    this.svc.getSummary(filters).subscribe({
+      next: summaries => this.state.update(s => ({ ...s, summaries })),
+      error: () => this.state.update(s => ({ ...s, summaries: [] })),
     });
   }
 
@@ -202,7 +208,8 @@ export class AccountsPayableStore {
   }
 
   exportExcel(): void {
-    this.svc.exportExcel().subscribe({
+    // D9: exporta exatamente o que a tela está filtrando.
+    this.svc.exportExcel(this.state().filters).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

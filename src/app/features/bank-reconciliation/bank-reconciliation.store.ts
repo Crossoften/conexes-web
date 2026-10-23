@@ -5,15 +5,17 @@ import { BankReconciliationService, ReconAccount, AccountReconciliation } from '
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const WEEKDAY = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+// FIN-N03: o extrato guarda datas civis (meia-noite UTC). Lidas no fuso do
+// navegador (UTC−3) o dia e o dia-da-semana recuavam um dia — 18/10 saía 17/10.
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 function weekday(iso?: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '' : WEEKDAY[d.getDay()];
+  return isNaN(d.getTime()) ? '' : WEEKDAY[d.getUTCDay()];
 }
 
 /** Intervalo [start, end] (inclusive) a partir do período selecionado. */

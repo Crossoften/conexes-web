@@ -114,8 +114,9 @@ export class AccountsReceivableService {
   });
 }
 
+// FIN-N03: datas civis renderizadas em UTC, igual a Contas a pagar e Transferências.
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
