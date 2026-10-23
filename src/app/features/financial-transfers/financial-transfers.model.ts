@@ -27,6 +27,15 @@ export interface BankAccountOption {
   label: string;
 }
 
+/** LB-05 / TR-RATEIO: uma linha de rateio por classificação. */
+export interface BankMovementRateio {
+  accountPlanId?: number;
+  projectId?:     number;
+  costCenterId?:  number;
+  percentage?:    number;
+  amount?:        number;
+}
+
 export interface CreateBankTransferPayload {
   description:          string;
   originAccountId:      number;
@@ -35,6 +44,15 @@ export interface CreateBankTransferPayload {
   amount:              number;
   differentCreditDate?: boolean;
   observation?:        string;
+  // TR-07: data em que o destino é creditado, quando diferente da operação.
+  creditDate?:               string;
+  // TR-09: natureza do recurso de cada ponta (Publico | Privado).
+  originResourceNature?:      string;
+  destinationResourceNature?: string;
+  // TR-08: 'auto' compõe a descrição a partir das contas; 'manual' usa a digitada.
+  descriptionMode?:          'auto' | 'manual';
+  // TR-RATEIO
+  rateios?:                  BankMovementRateio[];
 }
 
 // ── Lançamento avulso (POST /v1/banking/entries) ──────────────────────────────
@@ -49,4 +67,12 @@ export interface CreateBankEntryPayload {
   date:          string;          // ISO 8601
   observation?:  string;
   stakeholderId?: number;         // LB-12: fornecedor (opcional)
+  accountPlanId?: number;         // LB-04: conta do plano de contas
+  rateios?:       BankMovementRateio[];  // LB-05
 }
+
+/** TR-09: mesmo vocabulário do cadastro de conta bancária. */
+export const NATUREZAS_RECURSO = [
+  { valor: 'Publico', rotulo: 'Público' },
+  { valor: 'Privado', rotulo: 'Privado' },
+];

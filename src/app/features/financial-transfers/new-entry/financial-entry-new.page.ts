@@ -1,10 +1,10 @@
 // src/app/features/financial-transfers/new-entry/financial-entry-new.page.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
-import { BankAccountOption, CreateBankEntryPayload } from '../financial-transfers.model';
+import { BankAccountOption, CreateBankEntryPayload, BankMovementRateio } from '../financial-transfers.model';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
@@ -12,7 +12,7 @@ import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 @Component({
   selector: 'app-financial-entry-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CurrencyPipe, DecimalPipe],
   templateUrl: './financial-entry-new.page.html',
   styleUrl: '../new/financial-transfer-new.page.scss',
 })
@@ -33,6 +33,11 @@ export class FinancialEntryNewPage implements OnInit {
     'Impostos', 'Outras tarifas', 'Estornos', 'Ajuste de saldo de projeto', 'Outros',
   ];
 
+  // LB-04 / LB-05: classificações.
+  readonly accountPlans = signal<{ id: number; name: string }[]>([]);
+  readonly costCenters  = signal<{ id: number; name: string }[]>([]);
+  readonly projects     = signal<{ id: number; name: string }[]>([]);
+
   form: FormGroup = this.fb.group({
     bankAccountId: ['', Validators.required],
     description:   ['', Validators.required],
@@ -41,8 +46,34 @@ export class FinancialEntryNewPage implements OnInit {
     date:          ['', Validators.required],
     category:      [''],
     stakeholderId: [''],   // LB-12: fornecedor (opcional)
+    accountPlanId: [''],   // LB-04: conta do plano de contas
     observations:  [''],
+    rateios:       this.fb.array([]),  // LB-05
   });
+
+  get rateios(): FormArray { return this.form.get('rateios') as FormArray; }
+
+  novaLinhaRateio(valor: Partial<BankMovementRateio> = {}): FormGroup {
+    return this.fb.group({
+      costCenterId:  [valor.costCenterId ?? ''],
+      projectId:     [valor.projectId ?? ''],
+      accountPlanId: [valor.accountPlanId ?? ''],
+      percentage:    [valor.percentage ?? ''],
+    });
+  }
+
+  adicionarRateio(): void { this.rateios.push(this.novaLinhaRateio()); }
+  removerRateio(i: number): void { this.rateios.removeAt(i); }
+
+  somaPercentual(): number {
+    return this.rateios.controls.reduce((s, c) => s + (Number(c.get('percentage')?.value) || 0), 0);
+  }
+
+  valorDaLinha(i: number): number {
+    const total = parseDecimalBR(this.form.get('amount')?.value ?? '') || 0;
+    const pct = Number(this.rateios.at(i).get('percentage')?.value) || 0;
+    return Math.round(total * pct) / 100;
+  }
 
   ngOnInit(): void {
     this.svc.getBankAccounts().subscribe({
@@ -52,6 +83,19 @@ export class FinancialEntryNewPage implements OnInit {
     this.lookups.getSuppliersLookup().subscribe({
       next: v => this.suppliers.set(v as { id: number; name: string }[]),
       error: () => this.suppliers.set([]),
+    });
+    // LB-04: contas analíticas do plano cadastrado.
+    this.lookups.getAccountPlansLookup().subscribe({
+      next: v => this.accountPlans.set(v as { id: number; name: string }[]),
+      error: () => this.accountPlans.set([]),
+    });
+    this.lookups.getCostCentersLookup().subscribe({
+      next: v => this.costCenters.set(v as { id: number; name: string }[]),
+      error: () => this.costCenters.set([]),
+    });
+    this.lookups.getProjectsLookup().subscribe({
+      next: v => this.projects.set(v as { id: number; name: string }[]),
+      error: () => this.projects.set([]),
     });
   }
 
@@ -80,6 +124,7 @@ export class FinancialEntryNewPage implements OnInit {
   }
 
   resetForm(): void {
+    this.rateios.clear();
     this.form.reset({ type: 'Credit' });
     this.errorMsg.set(null);
   }
@@ -102,6 +147,13 @@ export class FinancialEntryNewPage implements OnInit {
       return;
     }
 
+    // LB-05: a soma dos percentuais não pode passar de 100.
+    const soma = this.somaPercentual();
+    if (this.rateios.length && Math.round(soma * 100) > 10000) {
+      this.errorMsg.set(`A soma dos percentuais do rateio é ${soma.toFixed(2)}% — não pode passar de 100%.`);
+      return;
+    }
+
     const payload: CreateBankEntryPayload = {
       bankAccountId: Number(v.bankAccountId),
       description:   v.description,
@@ -111,6 +163,15 @@ export class FinancialEntryNewPage implements OnInit {
       date,
       observation:   v.observations || undefined,
       stakeholderId: v.stakeholderId ? Number(v.stakeholderId) : undefined,
+      accountPlanId: v.accountPlanId ? Number(v.accountPlanId) : undefined,
+      rateios: this.rateios.length
+        ? this.rateios.controls.map(c => ({
+            costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
+            projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
+            accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
+            percentage:    Number(c.get('percentage')?.value) || 0,
+          }))
+        : undefined,
     };
 
     this.loading.set(true);
