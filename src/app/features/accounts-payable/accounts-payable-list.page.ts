@@ -5,7 +5,7 @@ import { NgClass } from '@angular/common';
 import { AccountsPayableStore } from './accounts-payable.store';
 import { AccountsPayableService } from './accounts-payable.service';
 import { PayableAccount, AdvancedFilters } from './accounts-payable.model';
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -22,6 +22,7 @@ export class AccountsPayableListPage implements OnInit {
   readonly store = inject(AccountsPayableStore);
   private svc    = inject(AccountsPayableService);
   private notify = inject(NotificationService);
+  private router = inject(Router);
 
   // FIN-01: baixa (pagamento) total ou parcial.
   readonly payItem = signal<PayableAccount | null>(null);
@@ -134,6 +135,11 @@ export class AccountsPayableListPage implements OnInit {
 
   onCopy(item: PayableAccount) {
     this.store.copyOne(item.id);
+  }
+
+  /** CP-04: abre o título no formulário, em modo edição. */
+  onEdit(item: PayableAccount) {
+    this.router.navigate(['/accounts-payable', item.id, 'edit']);
   }
 
   onSendToRemittance(item: PayableAccount) {

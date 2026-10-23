@@ -58,6 +58,16 @@ export class FinancialTransfersService {
     return this.http.post<unknown>(`${this.entriesUrl}/${id}/copy`, {});
   }
 
+  /** B5: carrega um lançamento para edição. */
+  getEntry(id: string | number): Observable<any> {
+    return this.http.get<any>(`${this.entriesUrl}/${id}`);
+  }
+
+  /** B5: salva a edição de um lançamento. */
+  updateEntry(id: string | number, payload: Partial<CreateBankEntryPayload>): Observable<unknown> {
+    return this.http.patch<unknown>(`${this.entriesUrl}/${id}`, payload);
+  }
+
   private mapTransfer(r: any): FinancialTransfer {
     return {
       id: String(r.id),

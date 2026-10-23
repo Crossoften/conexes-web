@@ -16,5 +16,11 @@ export const financialTransfersRoutes: Routes = [
   {
     path: 'new-entry',
     component: FinancialEntryNewPage
+  },
+  {
+    // B5 (resto): edição do lançamento bancário. Mesmo formulário do cadastro,
+    // carregando o registro e enviando PATCH.
+    path: 'entry/:id/edit',
+    component: FinancialEntryNewPage
   }
 ];

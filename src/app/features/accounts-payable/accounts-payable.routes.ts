@@ -10,5 +10,11 @@ export const accountsPayableRoutes: Routes = [
   {
     path: 'new',
     component: AccountsPayableNewPage
+  },
+  {
+    // CP-04: edição do título. Reusa o mesmo formulário do cadastro, que carrega
+    // o registro e envia PATCH em vez de POST.
+    path: ':id/edit',
+    component: AccountsPayableNewPage
   }
 ];

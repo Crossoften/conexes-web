@@ -1,6 +1,6 @@
 // src/app/features/financial-transfers/new-entry/financial-entry-new.page.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
@@ -21,6 +21,11 @@ export class FinancialEntryNewPage implements OnInit {
   private svc    = inject(FinancialTransfersService);
   private lookups = inject(PurchasesService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // B5: o mesmo formulário cadastra e edita o lançamento.
+  readonly editandoId = signal<number | null>(null);
+  readonly ehEdicao = computed(() => this.editandoId() !== null);
 
   readonly accounts = signal<BankAccountOption[]>([]);
   readonly suppliers = signal<{ id: number; name: string }[]>([]);
@@ -96,6 +101,45 @@ export class FinancialEntryNewPage implements OnInit {
     this.lookups.getProjectsLookup().subscribe({
       next: v => this.projects.set(v as { id: number; name: string }[]),
       error: () => this.projects.set([]),
+    });
+
+    // B5: com id na rota, carrega o lançamento para edição.
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id && !isNaN(Number(id))) this.carregarParaEdicao(Number(id));
+  }
+
+  /** B5: traz o lançamento gravado para o formulário, com a classificação. */
+  private carregarParaEdicao(id: number): void {
+    this.svc.getEntry(id).subscribe({
+      next: (r: any) => {
+        this.editandoId.set(id);
+        const dataBR = (iso?: string | null) => {
+          if (!iso) return '';
+          const d = new Date(iso);
+          return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        };
+        this.form.patchValue({
+          bankAccountId: r.bankAccountId ? String(r.bankAccountId) : '',
+          description:   r.description ?? '',
+          type:          r.type ?? 'Credit',
+          amount:        r.amount != null ? Number(r.amount).toFixed(2).replace('.', ',') : '',
+          date:          dataBR(r.date),
+          category:      r.category ?? '',
+          stakeholderId: r.stakeholderId ? String(r.stakeholderId) : '',
+          accountPlanId: r.accountPlanId ? String(r.accountPlanId) : '',
+          observations:  r.observation ?? '',
+        });
+        this.rateios.clear();
+        for (const linha of r.rateios ?? []) {
+          this.rateios.push(this.fb.group({
+            costCenterId:  [linha.costCenterId  ? String(linha.costCenterId)  : ''],
+            projectId:     [linha.projectId     ? String(linha.projectId)     : ''],
+            accountPlanId: [linha.accountPlanId ? String(linha.accountPlanId) : ''],
+            percentage:    [linha.percentage ?? ''],
+          }));
+        }
+      },
+      error: () => this.errorMsg.set('Não foi possível carregar o lançamento para edição.'),
     });
   }
 
@@ -176,7 +220,11 @@ export class FinancialEntryNewPage implements OnInit {
 
     this.loading.set(true);
     this.errorMsg.set(null);
-    this.svc.createEntry(payload).subscribe({
+    // B5: em edição, PATCH; senão, POST de um novo lançamento.
+    const id = this.editandoId();
+    const requisicao = id === null ? this.svc.createEntry(payload) : this.svc.updateEntry(id, payload);
+
+    requisicao.subscribe({
       next: () => { this.loading.set(false); this.router.navigate(['/financial-transfers'], { queryParams: { view: 'entries' } }); },
       error: err => {
         this.loading.set(false);

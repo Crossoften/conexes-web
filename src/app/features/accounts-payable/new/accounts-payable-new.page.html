@@ -1,7 +1,8 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Contas a pagar</h1>
+    <!-- CP-04: o mesmo formulário cadastra e edita; o título diz qual é o caso. -->
+    <h1 class="page-title">{{ ehEdicao() ? 'Editar conta a pagar' : 'Nova conta a pagar' }}</h1>
   </div>
 
   <div class="card">

@@ -1,6 +1,6 @@
 // src/app/features/accounts-payable/new/accounts-payable-new.page.ts
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { AccountsPayableService } from '../accounts-payable.service';
@@ -25,6 +25,12 @@ export class AccountsPayableNewPage implements OnInit {
   private lookups = inject(PurchasesService);
   private notify = inject(NotificationService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // CP-04: o mesmo formulário serve para cadastrar e editar. Com id na rota,
+  // carrega o título e envia PATCH em vez de POST.
+  readonly editandoId = signal<number | null>(null);
+  readonly ehEdicao = computed(() => this.editandoId() !== null);
 
   form: FormGroup;
 
@@ -142,10 +148,60 @@ export class AccountsPayableNewPage implements OnInit {
     this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v as Ref[]), error: () => {} });
     this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v as Ref[]), error: () => {} });
 
+    // CP-04: com id na rota, carrega o título para edição.
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id && !isNaN(Number(id))) this.carregarParaEdicao(Number(id));
+
     // CP-12: recalcula o líquido quando muda o bruto ou qualquer alíquota de retenção.
     for (const c of ['valorBruto', ...this.TAX_DEFS.map(d => d.ctrl)]) {
       this.form.get(c)?.valueChanges.subscribe(() => this.recalcLiquido());
     }
+  }
+
+  /**
+   * CP-04: carrega um título existente no formulário. Só os campos que a tela
+   * edita — o que ela não mostra (parcelas já geradas, pagamentos, vínculos de
+   * compras) não é tocado, porque o PATCH só envia o que vai no payload.
+   */
+  private carregarParaEdicao(id: number): void {
+    this.svc.getById(id).subscribe({
+      next: (r: any) => {
+        this.editandoId.set(id);
+        const iso = (d?: string | null) => (d ? String(d).slice(0, 10) : '');
+        const brl = (n?: number | null) =>
+          n == null ? '' : Number(n).toFixed(2).replace('.', ',');
+
+        this.form.patchValue({
+          fornecedor:       r.stakeholderId ? String(r.stakeholderId) : '',
+          historicoDespesa: r.history ?? r.description ?? '',
+          dataEmissao1:     iso(r.issueDate),
+          dataEmissao2:     iso(r.dueDate),
+          dataCadastro:     iso(r.competencyDate),
+          valorBruto:       brl(r.grossAmount),
+          tipoDespesa:      r.expenseType ?? '',
+          observacoes:      r.observation ?? '',
+        });
+
+        // CP-18: devolve as linhas de rateio gravadas.
+        this.rateios.clear();
+        for (const linha of r.rateios ?? []) {
+          this.rateios.push(this.fb.group({
+            costCenterId:  [linha.costCenterId  ? String(linha.costCenterId)  : ''],
+            projectId:     [linha.projectId     ? String(linha.projectId)     : ''],
+            accountPlanId: [linha.accountPlanId ? String(linha.accountPlanId) : ''],
+            percentage:    [linha.percentage ?? ''],
+          }));
+        }
+
+        // CP-22/23: devolve as alíquotas de retenção gravadas.
+        for (const def of this.TAX_DEFS) {
+          const imposto = (r.taxes ?? []).find((t: any) => t.taxType === def.type);
+          if (imposto) this.form.get(def.ctrl)?.setValue(brl(imposto.rate));
+        }
+        this.recalcLiquido();
+      },
+      error: () => this.notify.error('Não foi possível carregar o título para edição.'),
+    });
   }
 
   // ── CP-18 / D2: rateio multilinha ──────────────────────────────────────────
@@ -266,9 +322,15 @@ export class AccountsPayableNewPage implements OnInit {
       return;
     }
     this.saving.set(true);
-    this.svc.create(this.buildPayload()).subscribe({
+    // CP-04: em edição, PATCH no título existente; senão, POST de um novo.
+    const id = this.editandoId();
+    const requisicao = id === null
+      ? this.svc.create(this.buildPayload())
+      : this.svc.update(id, this.buildPayload());
+
+    requisicao.subscribe({
       next: () => {
-        this.notify.success('Conta a pagar cadastrada com sucesso.');
+        this.notify.success(id === null ? 'Conta a pagar cadastrada com sucesso.' : 'Conta a pagar atualizada.');
         this.router.navigate(['/accounts-payable']);
       },
       error: (err) => {

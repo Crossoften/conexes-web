@@ -42,6 +42,11 @@ export class FinancialTransfersListPage implements OnInit {
     this.router.navigate(['/financial-transfers/new'], { state: { duplicate: item } });
   }
 
+  /** B5: abre o lançamento no formulário, em modo edição. */
+  onEdit(item: FinancialTransfer): void {
+    this.router.navigate(['/financial-transfers', 'entry', item.id, 'edit']);
+  }
+
   ngOnInit(): void {
     this.svc.getBankAccounts().subscribe({
       next: list => this.accounts.set(list),
