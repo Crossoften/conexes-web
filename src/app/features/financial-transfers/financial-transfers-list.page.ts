@@ -3,7 +3,8 @@ import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
-import { FinancialTransfer, TransferStatus, TransferType, TransferView } from './financial-transfers.model';
+import { FinancialTransfersService } from './financial-transfers.service';
+import { BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
 import { RouterLink, ActivatedRoute, Router } from "@angular/router";
 
 @Component({
@@ -16,20 +17,36 @@ import { RouterLink, ActivatedRoute, Router } from "@angular/router";
 })
 export class FinancialTransfersListPage implements OnInit {
   readonly store = inject(FinancialTransfersStore);
+  private svc = inject(FinancialTransfersService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  // TR-03: visualização read-only da transferência.
+  // TR-12 / LB-07: contas bancárias para os filtros de origem/destino/conta.
+  readonly accounts = signal<BankAccountOption[]>([]);
+
+  // TR-03: visualização read-only do registro.
   readonly viewItem = signal<FinancialTransfer | null>(null);
   openView(item: FinancialTransfer): void { this.viewItem.set(item); }
   closeView(): void { this.viewItem.set(null); }
 
-  // TR-04: duplicar abre o formulário de nova transferência com os dados do registro.
+  /**
+   * TR-04: em Transferências, duplicar abre o formulário pré-preenchido.
+   * LB-06 / B5: em Lançamentos, duplica no servidor (que leva a classificação
+   * junto) e recarrega a lista — antes o botão nem aparecia nessa visão.
+   */
   onDuplicate(item: FinancialTransfer): void {
+    if (this.isEntries()) {
+      this.store.duplicarLancamento(item.id);
+      return;
+    }
     this.router.navigate(['/financial-transfers/new'], { state: { duplicate: item } });
   }
 
   ngOnInit(): void {
+    this.svc.getBankAccounts().subscribe({
+      next: list => this.accounts.set(list),
+      error: ()   => this.accounts.set([]),
+    });
     // LB: ao voltar de salvar um lançamento avulso, mantém a visão Lançamentos (não cai em Transferências).
     const view = this.route.snapshot.queryParamMap.get('view');
     if (view === 'entries') this.store.setView('ENTRIES');
@@ -39,18 +56,6 @@ export class FinancialTransfersListPage implements OnInit {
   readonly viewOptions: { label: string; value: TransferView }[] = [
     { label: 'Transferências', value: 'TRANSFERS' },
     { label: 'Lançamentos', value: 'ENTRIES' },
-  ];
-
-  readonly statusOptions: { label: string; value: TransferStatus | '' }[] = [
-    { label: 'Selecione o status', value: '' },
-    { label: 'Concluído', value: 'COMPLETED' },
-    { label: 'Pendente', value: 'PENDING' },
-  ];
-
-  readonly typeOptions: { label: string; value: TransferType | '' }[] = [
-    { label: 'Selecione o tipo', value: '' },
-    { label: 'PIX', value: 'PIX' },
-    { label: 'TED', value: 'TED' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];

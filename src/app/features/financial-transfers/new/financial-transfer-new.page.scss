@@ -57,6 +57,9 @@
 
 .grid-cols-1 { grid-template-columns: 1fr; }
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+// LB-05 / TR-RATEIO: a linha de rateio tem 4 colunas (CC, projeto, conta, %).
+// Sem esta regra as linhas empilhavam uma abaixo da outra.
+.grid-cols-4 { grid-template-columns: repeat(3, 1fr) 260px; }
 
 .form-group {
   display: flex;

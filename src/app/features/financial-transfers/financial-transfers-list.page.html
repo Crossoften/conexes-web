@@ -30,19 +30,43 @@
         <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
 
-      <div class="select-wrap">
-        <select class="select select--pill" [value]="store.filters().status" (change)="store.setStatus($any($event.target).value)">
-          @for (opt of statusOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
+      <!-- TR-12 (transferências): origem, destino e intervalo.
+           LB-07 (lançamentos): conta bancária e período.
+           Antes havia Status e PIX/TED, que não dizem nada sobre estes registros. -->
+      @if (isEntries()) {
+        <div class="select-wrap">
+          <select class="select select--pill" [value]="store.filters().bankAccountId" (change)="store.setFiltro('bankAccountId', $any($event.target).value)">
+            <option value="">Conta bancária</option>
+            @for (a of accounts(); track a.id) { <option [value]="a.id">{{ a.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      } @else {
+        <div class="select-wrap">
+          <select class="select select--pill" [value]="store.filters().originAccountId" (change)="store.setFiltro('originAccountId', $any($event.target).value)">
+            <option value="">Origem</option>
+            @for (a of accounts(); track a.id) { <option [value]="a.id">{{ a.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
 
-      <div class="select-wrap">
-        <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
-          @for (opt of typeOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
+        <div class="select-wrap">
+          <select class="select select--pill" [value]="store.filters().destinationAccountId" (change)="store.setFiltro('destinationAccountId', $any($event.target).value)">
+            <option value="">Destino</option>
+            @for (a of accounts(); track a.id) { <option [value]="a.id">{{ a.label }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      }
+
+      <input class="select select--pill" type="date" title="Data inicial"
+             [value]="store.filters().startDate" (change)="store.setFiltro('startDate', $any($event.target).value)">
+      <input class="select select--pill" type="date" title="Data final"
+             [value]="store.filters().endDate" (change)="store.setFiltro('endDate', $any($event.target).value)">
+
+      @if (store.temFiltroAtivo()) {
+        <button type="button" class="btn-outline btn-pill" (click)="store.limparFiltros()">Limpar filtros</button>
+      }
 
       <button type="button" class="btn-outline btn-pill" (click)="onExport()">
         Exportar
@@ -103,9 +127,8 @@
               <td class="td td--center">
                 <div class="action-icons">
                   <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  @if (!isEntries()) {
+                  <!-- LB-06 / B5: Duplicar passa a existir também em Lançamentos. -->
                   <button class="icon-btn" title="Duplicar" (click)="onDuplicate(item)"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-                  }
                   <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 </div>
               </td>

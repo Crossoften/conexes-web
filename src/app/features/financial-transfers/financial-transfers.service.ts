@@ -1,9 +1,18 @@
 // src/app/features/financial-transfers/financial-transfers.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CreateBankTransferPayload, CreateBankEntryPayload, BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
+
+/** TR-12 / LB-07: filtros aceitos pelos endpoints de transferência e lançamento. */
+export interface MovementQuery {
+  startDate: string;
+  endDate: string;
+  originAccountId: string;
+  destinationAccountId: string;
+  bankAccountId: string;
+}
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 function fmtDate(iso?: string | null): string {
@@ -23,12 +32,30 @@ export class FinancialTransfersService {
    * Lista transferências (view TRANSFERS) ou lançamentos bancários (view ENTRIES).
    * Ambos os endpoints devolvem array puro; a paginação/ordenação são feitas no store.
    */
-  getAll(view: TransferView): Observable<FinancialTransfer[]> {
+  getAll(view: TransferView, filtros?: Partial<MovementQuery>): Observable<FinancialTransfer[]> {
     const url = view === 'ENTRIES' ? this.entriesUrl : this.base;
-    return this.http.get<unknown>(url).pipe(map(res => {
+
+    // TR-12 / LB-07: os filtros vão para o servidor. Origem e destino só existem
+    // em Transferências; conta bancária só em Lançamentos.
+    let params = new HttpParams();
+    if (filtros?.startDate) params = params.set('startDate', filtros.startDate);
+    if (filtros?.endDate)   params = params.set('endDate', filtros.endDate);
+    if (view === 'ENTRIES') {
+      if (filtros?.bankAccountId) params = params.set('bankAccountId', filtros.bankAccountId);
+    } else {
+      if (filtros?.originAccountId)      params = params.set('originAccountId', filtros.originAccountId);
+      if (filtros?.destinationAccountId) params = params.set('destinationAccountId', filtros.destinationAccountId);
+    }
+
+    return this.http.get<unknown>(url, { params }).pipe(map(res => {
       const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
       return rows.map(r => view === 'ENTRIES' ? this.mapEntry(r) : this.mapTransfer(r));
     }));
+  }
+
+  /** LB-06 / B5: duplica um lançamento bancário no servidor. */
+  copyEntry(id: string | number): Observable<unknown> {
+    return this.http.post<unknown>(`${this.entriesUrl}/${id}/copy`, {});
   }
 
   private mapTransfer(r: any): FinancialTransfer {

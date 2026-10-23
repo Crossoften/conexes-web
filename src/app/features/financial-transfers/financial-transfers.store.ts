@@ -5,15 +5,35 @@ import { FinancialTransfer, TransferStatus, TransferType, TransferView } from '.
 import { FinancialTransfersService } from './financial-transfers.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
+/**
+ * TR-12 / LB-07: os filtros da tela deixaram de ser Status e PIX/TED (que não
+ * dizem nada sobre estes registros) e passaram a ser os que o relatório pede —
+ * origem, destino e intervalo nas Transferências; conta e período nos
+ * Lançamentos. São aplicados no servidor.
+ */
+export interface MovementFilters {
+  view: TransferView;
+  search: string;
+  originAccountId: string;
+  destinationAccountId: string;
+  bankAccountId: string;
+  startDate: string;
+  endDate: string;
+}
+
 interface State {
   items: FinancialTransfer[];
   loading: boolean;
   error: string | null;
-  filters: { view: TransferView; search: string; status: TransferStatus | ''; type: TransferType | '' };
+  filters: MovementFilters;
   sort: { column: keyof FinancialTransfer | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
   selectedIds: Set<string>;
 }
+
+const FILTROS_VAZIOS = {
+  search: '', originAccountId: '', destinationAccountId: '', bankAccountId: '', startDate: '', endDate: '',
+};
 
 @Injectable()
 export class FinancialTransfersStore {
@@ -24,16 +44,16 @@ export class FinancialTransfersStore {
     items: [],
     loading: false,
     error: null,
-    filters: { view: 'TRANSFERS', search: '', status: '', type: '' },
+    filters: { view: 'TRANSFERS', ...FILTROS_VAZIOS },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
   });
 
   load(): void {
-    const view = this.state().filters.view;
+    const f = this.state().filters;
     this.state.update(s => ({ ...s, loading: true, error: null }));
-    this.svc.getAll(view).subscribe({
+    this.svc.getAll(f.view, f).subscribe({
       next: items => this.state.update(s => ({ ...s, items, loading: false })),
       error: () => this.state.update(s => ({ ...s, items: [], loading: false, error: 'Não foi possível carregar os lançamentos.' })),
     });
@@ -47,22 +67,17 @@ export class FinancialTransfersStore {
   readonly pagination = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
 
+  // A busca por texto segue local (sobre o resultado já filtrado no servidor).
   readonly filteredItems = computed(() => {
-    let result = this.state().items;
     const f = this.filters();
-    
-    if (f.search) {
-      const term = f.search.toLowerCase();
-      result = result.filter(item => 
-        item.description.toLowerCase().includes(term) || 
-        item.code.includes(term) ||
-        item.origin.toLowerCase().includes(term)
-      );
-    }
-    if (f.status) { result = result.filter(item => item.status === f.status); }
-    if (f.type) { result = result.filter(item => item.type === f.type); }
-    
-    return result;
+    if (!f.search) return this.state().items;
+    const termo = f.search.toLowerCase();
+    return this.state().items.filter(item =>
+      item.description.toLowerCase().includes(termo) ||
+      item.code.includes(termo) ||
+      item.origin.toLowerCase().includes(termo) ||
+      item.destination.toLowerCase().includes(termo),
+    );
   });
 
   readonly sortedItems = computed(() => {
@@ -97,10 +112,32 @@ export class FinancialTransfersStore {
   });
 
   // Updaters
-  setView(view: TransferView) { this.state.update(s => ({ ...s, filters: { ...s.filters, view }, pagination: { ...s.pagination, page: 1 } })); this.load(); }
-  setSearch(search: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } })); }
-  setStatus(status: TransferStatus | '') { this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } })); }
-  setType(type: TransferType | '') { this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } })); }
+  /** Trocar de visão zera os filtros — origem/destino não fazem sentido em Lançamentos. */
+  setView(view: TransferView) {
+    this.state.update(s => ({ ...s, filters: { view, ...FILTROS_VAZIOS }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  setSearch(search: string) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, search }, pagination: { ...s.pagination, page: 1 } }));
+  }
+
+  /** TR-12 / LB-07: filtro aplicado no servidor — recarrega a lista. */
+  setFiltro(campo: keyof MovementFilters, valor: string) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, [campo]: valor }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  limparFiltros() {
+    this.state.update(s => ({ ...s, filters: { view: s.filters.view, ...FILTROS_VAZIOS }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  /** Indica se há algum filtro de servidor ativo (para mostrar o botão Limpar). */
+  readonly temFiltroAtivo = computed(() => {
+    const f = this.filters();
+    return !!(f.originAccountId || f.destinationAccountId || f.bankAccountId || f.startDate || f.endDate);
+  });
 
   setSort(column: keyof FinancialTransfer) {
     this.state.update(s => {
@@ -133,6 +170,18 @@ export class FinancialTransfersStore {
   clearSelection() { this.state.update(s => ({ ...s, selectedIds: new Set() })); }
 
   private get currentView(): TransferView { return this.state().filters.view; }
+
+  /**
+   * LB-06 / B5: duplicar um lançamento bancário. Usa o endpoint de cópia do
+   * servidor, que leva junto a classificação (plano de contas, fornecedor,
+   * centro de custo e as linhas de rateio).
+   */
+  duplicarLancamento(id: string): void {
+    this.svc.copyEntry(id).subscribe({
+      next: () => { this.notify.success('Lançamento duplicado.'); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao duplicar o lançamento.'),
+    });
+  }
 
   deleteOne(id: string): void {
     this.svc.delete(id, this.currentView).subscribe({
