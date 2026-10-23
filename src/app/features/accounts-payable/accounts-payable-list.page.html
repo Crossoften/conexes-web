@@ -120,6 +120,8 @@
               
               <td class="td td--center">
                 <div class="action-icons">
+                  <!-- CP-03: visualizar o lançamento -->
+                  <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                   @if (item.canPay) {
                     <!-- FIN-01: baixa (pagamento) total ou parcial -->
                     <button class="icon-btn" title="Baixar (pagar)" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -276,4 +278,28 @@
     (confirm)="onRenegotiateConfirm($event)"
     (cancel)="closeRenegotiate()">
   </app-renegotiate-modal>
+}
+
+<!-- CP-03: visualização read-only de Contas a pagar -->
+@if (viewItem(); as p) {
+  <div (click)="closeView()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
+    <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+        <h2 style="font-size:16px;font-weight:700;color:#111827;margin:0;">Conta a pagar {{ p.displayId }}</h2>
+        <button type="button" (click)="closeView()" aria-label="Fechar" style="border:none;background:transparent;font-size:15px;cursor:pointer;color:#6B7280;">✕</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#111827;">
+        <div><span style="color:#6B7280;">Fornecedor:</span> {{ p.company }}</div>
+        <div><span style="color:#6B7280;">Histórico:</span> {{ p.history }}</div>
+        <div><span style="color:#6B7280;">Emissão:</span> {{ p.issueDate }}</div>
+        <div><span style="color:#6B7280;">Vencimento:</span> {{ p.dueDate }}</div>
+        <div><span style="color:#6B7280;">Valor:</span> {{ p.value }}</div>
+        <div><span style="color:#6B7280;">Saldo em aberto:</span> {{ p.balance }}</div>
+        <div><span style="color:#6B7280;">Situação:</span> {{ p.status }}</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
+      </div>
+    </div>
+  </div>
 }

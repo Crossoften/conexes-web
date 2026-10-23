@@ -39,6 +39,19 @@ export class FinancialTransferNewPage implements OnInit {
       next: list => this.accounts.set(list),
       error: ()   => this.accounts.set([]),
     });
+
+    // TR-04: duplicar — o formulário abre pré-preenchido com os dados do registro de origem.
+    const dup = (history.state && history.state.duplicate) || null;
+    if (dup) {
+      this.form.patchValue({
+        description: dup.description && dup.description !== '—' ? dup.description : '',
+        origin: dup.originAccountId ? String(dup.originAccountId) : '',
+        destination: dup.destinationAccountId ? String(dup.destinationAccountId) : '',
+        operationDate: typeof dup.rawDate === 'string' ? dup.rawDate.slice(0, 10) : '',
+        transferValue: dup.rawAmount != null ? Number(dup.rawAmount).toFixed(2).replace('.', ',') : '',
+        observations: dup.observation ?? '',
+      });
+    }
   }
 
   /** Máscara monetária BR no valor. */
@@ -61,6 +74,9 @@ export class FinancialTransferNewPage implements OnInit {
 
   private toIso(value: string): string | undefined {
     const s = (value ?? '').trim();
+    // TR-06: input type=date entrega yyyy-mm-dd.
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) { const d = new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3])); return isNaN(d.getTime()) ? undefined : d.toISOString(); }
     const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (!br) return undefined;
     const date = new Date(Date.UTC(+br[3], +br[2] - 1, +br[1]));
@@ -85,9 +101,14 @@ export class FinancialTransferNewPage implements OnInit {
     }
 
     const v = this.form.value;
+    // TR-01: a conta de origem precisa ser diferente da conta de destino.
+    if (Number(v.origin) === Number(v.destination)) {
+      this.errorMsg.set('A conta de origem deve ser diferente da conta de destino.');
+      return;
+    }
     const operationDate = this.toIso(v.operationDate);
     if (!operationDate) {
-      this.errorMsg.set('Data da operação inválida. Use o formato dd/mm/aaaa.');
+      this.errorMsg.set('Data da operação inválida.');
       return;
     }
 

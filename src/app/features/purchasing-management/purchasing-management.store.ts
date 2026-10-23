@@ -40,6 +40,7 @@ function toRow(r: PurchaseRequest): PurchasingReq {
     group:        '—', // a listagem não retorna itens/grupo (pendente no backend)
     requester:    r.requester?.name ?? '—',
     stage:        r.currentStage != null ? `Etapa ${r.currentStage}` : '—',
+    stageNum:     Number(r.currentStage) || 0,
     reqDate:      formatDate(r.requestDate),
     deliveryDate: formatDate(r.expectedDeliveryDate),
     status:       r.status,

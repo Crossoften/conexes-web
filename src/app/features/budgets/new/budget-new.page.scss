@@ -176,3 +176,8 @@
     &:active { transform: translateY(0); }
   }
 }
+/* OR-01: célula da ação (Remover) alinhada à base da linha de rubrica */
+.form-group--action {
+  display: flex;
+  align-items: flex-end;
+}

@@ -59,6 +59,28 @@ export class AccountsReceivableListPage implements OnInit {
     });
   }
 
+  // CR-02: botões Exportar excel / Importar XML estavam sem ação.
+  onExport(): void {
+    this.svc.exportExcel().subscribe({
+      next: b => this.downloadBlob(b, `contas-a-receber_${new Date().toISOString().slice(0, 10)}.xlsx`),
+      error: () => this.notify.error('Falha ao exportar.'),
+    });
+  }
+  onImportXml(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    this.svc.importXml(files).subscribe({
+      next: () => { this.notify.success('XML(s) importado(s).'); this.store.load(); input.value = ''; },
+      error: err => { this.notify.error(err?.error?.message ?? 'Falha ao importar o XML.'); input.value = ''; },
+    });
+  }
+  private downloadBlob(b: Blob, name: string): void {
+    const url = URL.createObjectURL(b);
+    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   ngOnInit(): void {
     this.store.load();
   }

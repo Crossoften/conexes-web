@@ -1,5 +1,5 @@
 // src/app/features/accounts-payable/new/accounts-payable-new.page.ts
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -82,7 +82,7 @@ export class AccountsPayableNewPage implements OnInit {
       vencimentoDetalhe: [{ value: '', disabled: true }],
       valorDetalhe: [{ value: '', disabled: true }],
 
-      // -- Impostos retidos (opcionais) --
+      // -- Impostos retidos (opcionais) -- (CP-23: + IBS e CBS)
       aliqIRRF: [''], codIRRF: [''],
       aliqPIS: [''], codPIS: [''],
       aliqPCC: [''], codPCC: [''],
@@ -90,15 +90,57 @@ export class AccountsPayableNewPage implements OnInit {
       aliqINSS: [''], codINSS: [''],
       aliqCSLL: [''], codCSLL: [''],
       aliqISS: [''], codISS: [''],
+      aliqIBS: [''], codIBS: [''],
+      aliqCBS: [''], codCBS: [''],
 
       observacoes: ['']
     });
+  }
+
+  // CP-22/23: tipos de retenção que viram linhas de `taxes[]` (campo de alíquota → taxType).
+  private readonly TAX_DEFS: { ctrl: string; type: string }[] = [
+    { ctrl: 'aliqIRRF', type: 'IRRF' }, { ctrl: 'aliqPIS', type: 'PIS' },
+    { ctrl: 'aliqPCC', type: 'PCC' }, { ctrl: 'aliqCOFINS', type: 'COFINS' },
+    { ctrl: 'aliqINSS', type: 'INSS' }, { ctrl: 'aliqCSLL', type: 'CSLL' },
+    { ctrl: 'aliqISS', type: 'ISS' }, { ctrl: 'aliqIBS', type: 'IBS' },
+    { ctrl: 'aliqCBS', type: 'CBS' },
+  ];
+  readonly retencoesTotal = signal(0);
+  private readonly brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  readonly retencoesTotalFmt = computed(() => this.brl.format(this.retencoesTotal()));
+
+  private numOf(x: any): number {
+    const n = Number(String(x ?? '').replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
+  }
+  private round2(n: number): number { return Math.round(n * 100) / 100; }
+
+  /** CP-22/23: monta as retenções com o valor calculado sobre o valor bruto. */
+  private buildTaxes(gross: number): { taxType: string; rate: number; amount: number }[] {
+    return this.TAX_DEFS
+      .map(d => ({ taxType: d.type, rate: this.numOf(this.form.get(d.ctrl)?.value) }))
+      .filter(t => t.rate > 0)
+      .map(t => ({ ...t, amount: this.round2(gross * t.rate / 100) }));
+  }
+
+  /** CP-12: valor líquido = valor bruto − retenções (calculado, não digitado). */
+  private recalcLiquido(): void {
+    const gross = this.numOf(this.form.get('valorBruto')?.value);
+    const taxes = this.buildTaxes(gross);
+    const total = this.round2(taxes.reduce((s, t) => s + t.amount, 0));
+    this.retencoesTotal.set(total);
+    this.form.get('valorLiquido')?.setValue(this.round2(gross - total), { emitEvent: false });
   }
 
   ngOnInit(): void {
     this.lookups.getSuppliersLookup().subscribe({ next: v => this.suppliers.set(v as Ref[]), error: () => {} });
     this.lookups.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v as Ref[]), error: () => {} });
     this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v as Ref[]), error: () => {} });
+
+    // CP-12: recalcula o líquido quando muda o bruto ou qualquer alíquota de retenção.
+    for (const c of ['valorBruto', ...this.TAX_DEFS.map(d => d.ctrl)]) {
+      this.form.get(c)?.valueChanges.subscribe(() => this.recalcLiquido());
+    }
   }
 
   setMainTab(tab: MainTab) { this.activeMainTab = tab; }
@@ -114,15 +156,20 @@ export class AccountsPayableNewPage implements OnInit {
   private buildPayload() {
     const v = this.form.getRawValue();
     const num = (x: any) => { const n = Number(x); return Number.isFinite(n) ? n : 0; };
+    const gross = num(v.valorBruto);
+    // CP-22/23: retenções persistidas (eram descartadas). CP-12: líquido = bruto − retenções.
+    const taxes = this.buildTaxes(gross);
+    const totalRetido = this.round2(taxes.reduce((s, t) => s + t.amount, 0));
     const payload: any = {
       stakeholderId: Number(v.fornecedor),
       issueDate: v.dataEmissao1,
       dueDate: v.dataEmissao2,
-      grossAmount: num(v.valorBruto),
-      netAmount: num(v.valorLiquido),
+      grossAmount: gross,
+      netAmount: this.round2(gross - totalRetido),
       history: v.historicoDespesa,
       description: v.historicoDespesa,
     };
+    if (taxes.length) payload.taxes = taxes;
     if (v.tipoDespesa) payload.expenseType = v.tipoDespesa;
     if (v.dataCadastro) payload.competencyDate = v.dataCadastro;
     if (v.observacoes) payload.observation = v.observacoes;

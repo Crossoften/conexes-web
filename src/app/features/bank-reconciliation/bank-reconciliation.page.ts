@@ -2,6 +2,7 @@
 import { Component, inject, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { Router } from '@angular/router';
 import { BankReconciliationStore } from './bank-reconciliation.store';
 
 @Component({
@@ -14,6 +15,11 @@ import { BankReconciliationStore } from './bank-reconciliation.store';
 })
 export class BankReconciliationPage implements OnInit {
   readonly store = inject(BankReconciliationStore);
+  private router = inject(Router);
+
+  // CB-11: abrir o cadastro correspondente a partir da conciliação.
+  goNewEntry(): void { this.router.navigate(['/financial-transfers/new-entry']); }
+  goNewTransfer(): void { this.router.navigate(['/financial-transfers/new']); }
 
   ngOnInit(): void {
     this.store.load();

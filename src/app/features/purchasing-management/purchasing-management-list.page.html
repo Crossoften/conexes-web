@@ -69,7 +69,17 @@
               <td class="td td--name">{{ item.title }}</td>
               <td class="td">{{ item.costCenter }}</td>
               <td class="td">{{ item.requester }}</td>
-              <td class="td">{{ item.stage }}</td>
+              <td class="td">
+                <!-- COMP-11: esteira — a etapa atual aparece colorida (como dentro da requisição) -->
+                <div style="display:flex;align-items:center;gap:3px;" [title]="item.stage">
+                  @for (s of stageTrack; track s) {
+                    <span
+                      style="width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;"
+                      [style.background]="s === item.stageNum ? '#901633' : (s < item.stageNum ? '#f1d7de' : '#eceef1')"
+                      [style.color]="s === item.stageNum ? '#ffffff' : (s < item.stageNum ? '#901633' : '#9aa1ab')">{{ s }}</span>
+                  }
+                </div>
+              </td>
               
               <td class="td td--dates">
                 <span class="date-line">Requisição: {{ item.reqDate }}</span>

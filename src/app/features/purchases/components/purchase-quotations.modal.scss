@@ -6,7 +6,8 @@
   animation: fadeIn .15s ease;
 }
 .modal-container {
-  width: 100%; max-width: 980px; max-height: 90vh; overflow: hidden;
+  // COMP-13: pop-up mais largo para caber todas as colunas (Status e Ações eram cortadas).
+  width: 100%; max-width: 1240px; max-height: 90vh; overflow: hidden;
   background: #fff; border-radius: 16px; display: flex; flex-direction: column;
   box-shadow: 0 24px 60px rgba(17, 24, 39, .25);
 }

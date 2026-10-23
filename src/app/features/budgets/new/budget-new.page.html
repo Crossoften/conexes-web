@@ -111,6 +111,47 @@
           </div>
         </div>
 
+        <h3 class="section-title">Itens do orçamento (rubricas)</h3>
+        <div class="form-grid mb-8" formArrayName="itens">
+          @for (item of itens.controls; track $index; let i = $index) {
+            <div class="form-row grid-cols-4" [formGroupName]="i">
+              <div class="form-group">
+                <label>Conta (plano de contas)</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="contaPlano">
+                    <option value="">Selecione</option>
+                    @for (c of contas; track c.id) { <option [value]="c.id">{{ c.code }} — {{ c.title }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Projeto / Centro de custo</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="projetoItem">
+                    <option value="">(usar o padrão)</option>
+                    @for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Valor <span class="req">*</span></label>
+                <input type="text" inputmode="numeric" class="form-control" appCurrencyMask formControlName="valor"
+                       placeholder="R$ 0,00" [class.is-invalid]="item.get('valor')?.invalid && item.get('valor')?.touched">
+              </div>
+              <div class="form-group form-group--action">
+                @if (itens.length > 1) {
+                  <button type="button" class="btn-outline btn-outline--orange" (click)="removeItem(i)">Remover</button>
+                }
+              </div>
+            </div>
+          }
+          <div class="form-row">
+            <button type="button" class="btn-outline btn-outline--orange" (click)="addItem()">+ Adicionar rubrica</button>
+          </div>
+        </div>
+
         <h3 class="section-title">Formas de acompanhamento</h3>
         <div class="form-grid mb-8">
           <div class="form-row grid-cols-4">
@@ -203,8 +244,8 @@
           Reiniciar formulário
         </button>
 
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar' }}
         </button>
       </div>
     </div>
