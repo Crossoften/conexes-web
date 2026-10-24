@@ -68,9 +68,14 @@
             <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
             <th class="th th--sortable" (click)="store.setSort('displayId')">ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('displayId')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('title')">Título <span class="sort-icon" [ngClass]="'sort--' + getSortState('title')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('tracking')">Acompanhamento <span class="sort-icon" [ngClass]="'sort--' + getSortState('tracking')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('description')">Descrição <span class="sort-icon" [ngClass]="'sort--' + getSortState('description')"></span></th>
+            <!-- F2/F3: a coluna "Acompanhamento" mostrava "N rubrica(s)" — contava
+                 linhas, nao acompanhava nada. -->
             <th class="th th--sortable" (click)="store.setSort('fiscalYear')">Exercício <span class="sort-icon" [ngClass]="'sort--' + getSortState('fiscalYear')"></span></th>
+            <th class="th">Período</th>
+            <th class="th th--num">Previsto</th>
+            <th class="th th--num">Realizado</th>
+            <th class="th th--num">Saldo</th>
+            <th class="th th--num">% Execução</th>
             <th class="th th--sortable" (click)="store.setSort('periodicity')">Periodicidade <span class="sort-icon" [ngClass]="'sort--' + getSortState('periodicity')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
             <th class="th th--center">Ações</th>
@@ -82,9 +87,24 @@
               <td class="td td--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.selectedIds().has(item.id)" (change)="store.toggleRow(item.id)"><span class="checkbox__box"></span></label></td>
               <td class="td td--mono">{{ item.displayId }}</td>
               <td class="td td--name">{{ item.title }}</td>
-              <td class="td">{{ item.tracking }}</td>
-              <td class="td">{{ item.description }}</td>
               <td class="td">{{ item.fiscalYear }}</td>
+              <td class="td td--periodo">
+                {{ item.periodoFmt }}
+                @if (item.tracking?.periodo?.semRecorte) {
+                  <span class="aviso-inline" title="Sem período declarado, o realizado soma a base inteira">!</span>
+                }
+              </td>
+              <td class="td td--num">{{ item.previstoFmt }}</td>
+              <td class="td td--num">{{ item.realizadoFmt }}</td>
+              <td class="td td--num" [class.td--estouro]="item.estourou">{{ item.saldoFmt }}</td>
+              <td class="td td--num">
+                <div class="exec">
+                  <div class="exec__barra" [class.exec__barra--estouro]="item.estourou">
+                    <span [style.width.%]="item.percentual > 100 ? 100 : item.percentual"></span>
+                  </div>
+                  <span class="exec__num">{{ item.percentual }}%</span>
+                </div>
+              </td>
               <td class="td">{{ item.periodicity }}</td>
               
               <td class="td">
@@ -99,6 +119,7 @@
               </td>
 
               <td class="td td--center">
+                <button class="icon-btn" title="Ver acompanhamento linha a linha" (click)="abrirAcompanhamento(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
                 <div class="action-icons">
                   <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                   <button class="icon-btn" title="Anexo"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
@@ -109,12 +130,12 @@
             </tr>
           }
           @if (!store.loading() && store.pageItems().length === 0) {
-            <tr class="tr"><td class="td" colspan="9" style="text-align:center; padding:32px; color: var(--text-secondary);">
+            <tr class="tr"><td class="td" colspan="12" style="text-align:center; padding:32px; color: var(--text-secondary);">
               @if (store.error()) { {{ store.error() }} } @else { Nenhum orçamento cadastrado. }
             </td></tr>
           }
           @if (store.loading()) {
-            <tr class="tr"><td class="td" colspan="9" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+            <tr class="tr"><td class="td" colspan="12" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
           }
         </tbody>
       </table>
@@ -138,3 +159,94 @@
 
   </div>
 </div>
+
+@if (acompTarget(); as b) {
+  <!-- F2/F3: o acompanhamento linha a linha. O total sozinho nao diz em que
+       rubrica mexer, que e a pergunta de quem abre esta tela. -->
+  <div class="modal-overlay" (click)="fecharAcompanhamento()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Acompanhamento — {{ b.title }}</h2>
+        <button class="modal-close" (click)="fecharAcompanhamento()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (b.tracking; as t) {
+          <p class="modal-hint">
+            Exercício {{ b.fiscalYear }} · período {{ b.periodoFmt }} ·
+            <strong>{{ b.rubricas }}</strong> rubrica(s).
+          </p>
+
+          @if (t.periodo.semRecorte) {
+            <p class="modal-hint modal-hint--warn">
+              Este orçamento <strong>não tem período declarado</strong>, então o realizado está
+              somando toda a despesa cadastrada, de qualquer ano. Informe início e fim para o
+              número valer.
+            </p>
+          }
+
+          <div class="resumo-exec">
+            <div><span>Previsto</span><strong>{{ b.previstoFmt }}</strong></div>
+            <div><span>Realizado</span><strong>{{ b.realizadoFmt }}</strong></div>
+            <div><span>Saldo</span><strong [class.texto-estouro]="t.estourou">{{ b.saldoFmt }}</strong></div>
+            <div><span>Execução</span><strong [class.texto-estouro]="t.estourou">{{ t.percentual }}%</strong></div>
+          </div>
+
+          <table class="table table--compacta">
+            <thead>
+              <tr>
+                <th class="th">Rubrica</th>
+                <th class="th th--num">Previsto</th>
+                <th class="th th--num">Realizado</th>
+                <th class="th th--num">Saldo</th>
+                <th class="th th--num">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of t.linhas; track l.itemId) {
+                <tr class="tr">
+                  <td class="td">
+                    {{ l.descricao }}
+                    @if (l.semClassificacao) {
+                      <span class="tag-aviso">sem classificação</span>
+                    }
+                  </td>
+                  <td class="td td--num">{{ l.previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="td td--num">{{ l.realizado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="td td--num" [class.td--estouro]="l.estourou">{{ l.saldo | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="td td--num" [class.td--estouro]="l.estourou">{{ l.percentual }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (temLinhaSemClassificacao(t)) {
+            <p class="modal-hint modal-hint--warn">
+              Rubrica <strong>sem classificação</strong> não tem como receber gasto: a despesa é
+              atribuída ao orçamento pelo rateio do título (plano de contas, centro de custo ou
+              projeto). Informe a classificação na rubrica para ela passar a acompanhar.
+            </p>
+          }
+
+          @if (t.naoClassificado.titulos > 0) {
+            <p class="modal-hint">
+              <strong>{{ t.naoClassificado.titulos }}</strong> título(s) de despesa no período,
+              somando
+              <strong>{{ t.naoClassificado.valor | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>,
+              estão <strong>sem rateio</strong> e por isso não entram em nenhuma rubrica. Sem este
+              aviso o realizado pareceria menor do que é.
+            </p>
+          }
+        } @else {
+          <p class="modal-hint">Acompanhamento indisponível para este orçamento.</p>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="fecharAcompanhamento()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}

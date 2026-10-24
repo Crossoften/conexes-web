@@ -86,3 +86,52 @@
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
 /* Onda 4 — excluir */
 .icon-btn--danger:hover { background: var(--status-danger-bg, #FEE2E2); color: var(--status-danger-text, #991B1B); }
+
+/* F2/F3 — acompanhamento de orcamento: previsto x realizado */
+.th--num, .td--num { text-align: right; white-space: nowrap; }
+.td--periodo { white-space: nowrap; font-size: 12.5px; }
+.td--estouro, .texto-estouro { color: var(--status-danger-text, #991B1B); font-weight: 700; }
+
+.aviso-inline {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-left: 6px; border-radius: 50%;
+  background: var(--status-warning-bg, #FEF3C7);
+  color: var(--status-warning-text, #92400E);
+  font-size: 11px; font-weight: 700; cursor: help;
+}
+
+.exec { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.exec__barra {
+  width: 56px; height: 6px; border-radius: 3px; overflow: hidden;
+  background: var(--surface-border-mid, #E2E8F0);
+  span { display: block; height: 100%; background: var(--brand-purple, #7C3AED); }
+  &--estouro span { background: var(--status-danger-text, #991B1B); }
+}
+.exec__num { font-size: 12.5px; min-width: 48px; text-align: right; }
+
+.resumo-exec {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 4px 0 16px;
+  > div {
+    padding: 10px 14px; border: 1.5px solid var(--surface-border); border-radius: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    span { font-size: 12px; color: var(--text-muted); }
+    strong { font-size: 15px; color: var(--text-primary); }
+  }
+}
+
+.table--compacta { font-size: 12.5px; .td, .th { padding: 9px 12px; } }
+
+.tag-aviso {
+  display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px;
+  background: var(--status-warning-bg, #FEF3C7);
+  color: var(--status-warning-text, #92400E);
+  font-size: 11px; font-weight: 700;
+}
+
+.modal-hint { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+.modal-hint--warn {
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--status-warning-bg, #FEF3C7);
+  color: var(--status-warning-text, #92400E);
+  border: 1px solid #FDE68A;
+}

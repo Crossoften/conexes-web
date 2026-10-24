@@ -1,17 +1,17 @@
 // src/app/features/budgets/budgets-list.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, CurrencyPipe } from '@angular/common';
 import { BudgetsStore } from './budgets.store';
 import { BudgetsService } from './budgets.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { Budget, BUDGET_STATUS_CONFIG } from './budgets.model';
+import { Budget, BudgetTracking, BUDGET_STATUS_CONFIG } from './budgets.model';
 import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-budgets-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, CurrencyPipe, RouterLink],
   providers: [BudgetsStore],
   templateUrl: './budgets-list.page.html',
   styleUrl: './budgets-list.page.scss',
@@ -80,6 +80,19 @@ export class BudgetsListPage implements OnInit {
 
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
+  }
+
+  // ── F2/F3: acompanhamento linha a linha ───────────────────────────────────
+  // A coluna "Acompanhamento" mostrava "N rubrica(s)" — contava linhas. O total
+  // sozinho nao diz em que rubrica mexer, que e a pergunta de quem abre a tela.
+  readonly acompTarget = signal<Budget | null>(null);
+
+  abrirAcompanhamento(item: Budget): void { this.acompTarget.set(item); }
+  fecharAcompanhamento(): void { this.acompTarget.set(null); }
+
+  /** Avisa quando ha rubrica que nao tem como receber gasto nenhum. */
+  temLinhaSemClassificacao(t: BudgetTracking): boolean {
+    return (t.linhas ?? []).some(l => l.semClassificacao);
   }
 
   onDelete(item: Budget) {

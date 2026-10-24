@@ -37,7 +37,8 @@ export class BudgetsStore {
     const { page, pageSize } = this.state().pagination;
     const search = this.state().filters.search;
     this.state.update(s => ({ ...s, loading: true, error: null }));
-    this.svc.getAll(search, pageSize, (page - 1) * pageSize).subscribe({
+    // `page` vai como número da página: o back usa `skip` como página, não offset.
+    this.svc.getAll(search, pageSize, page).subscribe({
       next: res => this.state.update(s => ({ ...s, items: res.items, total: res.total, loading: false })),
       error: () => this.state.update(s => ({ ...s, items: [], total: 0, loading: false, error: 'Não foi possível carregar os orçamentos.' })),
     });
