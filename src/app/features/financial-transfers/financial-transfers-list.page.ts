@@ -6,6 +6,7 @@ import { FinancialTransfersStore } from './financial-transfers.store';
 import { FinancialTransfersService } from './financial-transfers.service';
 import { BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
 import { RouterLink, ActivatedRoute, Router } from "@angular/router";
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-financial-transfers-list',
@@ -20,6 +21,7 @@ export class FinancialTransfersListPage implements OnInit {
   private svc = inject(FinancialTransfersService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private notify = inject(NotificationService);
 
   // TR-12 / LB-07: contas bancárias para os filtros de origem/destino/conta.
   readonly accounts = signal<BankAccountOption[]>([]);
@@ -126,6 +128,24 @@ export class FinancialTransfersListPage implements OnInit {
   }
 
   /** Exporta a lista filtrada atual para CSV (abre no Excel). */
+  // TR-13/LB-09: baixa o modelo conforme a visão aberta.
+  onBaixarModelo(): void {
+    const view = this.store.filters().view;
+    this.svc.downloadTemplate(view).subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = view === 'ENTRIES'
+          ? 'modelo-lancamentos-bancarios.xlsx'
+          : 'modelo-transferencias.xlsx';
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.notify.error('Falha ao baixar o modelo.'),
+    });
+  }
+
   onExport() {
     const rows = this.store.sortedItems();
     if (!rows.length) { alert('Não há registros para exportar nesta visão.'); return; }

@@ -78,6 +78,19 @@
         </svg>
       </button>
 
+      <!-- TR-13/LB-09: havia "Upload arquivo" e nenhum modelo para baixar — quem
+           importava tinha de adivinhar a ordem das colunas. O modelo acompanha a
+           visão (transferências ou lançamentos) e traz a lista de contas
+           bancárias numa segunda aba, porque as colunas pedem o ID da conta. -->
+      <button type="button" class="btn-outline btn-pill" (click)="onBaixarModelo()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Baixar modelo
+      </button>
+
       <button type="button" class="btn-outline btn-pill btn-upload" (click)="fileInput.click()">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

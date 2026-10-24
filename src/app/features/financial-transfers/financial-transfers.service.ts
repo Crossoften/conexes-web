@@ -138,6 +138,15 @@ export class FinancialTransfersService {
     return this.http.post<unknown>(url, form);
   }
 
+  /**
+   * TR-13/LB-09: o modelo de planilha que faltava. A tela tinha "Upload arquivo"
+   * e nada para baixar — quem importava adivinhava a ordem das colunas.
+   */
+  downloadTemplate(view: TransferView): Observable<Blob> {
+    const url = `${view === 'ENTRIES' ? this.entriesUrl : this.base}/import/template`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
   /** Exclui conforme a visão: transferência ou lançamento bancário. */
   delete(id: string | number, view: TransferView): Observable<void> {
     const url = view === 'ENTRIES' ? this.entriesUrl : this.base;
