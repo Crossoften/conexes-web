@@ -260,18 +260,40 @@ export class AccountsPayableListPage implements OnInit {
   multiplyInterval = 30;
 
   openMultiply(item: PayableAccount) {
-    // CP-06: o mínimo é 1 — "repetir uma vez" é pedido legítimo. O piso de 2
-    // vinha de "quantidade de parcelas", que é o que a tela dizia errado.
-    this.multiplyTimes = 1;
+    // CP-06: parcelar pede ao menos 2 — o critério fala em "quantidade de
+    // parcelas e intervalo em dias".
+    this.multiplyTimes = 2;
     this.multiplyInterval = 30;
     this.multiplyTarget.set(item);
   }
+
+  /**
+   * CP-06: a prévia do valor de cada parcela, em centavos, para quem confirma
+   * ver o que vai acontecer. A última absorve a sobra da divisão — é a mesma
+   * conta que o back faz, e mostrar uma diferente seria pior que não mostrar.
+   */
+  private previaCentavos(): { base: number; ultima: number } {
+    const alvo = this.multiplyTarget();
+    // `balanceNum` é o saldo; como o back recusa parcelar título que já tem
+    // baixa, aqui ele é sempre o valor cheio.
+    const total = Math.round((alvo?.balanceNum ?? 0) * 100);
+    const n = Math.max(2, Math.floor(this.multiplyTimes || 2));
+    const base = Math.floor(total / n);
+    return { base, ultima: total - base * (n - 1) };
+  }
+
+  private brlDe(centavos: number): string {
+    return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  previaParcela(): string { return this.brlDe(this.previaCentavos().base); }
+  previaUltima(): string  { return this.brlDe(this.previaCentavos().ultima); }
   closeMultiply() { this.multiplyTarget.set(null); }
   confirmMultiply() {
     const item = this.multiplyTarget();
     if (!item) return;
-    const times = Math.max(1, Math.floor(this.multiplyTimes));
-    const interval = Math.max(0, Math.floor(this.multiplyInterval));
+    const times = Math.max(2, Math.floor(this.multiplyTimes));
+    const interval = Math.max(1, Math.floor(this.multiplyInterval));
     this.store.multiplyOne(item.id, times, interval);
     this.closeMultiply();
   }
