@@ -8,9 +8,17 @@ import { PurchasesService } from '../../purchases/purchases.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 import { parseDecimalBR } from '../../../shared/utils/format';
+import { UploadService } from '../../../shared/services/upload.service';
 
-type MainTab = 'GERAIS' | 'RATEIO' | 'IMPOSTOS' | 'ANEXOS';
-type SubTab = 'COMPETENCIA' | 'CLASSIFICACAO';
+/**
+ * CP-15/CP-24: as abas do formulário, em UMA linha só.
+ *
+ * A referência da página 26 do reteste 19/10 descreve o alvo: bloco "Dados
+ * gerais" fixo no topo e, abaixo, as cinco abas lado a lado. O que havia era
+ * "Dados do pagamento" com quatro abas e, DENTRO de "Dados gerais", mais duas —
+ * abas dentro de abas, que é o que o relatório aponta.
+ */
+type MainTab = 'COMPETENCIA' | 'CLASSIFICACAO' | 'RATEIO' | 'IMPOSTOS' | 'ANEXOS';
 interface Ref { id: number; name: string; }
 
 /** CP-17: contrato com o que o formulário precisa preencher ao selecioná-lo. */
@@ -37,6 +45,7 @@ export class AccountsPayableNewPage implements OnInit {
   private notify = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private upload = inject(UploadService);
 
   // CP-04: o mesmo formulário serve para cadastrar e editar. Com id na rota,
   // carrega o título e envia PATCH em vez de POST.
@@ -45,8 +54,7 @@ export class AccountsPayableNewPage implements OnInit {
 
   form: FormGroup;
 
-  activeMainTab: MainTab = 'GERAIS';
-  activeSubTab: SubTab = 'COMPETENCIA';
+  activeMainTab: MainTab = 'COMPETENCIA';
   isParcelamentoOpen = true;
 
   // FIN-02: opções de quantidade de parcelas (o select vinha vazio).
@@ -66,11 +74,56 @@ export class AccountsPayableNewPage implements OnInit {
   // CP-17: contratos, com valor, saldo e vigência.
   readonly contracts    = signal<ContratoRef[]>([]);
 
-  anexos = [
-    { id: 1, nome: 'Nota fiscal' },
-    { id: 2, nome: 'Anexo 2' },
-    { id: 3, nome: 'Anexo 3' }
-  ];
+  // CP-24: anexos REAIS do título. Antes esta lista era fixa no código — três
+  // cartões de exemplo com um Download que não baixava nada.
+  readonly anexosDoTitulo = signal<{ id: number; fileUrl: string; fileKey?: string | null }[]>([]);
+  readonly enviandoAnexo = signal(false);
+  readonly erroAnexo     = signal<string | null>(null);
+
+  private carregarAnexos(id: number): void {
+    this.svc.listFiles(id).subscribe({
+      next: a => this.anexosDoTitulo.set(a ?? []),
+      error: () => this.anexosDoTitulo.set([]),
+    });
+  }
+
+  nomeDoAnexo(a: { fileUrl: string; fileKey?: string | null }): string {
+    const bruto = a.fileKey || a.fileUrl || '';
+    try { return decodeURIComponent(bruto.split('/').pop() || 'arquivo'); } catch { return 'arquivo'; }
+  }
+
+  onAnexoSelecionado(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const id = this.editandoId();
+    if (!file || !id) return;
+    this.erroAnexo.set(null);
+    this.enviandoAnexo.set(true);
+    // o arquivo vai primeiro para o armazenamento (/upload/one-file) e só então
+    // o link é amarrado ao título
+    this.upload.uploadOneFile(file).subscribe({
+      next: enviado => {
+        this.svc.attachFile(id, { fileUrl: enviado.fileUrl, fileKey: enviado.fileKey }).subscribe({
+          next: () => { this.enviandoAnexo.set(false); this.carregarAnexos(id); this.notify.success('Anexo adicionado.'); },
+          error: e => { this.enviandoAnexo.set(false); this.erroAnexo.set(e?.error?.message ?? 'Erro ao vincular o anexo ao título.'); },
+        });
+      },
+      error: e => {
+        this.enviandoAnexo.set(false);
+        this.erroAnexo.set(e?.error?.message ?? 'Erro ao enviar o arquivo. Verifique o armazenamento configurado.');
+      },
+    });
+    input.value = '';
+  }
+
+  removerAnexo(fileId: number): void {
+    const id = this.editandoId();
+    if (!id) return;
+    this.svc.removeFile(id, fileId).subscribe({
+      next: () => this.carregarAnexos(id),
+      error: e => this.erroAnexo.set(e?.error?.message ?? 'Erro ao remover o anexo.'),
+    });
+  }
 
   constructor() {
     this.form = this.fb.group({
@@ -82,7 +135,7 @@ export class AccountsPayableNewPage implements OnInit {
       dataEmissao2: ['', Validators.required],   // → dueDate
       valorBruto: ['', Validators.required],      // → grossAmount
       valorLiquido: ['', Validators.required],    // → netAmount
-      dataCadastro: [''],                          // → competencyDate (opcional)
+      dataCadastro: [''],                          // → registrationDate (do sistema, só exibe)
 
       // -- Competência e dados de contrato (opcionais) --
       competencia: [''],
@@ -92,6 +145,9 @@ export class AccountsPayableNewPage implements OnInit {
       pedido: [''],
       codCompras: [{ value: '', disabled: true }],
       contrato: [''],
+      // CP-24: campo da aba "Classificação do serviço e documento", que existia
+      // com título e nenhum campo dentro.
+      numeroDocumento: [''],
       valorContrato: [{ value: '', disabled: true }],
       saldoContrato: [{ value: '', disabled: true }],
       dataInicioContrato: [{ value: '', disabled: true }],
@@ -251,6 +307,8 @@ export class AccountsPayableNewPage implements OnInit {
         });
         // preenche valor/saldo/vigência do contrato carregado (CP-17)
         if (r.contractId) this.onContratoChange();
+        // CP-24: anexos do título
+        this.carregarAnexos(id);
 
         // CP-18: devolve as linhas de rateio gravadas.
         this.rateios.clear();
@@ -379,13 +437,11 @@ export class AccountsPayableNewPage implements OnInit {
   }
 
   setMainTab(tab: MainTab) { this.activeMainTab = tab; }
-  setSubTab(tab: SubTab) { this.activeSubTab = tab; }
   toggleParcelamento() { this.isParcelamentoOpen = !this.isParcelamentoOpen; }
 
   resetForm() {
     this.form.reset({ parcelar: 'Nao', definirValorVencimento: false });
-    this.activeMainTab = 'GERAIS';
-    this.activeSubTab = 'COMPETENCIA';
+    this.activeMainTab = 'COMPETENCIA';
   }
 
   private buildPayload() {
@@ -479,7 +535,7 @@ export class AccountsPayableNewPage implements OnInit {
       this.form.markAllAsTouched();
       this.notify.error('Preencha os campos obrigatórios (fornecedor, histórico, datas e valores).');
       // Se o campo pendente estiver em outra aba, volta para Dados gerais.
-      this.activeMainTab = 'GERAIS';
+      this.activeMainTab = 'COMPETENCIA';
       return;
     }
     // CP-18/D2: a soma do rateio não pode passar de 100% (o backend recusa de novo).

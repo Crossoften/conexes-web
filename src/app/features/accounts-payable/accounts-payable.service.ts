@@ -195,6 +195,23 @@ export class AccountsPayableService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
+  // ── CP-24 / anexos do título ────────────────────────────────────────────────
+  // (o tipo está no fim deste arquivo, junto dos demais)
+  // A aba "Anexos" mostrava três cartões FIXOS no código ("Nota fiscal",
+  // "Anexo 2", "Anexo 3") com um botão de Download que não baixava nada — uma
+  // tela de exemplo que nunca foi ligada. O back já tem as rotas.
+  listFiles(id: number): Observable<PayableFile[]> {
+    return this.http.get<PayableFile[]>(`${this.base}/${id}/files`);
+  }
+
+  attachFile(id: number, payload: { fileUrl: string; fileKey: string }): Observable<PayableFile> {
+    return this.http.post<PayableFile>(`${this.base}/${id}/files`, payload);
+  }
+
+  removeFile(id: number, fileId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/files/${fileId}`);
+  }
+
   // ── Ações avançadas ─────────────────────────────────────────────────────
   copy(id: number): Observable<ApiAccountPayable> {
     return this.http.post<ApiAccountPayable>(`${this.base}/${id}/copy`, {});
@@ -302,6 +319,15 @@ export class AccountsPayableService {
     balance: brl.format(Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0))),
     canPay: (r.status === 'Open' || r.status === 'PartiallyPaid'),
   });
+}
+
+/** CP-24: anexo de uma conta a pagar, como o back devolve em GET :id/files. */
+export interface PayableFile {
+  id: number;
+  fileUrl: string;
+  fileKey?: string | null;
+  userId?: number | null;
+  createdAt?: string;
 }
 
 // FIN-N03: emissão/vencimento/cadastro são datas civis, gravadas à meia-noite UTC.

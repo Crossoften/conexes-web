@@ -70,6 +70,17 @@
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+// CP-24: a segunda linha dos dados gerais tem SEIS campos (cadastro,
+// competência, emissão, vencimento, bruto, líquido). `minmax(0,1fr)` para os
+// campos de data não estourarem a coluna; abaixo de 1500px quebra em três,
+// porque seis campos de data espremidos não se leem.
+// `align-items: end` para os campos nascerem na mesma base: o rótulo "Valor
+// líquido da despesa (calculado)" quebra em duas linhas e, sem isso, empurra só
+// aquele campo para baixo — o mesmo tipo de desalinhamento do COMP-07.
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
+@media (max-width: 1500px) {
+  .grid-cols-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
 .align-items-end { align-items: flex-end; }
 

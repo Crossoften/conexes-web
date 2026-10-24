@@ -10,91 +10,64 @@
     <div class="card-body" style="padding-top: 32px;">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         
-        <h3 class="section-title" style="font-size: 18px;">Dados do pagamento</h3>
-        <p class="section-subtitle mb-6">Preencha todas as informações necessárias.</p>
 
-        <div class="segmented-tabs mb-8">
-          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'GERAIS'" (click)="setMainTab('GERAIS')">
-            Dados gerais
-          </button>
-          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'RATEIO'" (click)="setMainTab('RATEIO')">
-            Rateio e parcelamento
-          </button>
-          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'IMPOSTOS'" (click)="setMainTab('IMPOSTOS')">
-            Impostos retidos
-          </button>
-          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'ANEXOS'" (click)="setMainTab('ANEXOS')">
-            Anexos
-          </button>
+        <!-- ══ CP-15/CP-24: Dados gerais FIXO no topo ═══════════════════════
+             A referência (pág. 26 do reteste 19/10) pede o bloco de dados
+             gerais sempre visível e, abaixo, as abas em UMA linha. O que havia
+             era "Dados do pagamento" com quatro abas e, dentro de "Dados
+             gerais", mais duas — abas dentro de abas. -->
+        <h3 class="section-title" style="font-size: 18px;">Dados gerais</h3>
+        <p class="section-subtitle mb-6">Preencha todas as informações necessárias para lançar o pagamento.</p>
+
+        <div class="form-grid mb-8">
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>Fornecedor<span class="req">*</span></label>
+              <div class="select-wrap"><select class="form-control" formControlName="fornecedor">
+                <option value="">Selecione</option>
+                @for (s of suppliers(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+              </select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="form-group">
+              <label>Histórico da despesa<span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="historicoDespesa">
+            </div>
+            <div class="form-group">
+              <label>Tipo de despesa</label>
+              <input type="text" class="form-control" placeholder="Ex.: Serviço, Material..." formControlName="tipoDespesa">
+            </div>
+          </div>
+
+          <!-- CP-13: Data cadastro vem do sistema e não se edita. CP-24: a
+               Competência fica AQUI, na segunda linha dos dados gerais — estava
+               escondida dentro da aba de contrato. -->
+          <div class="form-row grid-cols-6">
+            <div class="form-group">
+              <label>Data cadastro <span class="muted-label">(do sistema)</span></label>
+              <input type="date" class="form-control disabled-bg" formControlName="dataCadastro" readonly>
+            </div>
+            <div class="form-group"><label>Competência<span class="req">*</span></label><input type="date" class="form-control" formControlName="competencia"></div>
+            <div class="form-group"><label>Data emissão<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao1"></div>
+            <div class="form-group"><label>Vencimento<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao2"></div>
+            <div class="form-group"><label>Valor bruto da despesa<span class="req">*</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorBruto"></div>
+            <div class="form-group"><label>Valor líquido da despesa <span class="muted-label">(calculado)</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorLiquido" readonly></div>
+          </div>
         </div>
 
-        @if (activeMainTab === 'GERAIS') {
-          <div class="form-grid mb-8">
-            <div class="form-row grid-cols-3">
-              <div class="form-group">
-                <label>Fornecedor<span class="req">*</span></label>
-                <div class="select-wrap"><select class="form-control" formControlName="fornecedor">
-                  <option value="">Selecione</option>
-                  @for (s of suppliers(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                </select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              </div>
-              <div class="form-group">
-                <label>Histórico da despesa<span class="req">*</span></label>
-                <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="historicoDespesa">
-              </div>
-              <div class="form-group">
-                <label>Tipo de despesa</label>
-                <input type="text" class="form-control" placeholder="Ex.: Serviço, Material..." formControlName="tipoDespesa">
-              </div>
-            </div>
+        <!-- CP-15/CP-24: as cinco abas, numa linha só -->
+        <div class="segmented-tabs mb-6">
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'COMPETENCIA'" (click)="setMainTab('COMPETENCIA')">Competência e dados de contrato</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'CLASSIFICACAO'" (click)="setMainTab('CLASSIFICACAO')">Classificação do serviço e documento</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'RATEIO'" (click)="setMainTab('RATEIO')">Rateio e parcelamento</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'IMPOSTOS'" (click)="setMainTab('IMPOSTOS')">Impostos retidos</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'ANEXOS'" (click)="setMainTab('ANEXOS')">Anexos</button>
+        </div>
 
-            <!-- CP-14: serviço do cadastro central, SEPARADO do tipo de despesa. -->
-            <div class="form-row grid-cols-3">
-              <div class="form-group">
-                <label>Tipo de serviço</label>
-                <div class="select-wrap">
-                  <select class="form-control" formControlName="servico">
-                    <option value="">Selecione (opcional)</option>
-                    @for (s of services(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- CP-13: a data de cadastro precede a emissão, vem preenchida pelo
-                 sistema e não é editável. -->
-            <div class="form-row grid-cols-5">
-              <div class="form-group">
-                <label>Data cadastro <span class="muted-label">(do sistema)</span></label>
-                <input type="date" class="form-control disabled-bg" formControlName="dataCadastro" readonly>
-              </div>
-              <div class="form-group"><label>Data emissão<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao1"></div>
-              <div class="form-group"><label>Vencimento<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao2"></div>
-              <div class="form-group"><label>Valor bruto da despesa<span class="req">*</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorBruto"></div>
-              <div class="form-group"><label>Valor líquido da despesa <span class="muted-label">(calculado)</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorLiquido" readonly></div>
-            </div>
-          </div>
-
-          <div class="segmented-tabs mb-6">
-            <button type="button" class="segmented-tab-btn" [class.active]="activeSubTab === 'COMPETENCIA'" (click)="setSubTab('COMPETENCIA')">
-              Competência e dados de contrato
-            </button>
-            <button type="button" class="segmented-tab-btn" [class.active]="activeSubTab === 'CLASSIFICACAO'" (click)="setSubTab('CLASSIFICACAO')">
-              Classificação do serviço e documento
-            </button>
-          </div>
-
-          @if (activeSubTab === 'COMPETENCIA') {
+        @if (activeMainTab === 'COMPETENCIA') {
             <h3 class="section-title">Competência e dados de contrato</h3>
             <p class="section-subtitle">Preencha e configure todas as informações necessárias.</p>
             <div class="form-grid mb-4">
               <div class="form-row grid-cols-3">
-                <!-- QA-01: era type="text" com placeholder "00/00/00", e o que o
-                     usuário digitasse ia cru para competencyDate. Vira seletor de
-                     data, como as outras datas da tela: o valor sai e volta em ISO
-                     e a edição consegue recarregá-lo. -->
-                <div class="form-group"><label>Competência<span class="req">*</span></label><input type="date" class="form-control" formControlName="competencia"></div>
                 <!-- CP-16: o pedido vem de uma pesquisa; o código deixa de ser digitado. -->
                 <div class="form-group">
                   <label>Pedido de compra</label>
@@ -126,12 +99,32 @@
                 <div class="form-group"><label>Data fim contrato</label><input type="text" class="form-control disabled-bg" formControlName="dataFimContrato"></div>
               </div>
             </div>
-          }
-          
-          @if (activeSubTab === 'CLASSIFICACAO') {
-            <h3 class="section-title">Classificação do serviço e documento</h3>
-            <p class="section-subtitle">Configurações de classificação e documentos vinculados.</p>
-            }
+        }
+
+        @if (activeMainTab === 'CLASSIFICACAO') {
+          <!-- CP-24: a aba existia com título e NENHUM campo. Recebe o que lhe
+               pertence: o tipo de serviço do cadastro central (CP-14, que estava
+               solto nos dados gerais) e o documento do título. -->
+          <h3 class="section-title">Classificação do serviço e documento</h3>
+          <p class="section-subtitle">Configurações de classificação e documentos vinculados.</p>
+          <div class="form-grid mb-8">
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Tipo de serviço</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="servico">
+                    <option value="">Selecione (opcional)</option>
+                    @for (s of services(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Nº do documento</label>
+                <input type="text" class="form-control" placeholder="NF, recibo, contrato..." formControlName="numeroDocumento">
+              </div>
+            </div>
+          </div>
         }
 
         @if (activeMainTab === 'RATEIO') {
@@ -324,17 +317,39 @@
         }
 
         @if (activeMainTab === 'ANEXOS') {
-          <div class="attachments-list">
-            @for (anexo of anexos; track anexo.id) {
-              <div class="attachment-card">
-                <span class="attachment-name">{{ anexo.nome }}</span>
-                <button type="button" class="btn-outline btn-outline--sm">
-                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  Download
-                </button>
-              </div>
-            }
-          </div>
+          <!-- CP-24: a aba listava três cartões FIXOS no código ("Nota fiscal",
+               "Anexo 2", "Anexo 3") com um Download que não baixava nada. Agora
+               lista os anexos reais do título e permite anexar e remover. -->
+          <h3 class="section-title">Anexos</h3>
+          <p class="section-subtitle">Nota fiscal, recibos e certidões ligados a este título.</p>
+
+          @if (!ehEdicao()) {
+            <p class="section-subtitle">Salve o título primeiro — o anexo precisa de um título para ficar guardado.</p>
+          } @else {
+            <label class="dropzone" style="cursor:pointer; display:block; text-align:center; padding:18px; border:1.5px dashed var(--surface-border,#E5E7EB); border-radius:10px; margin-bottom:14px;">
+              <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onAnexoSelecionado($event)">
+              {{ enviandoAnexo() ? 'Enviando…' : '+ Selecionar arquivo' }}
+            </label>
+            @if (erroAnexo()) { <div class="form-alert form-alert--error">{{ erroAnexo() }}</div> }
+
+            <div class="attachments-list">
+              @for (a of anexosDoTitulo(); track a.id) {
+                <div class="attachment-card">
+                  <span class="attachment-name">{{ nomeDoAnexo(a) }}</span>
+                  <span style="display:flex; gap:8px;">
+                    <a class="btn-outline btn-outline--sm" [href]="a.fileUrl" target="_blank" rel="noopener">
+                      <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Baixar
+                    </a>
+                    <button type="button" class="btn-outline btn-outline--sm" (click)="removerAnexo(a.id)">Remover</button>
+                  </span>
+                </div>
+              }
+              @if (anexosDoTitulo().length === 0) {
+                <p class="section-subtitle">Nenhum anexo neste título.</p>
+              }
+            </div>
+          }
         }
 
         @if (activeMainTab !== 'ANEXOS') {
