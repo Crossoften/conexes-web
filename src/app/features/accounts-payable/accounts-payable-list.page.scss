@@ -36,8 +36,19 @@
 }
 .btn-solid {
   display: inline-flex; align-items: center; justify-content: center; padding: 9px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; color: #fff;
-  &--purple { background: #E2E8F0; color: #94A3B8; pointer-events: none; } // Visual de botão inativo conforme imagem. Use classes ativas via lógica de formulário no futuro.
-  // Se for ativo: { background: var(--brand-purple); color: #fff; pointer-events: auto; }
+
+  // CP-01/CP-06: esta classe vinha com a APARENCIA DE DESABILITADO fixa, copiada
+  // de um mockup, e com `pointer-events: none` — o botao ficava morto para o
+  // usuario, com `disabled=false` no DOM. Era a causa de "Filtrar desabilitado"
+  // (CP-01) e de "Multiplicar fica desabilitado" (CP-06): tres botoes desta tela
+  // usam a classe. O proprio autor deixou escrito "use classes ativas via logica
+  // de formulario no futuro" — e o estado inativo agora vem de `:disabled`, que
+  // e o que as telas de fato controlam.
+  &--purple {
+    background: var(--brand-purple, #7C3AED); color: #fff;
+    &:hover:not(:disabled) { background: var(--brand-purple-dark, #5B21B6); }
+    &:disabled { background: #E2E8F0; color: #94A3B8; cursor: not-allowed; }
+  }
 }
 
 // ── Inputs e Selects genéricos ────────────────

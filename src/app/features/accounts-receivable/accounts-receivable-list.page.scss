@@ -35,7 +35,15 @@
 }
 .btn-solid {
   display: inline-flex; align-items: center; justify-content: center; padding: 9px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; color: #fff;
-  &--purple { background: #E2E8F0; color: #94A3B8; pointer-events: none; }
+
+  // CR-02: a mesma aparência-de-desabilitado fixa que matava o Filtrar de Contas
+  // a pagar estava copiada aqui — por isso o relatório diz "botões não funcionam
+  // (como CP)". O estado inativo passa a vir de `:disabled`.
+  &--purple {
+    background: var(--brand-purple, #7C3AED); color: #fff;
+    &:hover:not(:disabled) { background: var(--brand-purple-dark, #5B21B6); }
+    &:disabled { background: #E2E8F0; color: #94A3B8; cursor: not-allowed; }
+  }
 }
 
 // ── Inputs e Selects genéricos ────────────────
