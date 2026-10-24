@@ -1,17 +1,17 @@
 // src/app/features/financial-transfers/financial-transfers-list.page.ts
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
 import { FinancialTransfersService } from './financial-transfers.service';
-import { BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
+import { BankAccountOption, FinancialTransfer, ImportBatch, TransferView } from './financial-transfers.model';
 import { RouterLink, ActivatedRoute, Router } from "@angular/router";
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-financial-transfers-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink],
+  imports: [FormsModule, NgClass, DatePipe, RouterLink],
   providers: [FinancialTransfersStore],
   templateUrl: './financial-transfers-list.page.html',
   styleUrl: './financial-transfers-list.page.scss',
@@ -127,7 +127,46 @@ export class FinancialTransfersListPage implements OnInit {
     input.value = '';
   }
 
-  /** Exporta a lista filtrada atual para CSV (abre no Excel). */
+  // ── TR-14/LB-10: lotes de importação ──────────────────────────────────────
+  // Depois de subir uma planilha errada não havia como voltar atrás senão
+  // apagando registro a registro.
+  readonly lotesAbertos = signal(false);
+  readonly lotes = signal<ImportBatch[]>([]);
+  readonly lotesCarregando = signal(false);
+
+  abrirLotes(): void {
+    this.lotesAbertos.set(true);
+    this.carregarLotes();
+  }
+  fecharLotes(): void { this.lotesAbertos.set(false); }
+
+  private carregarLotes(): void {
+    this.lotesCarregando.set(true);
+    this.svc.listImportBatches(this.store.filters().view).subscribe({
+      next: r => { this.lotes.set(r.items); this.lotesCarregando.set(false); },
+      error: () => { this.lotes.set([]); this.lotesCarregando.set(false); },
+    });
+  }
+
+  desfazerLote(lote: ImportBatch): void {
+    const quantos = lote.restantes;
+    if (!confirm(
+      `Desfazer esta importação remove ${quantos} registro(s) criado(s) pelo arquivo ` +
+      `"${lote.fileName}". Nas transferências, os movimentos de extrato e o rateio saem junto, ` +
+      `para o saldo das contas voltar ao que era. Esta ação não pode ser desfeita. Continuar?`,
+    )) return;
+
+    this.svc.deleteImportBatch(lote.id).subscribe({
+      next: r => {
+        const n = (r?.transferenciasRemovidas ?? 0) + (r?.lancamentosRemovidos ?? 0);
+        this.notify.success(`Importação desfeita — ${n} registro(s) removido(s).`);
+        this.carregarLotes();
+        this.store.load();
+      },
+      error: err => this.notify.error(err?.error?.message ?? 'Falha ao desfazer a importação.'),
+    });
+  }
+
   // TR-13/LB-09: baixa o modelo conforme a visão aberta.
   onBaixarModelo(): void {
     const view = this.store.filters().view;
@@ -146,6 +185,7 @@ export class FinancialTransfersListPage implements OnInit {
     });
   }
 
+  /** Exporta a lista filtrada atual para CSV (abre no Excel). */
   onExport() {
     const rows = this.store.sortedItems();
     if (!rows.length) { alert('Não há registros para exportar nesta visão.'); return; }

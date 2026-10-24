@@ -78,6 +78,16 @@
         </svg>
       </button>
 
+      <!-- TR-14/LB-10: depois de subir uma planilha errada nao havia como voltar
+           atras senao apagando registro a registro. -->
+      <button type="button" class="btn-outline btn-pill" (click)="abrirLotes()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 2.6-6.4"></path>
+          <polyline points="3 3 3 8 8 8"></polyline>
+        </svg>
+        Importações
+      </button>
+
       <!-- TR-13/LB-09: havia "Upload arquivo" e nenhum modelo para baixar — quem
            importava tinha de adivinhar a ordem das colunas. O modelo acompanha a
            visão (transferências ou lançamentos) e traz a lista de contas
@@ -199,6 +209,87 @@
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
         <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (lotesAbertos()) {
+  <!-- TR-14/LB-10: a lista de lotes, com o comando de desfazer. -->
+  <div class="modal-overlay" (click)="fecharLotes()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Importações de {{ isEntries() ? 'lançamentos' : 'transferências' }}</h2>
+        <button class="modal-close" (click)="fecharLotes()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-hint">
+          Cada linha é uma planilha que foi importada. <strong>Desfazer</strong> remove tudo que
+          aquele arquivo criou — nas transferências, os movimentos de extrato e o rateio saem junto,
+          para o saldo das contas voltar ao que era.
+        </p>
+
+        @if (lotesCarregando()) {
+          <p class="modal-hint">Carregando…</p>
+        } @else if (!lotes().length) {
+          <p class="modal-hint">Nenhuma planilha foi importada nesta visão ainda.</p>
+        } @else {
+          <table class="table table--compacta">
+            <thead>
+              <tr>
+                <th class="th">Arquivo</th>
+                <th class="th">Quando</th>
+                <th class="th">Quem</th>
+                <th class="th th--num">Linhas</th>
+                <th class="th th--num">Entraram</th>
+                <th class="th th--num">Falharam</th>
+                <th class="th th--num">Ainda existem</th>
+                <th class="th th--center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lotes(); track l.id) {
+                <tr class="tr">
+                  <td class="td">{{ l.fileName }}</td>
+                  <td class="td">{{ l.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="td">{{ l.user?.name ?? '—' }}</td>
+                  <td class="td td--num">{{ l.total }}</td>
+                  <td class="td td--num">{{ l.success }}</td>
+                  <td class="td td--num" [class.td--estouro]="l.failed > 0">{{ l.failed }}</td>
+                  <!-- Pode diferir de "Entraram": o usuário talvez tenha apagado
+                       alguns registros à mão depois de importar. -->
+                  <td class="td td--num">{{ l.restantes }}</td>
+                  <td class="td td--center">
+                    @if (l.restantes > 0) {
+                      <button class="btn-outline btn-outline--sm btn-outline--danger" (click)="desfazerLote(l)">Desfazer</button>
+                    } @else {
+                      <span class="td--vazio">nada a desfazer</span>
+                    }
+                  </td>
+                </tr>
+                @if (l.errorList?.length) {
+                  <tr class="tr">
+                    <td class="td" colspan="8">
+                      <details>
+                        <summary class="resumo-erros">{{ l.errorList.length }} linha(s) não entraram — ver motivos</summary>
+                        <ul class="lista-erros">
+                          @for (e of l.errorList; track $index) { <li>{{ e }}</li> }
+                        </ul>
+                      </details>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="fecharLotes()">Fechar</button>
       </div>
     </div>
   </div>

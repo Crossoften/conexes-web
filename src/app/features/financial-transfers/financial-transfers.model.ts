@@ -76,3 +76,27 @@ export const NATUREZAS_RECURSO = [
   { valor: 'Publico', rotulo: 'Público' },
   { valor: 'Privado', rotulo: 'Privado' },
 ];
+// ── TR-14/LB-10: lotes de importação ─────────────────────────────────────────
+
+/**
+ * Um lote de importação por planilha. Existe para que uma importação errada
+ * possa ser desfeita inteira — antes, planilha errada só saía apagando registro
+ * a registro.
+ */
+export interface ImportBatch {
+  id: number;
+  /** 'transfers' | 'entries' */
+  kind: string;
+  fileName: string;
+  total: number;
+  success: number;
+  failed: number;
+  /** Quantos registros do lote AINDA existem: o usuário pode ter apagado alguns
+   *  à mão depois de importar, e aí o número do resumo mentiria. */
+  restantes: number;
+  errorList: string[];
+  user?: { id: number; name: string } | null;
+  createdAt: string;
+}
+
+export interface ImportBatchListResult { items: ImportBatch[]; total: number }

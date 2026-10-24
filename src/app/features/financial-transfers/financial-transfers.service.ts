@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateBankTransferPayload, CreateBankEntryPayload, BankAccountOption, FinancialTransfer, TransferView } from './financial-transfers.model';
+import { CreateBankTransferPayload, CreateBankEntryPayload, BankAccountOption, FinancialTransfer, ImportBatch, ImportBatchListResult, TransferView } from './financial-transfers.model';
 
 /** TR-12 / LB-07: filtros aceitos pelos endpoints de transferência e lançamento. */
 export interface MovementQuery {
@@ -27,6 +27,8 @@ export class FinancialTransfersService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/v1/banking/transfers`;
   private entriesUrl = `${environment.apiUrl}/v1/banking/entries`;
+  // TR-14/LB-10: os lotes ficam fora de transfers/entries — é outro recurso.
+  private baseBanking = `${environment.apiUrl}/v1/banking`;
 
   /**
    * Lista transferências (view TRANSFERS) ou lançamentos bancários (view ENTRIES).
@@ -145,6 +147,23 @@ export class FinancialTransfersService {
   downloadTemplate(view: TransferView): Observable<Blob> {
     const url = `${view === 'ENTRIES' ? this.entriesUrl : this.base}/import/template`;
     return this.http.get(url, { responseType: 'blob' });
+  }
+
+  // ── TR-14/LB-10: lotes de importação ──────────────────────────────────────
+  /** Os lotes da visão aberta, do mais recente para o mais antigo. */
+  listImportBatches(view: TransferView): Observable<ImportBatchListResult> {
+    const params = new HttpParams()
+      .set('kind', view === 'ENTRIES' ? 'entries' : 'transfers')
+      .set('take', 50)
+      .set('skip', 1);
+    return this.http
+      .get<{ data: ImportBatch[]; count: number }>(`${this.baseBanking}/import-batches`, { params })
+      .pipe(map(r => ({ items: r?.data ?? [], total: r?.count ?? 0 })));
+  }
+
+  /** Desfaz a importação inteira: remove tudo que aquele lote criou. */
+  deleteImportBatch(id: number): Observable<{ message: string; transferenciasRemovidas: number; lancamentosRemovidos: number }> {
+    return this.http.delete<any>(`${this.baseBanking}/import-batches/${id}`);
   }
 
   /** Exclui conforme a visão: transferência ou lançamento bancário. */
