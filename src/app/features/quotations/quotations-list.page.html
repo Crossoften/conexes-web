@@ -234,7 +234,14 @@
                         @if (menuOpenId() === item.id) {
                           <div class="row-menu" [style.top.px]="menuPos().top" [style.left.px]="menuPos().left" (click)="$event.stopPropagation()">
                             @if (canExcel)    { <button type="button" (click)="excel(item); closeMenu()">Gerar Excel</button> }
-                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar PDF</button> }
+                            <!-- "da requisição" no rótulo: da Etapa 4 em diante convivem dois
+                                 documentos, e o cliente clicou neste esperando o da cotação. -->
+                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar PDF da requisição</button> }
+                            <!-- COMP-16/COMP-17 -->
+                            @if (canQuotationDoc) {
+                              <button type="button" (click)="quotationPdf(item); closeMenu()">Exportar cotação (PDF)</button>
+                              <button type="button" (click)="quotationExcel(item); closeMenu()">Exportar cotação (Excel)</button>
+                            }
                             @if (canCancel()) { <button type="button" (click)="cancel(item); closeMenu()">Cancelar</button> }
                             @if (canDelete)   { <button type="button" class="row-menu__danger" (click)="remove(item); closeMenu()">Excluir</button> }
                           </div>

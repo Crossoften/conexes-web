@@ -84,6 +84,13 @@ export class QuotationsListPage {
   readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
   readonly canEdit   = this.routeStage === 0;                          // Etapa 1
 
+  // COMP-16/COMP-17: documento da COTAÇÃO (com fornecedor vencedor, itens e
+  // valores) nas Etapas 4, 5 e 6 — onde a cotação já existe e é o que se quer
+  // consultar. Antes, da Etapa 4 em diante só havia "Exportar PDF", e ele gerava
+  // o documento da requisição: sem vencedor e sem valor. Também aparece na Etapa
+  // 3, onde as propostas começam a chegar.
+  readonly canQuotationDoc = this.routeStage >= 2 && this.routeStage <= 5;
+
   readonly statusOptions: { label: string; value: PurchaseRequestStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
     { label: 'Rascunho',             value: 'Draft' },
@@ -150,6 +157,10 @@ export class QuotationsListPage {
   openAward(item: Quotation) { this.store.openAward(item); }
   excel(item: Quotation)   { this.store.exportExcel(item.apiId); }
   pdf(item: Quotation)     { this.store.exportPdf(item.apiId); }
+
+  // COMP-16/COMP-17: documento da cotação (com vencedor, itens e valores).
+  quotationPdf(item: Quotation)   { this.store.exportQuotationPdf(item.apiId); }
+  quotationExcel(item: Quotation) { this.store.exportQuotationExcel(item.apiId); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
 

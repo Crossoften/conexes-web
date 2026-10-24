@@ -377,6 +377,10 @@ export class PurchasesService {
   generateQuotationMapPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/requests/${id}/quotation-pdf`, { responseType: 'blob' });
   }
+  // COMP-17: a mesma cotação em Excel (resumo, comparativo por item e propostas).
+  generateQuotationMapExcel(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/requests/${id}/quotation-excel`, { responseType: 'blob' });
+  }
   // DOC-PED: documento do pedido de compra.
   generateOrderPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/orders/${id}/pdf`, { responseType: 'blob' });

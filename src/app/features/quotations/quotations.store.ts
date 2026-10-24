@@ -283,19 +283,41 @@ export class QuotationsStore {
     this.svc.completeRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
-  /** Exportar a requisição em PDF (gerado no back). */
-  exportPdf(apiId: number): void {
-    this.svc.generateRequestPdf(apiId).subscribe({
+  /**
+   * COMP-17: um caminho só para baixar arquivo.
+   *
+   * Cada exportação repetia estas oito linhas — e as duas engoliam o erro
+   * (`error: () => {}`). Exportação que falha sem dizer nada é botão morto para
+   * quem clica: o usuário tenta de novo achando que errou o clique.
+   */
+  private baixar(obs: Observable<Blob>, nomeArquivo: string, oQueE: string): void {
+    obs.subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `requisicao-${apiId}.pdf`;
+        link.download = nomeArquivo;
         link.click();
         URL.revokeObjectURL(url);
       },
-      error: () => {},
+      error: err => this.notify.error(this.errMsg(err) || `Não foi possível gerar ${oQueE}.`),
     });
+  }
+
+  /** Exportar a requisição em PDF (gerado no back). */
+  exportPdf(apiId: number): void {
+    this.baixar(this.svc.generateRequestPdf(apiId), `requisicao-${apiId}.pdf`, 'o PDF da requisição');
+  }
+
+  // COMP-16/COMP-17: o documento da COTAÇÃO — com fornecedor vencedor, itens e
+  // valores. Da Etapa 4 em diante só havia "Exportar PDF", que gerava o documento
+  // da requisição: sem vencedor e sem valor nenhum.
+  exportQuotationPdf(apiId: number): void {
+    this.baixar(this.svc.generateQuotationMapPdf(apiId), `cotacao-${apiId}.pdf`, 'o PDF da cotação');
+  }
+
+  exportQuotationExcel(apiId: number): void {
+    this.baixar(this.svc.generateQuotationMapExcel(apiId), `cotacao-${apiId}.xlsx`, 'a planilha da cotação');
   }
 
   copy(apiId: number): void {
@@ -303,17 +325,7 @@ export class QuotationsStore {
   }
 
   exportExcel(apiId: number): void {
-    this.svc.generateRequestExcel(apiId).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `pedido-${apiId}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(url);
-      },
-      error: () => {},
-    });
+    this.baixar(this.svc.generateRequestExcel(apiId), `pedido-${apiId}.xlsx`, 'a planilha do pedido');
   }
 
   remove(apiId: number): void {
