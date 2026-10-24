@@ -237,6 +237,10 @@
                             <!-- "da requisição" no rótulo: da Etapa 4 em diante convivem dois
                                  documentos, e o cliente clicou neste esperando o da cotação. -->
                             @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar PDF da requisição</button> }
+                            <!-- COMP-21: o mapa, de dentro da Etapa 4 -->
+                            @if (canQuotationMap) {
+                              <button type="button" (click)="quotationMap(item); closeMenu()">Mapa de cotação</button>
+                            }
                             <!-- COMP-16/COMP-17 -->
                             @if (canQuotationDoc) {
                               <button type="button" (click)="quotationPdf(item); closeMenu()">Exportar cotação (PDF)</button>

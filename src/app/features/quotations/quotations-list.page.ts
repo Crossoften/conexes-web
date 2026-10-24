@@ -91,6 +91,11 @@ export class QuotationsListPage {
   // 3, onde as propostas começam a chegar.
   readonly canQuotationDoc = this.routeStage >= 2 && this.routeStage <= 5;
 
+  // COMP-21: o Mapa de cotação é onde se compara as propostas para adjudicar —
+  // Etapa 4. Era um item de menu lateral próprio, que abria do zero e pedia para
+  // escolher de novo a requisição que já se estava olhando.
+  readonly canQuotationMap = this.routeStage === 3;
+
   readonly statusOptions: { label: string; value: PurchaseRequestStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
     { label: 'Rascunho',             value: 'Draft' },
@@ -161,6 +166,9 @@ export class QuotationsListPage {
   // COMP-16/COMP-17: documento da cotação (com vencedor, itens e valores).
   quotationPdf(item: Quotation)   { this.store.exportQuotationPdf(item.apiId); }
   quotationExcel(item: Quotation) { this.store.exportQuotationExcel(item.apiId); }
+
+  // COMP-21: o mapa é um passo da Etapa 4, aberto a partir da requisição.
+  quotationMap(item: Quotation)   { this.router.navigate(['/quotation-map', item.apiId]); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
 

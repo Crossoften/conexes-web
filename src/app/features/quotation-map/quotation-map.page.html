@@ -1,20 +1,31 @@
 <div class="page">
   <div class="page-header">
     <h1 class="page-title">Mapa de Cotação</h1>
+    <!-- COMP-21: aberto de dentro da Etapa 4, o caminho de volta é para lá -->
+    @if (fromStage) {
+      <a class="btn-outline btn-outline--orange" routerLink="/quotations/stage-4">Voltar à Etapa 4</a>
+    }
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <label class="lbl">Requisição</label>
-      <div class="select-wrap">
-        <select class="form-control" (change)="onSelectRequest($any($event.target).value)">
-          <option value="">Selecione uma requisição</option>
-          @for (r of requests(); track r.id) { <option [value]="r.id">#{{ r.id }} — {{ r.title }}</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <!-- COMP-21: o seletor de requisição só existe no acesso direto. Vindo da
+       Etapa 4 a requisição já está escolhida — era essa segunda escolha que
+       fazia o mapa parecer um módulo separado do processo de compra. -->
+  @if (!fromStage) {
+    <div class="card">
+      <div class="card-body">
+        <label class="lbl">Requisição</label>
+        <div class="select-wrap">
+          <select class="form-control" (change)="onSelectRequest($any($event.target).value)">
+            <option value="">Selecione uma requisição</option>
+            @for (r of requests(); track r.id) { <option [value]="r.id">#{{ r.id }} — {{ r.title }}</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
       </div>
     </div>
-  </div>
+  } @else {
+    <p class="section-subtitle">Requisição #{{ fixedRequestId }} — propostas recebidas para esta cotação.</p>
+  }
 
   @if (selectedRequestId()) {
     <!-- Comparativo -->

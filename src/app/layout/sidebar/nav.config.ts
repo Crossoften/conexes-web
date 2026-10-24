@@ -60,7 +60,9 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: 'Dashboard',     route: '/purchasing-dashboard' },
       { label: 'Cotações',      route: '/quotations' },
-      { label: 'Mapa de cotação', route: '/quotation-map' },
+      // COMP-21: "Mapa de cotação" saiu do menu. Não é um módulo próprio — é um
+      // passo da Etapa 4, e se abre de lá, com a requisição já escolhida. A rota
+      // continua existindo (/quotation-map/:requestId) para link antigo.
       { label: 'Gerenciamento', route: '/purchasing-management' },
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Recebimento',   route: '/purchase-receiving' },

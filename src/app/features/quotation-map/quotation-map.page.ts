@@ -3,6 +3,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
 interface Req { id: number; title: string; }
@@ -11,12 +12,21 @@ interface Supp { id: number; name: string; }
 @Component({
   selector: 'app-quotation-map',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './quotation-map.page.html',
   styleUrl: './quotation-map.page.scss',
 })
 export class QuotationMapPage implements OnInit {
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
+
+  /**
+   * COMP-21: quando o mapa é aberto de dentro da Etapa 4, a requisição vem na
+   * rota. Nesse caso o seletor "Selecione uma requisição" não aparece — escolher
+   * de novo o que já se estava olhando é o que fazia dele um módulo à parte.
+   */
+  readonly fixedRequestId = Number(this.route.snapshot.paramMap.get('requestId')) || null;
+  readonly fromStage      = this.fixedRequestId != null;
   private api = environment.apiUrl + '/v1';
   private portalBase = 'https://homolog.crosoften.com/cotacao/?t=';
 
@@ -31,6 +41,11 @@ export class QuotationMapPage implements OnInit {
   readonly copied = signal<string | null>(null);
 
   ngOnInit(): void {
+    // COMP-21: veio da Etapa 4 com a requisição escolhida — carrega direto.
+    if (this.fixedRequestId) {
+      this.selectedRequestId.set(this.fixedRequestId);
+      this.loadMap(this.fixedRequestId);
+    }
     this.http.get<any>(`${this.api}/purchases/requests?take=1000`).subscribe({
       next: r => this.requests.set((r?.data ?? []).map((x: any) => ({ id: x.id, title: x.title || `Requisição #${x.id}` }))),
       error: () => {},
