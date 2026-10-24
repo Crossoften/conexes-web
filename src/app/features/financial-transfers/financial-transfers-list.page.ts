@@ -185,26 +185,35 @@ export class FinancialTransfersListPage implements OnInit {
     });
   }
 
-  /** Exporta a lista filtrada atual para CSV (abre no Excel). */
-  onExport() {
-    const rows = this.store.sortedItems();
-    if (!rows.length) { alert('Não há registros para exportar nesta visão.'); return; }
-    const isEntries = this.isEntries();
-    const header = isEntries
-      ? ['Código', 'Descrição', 'Conta', 'Tipo', 'Data', 'Valor']
-      : ['Código', 'Descrição', 'Origem', 'Destino', 'Data', 'Valor'];
-    const esc = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [header.map(esc).join(';')];
-    for (const r of rows) {
-      lines.push([r.code, r.description, r.origin, r.destination, r.operationDate, r.value].map(esc).join(';'));
-    }
-    // BOM + CRLF para o Excel abrir com acentuação e separador corretos.
-    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${isEntries ? 'lancamentos' : 'transferencias'}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  /**
+   * TR-10/TR-15/LB-11: relatório da visão aberta, em Excel ou PDF.
+   *
+   * Era um CSV montado aqui no navegador, com seis colunas — e na visão de
+   * Lançamentos escrevia o cabeçalho de lançamentos preenchendo as células com
+   * origem e destino, que são campos de transferência. Agora vem do servidor,
+   * com todos os campos do formulário e os filtros da tela aplicados.
+   */
+  onExport(formato: 'excel' | 'pdf' = 'excel') {
+    const f = this.store.filters();
+    const filtros: Record<string, string> = {
+      startDate: f.startDate ?? '',
+      endDate: f.endDate ?? '',
+      ...(this.isEntries()
+        ? { bankAccountId: f.bankAccountId ?? '' }
+        : { originAccountId: f.originAccountId ?? '', destinationAccountId: f.destinationAccountId ?? '' }),
+    };
+
+    this.svc.downloadReport(f.view, formato, filtros).subscribe({
+      next: (blob: Blob) => {
+        const base = this.isEntries() ? 'relatorio-lancamentos-bancarios' : 'relatorio-transferencias';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${base}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.notify.error('Falha ao gerar o relatório.'),
+    });
   }
 }

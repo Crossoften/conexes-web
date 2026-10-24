@@ -149,6 +149,23 @@ export class FinancialTransfersService {
     return this.http.get(url, { responseType: 'blob' });
   }
 
+  /**
+   * TR-10/TR-15/LB-11: relatório da visão aberta, em Excel ou PDF, montado no
+   * servidor e respeitando os filtros da tela.
+   *
+   * A exportação anterior era um CSV montado no navegador com seis colunas — e
+   * na visão de Lançamentos escrevia o cabeçalho de lançamentos preenchendo com
+   * origem e destino, que são campos de transferência.
+   */
+  downloadReport(view: TransferView, formato: 'excel' | 'pdf', filtros: Record<string, string> = {}): Observable<Blob> {
+    let params = new HttpParams().set('formato', formato);
+    for (const [k, v] of Object.entries(filtros)) {
+      if (v) params = params.set(k, v);
+    }
+    const url = `${view === 'ENTRIES' ? this.entriesUrl : this.base}/report`;
+    return this.http.get(url, { params, responseType: 'blob' });
+  }
+
   // ── TR-14/LB-10: lotes de importação ──────────────────────────────────────
   /** Os lotes da visão aberta, do mais recente para o mais antigo. */
   listImportBatches(view: TransferView): Observable<ImportBatchListResult> {
