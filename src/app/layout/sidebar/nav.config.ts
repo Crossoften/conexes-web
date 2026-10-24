@@ -42,7 +42,8 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Tributos e retenções',  route: '/taxes' },
       { label: 'Usuários e permissões', route: '/users' },
       { label: 'Alçadas de aprovação',  route: '/approval-tiers' },
-      { label: 'Configurações gerais',  route: '/general-settings', disabled: true, badge: 'Em breve' },
+      // TR-08: a tela existe — a preferência de descrição da transferência mora aqui.
+      { label: 'Configurações gerais',  route: '/general-settings' },
     ],
   },
   {

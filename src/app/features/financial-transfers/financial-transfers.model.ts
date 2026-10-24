@@ -72,9 +72,20 @@ export interface CreateBankEntryPayload {
 }
 
 /** TR-09: mesmo vocabulário do cadastro de conta bancária. */
+/**
+ * TR-09: as QUATRO naturezas que o critério nomeia.
+ *
+ * O reteste 19/10 (pág. 3) é literal: "com as opções recurso próprio, recurso
+ * municipal, recurso federal e recurso estadual". Eu havia usado Público/Privado
+ * — o vocabulário do cadastro de conta bancária —, que é outra classificação e
+ * não responde ao pedido: um recurso federal e um municipal são ambos públicos,
+ * e é exatamente a distinção entre eles que a prestação de contas exige.
+ */
 export const NATUREZAS_RECURSO = [
-  { valor: 'Publico', rotulo: 'Público' },
-  { valor: 'Privado', rotulo: 'Privado' },
+  { valor: 'Proprio',   rotulo: 'Recurso próprio' },
+  { valor: 'Municipal', rotulo: 'Recurso municipal' },
+  { valor: 'Estadual',  rotulo: 'Recurso estadual' },
+  { valor: 'Federal',   rotulo: 'Recurso federal' },
 ];
 // ── TR-14/LB-10: lotes de importação ─────────────────────────────────────────
 

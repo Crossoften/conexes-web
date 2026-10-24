@@ -42,6 +42,21 @@ export class FinancialEntryNewPage implements OnInit {
   readonly accountPlans = signal<{ id: number; name: string }[]>([]);
   readonly costCenters  = signal<{ id: number; name: string }[]>([]);
   readonly projects     = signal<{ id: number; name: string }[]>([]);
+  // LB-05: atividades, com o projeto pai, para filtrar por linha de rateio.
+  readonly activities   = signal<{ id: number; name: string; parentProjectId?: number | null }[]>([]);
+
+  /**
+   * LB-05: as atividades que cabem na linha — as do projeto escolhido. Sem
+   * projeto, mostra todas, porque obrigar a escolher projeto para ver atividade
+   * travaria quem rateia só por atividade.
+   */
+  atividadesDaLinha(i: number): { id: number; name: string }[] {
+    const projeto = Number(this.rateios.at(i)?.get('projectId')?.value) || null;
+    const todas = this.activities();
+    if (!projeto) return todas;
+    const doProjeto = todas.filter(a => a.parentProjectId === projeto);
+    return doProjeto.length ? doProjeto : todas;
+  }
 
   form: FormGroup = this.fb.group({
     bankAccountId: ['', Validators.required],
@@ -62,6 +77,8 @@ export class FinancialEntryNewPage implements OnInit {
     return this.fb.group({
       costCenterId:  [valor.costCenterId ?? ''],
       projectId:     [valor.projectId ?? ''],
+      // LB-05: a atividade da linha
+      activityId:    [(valor as any).activityId ?? ''],
       accountPlanId: [valor.accountPlanId ?? ''],
       percentage:    [valor.percentage ?? ''],
     });
@@ -99,6 +116,11 @@ export class FinancialEntryNewPage implements OnInit {
     this.lookups.getCostCentersLookup().subscribe({
       next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.costCenters.set([]),
+    });
+    // LB-05: atividades (nível abaixo de projeto), para a coluna Atividade do rateio.
+    this.lookups.getActivitiesLookup().subscribe({
+      next: v => this.activities.set(v as { id: number; name: string; parentProjectId?: number | null }[]),
+      error: () => this.activities.set([]),
     });
     this.lookups.getProjectsLookup().subscribe({
       next: v => this.projects.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
