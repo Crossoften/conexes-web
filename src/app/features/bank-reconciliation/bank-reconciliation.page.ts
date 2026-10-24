@@ -127,9 +127,15 @@ export class BankReconciliationPage implements OnInit {
     this.form.set({ ...atual, [item.id]: { ...(atual[item.id] ?? FORM_VAZIO), [nome]: valor } });
   }
 
-  /** CB-10: busca candidatos pelo texto e pelo valor do próprio movimento. */
+  /**
+   * CB-10: com texto digitado, busca pelo TEXTO; com o campo vazio, busca pelo VALOR
+   * do próprio movimento. Mandar os dois juntos é um E no servidor e deixaria a busca
+   * quase sempre vazia — a descrição do extrato raramente é igual à do título.
+   */
   buscar(item: ReconciliationItem, termo: string): void {
-    this.store.buscarCandidatos(termo, item.rawValue != null ? Math.abs(item.rawValue) : undefined);
+    const t = (termo ?? '').trim();
+    if (t) this.store.buscarCandidatos(t);
+    else this.store.buscarCandidatos('', item.rawValue != null ? Math.abs(item.rawValue) : undefined);
   }
 
   escolherCandidato(item: ReconciliationItem, c: LedgerCandidate): void {
