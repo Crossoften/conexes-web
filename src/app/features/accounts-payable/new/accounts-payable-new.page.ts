@@ -52,6 +52,11 @@ export class AccountsPayableNewPage implements OnInit {
   readonly editandoId = signal<number | null>(null);
   readonly ehEdicao = computed(() => this.editandoId() !== null);
 
+  // CP-21 / I087: na edição, só reenviamos as parcelas (que o backend recria com
+  // deleteMany+create) quando o usuário realmente mexe nelas. Senão preservamos as
+  // parcelas e suas baixas já gravadas. Começa false e é marcado ao (re)gerar/editar.
+  private installmentsTocadas = false;
+
   form: FormGroup;
 
   activeMainTab: MainTab = 'COMPETENCIA';
@@ -334,6 +339,30 @@ export class AccountsPayableNewPage implements OnInit {
           const imposto = (r.taxes ?? []).find((t: any) => t.taxType === def.type);
           if (imposto) this.form.get(def.ctrl)?.setValue(brl(imposto.rate));
         }
+
+        // CP-21 / I087: um título já parcelado reabre com Parcelar = Sim e as parcelas
+        // gravadas na tabela — antes a tela carregava sempre "Não" e escondia as parcelas,
+        // como se o parcelamento tivesse sumido. As parcelas só voltam no PATCH se o usuário
+        // as regerar/editar (installmentsTocadas), para não apagar baixa nem saldo.
+        this.parcelasLista.clear();
+        this.installmentsTocadas = false;
+        const parcelasGravadas = [...(r.installments ?? [])].sort(
+          (a: any, b: any) => (a.installment ?? 0) - (b.installment ?? 0),
+        );
+        if (parcelasGravadas.length >= 2) {
+          this.form.get('parcelar')?.setValue('Sim');
+          this.form.get('parcelas')?.setValue(parcelasGravadas.length);
+          for (const p of parcelasGravadas) {
+            this.parcelasLista.push(this.fb.group({
+              installment: [p.installment],
+              dueDate: [iso(p.dueDate)],
+              amount: [p.amount],
+            }));
+          }
+        } else {
+          this.form.get('parcelar')?.setValue('Nao');
+        }
+
         this.recalcLiquido();
       },
       error: () => this.notify.error('Não foi possível carregar o título para edição.'),
@@ -385,6 +414,8 @@ export class AccountsPayableNewPage implements OnInit {
    */
   gerarParcelas(): void {
     const n = Number(this.form.get('parcelas')?.value);
+    // CP-21 / I087: o usuário pediu para (re)gerar — as parcelas vão no PATCH.
+    this.installmentsTocadas = true;
     this.parcelasLista.clear();
     if (!n || n < 2) return;
 
@@ -411,6 +442,7 @@ export class AccountsPayableNewPage implements OnInit {
   /** Joga a diferença na última parcela, para fechar a soma. */
   ajustarUltimaParcela(): void {
     if (!this.parcelasLista.length) return;
+    this.installmentsTocadas = true;
     const ultima = this.parcelasLista.at(this.parcelasLista.length - 1);
     const novo = this.round2((Number(ultima.get('amount')?.value) || 0) - this.diferencaParcelas());
     ultima.get('amount')?.setValue(novo);
@@ -554,13 +586,19 @@ export class AccountsPayableNewPage implements OnInit {
     const nParcelas = Number(v.parcelas);
     if (v.parcelar === 'Sim' && nParcelas >= 2) {
       const total = num(v.valorLiquido) || num(v.valorBruto);
-      payload.installments = this.parcelasLista.length
-        ? this.parcelasLista.controls.map((c, i) => ({
-            installment: Number(c.get('installment')?.value) || i + 1,
-            dueDate: c.get('dueDate')?.value,
-            amount: Number(c.get('amount')?.value) || 0,
-          }))
-        : this.buildInstallments(total, nParcelas, v.dataEmissao2);
+      // CP-21 / I087: em edição só reenvia as parcelas se o usuário as regerou (installmentsTocadas)
+      // ou editou uma linha (parcelasLista.dirty). Senão as parcelas e baixas gravadas são
+      // preservadas, porque o backend as recria (deleteMany+create) sempre que installments chega.
+      const reenviarParcelas = !this.ehEdicao() || this.installmentsTocadas || this.parcelasLista.dirty;
+      if (reenviarParcelas) {
+        payload.installments = this.parcelasLista.length
+          ? this.parcelasLista.controls.map((c, i) => ({
+              installment: Number(c.get('installment')?.value) || i + 1,
+              dueDate: c.get('dueDate')?.value,
+              amount: Number(c.get('amount')?.value) || 0,
+            }))
+          : this.buildInstallments(total, nParcelas, v.dataEmissao2);
+      }
     }
     return payload;
   }
