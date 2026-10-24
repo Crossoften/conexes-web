@@ -316,17 +316,24 @@
 }
 .suppliers-empty { margin-top: 10px; color: var(--text-muted, #9CA3AF); font-size: 13px; }
 
-// ── COMP-09: o "+" ao lado do seletor de contrato ─────────────────────────────
-// O seletor cede a largura do botão para que a altura e a base continuem as
-// mesmas dos outros dois campos da linha — o alinhamento do COMP-07 depende disso.
-.field-with-add {
-  display: flex; align-items: stretch; gap: 8px;
-  .select-wrap { flex: 1 1 auto; min-width: 0; }
+// ── COMP-09: o "+" na linha do rótulo do contrato ─────────────────────────────
+// Na linha do rótulo, e não ao lado do campo: ao lado do campo o botão consumia
+// 50px e este seletor ficava mais curto que os outros dois da linha (367px contra
+// 417px, medido) — o alinhamento do COMP-07 se perdia na borda direita.
+// O botão sai do fluxo (position:absolute). Em fluxo ele é mais ALTO que o texto
+// do rótulo e empurrava este seletor 8px para baixo dos outros dois — medido. Fora
+// do fluxo, o rótulo tem exatamente a altura do texto, igual aos vizinhos.
+.label-with-add {
+  position: relative;
+  display: block;
+  padding-right: 76px;   // a faixa do botão: o texto do rótulo nunca passa por baixo
 }
 .btn-add {
-  flex: 0 0 auto; width: 42px; display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--brand-orange, #F97316); border-radius: var(--radius-md, 10px);
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+  border: 1px solid var(--brand-orange, #F97316); border-radius: 999px;
   background: #fff; color: var(--brand-orange, #F97316); cursor: pointer;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
   transition: background var(--transition, .15s ease), color var(--transition, .15s ease);
   &:hover { background: var(--brand-orange, #F97316); color: #fff; }
 }

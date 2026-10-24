@@ -158,20 +158,24 @@
 
               <div class="form-group">
                 <!-- item 5 (reteste 22.09): contrato jurídico/de fornecedor (não Convênios/Parcerias). -->
-                <label>Contrato de fornecedor</label>
                 <!-- COMP-09: o "+" cadastra o contrato aqui mesmo. Antes era preciso sair da
-                     requisição para Cadastros › Contratos de fornecedor e perder o preenchimento. -->
-                <div class="field-with-add">
-                  <div class="select-wrap">
-                    <select class="form-control" formControlName="contractId">
-                      <option value="">Selecione</option>
-                      @for (c of contracts(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-                    </select>
-                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </div>
+                     requisição para Cadastros › Contratos de fornecedor e perder o preenchimento.
+                     COMP-07: ele fica na linha do RÓTULO, não ao lado do campo. Ao lado do campo
+                     ele consumia 50px e deixava este seletor mais curto que os outros dois da
+                     linha — o alinhamento se perdia na borda direita. Medido: 367px contra 417px. -->
+                <label class="label-with-add">
+                  Contrato de fornecedor
                   <button type="button" class="btn-add" title="Cadastrar contrato de fornecedor" aria-label="Cadastrar contrato de fornecedor" (click)="openContractModal()">
-                    <svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    Novo
                   </button>
+                </label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="contractId">
+                    <option value="">Selecione</option>
+                    @for (c of contracts(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
             </div>
