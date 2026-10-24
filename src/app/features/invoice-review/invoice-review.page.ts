@@ -1,7 +1,7 @@
 // src/app/features/invoice-review/invoice-review.page.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InvoiceReviewService, InvoiceCard, OrderOption, OrderDetail } from './invoice-review.service';
+import { InvoiceReviewService, InvoiceCard, OrderOption, OrderDetail, ReviewDetail } from './invoice-review.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
@@ -90,9 +90,46 @@ export class InvoiceReviewPage implements OnInit {
     });
   }
 
+  // ── COM-Faturar / I020: conferir o cartão antes de decidir ─────────────────
+  // O cartão trazia só título, fornecedor e valor, com Validar e Devolver ao lado:
+  // decidia-se sem poder abrir o pedido, os itens nem os anexos. O diálogo abaixo
+  // abre a NOTA e o PEDIDO que a originou, e as duas ações ficam disponíveis ali,
+  // depois da conferência.
+  readonly conferirOpen    = signal(false);
+  readonly conferir        = signal<ReviewDetail | null>(null);
+  readonly conferirLoading = signal(false);
+  readonly conferirError   = signal<string | null>(null);
+
+  abrirConferencia(card: InvoiceCard): void {
+    this.conferirOpen.set(true);
+    this.conferir.set(null);
+    this.conferirError.set(null);
+    this.conferirLoading.set(true);
+    this.svc.reviewDetail(card.id).subscribe({
+      next: d => { this.conferir.set(d); this.conferirLoading.set(false); },
+      error: e => {
+        this.conferirLoading.set(false);
+        this.conferirError.set(e?.error?.message ?? 'Não foi possível abrir a nota para conferência.');
+      },
+    });
+  }
+  fecharConferencia(): void { this.conferirOpen.set(false); this.conferir.set(null); }
+
+  /** Soma dos itens do pedido aberto na conferência, para confrontar com o total. */
+  somaItensConferencia(): number {
+    return (this.conferir()?.pedido?.items ?? []).reduce((s, i) => s + (i.totalValue ?? 0), 0);
+  }
+
+  /** A nota em análise ainda pode ser validada/devolvida; as já decididas, não. */
+  podeDecidir(): boolean { return this.conferir()?.nota.status === 'UnderReview'; }
+
   validate(id: number): void {
     this.svc.validate(id).subscribe({
-      next: () => { this.notify.success('Nota validada — foi para o contas a pagar.'); this.load(); },
+      next: () => {
+        this.notify.success('Nota validada — foi para o contas a pagar.');
+        this.fecharConferencia();
+        this.load();
+      },
       error: (e) => this.notify.error(e?.error?.message ?? 'Erro ao validar.'),
     });
   }
@@ -100,8 +137,18 @@ export class InvoiceReviewPage implements OnInit {
     const reason = window.prompt('Motivo da devolução ao compras:');
     if (!reason) return;
     this.svc.returnToPurchasing(id, reason).subscribe({
-      next: () => { this.notify.info('Nota devolvida ao compras.'); this.load(); },
+      next: () => {
+        this.notify.info('Nota devolvida ao compras.');
+        this.fecharConferencia();
+        this.load();
+      },
       error: (e) => this.notify.error(e?.error?.message ?? 'Erro ao devolver.'),
     });
+  }
+
+  dataBR(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
   }
 }

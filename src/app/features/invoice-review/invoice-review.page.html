@@ -17,7 +17,10 @@
             <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
             <div class="kcard-sub">{{ c.supplier || '—' }}</div>
             <div class="kcard-value">{{ brl(c.amount) }}</div>
+            <!-- I020: antes só havia Validar e Devolver — decidia-se sem poder abrir
+                 o pedido, os itens e os anexos. "Conferir" abre a nota e o pedido. -->
             <div class="kcard-actions">
+              <button class="btn-mini" (click)="abrirConferencia(c)">Conferir</button>
               <button class="btn-mini btn-mini--ok" (click)="validate(c.id)">Validar</button>
               <button class="btn-mini btn-mini--danger" (click)="returnCard(c.id)">Devolver</button>
             </div>
@@ -35,6 +38,8 @@
             <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
             <div class="kcard-sub">{{ c.supplier || '—' }}</div>
             <div class="kcard-value">{{ brl(c.amount) }}</div>
+            <!-- I020: conferir NOVAMENTE uma nota já decidida também precisa existir. -->
+            <div class="kcard-actions"><button class="btn-mini" (click)="abrirConferencia(c)">Conferir</button></div>
           </div>
         }
         @if (validated().length === 0) { <div class="empty">Nenhuma validada.</div> }
@@ -49,6 +54,7 @@
             <div class="kcard-title">{{ c.description || ('Nota #' + c.id) }}</div>
             <div class="kcard-sub">{{ c.supplier || '—' }}</div>
             <div class="kcard-value">{{ brl(c.amount) }}</div>
+            <div class="kcard-actions"><button class="btn-mini" (click)="abrirConferencia(c)">Conferir</button></div>
           </div>
         }
         @if (returned().length === 0) { <div class="empty">Nenhuma devolvida.</div> }
@@ -138,6 +144,108 @@
         <div class="modal-foot">
           <button class="btn-outline" (click)="closeInvoice()">Cancelar</button>
           <button class="btn-primary" [disabled]="!selectedOrder || loadingDetail()" (click)="invoice()">Faturar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══ I020 / COM-Faturar: conferir a nota e o pedido antes de decidir ══════
+       O cartão da fila não abria nada: Validar e Devolver ficavam ao lado do
+       título, sem que o financeiro pudesse ver o pedido, os itens e os anexos. -->
+  @if (conferirOpen()) {
+    <div class="modal-backdrop" (click)="fecharConferencia()">
+      <div class="modal modal--wide" (click)="$event.stopPropagation()">
+        <div class="modal-head"><h3 class="modal-title">Conferência da nota</h3></div>
+        <div class="modal-body modal-body--scroll">
+          @if (conferirLoading()) { <p class="hint">Abrindo a nota e o pedido…</p> }
+          @if (conferirError()) { <p class="hint hint--error">{{ conferirError() }}</p> }
+
+          @if (conferir(); as d) {
+            <div class="order-detail">
+              <div class="order-detail__head">
+                <div>
+                  <strong>Nota #{{ d.nota.id }}</strong>
+                  @if (d.nota.document) { <span class="muted"> · Dcto {{ d.nota.document }}</span> }
+                </div>
+                <div class="muted">{{ d.nota.supplier || 'Fornecedor não informado' }}</div>
+                <div class="muted">
+                  Emissão {{ dataBR(d.nota.issueDate) }} · Vencimento {{ dataBR(d.nota.dueDate) }}
+                  · Bruto {{ brl(d.nota.grossAmount) }} · Líquido {{ brl(d.nota.netAmount) }}
+                </div>
+                @if (d.nota.description) { <div class="muted">{{ d.nota.description }}</div> }
+                @if (d.nota.observation) { <div class="muted">Obs.: {{ d.nota.observation }}</div> }
+              </div>
+
+              <div class="order-detail__files">
+                <strong>Anexos da nota</strong>
+                @if (d.nota.files.length) {
+                  <ul>
+                    @for (f of d.nota.files; track f.id) {
+                      <li><a [href]="f.fileUrl" target="_blank" rel="noopener">{{ nomeDoArquivo(f) }}</a></li>
+                    }
+                  </ul>
+                } @else { <p class="muted">Esta nota não tem anexo próprio.</p> }
+              </div>
+            </div>
+
+            <!-- o pedido que originou a nota -->
+            @if (d.pedido; as p) {
+              <div class="order-detail">
+                <div class="order-detail__head">
+                  <div><strong>Pedido #{{ p.id }}</strong> <span class="muted">· {{ p.supplier }}</span></div>
+                  @if (p.requestTitle) { <div class="muted">Requisição #{{ p.requestId }} — {{ p.requestTitle }}</div> }
+                </div>
+
+                <table class="order-items">
+                  <thead>
+                    <tr><th>Item</th><th>Un.</th><th class="right">Qtd.</th><th class="right">Valor unit.</th><th class="right">Total</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (i of p.items; track $index) {
+                      <tr>
+                        <td>{{ i.name }}</td>
+                        <td>{{ i.unit || '—' }}</td>
+                        <td class="right">{{ i.quantity }}</td>
+                        <td class="right">{{ brl(i.unitValue) }}</td>
+                        <td class="right">{{ brl(i.totalValue) }}</td>
+                      </tr>
+                    }
+                    @if (p.items.length === 0) {
+                      <tr><td colspan="5" class="muted">Este pedido não tem itens cadastrados.</td></tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr><td colspan="4">Soma dos itens</td><td class="right">{{ brl(somaItensConferencia()) }}</td></tr>
+                    @if (p.freight)  { <tr><td colspan="4">Frete</td><td class="right">{{ brl(p.freight) }}</td></tr> }
+                    @if (p.discount) { <tr><td colspan="4">Desconto</td><td class="right">− {{ brl(p.discount) }}</td></tr> }
+                    <tr class="order-items__total"><td colspan="4">Total do pedido</td><td class="right">{{ brl(p.total) }}</td></tr>
+                  </tfoot>
+                </table>
+
+                <div class="order-detail__files">
+                  <strong>Anexos da requisição (NF/CNDs)</strong>
+                  @if (p.files.length) {
+                    <ul>
+                      @for (f of p.files; track f.id) {
+                        <li><a [href]="f.fileUrl" target="_blank" rel="noopener">{{ nomeDoArquivo(f) }}</a></li>
+                      }
+                    </ul>
+                  } @else { <p class="muted">Nenhum anexo na requisição deste pedido.</p> }
+                </div>
+              </div>
+            } @else {
+              <p class="hint">Esta nota não tem pedido de compra vinculado — foi lançada direto no financeiro.</p>
+            }
+          }
+        </div>
+        <div class="modal-foot">
+          <button class="btn-outline" (click)="fecharConferencia()">Fechar</button>
+          @if (conferir(); as d) {
+            @if (podeDecidir()) {
+              <button class="btn-outline btn-outline--danger" (click)="returnCard(d.nota.id)">Devolver</button>
+              <button class="btn-primary" (click)="validate(d.nota.id)">Validar</button>
+            }
+          }
         </div>
       </div>
     </div>

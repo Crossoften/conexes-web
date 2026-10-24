@@ -79,9 +79,38 @@ export class QuotationNewPage {
   readonly selectedSuppliers = computed(() =>
     this.selectedSupplierIds().map(id => this.suppliers().find(s => s.id === id) ?? { id, name: `#${id}` }),
   );
+  // ── COM-8 / I008: busca e seleção múltipla ────────────────────────────────
+  // Os três campos eram selects simples, sem pesquisa, e contrato/local aceitavam
+  // um só vínculo. Agora os três filtram por texto e guardam vários; no servidor,
+  // o PRIMEIRO de cada lista continua sendo o principal (contractId /
+  // deliveryLocationId), que é de onde os documentos já leem.
+  readonly buscaFornecedor = signal('');
+  readonly buscaContrato   = signal('');
+  readonly buscaLocal      = signal('');
+
+  readonly selectedContractIds = signal<number[]>([]);
+  readonly selectedLocationIds = signal<number[]>([]);
+
+  /** Esconde o que já foi escolhido e aplica o termo de busca. */
+  private filtrarOpcoes(lista: PurchaseRef[], termo: string, escolhidos: number[]): PurchaseRef[] {
+    const t = (termo ?? '').trim().toLowerCase();
+    return lista.filter(o =>
+      o.id != null && !escolhidos.includes(o.id) &&
+      (!t || (o.name ?? '').toLowerCase().includes(t)));
+  }
+  private comoEscolhidos(ids: number[], lista: PurchaseRef[]): PurchaseRef[] {
+    return ids.map(id => lista.find(o => o.id === id) ?? { id, name: `#${id}` });
+  }
+
   readonly availableSuppliers = computed(() =>
-    this.suppliers().filter(s => s.id != null && !this.selectedSupplierIds().includes(s.id)),
-  );
+    this.filtrarOpcoes(this.suppliers(), this.buscaFornecedor(), this.selectedSupplierIds()));
+  readonly availableContracts = computed(() =>
+    this.filtrarOpcoes(this.contracts(), this.buscaContrato(), this.selectedContractIds()));
+  readonly availableLocations = computed(() =>
+    this.filtrarOpcoes(this.deliveryLocations(), this.buscaLocal(), this.selectedLocationIds()));
+
+  readonly selectedContracts = computed(() => this.comoEscolhidos(this.selectedContractIds(), this.contracts()));
+  readonly selectedLocations = computed(() => this.comoEscolhidos(this.selectedLocationIds(), this.deliveryLocations()));
 
   addSupplier(event: Event): void {
     const el = event.target as HTMLSelectElement;
@@ -95,6 +124,46 @@ export class QuotationNewPage {
   }
   removeSupplier(id: number): void {
     this.selectedSupplierIds.update(l => l.filter(x => x !== id));
+  }
+
+  addContract(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const id = Number(el.value);
+    if (id && !this.selectedContractIds().includes(id)) {
+      this.selectedContractIds.update(l => [...l, id]);
+      this.sincronizarPrincipais();
+    }
+    el.value = '';
+  }
+  removeContract(id: number): void {
+    this.selectedContractIds.update(l => l.filter(x => x !== id));
+    this.sincronizarPrincipais();
+  }
+
+  addLocation(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const id = Number(el.value);
+    if (id && !this.selectedLocationIds().includes(id)) {
+      this.selectedLocationIds.update(l => [...l, id]);
+      this.sincronizarPrincipais();
+    }
+    el.value = '';
+  }
+  removeLocation(id: number): void {
+    this.selectedLocationIds.update(l => l.filter(x => x !== id));
+    this.sincronizarPrincipais();
+  }
+
+  /**
+   * Mantém os controles antigos (contractId/deliveryLocationId) apontando para o
+   * primeiro da lista. Eles seguem sendo o vínculo PRINCIPAL no servidor e tudo o
+   * que já lia esses campos continua lendo a mesma coisa.
+   */
+  private sincronizarPrincipais(): void {
+    const c = this.selectedContractIds()[0];
+    const l = this.selectedLocationIds()[0];
+    this.form.get('contractId')?.setValue(c != null ? String(c) : '');
+    this.form.get('deliveryLocationId')?.setValue(l != null ? String(l) : '');
   }
 
   // ── COMP-09: cadastrar o contrato de fornecedor sem sair da requisição ────────
@@ -144,7 +213,11 @@ export class QuotationNewPage {
               id: c.id,
               name: [c.number, c.title].filter(Boolean).join(' — ') + (c.stakeholder?.name ? ` (${c.stakeholder.name})` : ''),
             })));
-            if (criado?.id != null) this.form.get('contractId')?.setValue(String(criado.id));
+            // COM-8/I008: entra na seleção múltipla (e vira o principal se for o primeiro).
+            if (criado?.id != null && !this.selectedContractIds().includes(criado.id)) {
+              this.selectedContractIds.update(l => [...l, criado.id!]);
+              this.sincronizarPrincipais();
+            }
           },
           error: () => {},
         });
@@ -303,6 +376,15 @@ export class QuotationNewPage {
       contractId:            r.contractId != null ? String(r.contractId) : '',
       deliveryLocationId:    r.deliveryLocationId != null ? String(r.deliveryLocationId) : '',
     });
+
+    // COM-8/I008: recarrega a seleção múltipla. Quando a requisição é antiga e só
+    // tem o vínculo único, ele vira uma lista de um — as duas leituras batem.
+    const contratosSalvos = (r as any).contractLinks?.map((l: any) => l.contractId)
+      ?? (r.contractId != null ? [r.contractId] : []);
+    const locaisSalvos = (r as any).deliveryLocationLinks?.map((l: any) => l.deliveryLocationId)
+      ?? (r.deliveryLocationId != null ? [r.deliveryLocationId] : []);
+    this.selectedContractIds.set([...new Set<number>(contratosSalvos)]);
+    this.selectedLocationIds.set([...new Set<number>(locaisSalvos)]);
 
     // item 1: exibe o nº de referência já gerado ao editar.
     this.refNumber.set(r.referenceNumber ?? null);
@@ -639,7 +721,18 @@ export class QuotationNewPage {
     const name = (prompt('Nome do novo local de entrega:') || '').trim();
     if (!name) return;
     this.svc.createLocationQuick(name).subscribe({
-      next: l => this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v) }),
+      next: l => this.svc.getDeliveryLocationsLookup().subscribe({
+        next: v => {
+          this.deliveryLocations.set(v);
+          // COM-8/I008: quem acabou de cadastrar o local queria usá-lo — já entra
+          // na seleção, em vez de ter de procurá-lo na lista depois.
+          const novo = (l as any)?.id;
+          if (novo != null && !this.selectedLocationIds().includes(novo)) {
+            this.selectedLocationIds.update(ids => [...ids, novo]);
+            this.sincronizarPrincipais();
+          }
+        },
+      }),
       error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o local.'),
     });
   }
@@ -683,6 +776,9 @@ export class QuotationNewPage {
       // item 5: "Contrato" referencia o contrato de fornecedor → contractId.
       contractId:            this.num(v.contractId),
       deliveryLocationId:    this.num(v.deliveryLocationId),
+      // COM-8/I008: a lista completa; o servidor usa o primeiro como principal.
+      contractIds:           this.selectedContractIds(),
+      deliveryLocationIds:   this.selectedLocationIds(),
       // CP-15: fornecedores sugeridos vinculados à requisição.
       supplierIds:           this.selectedSupplierIds(),
       items,

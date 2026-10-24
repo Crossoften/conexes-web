@@ -316,6 +316,18 @@
 }
 .suppliers-empty { margin-top: 10px; color: var(--text-muted, #9CA3AF); font-size: 13px; }
 
+// ── COM-8 / I008: busca e seleção múltipla nos vínculos ──────────────────────
+// Fornecedores, contratos e locais eram selects simples, sem pesquisa, e contrato
+// e local aceitavam um só. O campo de busca fica acima do seletor e filtra as
+// opções; o primeiro escolhido é marcado como principal, porque é ele que vai
+// para os documentos.
+.busca-vinculo { margin-bottom: 6px; font-size: 13px; }
+.chip-principal {
+  margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  background: var(--brand-purple-light, #F3F0FF); color: var(--brand-purple, #7C3AED);
+  font-size: 10.5px; font-style: normal; font-weight: 700; text-transform: uppercase;
+}
+
 // ── COMP-09: o "+" na linha do rótulo do contrato ─────────────────────────────
 // Na linha do rótulo, e não ao lado do campo: ao lado do campo o botão consumia
 // 50px e este seletor ficava mais curto que os outros dois da linha (367px contra
