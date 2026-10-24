@@ -79,6 +79,12 @@ export interface PurchaseRef {
   // CP-20: cascata de alocação (Centro de custo → Projeto → Atividade).
   costCenterId?: number | null;
   parentProjectId?: number | null;
+  /**
+   * CP-01: 'Analitica' | 'Sintetica'. Conta sintética é totalizadora e o back
+   * recusa lançamento nela com 400 — formulário que grava rateio precisa
+   * filtrar por isto antes de oferecer a opção.
+   */
+  classification?: string | null;
 }
 
 // ── Item da requisição ────────────────────────────────────────────────────────

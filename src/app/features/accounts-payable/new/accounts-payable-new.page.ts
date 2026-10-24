@@ -169,8 +169,10 @@ export class AccountsPayableNewPage implements OnInit {
   ngOnInit(): void {
     this.lookups.getSuppliersLookup().subscribe({ next: v => this.suppliers.set(v as Ref[]), error: () => {} });
     this.lookups.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v as Ref[]), error: () => {} });
-    this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v as Ref[]), error: () => {} });
-    this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v as Ref[]), error: () => {} });
+    // CP-01 (achado): só conta ANALÍTICA aceita lançamento. Oferecer sintética
+    // levava o usuário a preencher o formulário inteiro e levar 400 no Salvar.
+    this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as Ref[]), error: () => {} });
+    this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(this.lookups.apenasAnaliticas(v) as Ref[]), error: () => {} });
 
     // CP-14: só os SERVIÇOS do cadastro central (produtos ficam de fora).
     this.lookups.getProductsServicesLookup().subscribe({

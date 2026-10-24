@@ -60,12 +60,15 @@ export class AccountsPayableListPage implements OnInit {
     });
     // Prefixo da entidade no valor: o back precisa saber se o id é de centro de
     // custo ou de projeto — id 12 de um não é id 12 do outro.
+    // Só as analíticas: nenhum título pode ser rateado a uma conta sintética,
+    // então oferecê-la seria mais uma opção que nunca devolve nada — que é
+    // justamente o defeito que o CP-01 relata.
     this.lookups.getCostCentersLookup().subscribe({
-      next: v => this.optCostCenter.set((v as any[]).map(r => ({ value: `cc:${r.id}`, label: r.name }))),
+      next: v => this.optCostCenter.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `cc:${r.id}`, label: r.name }))),
       error: () => this.optCostCenter.set([]),
     });
     this.lookups.getProjectsLookup().subscribe({
-      next: v => this.optProject.set((v as any[]).map(r => ({ value: `pj:${r.id}`, label: r.name }))),
+      next: v => this.optProject.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `pj:${r.id}`, label: r.name }))),
       error: () => this.optProject.set([]),
     });
     this.lookups.getActivitiesLookup().subscribe({

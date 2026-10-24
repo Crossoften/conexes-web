@@ -102,13 +102,14 @@ export class FinancialTransferNewPage implements OnInit {
       next: list => this.accounts.set(list),
       error: ()   => this.accounts.set([]),
     });
-    // TR-RATEIO: classificações disponíveis.
+    // TR-RATEIO: classificações disponíveis. CP-01 (achado): só as analíticas —
+    // conta sintética é totalizadora e o back recusa lançamento nela.
     this.lookups.getCostCentersLookup().subscribe({
-      next: v => this.costCenters.set(v as { id: number; name: string }[]),
+      next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.costCenters.set([]),
     });
     this.lookups.getProjectsLookup().subscribe({
-      next: v => this.projects.set(v as { id: number; name: string }[]),
+      next: v => this.projects.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.projects.set([]),
     });
     this.lookups.getAccountPlansLookup().subscribe({

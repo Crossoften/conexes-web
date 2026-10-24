@@ -166,7 +166,15 @@ export class PurchasesService {
         return rows
           .filter(r => r['_entityType'] === 'project')
           // CP-20: carrega costCenterId para a cascata Centro de custo → Projeto.
-          .map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']), costCenterId: r['costCenterId'] != null ? Number(r['costCenterId']) : null }));
+          // CP-01: `classification` distingue Analitica de Sintetica — conta
+          // sintetica e totalizadora e o back recusa lancamento nela com 400.
+          // Quem escreve rateio precisa filtrar; quem so exibe, nao.
+          .map(r => ({
+            id: Number(r['id']),
+            name: String(r['name'] ?? r['title'] ?? r['id']),
+            costCenterId: r['costCenterId'] != null ? Number(r['costCenterId']) : null,
+            classification: (r['classification'] as string | null) ?? null,
+          }));
       }));
   }
 
@@ -183,6 +191,16 @@ export class PurchasesService {
       }));
   }
 
+  /**
+   * CP-01 (achado): conta sintética é totalizadora — o back recusa lançamento
+   * nela com 400 ("Selecione uma conta Analítica"). Telas que GRAVAM rateio
+   * filtram por aqui; telas que só exibem ou classificam requisição seguem
+   * vendo a árvore inteira, porque lá a sintética é escolha legítima.
+   */
+  apenasAnaliticas(refs: PurchaseRef[]): PurchaseRef[] {
+    return (refs ?? []).filter(r => r.classification !== 'Sintetica');
+  }
+
   /** FE-13: Centro de Custo (campo distinto de Projeto na requisição). */
   getCostCentersLookup(): Observable<PurchaseRef[]> {
     const params = new HttpParams().set('take', '500').set('type', 'centro_de_custo');
@@ -190,7 +208,13 @@ export class PurchasesService {
       .get<RawListEnvelope<Record<string, unknown>> | Record<string, unknown>[]>(`${environment.apiUrl}/v1/projects`, { params })
       .pipe(map(res => {
         const rows = Array.isArray(res) ? res : res.data ?? [];
-        return rows.map(r => ({ id: Number(r['id']), name: String(r['name'] ?? r['title'] ?? r['id']) }));
+        // CP-01: ver nota em getProjectsLookup — `classification` é o que permite
+        // ao formulário de rateio não oferecer conta sintética.
+        return rows.map(r => ({
+          id: Number(r['id']),
+          name: String(r['name'] ?? r['title'] ?? r['id']),
+          classification: (r['classification'] as string | null) ?? null,
+        }));
       }));
   }
 

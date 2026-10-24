@@ -94,12 +94,14 @@ export class FinancialEntryNewPage implements OnInit {
       next: v => this.accountPlans.set(v as { id: number; name: string }[]),
       error: () => this.accountPlans.set([]),
     });
+    // LB-05: CP-01 (achado) — só as analíticas; sintética é totalizadora e o
+    // back recusa lançamento nela com 400.
     this.lookups.getCostCentersLookup().subscribe({
-      next: v => this.costCenters.set(v as { id: number; name: string }[]),
+      next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.costCenters.set([]),
     });
     this.lookups.getProjectsLookup().subscribe({
-      next: v => this.projects.set(v as { id: number; name: string }[]),
+      next: v => this.projects.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.projects.set([]),
     });
 
