@@ -69,6 +69,10 @@ export class AccountsPayableNewPage implements OnInit {
   readonly projects     = signal<Ref[]>([]);
   // CP-14: serviços do cadastro central (separados do tipo de despesa).
   readonly services     = signal<Ref[]>([]);
+  // CP-18: subprojetos para a coluna Subprojeto do rateio. Neste sistema o
+  // subprojeto é o nível abaixo de projeto — o mesmo que a Busca Detalhada já
+  // oferece no filtro "Subprojeto".
+  readonly subProjects  = signal<Ref[]>([]);
   // CP-16: pedidos de compra, para vincular o código ao título.
   readonly orders       = signal<{ id: number; code: string; label: string }[]>([]);
   // CP-17: contratos, com valor, saldo e vigência.
@@ -238,6 +242,8 @@ export class AccountsPayableNewPage implements OnInit {
     // levava o usuário a preencher o formulário inteiro e levar 400 no Salvar.
     this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as Ref[]), error: () => {} });
     this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(this.lookups.apenasAnaliticas(v) as Ref[]), error: () => {} });
+    // CP-18: subprojetos (nível abaixo de projeto) para a coluna Subprojeto do rateio.
+    this.lookups.getActivitiesLookup().subscribe({ next: v => this.subProjects.set(v as Ref[]), error: () => this.subProjects.set([]) });
 
     // CP-14: só os SERVIÇOS do cadastro central (produtos ficam de fora).
     this.lookups.getProductsServicesLookup().subscribe({
@@ -316,8 +322,10 @@ export class AccountsPayableNewPage implements OnInit {
           this.rateios.push(this.fb.group({
             costCenterId:  [linha.costCenterId  ? String(linha.costCenterId)  : ''],
             projectId:     [linha.projectId     ? String(linha.projectId)     : ''],
+            subProjectId:  [linha.subProjectId  ? String(linha.subProjectId)  : ''],
             accountPlanId: [linha.accountPlanId ? String(linha.accountPlanId) : ''],
             percentage:    [linha.percentage ?? ''],
+            amount:        [linha.amount != null ? this.brlDaLinha(linha.amount) : ''],
           }));
         }
 
@@ -417,8 +425,12 @@ export class AccountsPayableNewPage implements OnInit {
     this.rateios.push(this.fb.group({
       costCenterId:  [primeira ? (this.form.get('projetoCentroCusto')?.value ?? '') : ''],
       projectId:     [''],
+      // CP-18: subprojeto por linha
+      subProjectId:  [''],
       accountPlanId: [primeira ? (this.form.get('categoria')?.value ?? '') : ''],
       percentage:    [''],
+      // CP-18: o valor passa a ser EDITÁVEL — preencher um calcula o outro
+      amount:        [''],
     }));
   }
 
@@ -430,10 +442,43 @@ export class AccountsPayableNewPage implements OnInit {
 
   /** Valor em reais que cada linha representa sobre o líquido do título. */
   valorDaLinha(i: number): number {
-    const bruto = this.form.get('valorLiquido')?.value || this.form.get('valorBruto')?.value || '';
-    const total = Number(String(bruto).replace(/\./g, '').replace(',', '.')) || 0;
+    const total = this.totalParaRateio();
     const pct = Number(this.rateios.at(i).get('percentage')?.value) || 0;
     return Math.round(total * pct) / 100;
+  }
+
+  /**
+   * CP-18: "O percentual e o valor do rateio são proporcionais: ao preencher um,
+   * o outro é calculado."
+   *
+   * Em centavos nas duas direções: `12000 * 33.33 / 100` em ponto flutuante
+   * devolve 3999,5999999999995, e o valor apareceria errado no centavo.
+   */
+  private totalParaRateio(): number {
+    const v = this.form.get('valorLiquido')?.value ?? this.form.get('valorBruto')?.value ?? 0;
+    return parseDecimalBR(v);
+  }
+
+  private brlDaLinha(n: number): string {
+    return (Number(n) || 0).toFixed(2).replace('.', ',');
+  }
+
+  /** Digitou o percentual → calcula o valor. */
+  aoMudarPercentual(i: number): void {
+    const linha = this.rateios.at(i);
+    const totalCent = Math.round(this.totalParaRateio() * 100);
+    const pct = Number(linha.get('percentage')?.value) || 0;
+    const valorCent = Math.round((totalCent * pct) / 100);
+    linha.get('amount')?.setValue(this.brlDaLinha(valorCent / 100), { emitEvent: false });
+  }
+
+  /** Digitou o valor → calcula o percentual. Era o caminho que faltava. */
+  aoMudarValor(i: number): void {
+    const linha = this.rateios.at(i);
+    const totalCent = Math.round(this.totalParaRateio() * 100);
+    const valorCent = Math.round(parseDecimalBR(linha.get('amount')?.value) * 100);
+    const pct = totalCent > 0 ? Number(((valorCent / totalCent) * 100).toFixed(2)) : 0;
+    linha.get('percentage')?.setValue(pct, { emitEvent: false });
   }
 
   setMainTab(tab: MainTab) { this.activeMainTab = tab; }
@@ -489,7 +534,11 @@ export class AccountsPayableNewPage implements OnInit {
         accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
         costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
         projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
+        // CP-18: subprojeto por linha e o valor digitado (o back fecha a conta
+        // recíproca quando só um dos dois vier).
+        subProjectId:  c.get('subProjectId')?.value  ? Number(c.get('subProjectId')!.value)  : undefined,
         percentage:    Number(c.get('percentage')?.value) || 0,
+        amount:        parseDecimalBR(c.get('amount')?.value) || undefined,
       }));
     } else if (v.categoria || v.projetoCentroCusto) {
       payload.rateios = [{
