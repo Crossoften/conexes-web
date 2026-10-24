@@ -361,6 +361,11 @@ export class QuotationNewPage {
             quantity: it.quantity != null ? String(it.quantity) : '',
             unit: it.unit ?? '',
             group: it.group ?? '',
+            // COMP-04 / I004: as três colunas do modelo (o parser já as devolvia; o
+            // formulário é que as descartava e salvava vazias).
+            manufacturer: it.manufacturer ?? '',
+            referenceLink: it.referenceLink ?? '',
+            description: it.description ?? '',
             estimatedUnitValue: it.estimatedUnitValue != null ? formatDecimalBR(it.estimatedUnitValue) : '',
           });
           this.items.push(g);

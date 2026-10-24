@@ -39,7 +39,7 @@
             <table class="map-table">
               <thead>
                 <tr>
-                  <th>Fornecedor</th><th>Unitário</th><th>Total</th><th>Frete</th><th>Desconto</th>
+                  <th>Fornecedor</th><th>Subtotal dos itens</th><th>Frete</th><th>Desconto</th>
                   <th>Total efetivo</th><th>Prazo</th><th>Pagamento</th>
                 </tr>
               </thead>
@@ -47,8 +47,7 @@
                 @for (q of map().quotations; track q.quotationId) {
                   <tr [class.best]="q.isBest">
                     <td>{{ q.supplierName }} @if (q.isBest) { <span class="tag-best">melhor</span> }</td>
-                    <td>{{ brl(q.unitValue) }}</td>
-                    <td>{{ brl(q.totalValue) }}</td>
+                    <td>{{ brl(q.subtotal) }}</td>
                     <td>{{ brl(q.freight) }}</td>
                     <td>{{ brl(q.discount) }}</td>
                     <td class="strong">{{ brl(q.effectiveTotal) }}</td>
