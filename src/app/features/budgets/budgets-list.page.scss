@@ -135,3 +135,37 @@
   color: var(--status-warning-text, #92400E);
   border: 1px solid #FDE68A;
 }
+
+/* F2/F3 — o modal do acompanhamento. Estas classes nao existiam nesta tela, e
+   sem elas o dialogo renderizava INLINE, abaixo da tabela, em vez de sobreposto.
+   Mesmo desenho das outras telas financeiras. */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+  animation: fadeIn 200ms ease-out forwards;
+}
+.modal-content {
+  background: #fff; border-radius: 12px; width: 900px; max-width: 95vw;
+  max-height: 92vh; overflow: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+  animation: slideUp 300ms ease-out forwards;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--surface-border-mid);
+  h2 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
+}
+.modal-close {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  transition: color var(--transition);
+  &:hover { color: var(--brand-danger, #DC2626); }
+}
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px;
+  border-top: 1px solid var(--surface-border-mid); background: #FAFAFE;
+  border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
