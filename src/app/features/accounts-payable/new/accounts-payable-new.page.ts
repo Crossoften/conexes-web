@@ -7,6 +7,7 @@ import { AccountsPayableService } from '../accounts-payable.service';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
+import { parseDecimalBR } from '../../../shared/utils/format';
 
 type MainTab = 'GERAIS' | 'RATEIO' | 'IMPOSTOS' | 'ANEXOS';
 type SubTab = 'COMPETENCIA' | 'CLASSIFICACAO';
@@ -143,9 +144,17 @@ export class AccountsPayableNewPage implements OnInit {
   private readonly brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   readonly retencoesTotalFmt = computed(() => this.brl.format(this.retencoesTotal()));
 
+  /**
+   * QA-01: um parser só, e que entenda o formato brasileiro de verdade.
+   *
+   * O anterior trocava a vírgula por ponto mas NÃO tirava o separador de
+   * milhar: "1.234,56" virava "1.234.56", que é NaN — e NaN caía no zero logo
+   * abaixo. Abrir um título de R$ 1.234,56 e salvar sem mexer em nada zerava o
+   * valor. `parseDecimalBR` já existe no app e trata as três formas
+   * ("1.234,56", "1234,56" e 1234.56).
+   */
   private numOf(x: any): number {
-    const n = Number(String(x ?? '').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
+    return parseDecimalBR(x);
   }
   private round2(n: number): number { return Math.round(n * 100) / 100; }
 
@@ -220,11 +229,28 @@ export class AccountsPayableNewPage implements OnInit {
           historicoDespesa: r.history ?? r.description ?? '',
           dataEmissao1:     iso(r.issueDate),
           dataEmissao2:     iso(r.dueDate),
-          dataCadastro:     iso(r.competencyDate),
-          valorBruto:       brl(r.grossAmount),
+          // QA-01: a data de CADASTRO é a do sistema (registrationDate). Antes
+          // carregava-se aqui a COMPETÊNCIA — a mesma troca de campos que o
+          // CP-13 corrigiu na criação e que tinha ficado de pé na edição: a
+          // competência aparecia no campo errado e o campo certo abria vazio.
+          dataCadastro:     iso(r.registrationDate),
+          competencia:      iso(r.competencyDate),
+          // QA-01: valor como NÚMERO. A máscara (appCurrencyMask) é um
+          // ControlValueAccessor que guarda número e formata sozinha; recebendo
+          // a string "1234,56" ela fazia Number(...) = NaN e limpava o campo.
+          valorBruto:       r.grossAmount ?? null,
           tipoDespesa:      r.expenseType ?? '',
           observacoes:      r.observation ?? '',
+          // QA-01: vínculos. Não eram carregados — o contrato abria como
+          // "Selecione" mesmo existindo, e bastava o usuário tocar no campo
+          // para o título perder o vínculo ao salvar.
+          servico:          r.serviceId ? String(r.serviceId) : '',
+          pedido:           (r.orderId ?? r.purchaseOrderId) ? String(r.orderId ?? r.purchaseOrderId) : '',
+          contrato:         r.contractId ? String(r.contractId) : '',
+          codCompras:       r.orderCode ?? '',
         });
+        // preenche valor/saldo/vigência do contrato carregado (CP-17)
+        if (r.contractId) this.onContratoChange();
 
         // CP-18: devolve as linhas de rateio gravadas.
         this.rateios.clear();
@@ -364,7 +390,10 @@ export class AccountsPayableNewPage implements OnInit {
 
   private buildPayload() {
     const v = this.form.getRawValue();
-    const num = (x: any) => { const n = Number(x); return Number.isFinite(n) ? n : 0; };
+    // QA-01: era `Number(x)` cru. Com o campo mascarado guardando "1.234,56" ou
+    // a edição injetando "1234,56", Number() devolvia NaN e o `: 0` zerava o
+    // título no salvamento. Mesmo parser do resto da tela.
+    const num = (x: any) => parseDecimalBR(x);
     const gross = num(v.valorBruto);
     // CP-22/23: retenções persistidas (eram descartadas). CP-12: líquido = bruto − retenções.
     const taxes = this.buildTaxes(gross);

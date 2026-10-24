@@ -90,7 +90,11 @@
             <p class="section-subtitle">Preencha e configure todas as informações necessárias.</p>
             <div class="form-grid mb-4">
               <div class="form-row grid-cols-3">
-                <div class="form-group"><label>Competência<span class="req">*</span></label><input type="text" class="form-control" placeholder="00/00/00" formControlName="competencia"></div>
+                <!-- QA-01: era type="text" com placeholder "00/00/00", e o que o
+                     usuário digitasse ia cru para competencyDate. Vira seletor de
+                     data, como as outras datas da tela: o valor sai e volta em ISO
+                     e a edição consegue recarregá-lo. -->
+                <div class="form-group"><label>Competência<span class="req">*</span></label><input type="date" class="form-control" formControlName="competencia"></div>
                 <!-- CP-16: o pedido vem de uma pesquisa; o código deixa de ser digitado. -->
                 <div class="form-group">
                   <label>Pedido de compra</label>
