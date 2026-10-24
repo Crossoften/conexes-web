@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { AccountsPayableStore } from './accounts-payable.store';
 import { AccountsPayableService } from './accounts-payable.service';
-import { PayableAccount, AdvancedFilters } from './accounts-payable.model';
+import { PayableAccount, AdvancedFilters, FilterOption } from './accounts-payable.model';
+import { PurchasesService } from '../purchases/purchases.service';
 import { Router, RouterLink } from "@angular/router";
 import { BaixaModalComponent, BaixaResult, BaixaParcela } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
@@ -21,11 +22,63 @@ import { NotificationService } from '../../shared/services/notification.service'
 export class AccountsPayableListPage implements OnInit {
   readonly store = inject(AccountsPayableStore);
   private svc    = inject(AccountsPayableService);
+  private lookups = inject(PurchasesService);
   private notify = inject(NotificationService);
   private router = inject(Router);
 
   /** CP-09: contas bancárias para o seletor do modal de baixa. */
   readonly contasBancarias = signal<{ id: number; label: string }[]>([]);
+
+  // ── CP-01: opções dos filtros da Busca Detalhada ──────────────────────────
+  // Antes os 5 selects só tinham "Selecione" e os outros 9 campos eram caixas de
+  // texto com placeholder "Selecione" — pareciam seletor e não eram.
+  readonly optStatus      = this.svc.statusOptions;
+  readonly optDateField   = this.svc.dateFieldOptions;
+  readonly optRemittance  = this.svc.remittanceStatusOptions;
+  readonly optPayment     = this.svc.paymentMethodOptions;
+  readonly optSupplier    = signal<FilterOption[]>([]);
+  readonly optContract    = signal<FilterOption[]>([]);
+  readonly optRequisition = signal<FilterOption[]>([]);
+  readonly optBankAccount = signal<FilterOption[]>([]);
+  readonly optAccountPlan = signal<FilterOption[]>([]);
+  /** "Projeto/Centro de Custos" é um campo só para duas entidades — vão agrupadas. */
+  readonly optCostCenter  = signal<FilterOption[]>([]);
+  readonly optProject     = signal<FilterOption[]>([]);
+  /** Subprojeto é o nível abaixo de Projeto: a atividade. */
+  readonly optSubProject  = signal<FilterOption[]>([]);
+
+  /** Carrega as listas dos filtros. Falha de uma não derruba as outras. */
+  private carregarOpcoesDeFiltro(): void {
+    const comoOpcao = (v: { id: number; name: string }[]): FilterOption[] =>
+      v.map(r => ({ value: String(r.id), label: r.name }));
+
+    this.lookups.getSuppliersLookup().subscribe({
+      next: v => this.optSupplier.set(comoOpcao(v as any)), error: () => this.optSupplier.set([]),
+    });
+    this.lookups.getAccountPlansLookup().subscribe({
+      next: v => this.optAccountPlan.set(comoOpcao(v as any)), error: () => this.optAccountPlan.set([]),
+    });
+    // Prefixo da entidade no valor: o back precisa saber se o id é de centro de
+    // custo ou de projeto — id 12 de um não é id 12 do outro.
+    this.lookups.getCostCentersLookup().subscribe({
+      next: v => this.optCostCenter.set((v as any[]).map(r => ({ value: `cc:${r.id}`, label: r.name }))),
+      error: () => this.optCostCenter.set([]),
+    });
+    this.lookups.getProjectsLookup().subscribe({
+      next: v => this.optProject.set((v as any[]).map(r => ({ value: `pj:${r.id}`, label: r.name }))),
+      error: () => this.optProject.set([]),
+    });
+    this.lookups.getActivitiesLookup().subscribe({
+      next: v => this.optSubProject.set(comoOpcao(v as any)), error: () => this.optSubProject.set([]),
+    });
+    this.svc.getContracts().subscribe({
+      next: v => this.optContract.set(v.map(c => ({ value: String(c.id), label: c.label }))),
+      error: () => this.optContract.set([]),
+    });
+    this.svc.getPurchaseRequests().subscribe({
+      next: v => this.optRequisition.set(v), error: () => this.optRequisition.set([]),
+    });
+  }
 
   // FIN-01: baixa (pagamento) total ou parcial.
   readonly payItem = signal<PayableAccount | null>(null);
@@ -91,11 +144,16 @@ export class AccountsPayableListPage implements OnInit {
 
   ngOnInit(): void {
     this.store.load();
-    // CP-09: contas para o seletor da baixa.
+    // CP-09: contas para o seletor da baixa. CP-01: as mesmas contas servem aos
+    // filtros "Conta Pagadora" e "Conta Bancária Baixa".
     this.svc.getBankAccounts().subscribe({
-      next: v => this.contasBancarias.set(v),
-      error: () => this.contasBancarias.set([]),
+      next: v => {
+        this.contasBancarias.set(v);
+        this.optBankAccount.set(v.map(c => ({ value: String(c.id), label: c.label })));
+      },
+      error: () => { this.contasBancarias.set([]); this.optBankAccount.set([]); },
     });
+    this.carregarOpcoesDeFiltro();
   }
 
   readonly viewOptions = [
@@ -107,10 +165,16 @@ export class AccountsPayableListPage implements OnInit {
 
   // Estado local para os inputs do modal antes de aplicar
   localFilters: AdvancedFilters = {
-    issue: '', status: '', dateRange: '', supplier: '', remittanceStatus: '', expenseType: '',
-    paymentType: '', contract: '', requisition: '', writeOffAccount: '', payingAccount: '',
-    categoryAccount: '', costCenter: '', subProject: ''
+    issue: 'dueDate', status: '', dateStart: '', dateEnd: '', supplier: '', remittanceStatus: '',
+    expenseType: '', paymentType: '', contract: '', requisition: '', writeOffAccount: '',
+    payingAccount: '', categoryAccount: '', costCenter: '', subProject: ''
   };
+
+  /** CP-01: o intervalo precisa fechar — de depois de até não filtra nada. */
+  get intervaloInvalido(): boolean {
+    const { dateStart, dateEnd } = this.localFilters;
+    return !!dateStart && !!dateEnd && dateStart > dateEnd;
+  }
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
 
@@ -146,6 +210,7 @@ export class AccountsPayableListPage implements OnInit {
   }
 
   applyFilters() {
+    if (this.intervaloInvalido) return;
     this.store.applyFilters({ ...this.localFilters });
   }
 

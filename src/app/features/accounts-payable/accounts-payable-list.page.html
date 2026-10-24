@@ -55,7 +55,16 @@
       <button class="btn-outline" (click)="openFilters()">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
         Filtros
+        <!-- CP-01: a tela não dizia que havia filtro aplicado — quem voltava nela
+             via uma lista curta sem saber por quê. -->
+        @if (store.activeFilterCount() > 0) {
+          <span class="filter-badge">{{ store.activeFilterCount() }}</span>
+        }
       </button>
+
+      @if (store.activeFilterCount() > 0) {
+        <button type="button" class="btn-outline btn-pill" (click)="clearFilters()">Limpar filtros</button>
+      }
 
       <div class="toolbar-actions-right">
         <button class="btn-outline" (click)="store.exportExcel()">
@@ -187,31 +196,121 @@
       </div>
 
       <div class="modal-body">
+        <!-- CP-01: os 14 campos eram selects sem opção nenhuma ou caixas de texto
+             com placeholder "Selecione". Agora carregam do cadastro e filtram. -->
         <div class="filter-grid">
-          <div class="form-group"><label>Emissão</label><select class="select" [(ngModel)]="localFilters.issue"><option value="">Selecione</option></select></div>
-          <div class="form-group"><label>Status</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.status"></div>
-          <div class="form-group"><label>De - Ate</label><input type="text" class="input" placeholder="00/00/0000" [(ngModel)]="localFilters.dateRange"></div>
-          
-          <div class="form-group col-span-full"><label>Fornecedor</label><select class="select" [(ngModel)]="localFilters.supplier"><option value="">Selecione o fornecedor</option></select></div>
-          
-          <div class="form-group"><label>Status das Remessas</label><select class="select" [(ngModel)]="localFilters.remittanceStatus"><option value="">Selecione</option></select></div>
-          <div class="form-group"><label>Tipo Despesa</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.expenseType"></div>
-          <div class="form-group"><label>Tipo de Pagamento</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.paymentType"></div>
-          <div class="form-group"><label>Contrato</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.contract"></div>
+          <div class="form-group">
+            <label>Data base</label>
+            <select class="select" [(ngModel)]="localFilters.issue">
+              @for (o of optDateField; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>De</label>
+            <input type="date" class="input" [(ngModel)]="localFilters.dateStart">
+          </div>
+          <div class="form-group">
+            <label>Até</label>
+            <input type="date" class="input" [(ngModel)]="localFilters.dateEnd">
+          </div>
+          @if (intervaloInvalido) {
+            <p class="filter-error col-span-full">A data inicial não pode ser depois da final.</p>
+          }
 
-          <div class="form-group"><label>Requisição</label><select class="select" [(ngModel)]="localFilters.requisition"><option value="">Selecione</option></select></div>
-          <div class="form-group"><label>Conta Bancária Baixa</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.writeOffAccount"></div>
-          <div class="form-group"><label>Conta Pagadora</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.payingAccount"></div>
-          <div class="form-group"><label>Categoria/Conta</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.categoryAccount"></div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="select" [(ngModel)]="localFilters.status">
+              <option value="">Todos</option>
+              @for (o of optStatus; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group col-span-2">
+            <label>Fornecedor</label>
+            <select class="select" [(ngModel)]="localFilters.supplier">
+              <option value="">Todos os fornecedores</option>
+              @for (o of optSupplier(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
 
-          <div class="form-group col-span-2"><label>Projeto/Centro de Custos</label><select class="select" [(ngModel)]="localFilters.costCenter"><option value="">Selecione</option></select></div>
-          <div class="form-group col-span-2"><label>Subprojeto</label><input type="text" class="input" placeholder="Selecione" [(ngModel)]="localFilters.subProject"></div>
+          <div class="form-group">
+            <label>Status das Remessas</label>
+            <select class="select" [(ngModel)]="localFilters.remittanceStatus">
+              <option value="">Todos</option>
+              @for (o of optRemittance; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <!-- Tipo de despesa é texto livre no cadastro do título (o seletor de
+               serviço é o CP-14); aqui a busca é por parte do texto. -->
+          <div class="form-group"><label>Tipo Despesa</label><input type="text" class="input" placeholder="Digite parte do tipo" [(ngModel)]="localFilters.expenseType"></div>
+          <div class="form-group">
+            <label>Tipo de Pagamento</label>
+            <select class="select" [(ngModel)]="localFilters.paymentType">
+              <option value="">Todos</option>
+              @for (o of optPayment; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Contrato</label>
+            <select class="select" [(ngModel)]="localFilters.contract">
+              <option value="">Todos</option>
+              @for (o of optContract(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Requisição</label>
+            <select class="select" [(ngModel)]="localFilters.requisition">
+              <option value="">Todas</option>
+              @for (o of optRequisition(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Conta Bancária Baixa</label>
+            <select class="select" [(ngModel)]="localFilters.writeOffAccount">
+              <option value="">Todas</option>
+              @for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Conta Pagadora</label>
+            <select class="select" [(ngModel)]="localFilters.payingAccount">
+              <option value="">Todas</option>
+              @for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+
+          <div class="form-group col-span-2">
+            <label>Categoria/Conta</label>
+            <select class="select" [(ngModel)]="localFilters.categoryAccount">
+              <option value="">Todas</option>
+              @for (o of optAccountPlan(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group col-span-2">
+            <label>Projeto/Centro de Custos</label>
+            <select class="select" [(ngModel)]="localFilters.costCenter">
+              <option value="">Todos</option>
+              <optgroup label="Centros de custo">
+                @for (o of optCostCenter(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+              </optgroup>
+              <optgroup label="Projetos">
+                @for (o of optProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group col-span-2">
+            <label>Subprojeto</label>
+            <select class="select" [(ngModel)]="localFilters.subProject">
+              <option value="">Todos</option>
+              @for (o of optSubProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="modal-footer">
         <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
-        <button class="btn-solid btn-solid--purple" (click)="applyFilters()">Filtrar</button>
+        <button class="btn-solid btn-solid--purple" [disabled]="intervaloInvalido" (click)="applyFilters()">Filtrar</button>
       </div>
     </div>
   </div>

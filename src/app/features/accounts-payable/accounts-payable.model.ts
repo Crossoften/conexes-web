@@ -30,9 +30,12 @@ export interface PayableAccount {
 }
 
 export interface AdvancedFilters {
+  /** CP-01: sobre qual data o intervalo De–Até incide (o antigo select "Emissão"). */
   issue: string;
   status: string;
-  dateRange: string;
+  /** CP-01: o campo único "De - Ate" virou um par de datas de verdade. */
+  dateStart: string;
+  dateEnd: string;
   supplier: string;
   remittanceStatus: string;
   expenseType: string;
@@ -45,3 +48,6 @@ export interface AdvancedFilters {
   costCenter: string;
   subProject: string;
 }
+
+/** Uma opção de select do filtro. */
+export interface FilterOption { value: string; label: string }

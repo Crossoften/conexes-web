@@ -20,9 +20,10 @@ interface State {
 }
 
 const INITIAL_FILTERS: AdvancedFilters = {
-  issue: '', status: '', dateRange: '', supplier: '', remittanceStatus: '', expenseType: '',
-  paymentType: '', contract: '', requisition: '', writeOffAccount: '', payingAccount: '',
-  categoryAccount: '', costCenter: '', subProject: ''
+  // CP-01: a data-base começa em Vencimento — é sobre ela que a tela já filtrava.
+  issue: 'dueDate', status: '', dateStart: '', dateEnd: '', supplier: '', remittanceStatus: '',
+  expenseType: '', paymentType: '', contract: '', requisition: '', writeOffAccount: '',
+  payingAccount: '', categoryAccount: '', costCenter: '', subProject: ''
 };
 
 @Injectable()
@@ -81,6 +82,16 @@ export class AccountsPayableStore {
   readonly pagination = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
+
+  /**
+   * CP-01: quantos filtros estão de fato valendo. `issue` sozinho não conta —
+   * é a data-base do intervalo, e sem intervalo ela não filtra nada.
+   */
+  readonly activeFilterCount = computed(() => {
+    const f = this.state().filters;
+    return (Object.keys(f) as (keyof AdvancedFilters)[])
+      .filter(k => k !== 'issue' && !!f[k]).length;
+  });
 
   // A filtragem e a paginação são feitas no BACK (query params). O front só ordena
   // visualmente a página já carregada.

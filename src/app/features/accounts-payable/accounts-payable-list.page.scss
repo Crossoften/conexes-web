@@ -133,3 +133,18 @@
 .modal-content--sm { width: 460px; }
 .modal-hint { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
 .filter-grid--2 { grid-template-columns: 1fr 1fr; }
+
+/* CP-01 — Busca Detalhada: selects carregados e intervalo de datas de verdade */
+.filter-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px;
+  border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 1;
+  background: var(--brand-purple, #7C3AED); color: #fff;
+}
+.filter-error {
+  margin: 0; font-size: 12px; font-weight: 600;
+  color: var(--status-danger-text, #991B1B);
+}
+/* Os selects do filtro listam cadastro inteiro (contas do plano, fornecedores):
+   sem isso um rótulo longo estoura a coluna da grade. */
+.filter-grid .select { max-width: 100%; }

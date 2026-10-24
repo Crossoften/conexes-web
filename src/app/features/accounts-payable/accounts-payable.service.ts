@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PayableAccount, SummaryCard, AdvancedFilters } from './accounts-payable.model';
+import { PayableAccount, SummaryCard, AdvancedFilters, FilterOption } from './accounts-payable.model';
 
 /** Envelope de listagem padrão do back ({ data, count, pages }). */
 interface ListEnvelope<T> {
@@ -79,7 +79,75 @@ export class AccountsPayableService {
     if (filters.contract)         params = params.set('contractId', filters.contract);
     if (filters.requisition)      params = params.set('purchaseRequestId', filters.requisition);
     if (filters.payingAccount)    params = params.set('bankAccountId', filters.payingAccount);
+    // CP-01: campos que existiam na tela e nunca chegavam ao back.
+    if (filters.writeOffAccount)  params = params.set('writeOffAccountId', filters.writeOffAccount);
+    if (filters.categoryAccount)  params = params.set('accountPlanId', filters.categoryAccount);
+    if (filters.subProject)       params = params.set('subProjectId', filters.subProject);
+    // CP-01: "Projeto/Centro de Custos" é um campo só na tela para duas entidades
+    // diferentes. O valor carrega o prefixo da entidade (`cc:` / `pj:`) para o
+    // back saber em qual coluna do rateio procurar.
+    if (filters.costCenter) {
+      const [tipo, id] = filters.costCenter.split(':');
+      if (id) params = params.set(tipo === 'pj' ? 'projectId' : 'costCenterId', id);
+    }
+    // CP-01: o intervalo De–Até, que era um texto livre solto, e a data sobre a
+    // qual ele incide (o antigo select "Emissão", que não filtrava nada).
+    if (filters.dateStart)        params = params.set('startDate', filters.dateStart);
+    if (filters.dateEnd)          params = params.set('endDate', filters.dateEnd);
+    if (filters.issue && (filters.dateStart || filters.dateEnd)) {
+      params = params.set('dateField', filters.issue);
+    }
     return params;
+  }
+
+  // ── Opções dos filtros (CP-01) ──────────────────────────────────────────
+  /** Rótulos de situação, na mesma tradução que a lista usa. */
+  readonly statusOptions: FilterOption[] =
+    Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }));
+
+  readonly dateFieldOptions: FilterOption[] = [
+    { value: 'dueDate',          label: 'Vencimento' },
+    { value: 'issueDate',        label: 'Emissão' },
+    { value: 'registrationDate', label: 'Cadastro' },
+    { value: 'competencyDate',   label: 'Competência' },
+  ];
+
+  readonly remittanceStatusOptions: FilterOption[] = [
+    { value: 'NotSent',   label: 'Não enviada' },
+    { value: 'Queued',    label: 'Na fila' },
+    { value: 'Sent',      label: 'Enviada' },
+    { value: 'Processed', label: 'Processada' },
+    { value: 'Rejected',  label: 'Rejeitada' },
+  ];
+
+  readonly paymentMethodOptions: FilterOption[] = [
+    { value: 'EletronicTransferSameOwner',  label: 'Transferência eletrônica — mesma titularidade' },
+    { value: 'EletronicTransferOtherOwner', label: 'Transferência eletrônica — outra titularidade' },
+    { value: 'TEDSameOwner',                label: 'TED — mesma titularidade' },
+    { value: 'TEDOtherOwner',               label: 'TED — outra titularidade' },
+    { value: 'DOCSameOwner',                label: 'DOC — mesma titularidade' },
+    { value: 'DOCOtherOwner',               label: 'DOC — outra titularidade' },
+    { value: 'BoletoSameBank',              label: 'Boleto — mesmo banco' },
+    { value: 'BoletoOtherBank',             label: 'Boleto — outro banco' },
+    { value: 'UtilityBill',                 label: 'Conta de consumo' },
+    { value: 'DARFWithBarcode',             label: 'DARF com código de barras' },
+    { value: 'GARE',                        label: 'GARE' },
+    { value: 'SP_ICMS',                     label: 'ICMS — SP' },
+    { value: 'GNRE_StateTaxes',             label: 'GNRE — tributos estaduais' },
+    { value: 'GPS',                         label: 'GPS' },
+  ];
+
+  /** CP-01: requisições de compra para o filtro "Requisição". */
+  getPurchaseRequests(): Observable<FilterOption[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/requests`, { params: new HttpParams().set('take', 500) }).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(r => ({
+          value: String(r.id),
+          label: [r.referenceNumber ?? r.number, r.title ?? r.description].filter(Boolean).join(' — ') || `Requisição #${r.id}`,
+        }));
+      }),
+    );
   }
 
   /**
