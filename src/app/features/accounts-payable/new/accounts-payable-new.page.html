@@ -48,12 +48,31 @@
               </div>
             </div>
 
+            <!-- CP-14: serviço do cadastro central, SEPARADO do tipo de despesa. -->
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Tipo de serviço</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="servico">
+                    <option value="">Selecione (opcional)</option>
+                    @for (s of services(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- CP-13: a data de cadastro precede a emissão, vem preenchida pelo
+                 sistema e não é editável. -->
             <div class="form-row grid-cols-5">
+              <div class="form-group">
+                <label>Data cadastro <span class="muted-label">(do sistema)</span></label>
+                <input type="date" class="form-control disabled-bg" formControlName="dataCadastro" readonly>
+              </div>
               <div class="form-group"><label>Data emissão<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao1"></div>
               <div class="form-group"><label>Vencimento<span class="req">*</span></label><input type="date" class="form-control" formControlName="dataEmissao2"></div>
               <div class="form-group"><label>Valor bruto da despesa<span class="req">*</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorBruto"></div>
               <div class="form-group"><label>Valor líquido da despesa <span class="muted-label">(calculado)</span></label><input type="text" appCurrencyMask class="form-control" placeholder="0,00" formControlName="valorLiquido" readonly></div>
-              <div class="form-group"><label>Data cadastro</label><input type="date" class="form-control" formControlName="dataCadastro"></div>
             </div>
           </div>
 
@@ -72,8 +91,29 @@
             <div class="form-grid mb-4">
               <div class="form-row grid-cols-3">
                 <div class="form-group"><label>Competência<span class="req">*</span></label><input type="text" class="form-control" placeholder="00/00/00" formControlName="competencia"></div>
-                <div class="form-group"><label>Cód. Compras</label><input type="text" class="form-control" placeholder="Opcional — código do pedido de compra" formControlName="codCompras"></div>
-                <div class="form-group"><label>Contrato</label><div class="select-wrap"><select class="form-control" formControlName="contrato"><option value="">Selecione</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <!-- CP-16: o pedido vem de uma pesquisa; o código deixa de ser digitado. -->
+                <div class="form-group">
+                  <label>Pedido de compra</label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="pedido" (change)="onPedidoChange()">
+                      <option value="">Selecione (opcional)</option>
+                      @for (o of orders(); track o.id) { <option [value]="o.id">{{ o.label }}</option> }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="form-group"><label>Cód. Compras <span class="muted-label">(do pedido)</span></label><input type="text" class="form-control disabled-bg" placeholder="—" formControlName="codCompras" readonly></div>
+                <!-- CP-17: o seletor de contrato vinha vazio, apesar dos contratos existirem. -->
+                <div class="form-group">
+                  <label>Contrato</label>
+                  <div class="select-wrap">
+                    <select class="form-control" formControlName="contrato" (change)="onContratoChange()">
+                      <option value="">Selecione (opcional)</option>
+                      @for (c of contracts(); track c.id) { <option [value]="c.id">{{ c.label }}</option> }
+                    </select>
+                    <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
               </div>
               <div class="form-row grid-cols-4">
                 <div class="form-group"><label>Valor Contrato</label><input type="text" class="form-control disabled-bg" formControlName="valorContrato"></div>
@@ -250,35 +290,30 @@
         @if (activeMainTab === 'IMPOSTOS') {
           <h3 class="section-title">Alíquotas</h3>
           <div class="light-bg-box mb-4">
+            <!-- CP-22: cada retenção mostra a alíquota, o código e o VALOR em reais
+                 calculado sobre o bruto. Antes só havia o total retido.
+                 O bloco percorre TAX_DEFS em vez de repetir nove blocos iguais. -->
             <div class="form-grid">
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % IRRF</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIRRF"></div>
-                <div class="form-group"><label>Cód. IRRF</label><div class="select-wrap"><select class="form-control" formControlName="codIRRF"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % PIS</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqPIS"></div>
-                <div class="form-group"><label>Cód. PIS</label><div class="select-wrap"><select class="form-control" formControlName="codPIS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % PCC</label><input type="text" class="form-control" placeholder="%" formControlName="aliqPCC"></div>
-                <div class="form-group"><label>Cód. PCC</label><div class="select-wrap"><select class="form-control" formControlName="codPCC"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % COFINS</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqCOFINS"></div>
-                <div class="form-group"><label>Cód. COFINS</label><div class="select-wrap"><select class="form-control" formControlName="codCOFINS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-              <div class="form-group-row form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % INSS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqINSS"></div>
-                <div class="form-group"><label>Cód. INSS</label><div class="select-wrap"><select class="form-control" formControlName="codINSS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % CSLL</label><input type="text" class="form-control" placeholder="% Digite" formControlName="aliqCSLL"></div>
-                <div class="form-group"><label>Cód. CSLL</label><div class="select-wrap"><select class="form-control" formControlName="codCSLL"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % ISS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqISS"></div>
-                <div class="form-group"><label>Cód. ISS</label><div class="select-wrap"><select class="form-control" formControlName="codISS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-                <div class="form-group"><label>Alíquota % IBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqIBS"></div>
-                <div class="form-group"><label>Cód. IBS</label><div class="select-wrap"><select class="form-control" formControlName="codIBS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
-              <div class="form-row grid-cols-4">
-                <div class="form-group"><label>Alíquota % CBS</label><input type="text" class="form-control" placeholder="%" formControlName="aliqCBS"></div>
-                <div class="form-group"><label>Cód. CBS</label><div class="select-wrap"><select class="form-control" formControlName="codCBS"><option value="">Sem código</option></select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
-              </div>
+              @for (t of TAX_DEFS; track t.type) {
+                <div class="form-row grid-cols-3" style="align-items:end;">
+                  <div class="form-group">
+                    <label>Alíquota % {{ t.type }}</label>
+                    <input type="text" class="form-control" placeholder="%" [formControlName]="t.ctrl">
+                  </div>
+                  <div class="form-group">
+                    <label>Cód. {{ t.type }}</label>
+                    <div class="select-wrap">
+                      <select class="form-control" [formControlName]="t.code"><option value="">Sem código</option></select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Valor retido <span class="muted-label">(calculado)</span></label>
+                    <input type="text" class="form-control disabled-bg" readonly
+                           [value]="valorDaRetencao(t.ctrl) | currency:'BRL':'symbol':'1.2-2':'pt-BR'">
+                  </div>
+                </div>
+              }
             </div>
             <p class="hint">Total retido calculado sobre o valor bruto: <strong>{{ retencoesTotalFmt() }}</strong>. O valor líquido é ajustado automaticamente.</p>
           </div>

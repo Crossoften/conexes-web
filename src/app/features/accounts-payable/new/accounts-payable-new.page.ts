@@ -12,6 +12,16 @@ type MainTab = 'GERAIS' | 'RATEIO' | 'IMPOSTOS' | 'ANEXOS';
 type SubTab = 'COMPETENCIA' | 'CLASSIFICACAO';
 interface Ref { id: number; name: string; }
 
+/** CP-17: contrato com o que o formulário precisa preencher ao selecioná-lo. */
+interface ContratoRef {
+  id: number;
+  label: string;
+  value: number;
+  balance: number;
+  startDate: string;
+  endDate: string;
+}
+
 @Component({
   selector: 'app-accounts-payable-new',
   standalone: true,
@@ -48,6 +58,12 @@ export class AccountsPayableNewPage implements OnInit {
   readonly costCenters  = signal<Ref[]>([]);
   // CP-18: o rateio multilinha classifica também por projeto/atividade.
   readonly projects     = signal<Ref[]>([]);
+  // CP-14: serviços do cadastro central (separados do tipo de despesa).
+  readonly services     = signal<Ref[]>([]);
+  // CP-16: pedidos de compra, para vincular o código ao título.
+  readonly orders       = signal<{ id: number; code: string; label: string }[]>([]);
+  // CP-17: contratos, com valor, saldo e vigência.
+  readonly contracts    = signal<ContratoRef[]>([]);
 
   anexos = [
     { id: 1, nome: 'Nota fiscal' },
@@ -69,7 +85,11 @@ export class AccountsPayableNewPage implements OnInit {
 
       // -- Competência e dados de contrato (opcionais) --
       competencia: [''],
-      codCompras: [''],
+      // CP-14: serviço do cadastro central, separado do tipo de despesa.
+      servico: [''],
+      // CP-16: pedido escolhido na pesquisa; `codCompras` passa a ser derivado dele.
+      pedido: [''],
+      codCompras: [{ value: '', disabled: true }],
       contrato: [''],
       valorContrato: [{ value: '', disabled: true }],
       saldoContrato: [{ value: '', disabled: true }],
@@ -110,12 +130,14 @@ export class AccountsPayableNewPage implements OnInit {
   }
 
   // CP-22/23: tipos de retenção que viram linhas de `taxes[]` (campo de alíquota → taxType).
-  private readonly TAX_DEFS: { ctrl: string; type: string }[] = [
-    { ctrl: 'aliqIRRF', type: 'IRRF' }, { ctrl: 'aliqPIS', type: 'PIS' },
-    { ctrl: 'aliqPCC', type: 'PCC' }, { ctrl: 'aliqCOFINS', type: 'COFINS' },
-    { ctrl: 'aliqINSS', type: 'INSS' }, { ctrl: 'aliqCSLL', type: 'CSLL' },
-    { ctrl: 'aliqISS', type: 'ISS' }, { ctrl: 'aliqIBS', type: 'IBS' },
-    { ctrl: 'aliqCBS', type: 'CBS' },
+  // CP-22: `code` é o controle do código de cada retenção — o template passou a
+  // percorrer esta lista em vez de repetir nove blocos iguais à mão.
+  readonly TAX_DEFS: { ctrl: string; type: string; code: string }[] = [
+    { ctrl: 'aliqIRRF', type: 'IRRF', code: 'codIRRF' }, { ctrl: 'aliqPIS', type: 'PIS', code: 'codPIS' },
+    { ctrl: 'aliqPCC', type: 'PCC', code: 'codPCC' }, { ctrl: 'aliqCOFINS', type: 'COFINS', code: 'codCOFINS' },
+    { ctrl: 'aliqINSS', type: 'INSS', code: 'codINSS' }, { ctrl: 'aliqCSLL', type: 'CSLL', code: 'codCSLL' },
+    { ctrl: 'aliqISS', type: 'ISS', code: 'codISS' }, { ctrl: 'aliqIBS', type: 'IBS', code: 'codIBS' },
+    { ctrl: 'aliqCBS', type: 'CBS', code: 'codCBS' },
   ];
   readonly retencoesTotal = signal(0);
   private readonly brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -149,6 +171,24 @@ export class AccountsPayableNewPage implements OnInit {
     this.lookups.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v as Ref[]), error: () => {} });
     this.lookups.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v as Ref[]), error: () => {} });
     this.lookups.getProjectsLookup().subscribe({ next: v => this.projects.set(v as Ref[]), error: () => {} });
+
+    // CP-14: só os SERVIÇOS do cadastro central (produtos ficam de fora).
+    this.lookups.getProductsServicesLookup().subscribe({
+      next: v => this.services.set(
+        (v as any[]).filter(x => String(x.type ?? '').toLowerCase().startsWith('serv'))
+                    .map(x => ({ id: x.id, name: x.name })),
+      ),
+      error: () => this.services.set([]),
+    });
+
+    // CP-16: pedidos de compra para a pesquisa.
+    this.svc.getPurchaseOrders().subscribe({ next: v => this.orders.set(v), error: () => this.orders.set([]) });
+
+    // CP-17: contratos com valor, saldo e vigência.
+    this.svc.getContracts().subscribe({ next: v => this.contracts.set(v), error: () => this.contracts.set([]) });
+
+    // CP-13: a data de cadastro é do sistema — vem preenchida e não se edita.
+    this.form.get('dataCadastro')?.setValue(new Date().toISOString().slice(0, 10));
 
     // CP-04: com id na rota, carrega o título para edição.
     const id = this.route.snapshot.paramMap.get('id');
@@ -204,6 +244,35 @@ export class AccountsPayableNewPage implements OnInit {
       },
       error: () => this.notify.error('Não foi possível carregar o título para edição.'),
     });
+  }
+
+  /** CP-16: escolher o pedido preenche o código de compras (que era digitado à mão). */
+  onPedidoChange(): void {
+    const id = Number(this.form.get('pedido')?.value);
+    const pedido = this.orders().find(o => o.id === id);
+    this.form.get('codCompras')?.setValue(pedido ? pedido.code : '');
+  }
+
+  /** CP-17: escolher o contrato preenche valor, saldo e vigência. */
+  onContratoChange(): void {
+    const id = Number(this.form.get('contrato')?.value);
+    const c = this.contracts().find(x => x.id === id);
+    const brl = (n: number) => Number(n ?? 0).toFixed(2).replace('.', ',');
+    const br = (iso: string) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '');
+
+    this.form.patchValue({
+      valorContrato: c ? brl(c.value) : '',
+      saldoContrato: c ? brl(c.balance) : '',
+      dataInicioContrato: c ? br(c.startDate) : '',
+      dataFimContrato: c ? br(c.endDate) : '',
+    });
+  }
+
+  /** CP-22: valor em reais de cada retenção, ao lado da alíquota. */
+  valorDaRetencao(ctrl: string): number {
+    const bruto = this.numOf(this.form.get('valorBruto')?.value);
+    const aliquota = this.numOf(this.form.get(ctrl)?.value);
+    return this.round2(bruto * aliquota / 100);
   }
 
   // ── CP-20: editor de parcelas ──────────────────────────────────────────────
@@ -309,7 +378,20 @@ export class AccountsPayableNewPage implements OnInit {
     };
     if (taxes.length) payload.taxes = taxes;
     if (v.tipoDespesa) payload.expenseType = v.tipoDespesa;
-    if (v.dataCadastro) payload.competencyDate = v.dataCadastro;
+    // CP-13: a data de CADASTRO é do sistema (registrationDate, default now()) e
+    // não se envia. O que ia em competencyDate era a data de cadastro — troca
+    // que deixava a competência, digitada na aba de contrato, ser descartada.
+    if (v.competencia) payload.competencyDate = v.competencia;
+    // CP-14: serviço do cadastro central, separado do tipo de despesa.
+    if (v.servico) payload.serviceId = Number(v.servico);
+    // CP-16: pedido vinculado por pesquisa; o código vem dele.
+    if (v.pedido) {
+      payload.orderId = Number(v.pedido);
+      const pedido = this.orders().find(o => o.id === Number(v.pedido));
+      if (pedido) payload.orderCode = pedido.code;
+    }
+    // CP-17: contrato vinculado.
+    if (v.contrato) payload.contractId = Number(v.contrato);
     if (v.observacoes) payload.observation = v.observacoes;
 
     // CP-18/D2: rateio multilinha. Quando o usuário não abre nenhuma linha mas

@@ -144,6 +144,38 @@ export class AccountsPayableService {
     return this.http.post(`${this.base}/${id}/send-to-remittance`, {});
   }
 
+  /** CP-16: pedidos de compra, para vincular o código ao título. */
+  getPurchaseOrders(): Observable<{ id: number; code: string; label: string }[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/orders`, { params: new HttpParams().set('take', 500) }).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(r => {
+          const code = r.orderCode ?? `PED-${String(r.id).padStart(4, '0')}`;
+          const fornecedor = r.supplier?.name ? ` · ${r.supplier.name}` : '';
+          const valor = r.totalValue != null ? ` · R$ ${Number(r.totalValue).toFixed(2).replace('.', ',')}` : '';
+          return { id: Number(r.id), code, label: `${code}${fornecedor}${valor}` };
+        });
+      }),
+    );
+  }
+
+  /** CP-17: contratos com valor, saldo e vigência (o saldo vem calculado do back). */
+  getContracts(): Observable<{ id: number; label: string; value: number; balance: number; startDate: string; endDate: string }[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/contracts`, { params: new HttpParams().set('take', 500) }).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(r => ({
+          id: Number(r.id),
+          label: [r.number, r.title].filter(Boolean).join(' — ') || `Contrato #${r.id}`,
+          value: Number(r.value ?? 0),
+          balance: Number(r.balanceValue ?? r.value ?? 0),
+          startDate: r.startDate ?? '',
+          endDate: r.endDate ?? '',
+        }));
+      }),
+    );
+  }
+
   /** CP-09: contas bancárias para o seletor do modal de baixa. */
   getBankAccounts(): Observable<{ id: number; label: string }[]> {
     return this.http.get<unknown>(`${environment.apiUrl}/v1/institutional/bank-accounts`).pipe(
