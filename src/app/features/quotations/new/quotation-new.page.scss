@@ -296,3 +296,73 @@
   &--error { background: #FEF2F2; border: 1.5px solid #FECACA; color: #B91C1C; }
 }
 .dropzone--disabled { opacity: .6; cursor: not-allowed; }
+
+// ── COMP-07: os três campos de fornecedor/contrato alinhados ──────────────────
+// A dica e os chips saíram de dentro da coluna do seletor e passaram a ocupar a
+// linha cheia, logo abaixo dos três campos.
+.suppliers-help {
+  margin-top: -8px;
+  small { display: block; color: var(--text-secondary, #6B7280); font-size: 12px; }
+}
+.supplier-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.supplier-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+  border: 1px solid var(--surface-border, #E5E7EB); border-radius: 999px;
+  background: #f4f6f9; font-size: 13px;
+  button {
+    border: none; background: none; cursor: pointer; color: #dc2626;
+    font-size: 15px; line-height: 1; padding: 0;
+  }
+}
+.suppliers-empty { margin-top: 10px; color: var(--text-muted, #9CA3AF); font-size: 13px; }
+
+// ── COMP-09: o "+" ao lado do seletor de contrato ─────────────────────────────
+// O seletor cede a largura do botão para que a altura e a base continuem as
+// mesmas dos outros dois campos da linha — o alinhamento do COMP-07 depende disso.
+.field-with-add {
+  display: flex; align-items: stretch; gap: 8px;
+  .select-wrap { flex: 1 1 auto; min-width: 0; }
+}
+.btn-add {
+  flex: 0 0 auto; width: 42px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--brand-orange, #F97316); border-radius: var(--radius-md, 10px);
+  background: #fff; color: var(--brand-orange, #F97316); cursor: pointer;
+  transition: background var(--transition, .15s ease), color var(--transition, .15s ease);
+  &:hover { background: var(--brand-orange, #F97316); color: #fff; }
+}
+
+/* ── Modal do COMP-09 ─────────────────────────────────────────────────────────
+   Estas classes NÃO existiam nesta tela. É a mesma pegadinha da tela de
+   orçamentos: sem elas o diálogo renderiza INLINE, no fim da página, em vez de
+   sobreposto — e parece que o botão não fez nada. Mesmo desenho das outras telas. */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+  animation: fadeIn 200ms ease-out forwards;
+}
+.modal-content {
+  background: #fff; border-radius: 12px; width: 900px; max-width: 95vw;
+  max-height: 92vh; overflow: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+  animation: slideUp 300ms ease-out forwards;
+  &--narrow { width: 760px; }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
+  h2 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
+}
+.modal-close {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  transition: color var(--transition, .15s ease);
+  &:hover { color: var(--brand-danger, #DC2626); }
+}
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px;
+  border-top: 1px solid var(--surface-border-mid, #E5E7EB); background: #FAFAFE;
+  border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }

@@ -1,7 +1,7 @@
 // src/app/features/quotations/new/quotation-new.page.ts
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, NonNullableFormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, NonNullableFormBuilder, FormArray, FormGroup, Validators } from '@angular/forms';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import {
@@ -19,7 +19,7 @@ type QuotationTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS';
 @Component({
   selector: 'app-quotation-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, FormsModule],
   templateUrl: './quotation-new.page.html',
   styleUrl: './quotation-new.page.scss',
 })
@@ -95,6 +95,70 @@ export class QuotationNewPage {
   }
   removeSupplier(id: number): void {
     this.selectedSupplierIds.update(l => l.filter(x => x !== id));
+  }
+
+  // ── COMP-09: cadastrar o contrato de fornecedor sem sair da requisição ────────
+  // Antes era preciso ir a Cadastros › Contratos de fornecedor, cadastrar e voltar —
+  // e voltar significava perder tudo o que já estava preenchido aqui.
+  readonly contractModal   = signal(false);
+  readonly savingContract  = signal(false);
+  readonly contractError   = signal<string | null>(null);
+
+  novoContrato = { number: '', title: '', stakeholderId: null as number | null, startDate: '', endDate: '', value: '', observation: '' };
+
+  openContractModal(): void {
+    this.novoContrato = { number: '', title: '', stakeholderId: null, startDate: '', endDate: '', value: '', observation: '' };
+    this.contractError.set(null);
+    this.contractModal.set(true);
+  }
+
+  closeContractModal(): void {
+    this.contractModal.set(false);
+  }
+
+  saveContract(): void {
+    const title = this.novoContrato.title.trim();
+    if (!title || this.savingContract()) return;
+    this.contractError.set(null);
+    this.savingContract.set(true);
+    // Mesmos campos e mesmo tratamento do cadastro em Cadastros › Contratos de
+    // fornecedor (supplier-contracts.page.ts) — um contrato criado aqui tem de ser
+    // indistinguível de um criado lá.
+    this.svc.createContract({
+      title,
+      number: this.novoContrato.number.trim() || undefined,
+      stakeholderId: this.novoContrato.stakeholderId ? Number(this.novoContrato.stakeholderId) : undefined,
+      startDate: this.contractIso(this.novoContrato.startDate),
+      endDate: this.contractIso(this.novoContrato.endDate),
+      value: this.novoContrato.value ? (parseFloat(String(this.novoContrato.value).replace(/\./g, '').replace(',', '.')) || undefined) : undefined,
+      observation: this.novoContrato.observation.trim() || undefined,
+    }).subscribe({
+      next: criado => {
+        this.savingContract.set(false);
+        this.contractModal.set(false);
+        // Recarrega a lista e já deixa o contrato novo selecionado: quem clicou no
+        // "+" queria usar este contrato, não procurá-lo na lista depois.
+        this.svc.getContracts({ take: 500 }).subscribe({
+          next: res => {
+            this.contracts.set((res.data ?? []).map(c => ({
+              id: c.id,
+              name: [c.number, c.title].filter(Boolean).join(' — ') + (c.stakeholder?.name ? ` (${c.stakeholder.name})` : ''),
+            })));
+            if (criado?.id != null) this.form.get('contractId')?.setValue(String(criado.id));
+          },
+          error: () => {},
+        });
+        this.notify.success('Contrato cadastrado e selecionado na requisição.');
+      },
+      error: e => {
+        this.savingContract.set(false);
+        this.contractError.set(e?.error?.message ?? 'Erro ao salvar o contrato.');
+      },
+    });
+  }
+
+  private contractIso(d: string): string | undefined {
+    return d ? new Date(d + 'T00:00:00').toISOString() : undefined;
   }
 
   readonly form = this.fb.group({
