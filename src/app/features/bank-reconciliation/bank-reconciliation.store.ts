@@ -1,7 +1,10 @@
 // src/app/features/bank-reconciliation/bank-reconciliation.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ReconciliationItem, ReconciliationTab, BankAccountInfo, ConciliationSummary } from './bank-reconciliation.model';
-import { BankReconciliationService, ReconAccount, AccountReconciliation, LedgerCandidate } from './bank-reconciliation.service';
+import {
+  BankReconciliationService, ReconAccount, AccountReconciliation, LedgerCandidate,
+  AutoRule, AutoResult, ImportBatch, StatementImportResult,
+} from './bank-reconciliation.service';
 import { PurchasesService } from '../purchases/purchases.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
@@ -339,6 +342,189 @@ export class BankReconciliationStore {
         if (id) this.selectAccount(id);
       },
       error: err => { this.acaoBusy.set(null); this.notify.error(err?.error?.message ?? 'Não foi possível ignorar a pendência.'); },
+    });
+  }
+
+  // ───────── CB-07 / CB-08 / CB-09: trazer o extrato e casar em lote ─────────
+
+  /** O período selecionado em ISO (yyyy-mm-dd), para mandar ao banco (CB-08). */
+  readonly periodoIso = computed((): { from?: string; to?: string } => {
+    const f = this.filters();
+    const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { ...(start ? { from: iso(start) } : {}), ...(end ? { to: iso(end) } : {}) };
+  });
+
+  /**
+   * CB-07 / I063: o botão "Conciliar automaticamente" não tinha ação nenhuma e a tela
+   * não dizia por qual regra o sistema casaria. Agora a regra é buscada e EXIBIDA antes,
+   * e só depois do Executar o servidor concilia.
+   */
+  readonly regraAuto = signal<AutoRule | null>(null);
+  readonly painelAuto = signal(false);
+  readonly autoBusy = signal(false);
+  readonly autoResultado = signal<AutoResult | null>(null);
+
+  abrirPainelAuto(): void {
+    if (this.painelAuto()) { this.fecharPainelAuto(); return; }
+    this.painelAuto.set(true);
+    this.autoResultado.set(null);
+    if (!this.regraAuto()) {
+      this.svc.autoRule().subscribe({
+        next: r => this.regraAuto.set(r),
+        error: () => this.notify.error('Não foi possível carregar a regra da conciliação automática.'),
+      });
+    }
+  }
+  fecharPainelAuto(): void { this.painelAuto.set(false); this.autoResultado.set(null); }
+
+  executarAuto(): void {
+    const id = this.selectedAccountId();
+    if (!id) { this.notify.error('Selecione uma conta bancária.'); return; }
+    this.autoBusy.set(true);
+    this.autoResultado.set(null);
+    this.svc.autoReconcile(id).subscribe({
+      next: r => {
+        this.autoBusy.set(false);
+        this.autoResultado.set(r);
+        if (r.conciliados.length) { this.notify.success(r.mensagem); this.selectAccount(id); }
+        else this.notify.info(r.mensagem);
+      },
+      error: err => {
+        this.autoBusy.set(false);
+        this.notify.error(err?.error?.message ?? 'Não foi possível executar a conciliação automática.');
+      },
+    });
+  }
+
+  /**
+   * CB-09 / I065: "Importar extrato" não existia na tela. A importação entra como LOTE
+   * (mesma infra do TR-14), o que é o que torna o Desfazer possível.
+   */
+  readonly importBusy = signal(false);
+  readonly importResultado = signal<StatementImportResult | null>(null);
+  readonly lotes = signal<ImportBatch[]>([]);
+  readonly lotesVisiveis = signal(false);
+  readonly loteBusy = signal<number | null>(null);
+
+  importarExtrato(file: File): void {
+    const id = this.selectedAccountId();
+    if (!id) { this.notify.error('Selecione uma conta bancária.'); return; }
+    this.importBusy.set(true);
+    this.importResultado.set(null);
+    this.svc.importStatement(id, file).subscribe({
+      next: r => {
+        this.importBusy.set(false);
+        this.importResultado.set(r);
+        this.lotesVisiveis.set(true);
+        this.carregarLotes();
+        if (r.success) { this.notify.success(`${r.success} de ${r.total} movimento(s) importado(s) do extrato.`); this.selectAccount(id); }
+        else this.notify.info('Nenhum movimento novo: confira o resultado da importação.');
+      },
+      error: err => {
+        this.importBusy.set(false);
+        this.notify.error(err?.error?.message ?? 'Não foi possível importar o extrato.');
+      },
+    });
+  }
+
+  alternarLotes(): void {
+    const abrir = !this.lotesVisiveis();
+    this.lotesVisiveis.set(abrir);
+    if (abrir) this.carregarLotes();
+  }
+
+  carregarLotes(): void {
+    this.svc.listStatementBatches().subscribe({
+      next: r => this.lotes.set(r?.data ?? []),
+      error: () => this.lotes.set([]),
+    });
+  }
+
+  /** CB-09: desfaz o lote inteiro — os movimentos importados voltam a não existir. */
+  desfazerLote(loteId: number): void {
+    this.loteBusy.set(loteId);
+    this.svc.undoBatch(loteId).subscribe({
+      next: () => {
+        this.loteBusy.set(null);
+        this.notify.success(`Importação #${loteId} desfeita.`);
+        this.importResultado.set(null);
+        this.carregarLotes();
+        const id = this.selectedAccountId();
+        if (id) this.selectAccount(id);
+      },
+      error: err => { this.loteBusy.set(null); this.notify.error(err?.error?.message ?? 'Não foi possível desfazer a importação.'); },
+    });
+  }
+
+  /**
+   * CB-08 / I064: "Importar do banco" no período escolhido. A ligação interna é esta;
+   * a perna externa depende de conexão bancária (Open Finance) habilitada para a conta.
+   * Sem credencial o servidor responde o motivo e a tela mostra — não falha calada.
+   */
+  readonly bancoBusy = signal(false);
+  readonly bancoResultado = signal<string | null>(null);
+
+  private msgErro(err: any, fallback: string): string {
+    const m = err?.error?.message ?? fallback;
+    return Array.isArray(m) ? m.join('; ') : m;
+  }
+
+  importarDoBanco(): void {
+    const id = this.selectedAccountId();
+    if (!id) { this.notify.error('Selecione uma conta bancária.'); return; }
+    const periodo = this.periodoIso();
+    const janela = periodo.from || periodo.to
+      ? `${periodo.from ? fmtDate(periodo.from) : 'início'} a ${periodo.to ? fmtDate(periodo.to) : 'hoje'}`
+      : 'todo o período';
+    this.bancoBusy.set(true);
+    this.bancoResultado.set(null);
+
+    // Descobre a conexão Open Finance DESTA conta antes de sincronizar — o accountId
+    // do sync é o id da conexão, não o da conta bancária.
+    this.svc.listBankConnections().subscribe({
+      next: conns => {
+        const conexao = (conns ?? []).find(c => c.bankAccountId === id);
+        if (!conexao) {
+          this.bancoBusy.set(false);
+          this.bancoResultado.set(
+            'Esta conta ainda não tem conexão bancária (Open Finance) habilitada. ' +
+            'A importação direta do banco depende de conectar a conta e de credencial do provedor — ' +
+            'pendência externa. Enquanto isso, use "Importar extrato (OFX/Excel)".',
+          );
+          this.notify.info('Conta sem conexão Open Finance: importe o extrato por arquivo.');
+          return;
+        }
+        this.executarSyncBanco(conexao.id, id, periodo, janela);
+      },
+      error: err => {
+        // Se nem a lista de conexões responde, o motivo já indica a pendência.
+        this.bancoBusy.set(false);
+        this.bancoResultado.set(`Importação do banco não concluída: ${this.msgErro(err, 'Open Finance indisponível.')}`);
+      },
+    });
+  }
+
+  private executarSyncBanco(connectionId: number, bankAccountId: number, periodo: { from?: string; to?: string }, janela: string): void {
+    this.svc.syncFromBank({ accountId: connectionId, ...periodo }).subscribe({
+      next: r => {
+        this.bancoBusy.set(false);
+        const trazidos = r?.imported ?? 0;
+        this.bancoResultado.set(
+          trazidos
+            ? `${trazidos} movimento(s) trazido(s) do banco (${janela}).`
+            : `O banco não devolveu movimento novo para ${janela}. ${r?.message ?? ''}`.trim(),
+        );
+        if (trazidos) { this.notify.success(`${trazidos} movimento(s) trazido(s) do banco.`); this.selectAccount(bankAccountId); }
+        else this.notify.info('Nenhum movimento novo veio do banco neste período.');
+      },
+      error: err => {
+        this.bancoBusy.set(false);
+        // A mensagem do servidor é o que diz se falta credencial — mostre-a.
+        const msg = this.msgErro(err, 'Não foi possível importar do banco.');
+        this.bancoResultado.set(`Importação do banco não concluída: ${msg}`);
+        this.notify.error(msg);
+      },
     });
   }
 }

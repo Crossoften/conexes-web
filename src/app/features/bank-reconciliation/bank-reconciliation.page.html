@@ -19,8 +19,45 @@
     </div>
 
     @if (store.filters().period === 'CUSTOM') {
-      <input class="select select--pill" type="date" [value]="store.filters().customStart" (change)="store.setCustomStart($any($event.target).value)" aria-label="Data inicial">
-      <input class="select select--pill" type="date" [value]="store.filters().customEnd" (change)="store.setCustomEnd($any($event.target).value)" aria-label="Data final">
+      <!-- CB-05 / I061: eram dois campos de data soltos ("Data inicial" e "Data final").
+           O cliente pediu um calendário só, de intervalo: um clique marca o início,
+           o seguinte marca o fim e o período é aplicado quando o intervalo fecha. -->
+      <div class="range-wrap">
+        <button type="button" class="select select--pill range-btn" (click)="abrirCalendario()" aria-label="Escolher intervalo de datas">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>{{ rotuloIntervalo() }}</span>
+        </button>
+
+        @if (calendarioAberto()) {
+          <div class="range-cal">
+            <div class="range-cal__head">
+              <button type="button" class="range-cal__nav" (click)="mesAnterior()" aria-label="Mês anterior">‹</button>
+              <span class="range-cal__mes">{{ rotuloMes() }}</span>
+              <button type="button" class="range-cal__nav" (click)="mesProximo()" aria-label="Próximo mês">›</button>
+            </div>
+            <div class="range-cal__semana">
+              @for (d of diasSemana; track $index) { <span>{{ d }}</span> }
+            </div>
+            <div class="range-cal__grid">
+              @for (d of diasDoMes(); track d.iso) {
+                <button type="button" class="range-cal__dia"
+                        [class.range-cal__dia--fora]="!d.noMes"
+                        [class.range-cal__dia--hoje]="d.hoje"
+                        [class.range-cal__dia--ini]="d.inicio"
+                        [class.range-cal__dia--fim]="d.fim"
+                        [class.range-cal__dia--entre]="d.entre"
+                        (click)="clicarDia(d.iso)">{{ d.dia }}</button>
+              }
+            </div>
+            <div class="range-cal__pe">
+              <span class="range-cal__resumo">
+                {{ inicioSel() ? dataBR(inicioSel()) : 'Data inicial' }} → {{ fimSel() ? dataBR(fimSel()) : 'Data final' }}
+              </span>
+              <button type="button" class="btn-outline btn-sm" (click)="limparIntervalo()">Limpar</button>
+            </div>
+          </div>
+        }
+      </div>
     }
 
     <div class="select-wrap">
@@ -29,8 +66,145 @@
       </select>
     </div>
 
-    <button class="btn-outline btn-pill">Conciliar automaticamente</button>
+    <!-- CB-07/I063, CB-08/I064 e CB-09/I065: o "Conciliar automaticamente" não tinha
+         ação nenhuma, e não havia como trazer extrato (nem arquivo, nem do banco). -->
+    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.painelAuto()" (click)="store.abrirPainelAuto()">
+      Conciliar automaticamente
+    </button>
+
+    <label class="btn-outline btn-pill btn-pill--file">
+      {{ store.importBusy() ? 'Importando extrato…' : 'Importar extrato (OFX/Excel)' }}
+      <input type="file" accept=".ofx,.OFX,.qfx,.xls,.xlsx" hidden (change)="onImportarExtrato($event)">
+    </label>
+
+    <button type="button" class="btn-outline btn-pill" [disabled]="store.bancoBusy()" (click)="store.importarDoBanco()">
+      {{ store.bancoBusy() ? 'Consultando o banco…' : 'Importar do banco (período)' }}
+    </button>
+
+    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.lotesVisiveis()" (click)="store.alternarLotes()">
+      Importações
+    </button>
   </div>
+
+  <!-- CB-07 / I063: a regra aparece ANTES de executar — era o que faltava para o
+       usuário saber por qual critério o sistema ia casar extrato e títulos. -->
+  @if (store.painelAuto()) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">{{ store.regraAuto()?.titulo || 'Conciliação automática' }}</h3>
+        <button type="button" class="painel__fechar" (click)="store.fecharPainelAuto()" aria-label="Fechar">×</button>
+      </div>
+
+      @if (store.regraAuto()) {
+        <ol class="painel__regra">
+          @for (linha of store.regraAuto()!.regra; track $index) { <li>{{ linha }}</li> }
+        </ol>
+        <div class="painel__acoes">
+          <button type="button" class="btn-solid btn-solid--orange" [disabled]="store.autoBusy()" (click)="store.executarAuto()">
+            {{ store.autoBusy() ? 'Conciliando…' : 'Executar conciliação automática' }}
+          </button>
+          <span class="painel__nota">Nada é conciliado antes de você executar.</span>
+        </div>
+      } @else {
+        <p class="painel__nota">Carregando a regra…</p>
+      }
+
+      @if (store.autoResultado(); as r) {
+        <p class="painel__mensagem">{{ r.mensagem }}</p>
+
+        @if (r.conciliados.length) {
+          <p class="painel__sub">Conciliados ({{ r.conciliados.length }}):</p>
+          <ul class="painel__lista painel__lista--ok">
+            @for (c of r.conciliados; track c.id) {
+              <li>{{ c.descricao }} · {{ dinheiro(c.valor) }} → {{ c.vinculo }}{{ c.tituloDescricao ? ' — ' + c.tituloDescricao : '' }}</li>
+            }
+          </ul>
+        }
+
+        @if (r.naoResolvidos.length) {
+          <p class="painel__sub">Não conciliados ({{ r.naoResolvidos.length }}) — e por quê:</p>
+          <ul class="painel__lista">
+            @for (n of r.naoResolvidos; track n.id) {
+              <li>
+                {{ n.descricao }}{{ n.valor != null ? ' · ' + dinheiro(n.valor) : '' }} — {{ n.motivo }}
+                @if (n.candidatos?.length) { <span class="painel__cands">({{ n.candidatos!.join(' / ') }})</span> }
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  }
+
+  <!-- CB-08 / I064: o resultado da importação do banco, inclusive quando a conta
+       ainda não tem conexão bancária habilitada (a perna externa é pendência). -->
+  @if (store.bancoResultado()) {
+    <div class="card painel painel--aviso">
+      <p class="painel__mensagem">{{ store.bancoResultado() }}</p>
+    </div>
+  }
+
+  <!-- CB-09 / I065: resultado da importação de arquivo, linha por linha. -->
+  @if (store.importResultado(); as imp) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">Extrato importado — {{ imp.arquivo }} ({{ imp.formato }})</h3>
+        @if (imp.batchId) {
+          <button type="button" class="btn-outline btn-sm" [disabled]="store.loteBusy() === imp.batchId" (click)="store.desfazerLote(imp.batchId!)">
+            {{ store.loteBusy() === imp.batchId ? 'Desfazendo…' : 'Desfazer esta importação' }}
+          </button>
+        }
+      </div>
+      <p class="painel__mensagem">
+        {{ imp.total }} movimento(s) no arquivo · {{ imp.success }} importado(s) · {{ imp.failed }} não importado(s).
+      </p>
+      @if (imp.results.length) {
+        <ul class="painel__lista">
+          @for (l of imp.results; track $index) {
+            <li [class.painel__linha--erro]="l.status !== 'success'">Linha {{ l.row }}: {{ l.message }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <!-- CB-09 / I065: os lotes de extrato e o Desfazer (mesma infra de lote do TR-14). -->
+  @if (store.lotesVisiveis()) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">Extratos importados</h3>
+        <button type="button" class="painel__fechar" (click)="store.alternarLotes()" aria-label="Fechar">×</button>
+      </div>
+      @if (store.lotes().length) {
+        <table class="painel__tabela">
+          <thead>
+            <tr><th>#</th><th>Arquivo</th><th>Quando</th><th>Quem</th><th>Importados</th><th>Restantes</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (l of store.lotes(); track l.id) {
+              <tr>
+                <td>{{ l.id }}</td>
+                <td>{{ l.fileName }}</td>
+                <td>{{ dataBR(l.createdAt) }}</td>
+                <td>{{ l.user?.name || '—' }}</td>
+                <td>{{ l.success }} de {{ l.total }}</td>
+                <td>{{ l.restantes }}</td>
+                <td>
+                  <button type="button" class="btn-outline btn-sm"
+                          [disabled]="store.loteBusy() === l.id || l.restantes === 0"
+                          (click)="store.desfazerLote(l.id)">
+                    {{ store.loteBusy() === l.id ? 'Desfazendo…' : (l.restantes === 0 ? 'Já desfeito' : 'Desfazer') }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="painel__nota">Nenhum extrato importado nesta empresa ainda.</p>
+      }
+    </div>
+  }
 
   <div class="summary-cards-grid">
     <div class="summary-card">

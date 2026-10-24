@@ -19,6 +19,18 @@ interface PendenciaForm {
 }
 const FORM_VAZIO: PendenciaForm = { description: '', category: '', stakeholderId: '', costCenterId: '', busca: '', vinculo: '', vinculoRotulo: '' };
 
+/** CB-05 / I061: uma célula da grade do calendário de intervalo. */
+interface DiaCalendario {
+  iso: string; dia: number; noMes: boolean;
+  inicio: boolean; fim: boolean; entre: boolean; hoje: boolean;
+}
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const DIAS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+const dois = (n: number) => String(n).padStart(2, '0');
+function paraIso(d: Date): string { return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}`; }
+function deIso(s: string): Date { const [y, m, d] = s.split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
+function primeiroDoMes(d: Date): Date { return new Date(d.getFullYear(), d.getMonth(), 1); }
+
 @Component({
   selector: 'app-bank-reconciliation',
   standalone: true,
@@ -163,6 +175,90 @@ export class BankReconciliationPage implements OnInit {
   ignorar(item: ReconciliationItem): void {
     if (item.txId) this.store.ignorar(item.txId);
   }
+
+  // ── CB-09 / I065: importar extrato OFX/Excel ──────────────────────────────
+  onImportarExtrato(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) this.store.importarExtrato(file);
+    // Limpa para permitir reenviar o MESMO arquivo (é assim que se vê a regra de duplicata).
+    input.value = '';
+  }
+
+  // ── CB-05 / I061: um calendário único de intervalo ────────────────────────
+  // Eram dois <input type="date"> soltos ("Data inicial" e "Data final"), e o cliente
+  // pediu um calendário só, de intervalo. Não há biblioteca de calendário no projeto
+  // (sem Material, sem date-fns), então a grade é feita aqui: o primeiro clique marca
+  // o início, o segundo o fim, e o período só é aplicado quando o intervalo fecha.
+  readonly diasSemana = DIAS_SEMANA;
+  readonly calendarioAberto = signal(false);
+  readonly mesVisivel = signal<Date>(primeiroDoMes(new Date()));
+  readonly inicioSel = signal<string>('');
+  readonly fimSel = signal<string>('');
+
+  abrirCalendario(): void {
+    if (this.calendarioAberto()) { this.calendarioAberto.set(false); return; }
+    const f = this.store.filters();
+    this.inicioSel.set(f.customStart ?? '');
+    this.fimSel.set(f.customEnd ?? '');
+    this.mesVisivel.set(primeiroDoMes(f.customStart ? deIso(f.customStart) : new Date()));
+    this.calendarioAberto.set(true);
+  }
+
+  mesAnterior(): void { const m = this.mesVisivel(); this.mesVisivel.set(new Date(m.getFullYear(), m.getMonth() - 1, 1)); }
+  mesProximo(): void { const m = this.mesVisivel(); this.mesVisivel.set(new Date(m.getFullYear(), m.getMonth() + 1, 1)); }
+
+  readonly rotuloMes = computed(() => `${MESES[this.mesVisivel().getMonth()]} ${this.mesVisivel().getFullYear()}`);
+
+  /** Grade de 6 semanas, com os dias vizinhos em cinza, para o mês visível. */
+  readonly diasDoMes = computed((): DiaCalendario[] => {
+    const base = this.mesVisivel();
+    const hoje = paraIso(new Date());
+    const ini = this.inicioSel(), fim = this.fimSel();
+    const primeiraCelula = new Date(base.getFullYear(), base.getMonth(), 1 - base.getDay());
+    const celulas: DiaCalendario[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(primeiraCelula.getFullYear(), primeiraCelula.getMonth(), primeiraCelula.getDate() + i);
+      const s = paraIso(d);
+      celulas.push({
+        iso: s, dia: d.getDate(), noMes: d.getMonth() === base.getMonth(),
+        inicio: !!ini && s === ini, fim: !!fim && s === fim,
+        entre: !!ini && !!fim && s > ini && s < fim, hoje: s === hoje,
+      });
+    }
+    return celulas;
+  });
+
+  /** Primeiro clique = início (zera o fim); segundo = fim, invertendo se vier antes. */
+  clicarDia(iso: string): void {
+    const ini = this.inicioSel(), fim = this.fimSel();
+    if (!ini || fim) { this.inicioSel.set(iso); this.fimSel.set(''); return; }
+    if (iso < ini) { this.fimSel.set(ini); this.inicioSel.set(iso); } else { this.fimSel.set(iso); }
+    this.aplicarIntervalo();
+  }
+
+  private aplicarIntervalo(): void {
+    const ini = this.inicioSel(), fim = this.fimSel();
+    if (!ini || !fim) return;
+    this.store.setCustomStart(ini);
+    this.store.setCustomEnd(fim);
+    this.store.setPeriod('CUSTOM');
+    this.calendarioAberto.set(false);
+  }
+
+  limparIntervalo(): void {
+    this.inicioSel.set(''); this.fimSel.set('');
+    this.store.setCustomStart(''); this.store.setCustomEnd('');
+    this.store.setPeriod('');
+    this.calendarioAberto.set(false);
+  }
+
+  readonly rotuloIntervalo = computed(() => {
+    const f = this.store.filters();
+    if (f.customStart && f.customEnd) return `${this.dataBR(f.customStart)} a ${this.dataBR(f.customEnd)}`;
+    if (f.customStart) return `${this.dataBR(f.customStart)} — escolha a data final`;
+    return 'Escolher intervalo';
+  });
 
   // Formatação local (o componente não importa pipes).
   private readonly fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });

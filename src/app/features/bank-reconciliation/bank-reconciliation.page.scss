@@ -6,7 +6,9 @@
 }
 
 // ── Filtros ───────────────────────────────────
-.global-filters { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+// CB-07/CB-08/CB-09 (card #588): a barra passou a ter os botões de extrato
+// (automática, arquivo, banco, importações) e precisa quebrar linha em telas menores.
+.global-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .search-wrap { position: relative; width: 260px; }
 .search {
   width: 100%; padding: 10px 36px 10px 14px; border: 1.5px solid var(--surface-border-mid);
@@ -153,3 +155,72 @@
 
 // Botões de ação da pendência desabilitados durante a gravação.
 .btn-outline:disabled, .btn-solid:disabled { opacity: .5; cursor: not-allowed; }
+
+// ── CB-05 / I061 (card #588): calendário único de intervalo ───────────────────
+// Substitui os dois <input type="date"> da barra de filtros. Sem biblioteca: a
+// grade é montada pelo próprio componente.
+.range-wrap { position: relative; display: inline-flex; }
+.range-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 215px;
+  padding: 9px 16px; background: var(--surface-primary); text-align: left;
+}
+.range-cal {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; width: 272px;
+  padding: 12px; background: var(--surface-primary); border: 1.5px solid var(--surface-border-mid);
+  border-radius: 12px; box-shadow: 0 12px 28px rgba(17, 24, 39, .14);
+  &__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  &__mes { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+  &__nav {
+    width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--surface-border-mid);
+    background: var(--surface-primary); color: var(--text-secondary); font-size: 16px; line-height: 1; cursor: pointer;
+    &:hover { border-color: var(--brand-purple-mid); color: var(--brand-purple); }
+  }
+  &__semana {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px;
+    span { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+  }
+  &__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  &__dia {
+    height: 32px; border: none; background: transparent; border-radius: 8px; cursor: pointer;
+    font-size: 12.5px; color: var(--text-primary); transition: background 120ms;
+    &:hover { background: var(--brand-purple-light, #F3F0FF); }
+    &--fora { color: var(--text-muted); opacity: .55; }
+    &--hoje { box-shadow: inset 0 0 0 1.5px var(--brand-purple-mid); }
+    &--entre { background: var(--brand-purple-light, #F3F0FF); border-radius: 0; }
+    &--ini, &--fim { background: var(--brand-purple); color: #fff; font-weight: 700; &:hover { background: var(--brand-purple); } }
+  }
+  &__pe {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--surface-border-mid);
+  }
+  &__resumo { font-size: 12px; color: var(--text-secondary); }
+}
+
+// ── CB-07/CB-08/CB-09 / I063-I064-I065 (card #588): painéis de extrato ───────
+.btn-pill--on { border-color: var(--brand-purple); color: var(--brand-purple); background: var(--brand-purple-light, #F3F0FF); }
+.btn-pill--file { cursor: pointer; }
+
+.painel {
+  padding: 18px 20px; margin-bottom: 20px;
+  &--aviso { border-left: 4px solid var(--brand-orange); }
+  &__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  &__titulo { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  &__fechar { background: none; border: none; font-size: 22px; line-height: 1; color: var(--text-muted); cursor: pointer; &:hover { color: var(--text-primary); } }
+  &__regra { margin: 0 0 14px; padding-left: 20px; font-size: 13px; color: var(--text-secondary); li { margin-bottom: 4px; } }
+  &__acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  &__nota { margin: 0; font-size: 12.5px; color: var(--text-muted); }
+  &__mensagem { margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  &__sub { margin: 14px 0 6px; font-size: 12.5px; font-weight: 700; color: var(--text-secondary); }
+  &__lista {
+    margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--text-secondary);
+    li { margin-bottom: 4px; }
+    &--ok li { color: #065F46; }
+  }
+  &__linha--erro { color: #B91C1C; }
+  &__cands { color: var(--text-muted); }
+  &__tabela {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+    th { padding: 8px 10px; text-align: left; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--surface-border-mid); }
+    td { padding: 10px; color: var(--text-secondary); border-bottom: 1px solid var(--surface-border-mid); }
+  }
+}
