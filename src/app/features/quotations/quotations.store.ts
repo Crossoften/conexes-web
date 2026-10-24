@@ -324,8 +324,35 @@ export class QuotationsStore {
     this.svc.copyRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
+  // I019: este é o documento da REQUISIÇÃO (generateRequestExcel). O nome do arquivo e a
+  // mensagem diziam "pedido", que é OUTRO documento — exatamente a confusão de rótulo que
+  // o relatório apontou nas Etapas 4/5/6, onde os dois documentos convivem.
   exportExcel(apiId: number): void {
-    this.baixar(this.svc.generateRequestExcel(apiId), `pedido-${apiId}.xlsx`, 'a planilha do pedido');
+    this.baixar(this.svc.generateRequestExcel(apiId), `requisicao-${apiId}.xlsx`, 'a planilha da requisição');
+  }
+
+  /**
+   * I019: documento do PEDIDO (PDF/Excel) a partir da linha da requisição. Uma requisição
+   * pode ter mais de um pedido (adjudicação por item), então resolve os pedidos dela e baixa
+   * um documento por pedido. Sem pedido gerado, diz isso em vez de baixar arquivo nenhum —
+   * é o "distinguir documentos ainda não gerados" que o pedido original cobra.
+   */
+  exportOrderDoc(apiId: number, formato: 'pdf' | 'excel'): void {
+    this.svc.getOrders({ requestId: apiId, take: 50 }).subscribe({
+      next: page => {
+        const pedidos = page?.data ?? [];
+        if (!pedidos.length) {
+          this.notify.error('Esta requisição ainda não gerou pedido — o documento do pedido passa a existir depois da adjudicação (Etapa 4).');
+          return;
+        }
+        for (const p of pedidos) {
+          const obs = formato === 'pdf' ? this.svc.generateOrderPdf(p.id) : this.svc.generateOrderExcel(p.id);
+          this.baixar(obs, `pedido-${p.id}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`,
+            formato === 'pdf' ? 'o PDF do pedido' : 'a planilha do pedido');
+        }
+      },
+      error: err => this.notify.error(this.errMsg(err) || 'Não foi possível localizar o pedido desta requisição.'),
+    });
   }
 
   remove(apiId: number): void {

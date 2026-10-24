@@ -145,6 +145,65 @@ export class AccountsPayableListPage implements OnInit {
     });
   }
 
+  // ── I071 (CP-02): importação de XML de NF-e ────────────────────────────────
+  // Os dois botões da barra ("Importar XML" e "Upload de arquivo") eram inertes:
+  // não tinham handler nenhum e nenhum seletor de arquivo abria. Agora os dois
+  // abrem o seletor, importam cada XML e mostram a leitura da nota (prévia), o
+  // resultado e o erro legível, recarregando a lista com os títulos criados.
+  readonly importBusy = signal(false);
+  readonly importResultados = signal<{ arquivo: string; ok: boolean; mensagem: string; resumo: string }[]>([]);
+
+  limparResultadoImport(): void { this.importResultados.set([]); }
+
+  onImportXml(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const arquivos = Array.from(input.files ?? []);
+    input.value = '';                       // permite reenviar o mesmo arquivo
+    if (!arquivos.length) return;
+
+    const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const dia = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—');
+
+    this.importBusy.set(true);
+    this.importResultados.set([]);
+    let pendentes = arquivos.length;
+    const encerrar = () => {
+      if (--pendentes === 0) {
+        this.importBusy.set(false);
+        this.store.load();                  // os registros importados aparecem na lista
+      }
+    };
+
+    for (const arquivo of arquivos) {
+      this.svc.importXml(arquivo).subscribe({
+        next: res => {
+          const n = res.nota;
+          const resumo = n
+            ? [
+                `Nota ${n.numero}${n.serie ? '/' + n.serie : ''}`,
+                `emitente ${n.emitenteNome || n.emitenteDoc}`,
+                dinheiro.format(n.valor ?? 0),
+                `emissão ${dia(n.emissao)}`,
+                `vencimento ${dia(n.vencimento)}`,
+                `${n.itens} item(ns)`,
+                ...(n.chave ? [`chave ${n.chave}`] : []),
+              ].join(' · ')
+            : '';
+          this.importResultados.update(l => [...l, { arquivo: arquivo.name, ok: res.criado, mensagem: res.mensagem, resumo }]);
+          if (res.criado) this.notify.success(res.mensagem); else this.notify.error(res.mensagem);
+          encerrar();
+        },
+        error: err => {
+          const raw = err?.error?.message ?? 'Falha ao importar o XML.';
+          const msg = Array.isArray(raw) ? raw.join(', ') : String(raw);
+          this.importResultados.update(l => [...l, { arquivo: arquivo.name, ok: false, mensagem: msg, resumo: '' }]);
+          this.notify.error(msg);
+          encerrar();
+        },
+      });
+    }
+  }
+
   ngOnInit(): void {
     this.store.load();
     // CP-09: contas para o seletor da baixa. CP-01: as mesmas contas servem aos

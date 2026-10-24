@@ -71,17 +71,41 @@
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Exportar excel
         </button>
-        <button class="btn-outline">
+        <!-- I071 (CP-02): os dois botões eram inertes — nenhum tinha handler e nenhum
+             seletor de arquivo abria. Os dois trazem o documento fiscal para dentro do
+             Contas a pagar, e o que o módulo importa é o XML da NF-e: ambos aceitam .xml
+             (vários de uma vez). O <label> é que abre o seletor do input escondido. -->
+        <label class="btn-outline" title="Selecionar o XML da NF-e para gerar a conta a pagar">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Importar XML
-        </button>
-        <button class="btn-outline">
+          {{ importBusy() ? 'Importando…' : 'Importar XML' }}
+          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
+        </label>
+        <label class="btn-outline" title="Enviar o arquivo XML da NF-e">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Upload de arquivo
-        </button>
+          {{ importBusy() ? 'Importando…' : 'Upload de arquivo' }}
+          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
+        </label>
       </div>
 
     </div>
+
+    <!-- I071: prévia do que foi lido na nota, resultado e erro legível por arquivo. -->
+    @if (importResultados().length) {
+      <div class="import-xml-result">
+        <div class="import-xml-result__head">
+          <strong>Importação de XML — resultado</strong>
+          <button type="button" class="btn-outline btn-pill" (click)="limparResultadoImport()">Fechar</button>
+        </div>
+        @for (r of importResultados(); track r.arquivo + r.mensagem) {
+          <div class="import-xml-result__row" [class.is-error]="!r.ok">
+            <div class="import-xml-result__msg"><strong>{{ r.arquivo }}</strong> — {{ r.mensagem }}</div>
+            @if (r.resumo) {
+              <div class="import-xml-result__nota">{{ r.resumo }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
 
     @if (store.selectedCount() > 0) {
       <div class="bulk-bar">

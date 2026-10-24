@@ -79,7 +79,10 @@ export class QuotationsListPage {
 
   // Consultar/Duplicar/Excel/PDF disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
-  readonly canExcel  = this.routeStage === 0 || this.routeStage === 2;
+  // I019: a planilha da REQUISIÇÃO também nas Etapas 4/5/6. Ela existia só nas Etapas 1 e 3
+  // (e escondida no modal Visualizar), então da Etapa 4 em diante o conjunto pedido pelo
+  // cliente — Requisição + Cotação + Pedido, cada um em PDF e Excel — ficava incompleto.
+  readonly canExcel  = this.routeStage === 0 || (this.routeStage >= 2 && this.routeStage <= 5);
   readonly canPdf    = true;                                           // FE-12: consulta em qualquer etapa
   readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
   readonly canEdit   = this.routeStage === 0;                          // Etapa 1
@@ -95,6 +98,11 @@ export class QuotationsListPage {
   // Etapa 4. Era um item de menu lateral próprio, que abria do zero e pedia para
   // escolher de novo a requisição que já se estava olhando.
   readonly canQuotationMap = this.routeStage === 3;
+
+  // I019: documento do PEDIDO (PDF/Excel) no contexto das Etapas 4, 5 e 6. Na Etapa 4 o
+  // pedido normalmente ainda não existe (nasce da adjudicação) — nesse caso a ação avisa
+  // que o documento ainda não foi gerado, em vez de baixar arquivo vazio.
+  readonly canOrderDoc = this.routeStage >= 3 && this.routeStage <= 5;
 
   readonly statusOptions: { label: string; value: PurchaseRequestStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
@@ -166,6 +174,9 @@ export class QuotationsListPage {
   // COMP-16/COMP-17: documento da cotação (com vencedor, itens e valores).
   quotationPdf(item: Quotation)   { this.store.exportQuotationPdf(item.apiId); }
   quotationExcel(item: Quotation) { this.store.exportQuotationExcel(item.apiId); }
+  // I019: documento do pedido gerado por esta requisição.
+  orderPdf(item: Quotation)       { this.store.exportOrderDoc(item.apiId, 'pdf'); }
+  orderExcel(item: Quotation)     { this.store.exportOrderDoc(item.apiId, 'excel'); }
 
   // COMP-21: o mapa é um passo da Etapa 4, aberto a partir da requisição.
   quotationMap(item: Quotation)   { this.router.navigate(['/quotation-map', item.apiId]); }

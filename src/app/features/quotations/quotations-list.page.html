@@ -233,10 +233,13 @@
                         </button>
                         @if (menuOpenId() === item.id) {
                           <div class="row-menu" [style.top.px]="menuPos().top" [style.left.px]="menuPos().left" (click)="$event.stopPropagation()">
-                            @if (canExcel)    { <button type="button" (click)="excel(item); closeMenu()">Gerar Excel</button> }
-                            <!-- "da requisição" no rótulo: da Etapa 4 em diante convivem dois
-                                 documentos, e o cliente clicou neste esperando o da cotação. -->
-                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar PDF da requisição</button> }
+                            <!-- I019: rótulos paralelos e inequívocos. Nas Etapas 4/5/6 convivem
+                                 TRÊS documentos — requisição, cotação e pedido — cada um em PDF e
+                                 Excel. "Gerar Excel" e "Exportar PDF da requisição" não diziam de
+                                 qual documento se tratava, e o Excel chegava a baixar com nome de
+                                 pedido sendo o da requisição. -->
+                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar requisição (PDF)</button> }
+                            @if (canExcel)    { <button type="button" (click)="excel(item); closeMenu()">Exportar requisição (Excel)</button> }
                             <!-- COMP-21: o mapa, de dentro da Etapa 4 -->
                             @if (canQuotationMap) {
                               <button type="button" (click)="quotationMap(item); closeMenu()">Mapa de cotação</button>
@@ -245,6 +248,11 @@
                             @if (canQuotationDoc) {
                               <button type="button" (click)="quotationPdf(item); closeMenu()">Exportar cotação (PDF)</button>
                               <button type="button" (click)="quotationExcel(item); closeMenu()">Exportar cotação (Excel)</button>
+                            }
+                            <!-- I019: o pedido — tinha só PDF e só pelo submódulo Pedidos -->
+                            @if (canOrderDoc) {
+                              <button type="button" (click)="orderPdf(item); closeMenu()">Exportar pedido (PDF)</button>
+                              <button type="button" (click)="orderExcel(item); closeMenu()">Exportar pedido (Excel)</button>
                             }
                             @if (canCancel()) { <button type="button" (click)="cancel(item); closeMenu()">Cancelar</button> }
                             @if (canDelete)   { <button type="button" class="row-menu__danger" (click)="remove(item); closeMenu()">Excluir</button> }

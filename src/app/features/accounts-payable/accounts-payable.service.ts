@@ -62,6 +62,27 @@ const STATUS_LABEL: Record<string, string> = {
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
+/** I071 (CP-02): leitura do XML da NF-e + resultado da importação. */
+export interface ImportXmlNota {
+  chave: string | null;
+  numero: string;
+  serie: string | null;
+  emitenteNome: string | null;
+  emitenteDoc: string;
+  valor: number;
+  emissao: string;
+  vencimento: string;
+  itens: number;
+}
+export interface ImportXmlResult {
+  criado: boolean;
+  duplicada: boolean;
+  mensagem: string;
+  nota: ImportXmlNota;
+  titulo?: { id: number };
+  tituloExistenteId?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AccountsPayableService {
   private http = inject(HttpClient);
@@ -175,6 +196,17 @@ export class AccountsPayableService {
   // ── Criação / edição / exclusão ─────────────────────────────────────────
   create(payload: unknown): Observable<ApiAccountPayable> {
     return this.http.post<ApiAccountPayable>(this.base, payload);
+  }
+
+  /**
+   * I071 (CP-02): importa o XML de uma NF-e e cria a conta a pagar. A resposta traz a
+   * leitura da nota (prévia), a mensagem de resultado e, se a nota já tinha sido
+   * importada, `duplicada` com o título que já existe.
+   */
+  importXml(file: File): Observable<ImportXmlResult> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ImportXmlResult>(`${this.base}/import-xml`, form);
   }
 
   /** FIN-01: registra baixa (pagamento) total ou parcial. */
