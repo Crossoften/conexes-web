@@ -1,7 +1,7 @@
 // src/app/features/invoice-review/invoice-review.page.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InvoiceReviewService, InvoiceCard, OrderOption } from './invoice-review.service';
+import { InvoiceReviewService, InvoiceCard, OrderOption, OrderDetail } from './invoice-review.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
@@ -24,6 +24,11 @@ export class InvoiceReviewPage implements OnInit {
   readonly orders = signal<OrderOption[]>([]);
   selectedOrder = '';
 
+  // COMP-18: o pedido aberto para conferência dentro do próprio diálogo.
+  readonly detail        = signal<OrderDetail | null>(null);
+  readonly loadingDetail = signal(false);
+  readonly detailError   = signal<string | null>(null);
+
   ngOnInit(): void { this.load(); }
 
   load(): void {
@@ -37,10 +42,45 @@ export class InvoiceReviewPage implements OnInit {
 
   openInvoice(): void {
     this.selectedOrder = '';
+    this.detail.set(null);
+    this.detailError.set(null);
     this.modalOpen.set(true);
-    this.svc.orders().subscribe({ next: v => this.orders.set(v) });
+    this.svc.orders().subscribe({
+      next: v => this.orders.set(v),
+      error: e => this.notify.error(e?.error?.message ?? 'Erro ao carregar os pedidos.'),
+    });
   }
   closeInvoice(): void { this.modalOpen.set(false); }
+
+  /**
+   * COMP-18: escolher o pedido abre o pedido. Antes a tela só tinha o seletor
+   * "Pedido #N — fornecedor — total" e faturava sem mostrar o que havia dentro;
+   * o financeiro não tinha como conferir itens nem a NF antes de pré-lançar.
+   */
+  onOrderChange(): void {
+    this.detail.set(null);
+    this.detailError.set(null);
+    const id = Number(this.selectedOrder);
+    if (!id) return;
+    this.loadingDetail.set(true);
+    this.svc.orderDetail(id).subscribe({
+      next: d => { this.detail.set(d); this.loadingDetail.set(false); },
+      error: e => {
+        this.loadingDetail.set(false);
+        this.detailError.set(e?.error?.message ?? 'Não foi possível abrir o pedido para conferência.');
+      },
+    });
+  }
+
+  /** Soma dos itens — para confrontar com o total do pedido antes de faturar. */
+  somaItens(): number {
+    return (this.detail()?.items ?? []).reduce((s, i) => s + (i.totalValue ?? 0), 0);
+  }
+
+  nomeDoArquivo(f: { fileUrl: string; fileKey: string | null }): string {
+    const bruto = f.fileKey || f.fileUrl || '';
+    return decodeURIComponent(bruto.split('/').pop() || 'arquivo');
+  }
 
   invoice(): void {
     if (!this.selectedOrder) { this.notify.error('Escolha um pedido para faturar.'); return; }

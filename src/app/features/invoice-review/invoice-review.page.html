@@ -58,21 +58,86 @@
 
   @if (modalOpen()) {
     <div class="modal-backdrop" (click)="closeInvoice()">
-      <div class="modal" (click)="$event.stopPropagation()">
+      <!-- COMP-18: alarga quando o pedido está aberto; sem detalhe segue estreito -->
+      <div class="modal" [class.modal--wide]="!!detail()" (click)="$event.stopPropagation()">
         <div class="modal-head"><h3 class="modal-title">Faturar pedido de compra</h3></div>
         <div class="modal-body">
           <div class="field">
             <label>Pedido</label>
-            <select class="input" [(ngModel)]="selectedOrder">
+            <select class="input" [(ngModel)]="selectedOrder" (ngModelChange)="onOrderChange()">
               <option value="">Selecione um pedido</option>
               @for (o of orders(); track o.id) { <option [value]="o.id">Pedido #{{ o.id }} — {{ o.supplier }} — {{ brl(o.total) }}</option> }
             </select>
           </div>
+
+          <!-- ══ COMP-18: o pedido aberto para conferência ════════════════════
+               Antes havia só o seletor acima: faturava-se pelo número, sem ver
+               itens nem anexos. -->
+          @if (loadingDetail()) {
+            <p class="hint">Abrindo o pedido…</p>
+          }
+          @if (detailError()) {
+            <p class="hint hint--error">{{ detailError() }}</p>
+          }
+          @if (detail(); as d) {
+            <div class="order-detail">
+              <div class="order-detail__head">
+                <div>
+                  <strong>{{ d.supplier }}</strong>
+                  @if (d.document) { <span class="muted"> · {{ d.document }}</span> }
+                </div>
+                @if (d.requestTitle) {
+                  <div class="muted">Requisição #{{ d.requestId }} — {{ d.requestTitle }}</div>
+                }
+              </div>
+
+              <table class="order-items">
+                <thead>
+                  <tr><th>Item</th><th>Un.</th><th class="right">Qtd.</th><th class="right">Valor unit.</th><th class="right">Total</th></tr>
+                </thead>
+                <tbody>
+                  @for (i of d.items; track $index) {
+                    <tr>
+                      <td>{{ i.name }}</td>
+                      <td>{{ i.unit || '—' }}</td>
+                      <td class="right">{{ i.quantity }}</td>
+                      <td class="right">{{ brl(i.unitValue) }}</td>
+                      <td class="right">{{ brl(i.totalValue) }}</td>
+                    </tr>
+                  }
+                  @if (d.items.length === 0) {
+                    <tr><td colspan="5" class="muted">Este pedido não tem itens cadastrados.</td></tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="4">Soma dos itens</td><td class="right">{{ brl(somaItens()) }}</td></tr>
+                  @if (d.freight)  { <tr><td colspan="4">Frete</td><td class="right">{{ brl(d.freight) }}</td></tr> }
+                  @if (d.discount) { <tr><td colspan="4">Desconto</td><td class="right">− {{ brl(d.discount) }}</td></tr> }
+                  <tr class="order-items__total"><td colspan="4">Total do pedido</td><td class="right">{{ brl(d.total) }}</td></tr>
+                </tfoot>
+              </table>
+
+              <!-- a NF e as CNDs que vão junto no pré-lançamento -->
+              <div class="order-detail__files">
+                <strong>Anexos (NF/CNDs)</strong>
+                @if (d.files.length) {
+                  <ul>
+                    @for (f of d.files; track f.id) {
+                      <li><a [href]="f.fileUrl" target="_blank" rel="noopener">{{ nomeDoArquivo(f) }}</a></li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="muted">Nenhum anexo na requisição deste pedido.</p>
+                }
+              </div>
+            </div>
+          }
+
           <p class="hint">Gera um pré-lançamento em análise no financeiro, herdando a parceria da requisição e trazendo os anexos (NF/CNDs).</p>
         </div>
         <div class="modal-foot">
           <button class="btn-outline" (click)="closeInvoice()">Cancelar</button>
-          <button class="btn-primary" (click)="invoice()">Faturar</button>
+          <button class="btn-primary" [disabled]="!selectedOrder || loadingDetail()" (click)="invoice()">Faturar</button>
         </div>
       </div>
     </div>
