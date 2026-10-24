@@ -123,3 +123,16 @@
   color: var(--status-warning-text, #92400E);
   border: 1px solid #FDE68A;
 }
+
+/* CR-01: a lista ficou mais larga que a tela ao ganhar Vencimento, Valor e Saldo,
+   e a coluna de Ações saiu do campo de visão — justo as ações que este card
+   acabou de criar. Ela passa a ficar fixa à direita durante a rolagem lateral.
+   Vale para as duas telas, porque o critério é que elas se comportem igual. */
+.th--center:last-child, .td--center:last-child {
+  position: sticky; right: 0; z-index: 2;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, .18);
+}
+.th--center:last-child { background: #FAFAFE; }
+.td--center:last-child { background: var(--surface-primary); }
+.tr:hover .td--center:last-child { background: #FAFAFE; }
+.tr--selected .td--center:last-child { background: #F5F3FF; }
