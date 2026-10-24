@@ -206,7 +206,9 @@ export class AccountsPayableStore {
 
   multiplyOne(id: string, times: number, intervalDays: number): void {
     this.svc.multiply(Number(id), times, intervalDays).subscribe({
-      next: () => { this.notify.success(`Lançamento multiplicado em ${times} parcela(s).`); this.load(); },
+      // CP-06: a mensagem dizia "parcela(s)" para uma ação que cria lançamentos
+      // novos pelo valor cheio — repetia em palavras a promessa errada da tela.
+      next: () => { this.notify.success(`${times} lançamento(s) criado(s) a partir deste.`); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao multiplicar o lançamento.'),
     });
   }

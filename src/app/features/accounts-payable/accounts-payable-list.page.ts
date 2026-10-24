@@ -260,7 +260,9 @@ export class AccountsPayableListPage implements OnInit {
   multiplyInterval = 30;
 
   openMultiply(item: PayableAccount) {
-    this.multiplyTimes = 2;
+    // CP-06: o mínimo é 1 — "repetir uma vez" é pedido legítimo. O piso de 2
+    // vinha de "quantidade de parcelas", que é o que a tela dizia errado.
+    this.multiplyTimes = 1;
     this.multiplyInterval = 30;
     this.multiplyTarget.set(item);
   }
@@ -268,7 +270,7 @@ export class AccountsPayableListPage implements OnInit {
   confirmMultiply() {
     const item = this.multiplyTarget();
     if (!item) return;
-    const times = Math.max(2, Math.floor(this.multiplyTimes));
+    const times = Math.max(1, Math.floor(this.multiplyTimes));
     const interval = Math.max(0, Math.floor(this.multiplyInterval));
     this.store.multiplyOne(item.id, times, interval);
     this.closeMultiply();

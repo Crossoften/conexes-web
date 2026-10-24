@@ -159,3 +159,11 @@
 /* Os selects do filtro listam cadastro inteiro (contas do plano, fornecedores):
    sem isso um rótulo longo estoura a coluna da grade. */
 .filter-grid .select { max-width: 100%; }
+
+/* CP-06 — aviso de que repetir nao e parcelar */
+.modal-hint--warn {
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--status-warning-bg, #FEF3C7);
+  color: var(--status-warning-text, #92400E);
+  border: 1px solid #FDE68A;
+}

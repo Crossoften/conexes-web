@@ -320,22 +320,40 @@
   <div class="modal-overlay" (click)="closeMultiply()">
     <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Multiplicar lançamento</h2>
+        <h2>Repetir lançamento</h2>
         <button class="modal-close" (click)="closeMultiply()">
           <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div class="modal-body">
-        <p class="modal-hint">Gera parcelas a partir do lançamento {{ multiplyTarget()?.displayId }}.</p>
+        <!-- CP-06: a tela prometia "Gera parcelas", mas a ação cria lançamentos
+             NOVOS pelo valor cheio — despesa que se repete, não parcelamento.
+             Quem divide um título em parcelas é a aba Rateio e parcelamento. -->
+        <p class="modal-hint">
+          Cria <strong>novos lançamentos</strong> iguais ao {{ multiplyTarget()?.displayId }},
+          cada um pelo valor cheio de {{ multiplyTarget()?.value }}, com o vencimento
+          avançando pelo intervalo informado. Serve para despesa que se repete (aluguel,
+          mensalidade).
+        </p>
+        <p class="modal-hint modal-hint--warn">
+          Não é parcelamento — isto <strong>não divide</strong> o valor do título. Para dividir
+          em parcelas, use a aba <em>Rateio e parcelamento</em> do próprio lançamento.
+        </p>
         <div class="filter-grid filter-grid--2">
-          <div class="form-group"><label>Quantidade de parcelas</label><input type="number" min="2" class="input" [(ngModel)]="multiplyTimes"></div>
+          <div class="form-group"><label>Quantos lançamentos criar</label><input type="number" min="1" class="input" [(ngModel)]="multiplyTimes"></div>
           <div class="form-group"><label>Intervalo (dias)</label><input type="number" min="0" class="input" [(ngModel)]="multiplyInterval"></div>
         </div>
+        @if (multiplyTimes >= 1) {
+          <p class="modal-hint">
+            Resultado: o lançamento atual <strong>mais {{ multiplyTimes }}</strong> novo(s) —
+            {{ multiplyTimes + 1 }} cobranças de {{ multiplyTarget()?.value }}.
+          </p>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn-outline" (click)="closeMultiply()">Cancelar</button>
         <!-- CP-06: o botão só fica cinza quando está de fato inutilizável. -->
-        <button class="btn-solid btn-solid--purple" [disabled]="multiplyTimes < 2" (click)="confirmMultiply()">Multiplicar</button>
+        <button class="btn-solid btn-solid--purple" [disabled]="multiplyTimes < 1" (click)="confirmMultiply()">Criar lançamentos</button>
       </div>
     </div>
   </div>
