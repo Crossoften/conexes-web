@@ -103,29 +103,49 @@ function propostaHtml(d){
         <td>${esc(i.name)}${i.description ? `<span class="item-desc">${esc(i.description)}</span>` : ''}</td>
         <td>${esc(i.unit||'—')}</td>
         <td class="num">${i.quantity}</td>
+        <!-- COMP-23: "Quantidade que o fornecedor consegue fornecer" -->
+        <td><input class="preco q" data-item="${i.id}" inputmode="decimal"
+             value="${i.offeredQuantity==null?i.quantity:i.offeredQuantity}"></td>
         <td><input class="preco u" data-item="${i.id}" inputmode="decimal" placeholder="0,00"
              value="${i.unitValue==null||i.unitValue===0?'':String(i.unitValue).replace('.',',')}"></td>
+        <!-- COMP-23: desconto DO ITEM; o total da proposta soma estes -->
+        <td><input class="preco d" data-item="${i.id}" inputmode="decimal" placeholder="0,00"
+             value="${!i.discount?'':String(i.discount).replace('.',',')}"></td>
         <td class="num t" data-item="${i.id}">${brl(i.totalValue||0)}</td>
+        <!-- COMP-23: "forma de registrar um item que o fornecedor não tem" -->
+        <td class="num"><input type="checkbox" class="naotenho" data-item="${i.id}" ${i.unavailable?'checked':''}
+             title="Não tenho este item"></td>
       </tr>`).join('')
-    : '<tr><td colspan="5" class="muted">Esta requisição não detalhou itens — use o campo de observações para descrever a proposta.</td></tr>';
+    : '<tr><td colspan="8" class="muted">Esta requisição não detalhou itens — use o campo de observações para descrever a proposta.</td></tr>';
 
   return `<div class="card">
     <h3>Sua proposta, item a item</h3>
     <p class="muted">Informe o valor unitário de cada item. O total de cada linha e o total geral são calculados automaticamente.</p>
     <table>
-      <thead><tr><th>Item</th><th>Un.</th><th class="num">Qtd.</th><th>Valor unitário (R$)</th><th class="num">Total</th></tr></thead>
+      <thead><tr>
+        <th>Item</th><th>Un.</th>
+        <th class="num">Qtd. solicitada</th>
+        <th class="num">Qtd. que consigo</th>
+        <th>Valor unitário (R$)</th>
+        <th>Desconto (R$)</th>
+        <th class="num">Total do item</th>
+        <th class="num">Não tenho</th>
+      </tr></thead>
       <tbody>${linhas}</tbody>
       <tfoot class="totais">
-        <tr><td colspan="4">Soma dos itens</td><td class="num" id="somaItens">${brl(0)}</td></tr>
-        <tr><td colspan="4">Frete</td><td class="num" id="freteOut">${brl(e.freight||0)}</td></tr>
-        <tr><td colspan="4">Desconto</td><td class="num" id="descontoOut">− ${brl(e.discount||0)}</td></tr>
-        <tr><td colspan="4" class="geral">Total da proposta</td><td class="num geral" id="totalGeral">${brl(0)}</td></tr>
+        <tr><td colspan="6">Soma dos itens (já com os descontos)</td><td class="num" id="somaItens">${brl(0)}</td><td></td></tr>
+        <tr><td colspan="6">Desconto total <span class="muted">(soma dos descontos de cada item)</span></td><td class="num" id="descontoOut">${brl(0)}</td><td></td></tr>
+        <tr><td colspan="6">Frete</td><td class="num" id="freteOut">${brl(e.freight||0)}</td><td></td></tr>
+        <tr><td colspan="6" class="geral">Total da proposta</td><td class="num geral" id="totalGeral">${brl(0)}</td><td></td></tr>
       </tfoot>
     </table>
 
     <div class="grid" style="margin-top:16px">
       ${money('freight','Frete (R$)','0,00', e.freight)}
-      ${money('discount','Desconto (R$)','0,00', e.discount)}
+      <div><label class="lbl">Desconto total</label>
+        <input class="preco" id="descontoTotalVisao" readonly value="${brl(0)}"
+               title="Calculado a partir dos descontos de cada item">
+      </div>
     </div>
     <div class="grid" style="margin-top:12px">
       <div><label class="lbl">Prazo de entrega</label><input id="deliveryTime" placeholder="ex.: 10 dias úteis" value="${esc(e.deliveryTime)}"></div>
@@ -137,32 +157,53 @@ function propostaHtml(d){
   </div>`;
 }
 
-/** Recalcula a tabela a cada tecla: o fornecedor vê o total antes de enviar. */
+/**
+ * COMP-23: recalcula a cada tecla, com a conta que o criterio descreve.
+ *
+ *   total do item = (qtd. que consigo x valor unitario) - desconto do item
+ *   desconto total = soma dos descontos de cada item   <- "gerado ao final"
+ *   total da proposta = soma dos itens + frete
+ *
+ * O desconto NAO entra de novo no total: ele ja esta dentro de cada linha.
+ * Subtrai-lo outra vez faria a proposta sair mais barata do que o fornecedor
+ * ofereceu, e ele ganharia a cotacao por um numero que nao existe.
+ */
 function recalcular(){
-  let soma = 0;
-  document.querySelectorAll('input.u').forEach(inp => {
-    const id = inp.dataset.item;
+  let soma = 0, descontos = 0;
+  document.querySelectorAll('tr[data-item]').forEach(tr => {
+    const id = tr.dataset.item;
     const item = ITENS.find(i => String(i.id) === String(id));
-    const total = num(inp.value) * (item ? item.quantity : 0);
+    const naoTenho = tr.querySelector('input.naotenho')?.checked;
+    const qtd = naoTenho ? 0 : num(tr.querySelector('input.q')?.value || (item ? item.quantity : 0));
+    const unit = naoTenho ? 0 : num(tr.querySelector('input.u')?.value);
+    const desc = naoTenho ? 0 : num(tr.querySelector('input.d')?.value);
+    const total = Math.max(0, qtd * unit - desc);
+
+    // item marcado como "nao tenho" fica visivelmente fora da conta
+    tr.querySelectorAll('input.q, input.u, input.d').forEach(i => { i.disabled = !!naoTenho; });
+    tr.style.opacity = naoTenho ? '0.5' : '';
+
     soma += total;
-    const celula = document.querySelector(`td.t[data-item="${id}"]`);
-    if (celula) celula.textContent = brl(total);
+    descontos += desc;
+    const celula = tr.querySelector('td.t');
+    if (celula) celula.textContent = naoTenho ? '—' : brl(total);
   });
+
   const frete = num((document.getElementById('freight')||{}).value);
-  const desconto = num((document.getElementById('discount')||{}).value);
   document.getElementById('somaItens').textContent = brl(soma);
+  document.getElementById('descontoOut').textContent = brl(descontos);
   document.getElementById('freteOut').textContent = brl(frete);
-  document.getElementById('descontoOut').textContent = '− ' + brl(desconto);
-  document.getElementById('totalGeral').textContent = brl(soma + frete - desconto);
-  return { soma, frete, desconto, total: soma + frete - desconto };
+  document.getElementById('totalGeral').textContent = brl(soma + frete);
+  const visao = document.getElementById('descontoTotalVisao');
+  if (visao) visao.value = brl(descontos);
+  return { soma, frete, desconto: descontos, total: soma + frete };
 }
 
 function bind(){
-  document.querySelectorAll('input.u').forEach(i => i.addEventListener('input', recalcular));
-  ['freight','discount'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', recalcular);
-  });
+  document.querySelectorAll('input.u, input.q, input.d').forEach(i => i.addEventListener('input', recalcular));
+  document.querySelectorAll('input.naotenho').forEach(i => i.addEventListener('change', recalcular));
+  const f = document.getElementById('freight');
+  if (f) f.addEventListener('input', recalcular);
   recalcular();
 
   const btn = document.getElementById('send'); if(!btn) return;
@@ -170,15 +211,31 @@ function bind(){
     const err = document.getElementById('err'); err.style.display='none';
     const totais = recalcular();
 
-    // COMP-23: só vão os itens com preço. Item deixado em branco não é "grátis":
-    // é item não cotado, e mandar zero faria o comparativo premiar o fornecedor
-    // que esqueceu de preencher.
-    const itens = Array.from(document.querySelectorAll('input.u'))
-      .map(i => ({ purchaseRequestItemId: Number(i.dataset.item), unitValue: num(i.value) }))
-      .filter(i => i.unitValue > 0);
+    /**
+     * COMP-23: vao os itens COTADOS e os marcados como NAO DISPONIVEL.
+     *
+     * Os dois casos precisam chegar ao comprador, e sao diferentes: "nao tenho"
+     * e uma resposta; linha ausente e proposta incompleta. O que nao vai e o
+     * item deixado em branco sem marca nenhuma — mandar zero ali faria o
+     * comparativo premiar quem esqueceu de preencher.
+     */
+    const itens = Array.from(document.querySelectorAll('tr[data-item]')).map(tr => {
+      const id = Number(tr.dataset.item);
+      if (tr.querySelector('input.naotenho')?.checked) {
+        return { purchaseRequestItemId: id, unavailable: true };
+      }
+      const unitValue = num(tr.querySelector('input.u')?.value);
+      if (!(unitValue > 0)) return null;
+      return {
+        purchaseRequestItemId: id,
+        offeredQuantity: num(tr.querySelector('input.q')?.value),
+        unitValue,
+        discount: num(tr.querySelector('input.d')?.value),
+      };
+    }).filter(Boolean);
 
     if (ITENS.length && !itens.length){
-      err.textContent = 'Informe o valor unitário de ao menos um item.';
+      err.textContent = 'Informe o valor de ao menos um item, ou marque os que você não tem.';
       err.style.display = 'block';
       return;
     }
@@ -186,7 +243,6 @@ function bind(){
     const body = {
       items: itens,
       freight: totais.frete,
-      discount: totais.desconto,
       deliveryTime: document.getElementById('deliveryTime').value.trim(),
       paymentConditions: document.getElementById('paymentConditions').value.trim(),
       observation: document.getElementById('observation').value.trim(),
