@@ -237,6 +237,8 @@ export class PurchasesService {
           // CP-17: fabricante do cadastro (string direta ou relação manufacturerRef.name).
           fabricante: pick(r, 'manufacturer') ?? ((r['manufacturerRef'] as Record<string, unknown> | undefined)?.['name'] as string ?? null),
           code:     pick(r, 'code'),
+          // CP-14: Contas a pagar precisa separar Produto de Serviço neste lookup.
+          type:     pick(r, 'type'),
         }));
       }));
   }

@@ -75,6 +75,7 @@ export interface PurchaseRef {
   costBase?: number | null;
   fabricante?: string | null;      // CP-17: fabricante herdado do cadastro do produto
   code?: string | null;            // Menus ajustes 28.09 · #3: busca do item por código
+  type?: string | null;            // CP-14: Produto ou Serviço, para separar os dois no seletor
   // CP-20: cascata de alocação (Centro de custo → Projeto → Atividade).
   costCenterId?: number | null;
   parentProjectId?: number | null;
