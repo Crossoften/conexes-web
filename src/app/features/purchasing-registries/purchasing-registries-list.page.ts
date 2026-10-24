@@ -51,9 +51,16 @@ export class PurchasingRegistriesListPage {
   // item 9 (reteste 22.09): modelo/import PRÓPRIOS por aba — Locais de Entrega
   // deixou de reaproveitar o modelo de Produtos.
   downloadTemplate(): void {
-    const isLoc = this.store.activeTab() === 'LOCATIONS';
-    const req$    = isLoc ? this.svc.downloadLocationsTemplate() : this.svc.downloadProductsTemplate();
-    const fileName = isLoc ? 'modelo-locais-de-entrega.xlsx' : 'modelo-produtos-servicos.xlsx';
+    const aba = this.store.activeTab();
+    const isLoc = aba === 'LOCATIONS';
+    // COMP-02/COMP-03: o modelo acompanha a aba. Na aba Serviços vinha o modelo
+    // unificado, com Fabricante, Tipo Medida e Origem — campos de produto — e
+    // "Descrição do produto" no lugar de "Descrição do serviço".
+    const tipo = aba === 'SERVICES' ? 'servicos' : 'produtos';
+    const req$    = isLoc ? this.svc.downloadLocationsTemplate() : this.svc.downloadProductsTemplate(tipo);
+    const fileName = isLoc
+      ? 'modelo-locais-de-entrega.xlsx'
+      : (tipo === 'servicos' ? 'modelo-servicos.xlsx' : 'modelo-produtos.xlsx');
     req$.subscribe({
       next: (blob: Blob) => {
         const url = URL.createObjectURL(blob);

@@ -103,8 +103,14 @@ export class PurchasingRegistriesService {
     form.append('file', file);
     return this.http.post<any>(`${this.base}/v1/products-services/import`, form);
   }
-  downloadProductsTemplate(): Observable<Blob> {
-    return this.http.get(`${this.base}/v1/products-services/import/template`, { responseType: 'blob' });
+  /**
+   * COMP-02/COMP-03: o modelo passa a vir conforme a aba. Sem o `tipo`, a aba
+   * Serviços baixava o modelo unificado — com Fabricante, Tipo Medida, Origem e
+   * "Descrição do produto", que são campos de produto.
+   */
+  downloadProductsTemplate(tipo?: 'produtos' | 'servicos'): Observable<Blob> {
+    const params = tipo ? new HttpParams().set('tipo', tipo) : undefined;
+    return this.http.get(`${this.base}/v1/products-services/import/template`, { params, responseType: 'blob' });
   }
 
   // ── Locais de entrega (CRUD) ────────────────────────────────────────────────
