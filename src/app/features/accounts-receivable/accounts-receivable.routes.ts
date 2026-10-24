@@ -11,5 +11,11 @@ export const accountsReceivableRoutes: Routes = [
   {
     path: 'new',
     component: AccountsReceivableNewPage
+  },
+  {
+    // CR-04: edição do título. Mesmo desenho do CP-04 — reusa o formulário do
+    // cadastro, que carrega o registro e envia PATCH em vez de POST.
+    path: ':id/edit',
+    component: AccountsReceivableNewPage
   }
 ];

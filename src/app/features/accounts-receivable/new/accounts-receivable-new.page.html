@@ -1,12 +1,18 @@
 <div class="page">
   <div class="page-header">
-    <h1 class="page-title">Nova conta a receber</h1>
+    <h1 class="page-title">{{ ehEdicao() ? 'Editar conta a receber' : 'Nova conta a receber' }}</h1>
   </div>
 
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Dados da conta a receber</h2>
-      <p class="card-subtitle">Cadastro manual — para doações, repasses e outras receitas que não vêm de nota fiscal.</p>
+      <p class="card-subtitle">
+        @if (ehEdicao()) {
+          Alterações aqui não mexem nos recebimentos nem nas parcelas já registrados.
+        } @else {
+          Cadastro manual — para doações, repasses e outras receitas que não vêm de nota fiscal.
+        }
+      </p>
     </div>
 
     <div class="card-body">
@@ -28,6 +34,33 @@
             <div class="form-group">
               <label>Nº do documento / referência</label>
               <input type="text" class="form-control" placeholder="Opcional (ex.: recibo, termo)" formControlName="invoiceNumber">
+            </div>
+          </div>
+
+          <!-- CR-04: campos que o registro já guarda e a tela não oferecia. -->
+          <div class="form-row grid-cols-3">
+            <div class="form-group">
+              <label>CPF / CNPJ do contratante</label>
+              <input type="text" class="form-control" placeholder="Opcional" formControlName="document">
+            </div>
+            <div class="form-group">
+              <label>Termo / parceria</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="partnershipId">
+                  <option value="">Nenhum</option>
+                  @for (t of termos(); track t.id) { <option [value]="t.id">{{ t.nome }}</option> }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Situação</label>
+              <div class="select-wrap">
+                <select class="form-control" formControlName="status">
+                  @for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </div>
 
@@ -63,7 +96,7 @@
 
     <div class="card-footer">
       <button class="btn-outline btn-outline--orange" routerLink="/accounts-receivable">Voltar</button>
-      <button class="btn-solid btn-solid--orange" [disabled]="saving()" (click)="onSubmit()">{{ saving() ? 'Salvando...' : 'Salvar' }}</button>
+      <button class="btn-solid btn-solid--orange" [disabled]="saving()" (click)="onSubmit()">{{ saving() ? 'Salvando...' : (ehEdicao() ? 'Salvar alterações' : 'Salvar') }}</button>
     </div>
   </div>
 </div>

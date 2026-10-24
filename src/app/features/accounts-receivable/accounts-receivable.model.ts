@@ -16,6 +16,8 @@ export interface ReceivableAccount {
   contractorDoc: string;
   contractorName: string;
   issueDate: string;
+  /** CR-01: a coluna de vencimento faltava — a API devolvia e a tela descartava. */
+  dueDate: string;
   invoiceNumber: string;
   status: string;
   // FIN-01: baixa (recebimento) parcial
@@ -24,11 +26,19 @@ export interface ReceivableAccount {
   balance: string;
   balanceNum: number;
   canReceive: boolean;
+  /** E2: quantas parcelas o título já tem, para a tela saber o que oferecer. */
+  installmentsCount: number;
 }
 
 export interface ReceivableFilters {
   status: string;
-  dateRange: string;
+  /** CR-01: sobre qual data o intervalo incide (o par de pagar, CP-01). */
+  dateField: string;
+  /** CR-01: "Período" era um texto livre que nunca chegava ao servidor. */
+  dateStart: string;
+  dateEnd: string;
   contractor: string;
-  // Adicione outros campos específicos de contas a receber aqui
 }
+
+/** Uma opção de select do filtro. */
+export interface FilterOption { value: string; label: string }

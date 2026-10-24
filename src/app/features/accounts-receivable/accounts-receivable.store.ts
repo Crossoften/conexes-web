@@ -20,7 +20,8 @@ interface State {
 }
 
 const INITIAL_FILTERS: ReceivableFilters = {
-  status: '', dateRange: '', contractor: ''
+  // CR-01: a data-base começa em Vencimento — é a pergunta de uma tela de cobrança.
+  status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: ''
 };
 
 @Injectable()
@@ -46,15 +47,22 @@ export class AccountsReceivableStore {
     const { page, pageSize } = this.state().pagination;
     const filters = this.state().filters;
     this.state.update(s => ({ ...s, loading: true, error: null }));
-    this.svc.getAll(filters, pageSize, (page - 1) * pageSize).subscribe({
+    // `page` vai como número da página: o back usa `skip` como página, não offset.
+    // A tela mandava `(page-1)*pageSize`, então a página 2 pedia a página 10.
+    this.svc.getAll(filters, pageSize, page).subscribe({
       next: res => this.state.update(s => ({
-        ...s, items: res.items, total: res.total,
-        summaries: this.svc.buildSummaries(res.raw), loading: false,
+        ...s, items: res.items, total: res.total, loading: false,
       })),
       error: () => this.state.update(s => ({
         ...s, items: [], total: 0, loading: false,
         error: 'Não foi possível carregar as contas a receber.',
       })),
+    });
+    // CR-01: o resumo vem agregado do servidor — soma a base filtrada inteira,
+    // não apenas a página exibida. Falha no resumo não derruba a listagem.
+    this.svc.getSummary(filters).subscribe({
+      next: summaries => this.state.update(s => ({ ...s, summaries })),
+      error: () => this.state.update(s => ({ ...s, summaries: [] })),
     });
   }
 
@@ -68,6 +76,16 @@ export class AccountsReceivableStore {
   readonly pagination = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
+
+  /**
+   * CR-02: quantos filtros estão de fato valendo. `dateField` sozinho não conta —
+   * é a data-base do intervalo, e sem intervalo não filtra nada.
+   */
+  readonly activeFilterCount = computed(() => {
+    const f = this.state().filters;
+    return (Object.keys(f) as (keyof ReceivableFilters)[])
+      .filter(k => k !== 'dateField' && !!f[k]).length;
+  });
 
   readonly filteredItems = computed(() => {
     return this.state().items;
@@ -143,6 +161,30 @@ export class AccountsReceivableStore {
 
   readonly selectedCount = computed(() => this.state().selectedIds.size);
   clearSelection() { this.state.update(s => ({ ...s, selectedIds: new Set() })); }
+
+  /** CR-01: a exportação leva os filtros da tela. */
+  exportExcel(): void {
+    this.svc.exportExcel(this.state().filters).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contas-a-receber_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.notify.success('Exportação gerada.');
+      },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao exportar a planilha.'),
+    });
+  }
+
+  /** E2: divide o título em parcelas (a API já gerava; faltava o comando). */
+  splitInstallments(id: string, count: number): void {
+    this.svc.splitInstallments(Number(id), count).subscribe({
+      next: () => { this.notify.success(`Título dividido em ${count} parcela(s).`); this.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Erro ao parcelar o título.'),
+    });
+  }
 
   deleteOne(id: string): void {
     this.svc.delete(Number(id)).subscribe({

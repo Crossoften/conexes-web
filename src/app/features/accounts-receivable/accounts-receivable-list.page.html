@@ -51,7 +51,15 @@
       <button class="btn-outline" (click)="openFilters()">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
         Filtros
+        <!-- CR-02: a tela não dizia que havia filtro aplicado. -->
+        @if (store.activeFilterCount() > 0) {
+          <span class="filter-badge">{{ store.activeFilterCount() }}</span>
+        }
       </button>
+
+      @if (store.activeFilterCount() > 0) {
+        <button type="button" class="btn-outline btn-pill" (click)="clearFilters()">Limpar filtros</button>
+      }
 
       <div class="toolbar-actions-right">
         <button class="btn-outline" (click)="onExport()">
@@ -90,7 +98,12 @@
             <th class="th th--sortable" (click)="store.setSort('contractorDoc')">Doc da contratante <span class="sort-icon" [ngClass]="'sort--' + getSortState('contractorDoc')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('contractorName')">Nome contratante <span class="sort-icon" [ngClass]="'sort--' + getSortState('contractorName')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('issueDate')">Data emissão <span class="sort-icon" [ngClass]="'sort--' + getSortState('issueDate')"></span></th>
+            <!-- CR-01: o vencimento vinha na resposta e a tela descartava — era a
+                 coluna que mais importa numa lista de cobrança. -->
+            <th class="th th--sortable" (click)="store.setSort('dueDate')">Vencimento <span class="sort-icon" [ngClass]="'sort--' + getSortState('dueDate')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('invoiceNumber')">Número da NF <span class="sort-icon" [ngClass]="'sort--' + getSortState('invoiceNumber')"></span></th>
+            <th class="th">Valor</th>
+            <th class="th">Saldo</th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
             <th class="th th--center">Ações</th>
           </tr>
@@ -103,7 +116,10 @@
               <td class="td td--mono">{{ item.contractorDoc }}</td>
               <td class="td">{{ item.contractorName }}</td>
               <td class="td">{{ item.issueDate }}</td>
+              <td class="td">{{ item.dueDate }}</td>
               <td class="td">{{ item.invoiceNumber }}</td>
+              <td class="td">{{ item.value }}</td>
+              <td class="td">{{ item.balance }}</td>
               <td class="td">{{ item.status }}</td>
               
               <td class="td td--center">
@@ -114,7 +130,12 @@
                     <!-- FIN-03: renegociar o saldo -->
                     <button class="icon-btn" title="Renegociar" (click)="openRenegotiate(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 8a6 6 0 0 1 10-2M16 12a6 6 0 0 1-10 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3M6 17v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   }
-                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <!-- CR-04: a ação Editar não existia nesta tela. -->
+                  <button class="icon-btn" title="Editar" (click)="onEdit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M14.5 2.5a2.1 2.1 0 0 1 3 3L7 16l-4 1 1-4 10.5-10.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <!-- E2: parcelar — a API já gerava as parcelas, faltava o comando. -->
+                  @if (item.canReceive) {
+                    <button class="icon-btn" [title]="item.installmentsCount > 0 ? 'Já dividido em ' + item.installmentsCount + ' parcela(s) — refazer a divisão' : 'Parcelar'" (click)="openSplit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                  }
                   <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
                 </div>
@@ -122,12 +143,12 @@
             </tr>
           }
           @if (!store.loading() && store.pageItems().length === 0) {
-            <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">
+            <tr class="tr"><td class="td" colspan="11" style="text-align:center; padding:32px; color: var(--text-secondary);">
               @if (store.error()) { {{ store.error() }} } @else { Nenhuma conta a receber cadastrada. }
             </td></tr>
           }
           @if (store.loading()) {
-            <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+            <tr class="tr"><td class="td" colspan="11" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
           }
         </tbody>
       </table>
@@ -162,16 +183,47 @@
       </div>
 
       <div class="modal-body">
+        <!-- CR-02: Status era um select sem nenhuma opção, e Contratante e Período
+             eram caixas de texto que nunca chegavam ao servidor. -->
         <div class="filter-grid">
-          <div class="form-group"><label>Status</label><select class="select" [(ngModel)]="localFilters.status"><option value="">Selecione</option></select></div>
-          <div class="form-group"><label>Contratante</label><input type="text" class="input" placeholder="Buscar" [(ngModel)]="localFilters.contractor"></div>
-          <div class="form-group"><label>Período</label><input type="text" class="input" placeholder="00/00/0000" [(ngModel)]="localFilters.dateRange"></div>
+          <div class="form-group">
+            <label>Data base</label>
+            <select class="select" [(ngModel)]="localFilters.dateField">
+              @for (o of optDateField; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>De</label>
+            <input type="date" class="input" [(ngModel)]="localFilters.dateStart">
+          </div>
+          <div class="form-group">
+            <label>Até</label>
+            <input type="date" class="input" [(ngModel)]="localFilters.dateEnd">
+          </div>
+          @if (intervaloInvalido) {
+            <p class="filter-error col-span-full">A data inicial não pode ser depois da final.</p>
+          }
+
+          <div class="form-group">
+            <label>Status</label>
+            <select class="select" [(ngModel)]="localFilters.status">
+              <option value="">Todos</option>
+              @for (o of optStatus; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group col-span-2">
+            <label>Contratante</label>
+            <select class="select" [(ngModel)]="localFilters.contractor">
+              <option value="">Todos os contratantes</option>
+              @for (o of optContractor(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="modal-footer">
         <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
-        <button class="btn-solid btn-solid--purple" (click)="applyFilters()">Filtrar</button>
+        <button class="btn-solid btn-solid--purple" [disabled]="intervaloInvalido" (click)="applyFilters()">Filtrar</button>
       </div>
     </div>
   </div>
@@ -196,4 +248,45 @@
     (confirm)="onRenegotiateConfirm($event)"
     (cancel)="closeRenegotiate()">
   </app-renegotiate-modal>
+}
+
+@if (splitTarget(); as t) {
+  <!-- E2: a API já gerava as parcelas; faltava o comando na tela. -->
+  <div class="modal-overlay" (click)="closeSplit()">
+    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Parcelar recebimento</h2>
+        <button class="modal-close" (click)="closeSplit()">
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">
+          Divide o título {{ t.code }} ({{ t.value }}) em parcelas iguais, com os vencimentos
+          avançando um mês a cada parcela a partir do vencimento atual.
+        </p>
+        @if (t.installmentsCount > 0) {
+          <p class="modal-hint modal-hint--warn">
+            Este título já está dividido em <strong>{{ t.installmentsCount }} parcela(s)</strong>.
+            Confirmar vai <strong>refazer</strong> a divisão.
+          </p>
+        }
+        <div class="form-group">
+          <label>Quantidade de parcelas</label>
+          <input type="number" min="2" class="input" [(ngModel)]="splitCount">
+        </div>
+        @if (splitCount >= 2) {
+          <p class="modal-hint">
+            Resultado: <strong>{{ splitCount }}</strong> parcelas de aproximadamente
+            <strong>{{ valorPorParcela | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>.
+            A diferença de arredondamento fica na última.
+          </p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeSplit()">Cancelar</button>
+        <button class="btn-solid btn-solid--purple" [disabled]="splitCount < 2" (click)="confirmSplit()">Parcelar</button>
+      </div>
+    </div>
+  </div>
 }

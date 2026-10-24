@@ -2,10 +2,10 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, CurrencyPipe } from '@angular/common';
 import { AccountsReceivableStore } from './accounts-receivable.store';
 import { AccountsReceivableService } from './accounts-receivable.service';
-import { ReceivableAccount, ReceivableFilters } from './accounts-receivable.model';
+import { ReceivableAccount, ReceivableFilters, FilterOption } from './accounts-receivable.model';
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -13,7 +13,7 @@ import { NotificationService } from '../../shared/services/notification.service'
 @Component({
   selector: 'app-accounts-receivable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, BaixaModalComponent, RenegotiateModalComponent],
+  imports: [FormsModule, NgClass, CurrencyPipe, BaixaModalComponent, RenegotiateModalComponent],
   providers: [AccountsReceivableStore],
   templateUrl: './accounts-receivable-list.page.html',
   styleUrl: './accounts-receivable-list.page.scss',
@@ -26,6 +26,12 @@ export class AccountsReceivableListPage implements OnInit {
 
   /** CR-03: contas bancárias para o seletor do modal de recebimento. */
   readonly contasBancarias = signal<{ id: number; label: string }[]>([]);
+
+  // ── CR-02: opções dos filtros ─────────────────────────────────────────────
+  // Status era select só com o placeholder; Contratante e Período eram texto livre.
+  readonly optStatus     = this.svc.statusOptions;
+  readonly optDateField  = this.svc.dateFieldOptions;
+  readonly optContractor = signal<FilterOption[]>([]);
 
   // FA-09: cadastro manual de conta a receber.
   goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
@@ -66,13 +72,8 @@ export class AccountsReceivableListPage implements OnInit {
     });
   }
 
-  // CR-02: botões Exportar excel / Importar XML estavam sem ação.
-  onExport(): void {
-    this.svc.exportExcel().subscribe({
-      next: b => this.downloadBlob(b, `contas-a-receber_${new Date().toISOString().slice(0, 10)}.xlsx`),
-      error: () => this.notify.error('Falha ao exportar.'),
-    });
-  }
+  // CR-01: a exportação passa a respeitar os filtros da tela (era a base inteira).
+  onExport(): void { this.store.exportExcel(); }
   onImportXml(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
@@ -82,11 +83,6 @@ export class AccountsReceivableListPage implements OnInit {
       error: err => { this.notify.error(err?.error?.message ?? 'Falha ao importar o XML.'); input.value = ''; },
     });
   }
-  private downloadBlob(b: Blob, name: string): void {
-    const url = URL.createObjectURL(b);
-    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
-    URL.revokeObjectURL(url);
-  }
 
   ngOnInit(): void {
     this.store.load();
@@ -94,6 +90,11 @@ export class AccountsReceivableListPage implements OnInit {
     this.svc.getBankAccounts().subscribe({
       next: v => this.contasBancarias.set(v),
       error: () => this.contasBancarias.set([]),
+    });
+    // CR-02: contratantes para o filtro, que era uma caixa de texto.
+    this.svc.getContractors().subscribe({
+      next: v => this.optContractor.set(v),
+      error: () => this.optContractor.set([]),
     });
   }
 
@@ -105,8 +106,14 @@ export class AccountsReceivableListPage implements OnInit {
   readonly pageSizeOptions = [10, 25, 50];
 
   localFilters: ReceivableFilters = {
-    status: '', dateRange: '', contractor: ''
+    status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: ''
   };
+
+  /** CR-02: o intervalo precisa fechar — de depois de até não filtra nada. */
+  get intervaloInvalido(): boolean {
+    const { dateStart, dateEnd } = this.localFilters;
+    return !!dateStart && !!dateEnd && dateStart > dateEnd;
+  }
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));
 
@@ -142,6 +149,7 @@ export class AccountsReceivableListPage implements OnInit {
   }
 
   applyFilters() {
+    if (this.intervaloInvalido) return;
     this.store.applyFilters({ ...this.localFilters });
   }
 
@@ -153,6 +161,34 @@ export class AccountsReceivableListPage implements OnInit {
 
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
+  }
+
+  /** CR-04: abre o título no formulário, em modo edição — a ação não existia. */
+  onEdit(item: ReceivableAccount) {
+    this.router.navigate(['/accounts-receivable', item.id, 'edit']);
+  }
+
+  // ── E2: parcelamento (a API já gerava as parcelas; faltava o comando) ──────
+  readonly splitTarget = signal<ReceivableAccount | null>(null);
+  splitCount = 2;
+
+  openSplit(item: ReceivableAccount) {
+    this.splitCount = 2;
+    this.splitTarget.set(item);
+  }
+  closeSplit() { this.splitTarget.set(null); }
+  confirmSplit() {
+    const item = this.splitTarget();
+    if (!item || this.splitCount < 2) return;
+    this.store.splitInstallments(item.id, Math.floor(this.splitCount));
+    this.closeSplit();
+  }
+  /** E2: o valor que cada parcela vai ter, mostrado antes de confirmar. */
+  get valorPorParcela(): number {
+    const item = this.splitTarget();
+    if (!item || this.splitCount < 1) return 0;
+    const bruto = Number(String(item.value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
+    return Math.round((bruto / Math.floor(this.splitCount)) * 100) / 100;
   }
 
   onDelete(item: ReceivableAccount) {
