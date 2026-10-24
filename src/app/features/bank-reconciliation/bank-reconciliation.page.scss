@@ -127,3 +127,29 @@
 .pagination__nav { display: flex; align-items: center; gap: 4px; }
 .pag-btn { min-width: 34px; height: 34px; padding: 0 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--surface-border-mid); background: var(--surface-primary); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transition); &:hover:not(:disabled):not(.pag-btn--active) { border-color: var(--brand-purple-mid); color: var(--brand-purple); background: var(--brand-purple-light); } &--active { background: var(--brand-purple); border-color: var(--brand-purple); color: #fff; pointer-events: none; } &:disabled { opacity: .4; cursor: not-allowed; } }
 .pag-ellipsis { display: flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--text-muted); font-size: 13px; }
+
+// ── CB-01/CB-10/CB-13 (card #588): contagem no card, candidatos da busca e o
+//    vínculo escolhido. O painel da pendência era um mockup sem estes elementos.
+.summary-card__count { margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+
+.candidatos { margin: 0 0 16px; border: 1px solid var(--surface-border-mid); border-radius: 10px; padding: 8px; background: #F9FAFB; }
+.candidatos__titulo { margin: 2px 4px 8px; font-size: 12.5px; color: var(--text-secondary); }
+.candidato {
+  display: grid; grid-template-columns: 120px 1fr 160px auto; gap: 10px; align-items: center; width: 100%;
+  padding: 8px 10px; margin-bottom: 6px; text-align: left; cursor: pointer;
+  background: var(--surface-primary); border: 1px solid var(--surface-border-mid); border-radius: 8px;
+  font-size: 12.5px; color: var(--text-primary); transition: all var(--transition);
+  &:hover { border-color: var(--brand-orange); background: #FFF7ED; }
+  &__tipo { font-weight: 700; color: var(--brand-purple); }
+  &__desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__parte { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__valor { color: var(--text-secondary); white-space: nowrap; }
+}
+.vinculo-escolhido {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 16px; padding: 8px 12px; font-size: 12.5px;
+  border: 1px solid #A7F3D0; border-radius: 8px; background: #ECFDF5; color: #065F46;
+}
+
+// Botões de ação da pendência desabilitados durante a gravação.
+.btn-outline:disabled, .btn-solid:disabled { opacity: .5; cursor: not-allowed; }

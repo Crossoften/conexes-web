@@ -50,6 +50,11 @@
           <p class="summary-card__line summary-card__line--bold">{{ summary.credit }}</p>
           <p class="summary-card__line summary-card__line--bold" style="margin-top: 4px;">Débito</p>
           <p class="summary-card__line summary-card__line--bold">{{ summary.debit }}</p>
+          <!-- CB-01/I058: a contagem existia só no seletor de contas; agora também no card,
+               e CB-06/I062: tanto valor quanto contagem respeitam o período escolhido. -->
+          @if (summary.count !== undefined) {
+            <p class="summary-card__line summary-card__count">{{ summary.count }} lançamento(s) no período</p>
+          }
         </div>
       </div>
     }
@@ -75,7 +80,7 @@
           
           <div class="accordion-card" [class.accordion-card--expanded]="store.expandedIds().has(item.id)">
             
-            <div class="accordion-header" (click)="store.toggleExpand(item.id)">
+            <div class="accordion-header" (click)="onToggle(item)">
               <div class="accordion-left">
                 <span class="accordion-date">{{ item.date }}</span>
                 <span class="accordion-day">{{ item.dayOfWeek }}</span>
@@ -112,21 +117,77 @@
                         </div>
                       </div>
 
+                      <!-- CB-10/I066: a busca de lançamento não tinha ligação nenhuma e o
+                           seletor só oferecia "Novo lançamento". Agora consulta contas a
+                           pagar/receber (pelo texto e pelo valor do próprio movimento) e o
+                           título escolhido fica visível como vínculo antes de conciliar. -->
                       <div class="form-filters">
-                        <select class="select select--bg-gray"><option>Novo lançamento</option></select>
-                        <div class="search-wrap" style="flex: 1;"><input class="search search--bg-gray" type="text" placeholder="Buscar lançamento"><svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+                        <div class="search-wrap" style="flex: 1;">
+                          <input class="search search--bg-gray" type="text" placeholder="Buscar conta a pagar/receber para vincular"
+                                 [value]="campo(item, 'busca')"
+                                 (input)="setCampo(item, 'busca', $any($event.target).value)"
+                                 (keyup.enter)="buscar(item, campo(item, 'busca'))">
+                          <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                        <button type="button" class="btn-outline btn-sm" (click)="buscar(item, campo(item, 'busca'))">
+                          {{ store.buscando() ? 'Buscando…' : 'Buscar' }}
+                        </button>
                       </div>
 
+                      @if (store.candidatos().length) {
+                        <div class="candidatos">
+                          <p class="candidatos__titulo">{{ store.candidatos().length }} título(s) encontrado(s) — clique para vincular:</p>
+                          @for (c of store.candidatos(); track c.type + '-' + c.id) {
+                            <button type="button" class="candidato" (click)="escolherCandidato(item, c)">
+                              <span class="candidato__tipo">{{ c.type === 'payable' ? 'A pagar' : 'A receber' }} #{{ c.id }}</span>
+                              <span class="candidato__desc">{{ c.description || '—' }}</span>
+                              <span class="candidato__parte">{{ c.party || '' }}</span>
+                              <span class="candidato__valor">{{ dinheiro(c.value) }} · vence {{ dataBR(c.dueDate) }}</span>
+                            </button>
+                          }
+                        </div>
+                      }
+
+                      @if (campo(item, 'vinculoRotulo')) {
+                        <p class="vinculo-escolhido">
+                          Vínculo escolhido: <strong>{{ campo(item, 'vinculoRotulo') }}</strong>
+                          <button type="button" class="btn-outline btn-sm" (click)="setCampo(item, 'vinculo', ''); setCampo(item, 'vinculoRotulo', '')">remover</button>
+                        </p>
+                      }
+
+                      <!-- CB-03/I060 + CB-12/I068: os campos abrem preenchidos com os dados da
+                           própria movimentação, e Fornecedor/Centro de custo carregam o cadastro
+                           (antes tinham só "Selecione"). -->
                       <div class="form-grid">
-                        <div class="form-group"><label>Descrição<span class="req">*</span></label><input type="text" class="input" placeholder="Digite aqui..."></div>
-                        <div class="form-group"><label>Categoria<span class="req">*</span></label><input type="text" class="input" placeholder="Digite aqui..."></div>
-                        <div class="form-group"><label>Fornecedor</label><select class="select"><option>Selecione</option></select></div>
-                        <div class="form-group"><label>Centro de custo</label><select class="select"><option>Selecione</option></select></div>
+                        <div class="form-group"><label>Descrição<span class="req">*</span></label>
+                          <input type="text" class="input" placeholder="Digite aqui..."
+                                 [value]="campo(item, 'description')" (input)="setCampo(item, 'description', $any($event.target).value)"></div>
+                        <div class="form-group"><label>Categoria</label>
+                          <input type="text" class="input" placeholder="Digite aqui..."
+                                 [value]="campo(item, 'category')" (input)="setCampo(item, 'category', $any($event.target).value)"></div>
+                        <div class="form-group"><label>Fornecedor</label>
+                          <select class="select" [value]="campo(item, 'stakeholderId')" (change)="setCampo(item, 'stakeholderId', $any($event.target).value)">
+                            <option value="">Selecione</option>
+                            @for (f of store.fornecedores(); track f.id) { <option [value]="f.id">{{ f.name }}</option> }
+                          </select></div>
+                        <div class="form-group"><label>Centro de custo</label>
+                          <select class="select" [value]="campo(item, 'costCenterId')" (change)="setCampo(item, 'costCenterId', $any($event.target).value)">
+                            <option value="">Selecione</option>
+                            @for (cc of store.centrosCusto(); track cc.id) { <option [value]="cc.id">{{ cc.name }}</option> }
+                          </select></div>
                       </div>
 
+                      <!-- CB-13/I069: os dois botões não tinham handler — a pendência voltava
+                           igual ao recarregar. Agora persistem e a lista/contagem se atualizam. -->
                       <div class="form-actions">
-                        <button class="btn-outline btn-outline--orange">Ignorar</button>
-                        <button class="btn-solid btn-solid--orange">Conciliar</button>
+                        <button type="button" class="btn-outline btn-outline--orange"
+                                [disabled]="store.acaoBusy() === item.txId" (click)="ignorar(item)">
+                          {{ store.acaoBusy() === item.txId ? 'Aguarde…' : 'Ignorar' }}
+                        </button>
+                        <button type="button" class="btn-solid btn-solid--orange"
+                                [disabled]="store.acaoBusy() === item.txId" (click)="conciliar(item)">
+                          {{ store.acaoBusy() === item.txId ? 'Aguarde…' : 'Conciliar' }}
+                        </button>
                       </div>
                     </div>
                   </div>

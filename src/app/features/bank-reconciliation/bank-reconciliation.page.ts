@@ -1,9 +1,23 @@
 // src/app/features/bank-reconciliation/bank-reconciliation.page.ts
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { BankReconciliationStore } from './bank-reconciliation.store';
+import { ReconciliationItem } from './bank-reconciliation.model';
+import { LedgerCandidate } from './bank-reconciliation.service';
+
+/** CB-03/CB-10/CB-13: estado do formulário de uma pendência aberta. */
+interface PendenciaForm {
+  description: string;
+  category: string;
+  stakeholderId: string;
+  costCenterId: string;
+  busca: string;          // texto da busca de título (CB-10)
+  vinculo: string;        // 'payable:12' | 'receivable:7' | ''
+  vinculoRotulo: string;
+}
+const FORM_VAZIO: PendenciaForm = { description: '', category: '', stakeholderId: '', costCenterId: '', busca: '', vinculo: '', vinculoRotulo: '' };
 
 @Component({
   selector: 'app-bank-reconciliation',
@@ -76,5 +90,80 @@ export class BankReconciliationPage implements OnInit {
 
   goToPage(p: number | '...') {
     if (typeof p === 'number') this.store.setPage(p);
+  }
+
+  // ── CB-03 / CB-10 / CB-12 / CB-13: painel da pendência ────────────────────
+  // Era um mockup: campos sem ligação, seletores só com "Selecione" e os botões
+  // Ignorar/Conciliar sem handler. O formulário abre preenchido com os dados da
+  // própria movimentação (CB-03) e os botões agora persistem (CB-13).
+
+  readonly form = signal<Record<string, PendenciaForm>>({});
+
+  /** Abre/fecha a pendência; ao abrir, semeia o formulário com os dados do movimento. */
+  onToggle(item: ReconciliationItem): void {
+    const atual = this.form();
+    if (!atual[item.id]) {
+      this.form.set({
+        ...atual,
+        [item.id]: {
+          ...FORM_VAZIO,
+          description: item.description ?? '',
+          category: item.category ?? '',
+          stakeholderId: item.stakeholderId ? String(item.stakeholderId) : '',
+          costCenterId: item.costCenterId ? String(item.costCenterId) : '',
+        },
+      });
+    }
+    this.store.limparCandidatos();
+    this.store.toggleExpand(item.id);
+  }
+
+  campo(item: ReconciliationItem, nome: keyof PendenciaForm): string {
+    return this.form()[item.id]?.[nome] ?? '';
+  }
+
+  setCampo(item: ReconciliationItem, nome: keyof PendenciaForm, valor: string): void {
+    const atual = this.form();
+    this.form.set({ ...atual, [item.id]: { ...(atual[item.id] ?? FORM_VAZIO), [nome]: valor } });
+  }
+
+  /** CB-10: busca candidatos pelo texto e pelo valor do próprio movimento. */
+  buscar(item: ReconciliationItem, termo: string): void {
+    this.store.buscarCandidatos(termo, item.rawValue != null ? Math.abs(item.rawValue) : undefined);
+  }
+
+  escolherCandidato(item: ReconciliationItem, c: LedgerCandidate): void {
+    const rotulo = `${c.type === 'payable' ? 'Conta a pagar' : 'Conta a receber'} #${c.id}${c.description ? ' — ' + c.description : ''}`;
+    this.setCampo(item, 'vinculo', `${c.type}:${c.id}`);
+    this.setCampo(item, 'vinculoRotulo', rotulo);
+    this.store.limparCandidatos();
+  }
+
+  conciliar(item: ReconciliationItem): void {
+    if (!item.txId) return;
+    const f = this.form()[item.id] ?? FORM_VAZIO;
+    const [tipo, idStr] = (f.vinculo || '').split(':');
+    const vinculoId = Number(idStr) || undefined;
+    this.store.conciliar(item.txId, {
+      ...(f.description ? { description: f.description } : {}),
+      ...(f.category ? { category: f.category } : {}),
+      ...(f.stakeholderId ? { stakeholderId: Number(f.stakeholderId) } : {}),
+      ...(f.costCenterId ? { costCenterId: Number(f.costCenterId) } : {}),
+      ...(tipo === 'payable' && vinculoId ? { accountPayableId: vinculoId } : {}),
+      ...(tipo === 'receivable' && vinculoId ? { accountReceivableId: vinculoId } : {}),
+    }, f.vinculoRotulo || undefined);
+  }
+
+  ignorar(item: ReconciliationItem): void {
+    if (item.txId) this.store.ignorar(item.txId);
+  }
+
+  // Formatação local (o componente não importa pipes).
+  private readonly fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  dinheiro(v?: number | null): string { return this.fmtBRL.format(v ?? 0); }
+  dataBR(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
   }
 }

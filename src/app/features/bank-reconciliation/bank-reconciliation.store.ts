@@ -1,7 +1,9 @@
 // src/app/features/bank-reconciliation/bank-reconciliation.store.ts
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ReconciliationItem, ReconciliationTab, BankAccountInfo, ConciliationSummary } from './bank-reconciliation.model';
-import { BankReconciliationService, ReconAccount, AccountReconciliation } from './bank-reconciliation.service';
+import { BankReconciliationService, ReconAccount, AccountReconciliation, LedgerCandidate } from './bank-reconciliation.service';
+import { PurchasesService } from '../purchases/purchases.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const WEEKDAY = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
@@ -46,7 +48,6 @@ interface State {
   pendingItems: ReconciliationItem[];
   movementItems: ReconciliationItem[];
   accountInfo: BankAccountInfo;
-  summaries: ConciliationSummary[];
   loading: boolean;
   error: string | null;
   activeTab: ReconciliationTab;
@@ -59,6 +60,8 @@ interface State {
 @Injectable()
 export class BankReconciliationStore {
   private readonly svc = inject(BankReconciliationService);
+  private readonly lookups = inject(PurchasesService);
+  private readonly notify = inject(NotificationService);
 
   private readonly state = signal<State>({
     accounts: [],
@@ -66,7 +69,6 @@ export class BankReconciliationStore {
     pendingItems: [],
     movementItems: [],
     accountInfo: EMPTY_ACCOUNT,
-    summaries: [],
     loading: false,
     error: null,
     activeTab: 'PENDING',
@@ -79,11 +81,12 @@ export class BankReconciliationStore {
   // Carrega as contas e a conciliação da primeira conta (ou vazio se não houver conta).
   load(): void {
     this.state.update(s => ({ ...s, loading: true, error: null }));
+    this.carregarLookups();   // CB-12: os seletores do painel da pendência
     this.svc.getAccounts().subscribe({
       next: accounts => {
         this.state.update(s => ({ ...s, accounts }));
         if (!accounts.length) {
-          this.state.update(s => ({ ...s, loading: false, accountInfo: EMPTY_ACCOUNT, summaries: [], pendingItems: [], movementItems: [] }));
+          this.state.update(s => ({ ...s, loading: false, accountInfo: EMPTY_ACCOUNT, pendingItems: [], movementItems: [] }));
           return;
         }
         this.selectAccount(accounts[0].id);
@@ -107,12 +110,24 @@ export class BankReconciliationStore {
     };
     const pendingItems: ReconciliationItem[] = (data.pendingReconciliations ?? []).map(p => ({
       id: `p-${p.id}`, date: fmtDate(p.date), dayOfWeek: weekday(p.date), rawDate: p.date,
-      description: 'Lançamento pendente de conciliação', amount: brl.format(p.value ?? 0),
+      // CB-03/I060: a descrição é a da PRÓPRIA movimentação. O texto fixo "Lançamento
+      // pendente de conciliação" saía em toda linha — era o que o relatório apontou
+      // como pendência genérica, sem os dados do lançamento.
+      description: (p.description ?? '').trim() || 'Movimentação sem descrição no extrato',
+      amount: brl.format(p.value ?? 0),
       bankDetails: accInfo,
+      txId: p.id,
+      rawValue: p.value ?? 0,
+      type: p.type,
+      category: p.category ?? null,
+      stakeholderId: p.stakeholderId ?? null,
+      costCenterId: p.costCenterId ?? null,
+      reconciled: false,
     }));
     const movementItems: ReconciliationItem[] = (data.movements ?? []).map(m => ({
       id: `m-${m.id}`, date: fmtDate(m.date), dayOfWeek: weekday(m.date), rawDate: m.date,
       description: m.bankDescription ?? '—', amount: brl.format(m.bankValue ?? 0),
+      txId: m.id, rawValue: m.bankValue ?? 0, type: m.type, reconciled: m.reconciled,
       movementGroups: [{
         id: `g-${m.id}`,
         groupName: m.reconciled ? 'Conciliado' : 'Pendente',
@@ -129,13 +144,33 @@ export class BankReconciliationStore {
         }],
       }],
     }));
-    const totalConc = (data.movements ?? []).filter(m => m.reconciled).reduce((a, m) => a + (m.bankValue ?? 0), 0);
-    const totalPend = (data.pendingReconciliations ?? []).reduce((a, p) => a + (p.value ?? 0), 0);
-    const summaries: ConciliationSummary[] = [
-      { title: 'Conciliado', credit: brl.format(totalConc), debit: '' },
-      { title: 'Pendente', credit: brl.format(totalPend), debit: '' },
-    ];
-    return { accountInfo: accInfo, summaries, pendingItems, movementItems };
+    // CB-06/I062: os cards NÃO são calculados aqui. Eram somados sobre o conjunto
+    // inteiro da conta e por isso ignoravam o período — um intervalo sem movimento
+    // continuava exibindo o total da conta. Agora derivam do que o período deixou
+    // passar (ver o computed `summaries`).
+    return { accountInfo: accInfo, pendingItems, movementItems };
+  }
+
+  /** CB-06: aplica o período selecionado a uma lista de itens. */
+  private noPeriodo(items: ReconciliationItem[]): ReconciliationItem[] {
+    const f = this.filters();
+    const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
+    if (!start && !end) return items;
+    return items.filter(item => {
+      if (!item.rawDate) return false;
+      const d = new Date(item.rawDate);
+      if (isNaN(d.getTime())) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }
+
+  private creditoDebito(items: ReconciliationItem[]): { credit: string; debit: string } {
+    const soma = (t: string) => items
+      .filter(i => (i.type ?? '') === t)
+      .reduce((a, i) => a + Math.abs(i.rawValue ?? 0), 0);
+    return { credit: brl.format(soma('Credit')), debit: brl.format(soma('Debit')) };
   }
 
   readonly accounts = computed(() => this.state().accounts);
@@ -144,7 +179,20 @@ export class BankReconciliationStore {
   readonly loading = computed(() => this.state().loading);
   readonly activeTab = computed(() => this.state().activeTab);
   readonly accountInfo = computed(() => this.state().accountInfo);
-  readonly summaries = computed(() => this.state().summaries);
+  /**
+   * CB-06 / I062 + CB-01 / I058: os cards saem do que o PERÍODO deixou passar, e o de
+   * pendências leva a contagem. Antes somavam o conjunto inteiro da conta: um intervalo
+   * sem movimento continuava mostrando "Pendente R$ 50.020". O Débito também vinha
+   * sempre vazio — agora crédito e débito são separados.
+   */
+  readonly summaries = computed((): ConciliationSummary[] => {
+    const conciliados = this.noPeriodo(this.state().movementItems).filter(i => i.reconciled);
+    const pendentes = this.noPeriodo(this.state().pendingItems);
+    return [
+      { title: 'Conciliado', ...this.creditoDebito(conciliados), count: conciliados.length },
+      { title: 'Pendente', ...this.creditoDebito(pendentes), count: pendentes.length },
+    ];
+  });
   readonly filters = computed(() => this.state().filters);
   readonly pagination = computed(() => this.state().pagination);
   readonly expandedIds = computed(() => this.state().expandedIds);
@@ -217,6 +265,80 @@ export class BankReconciliationStore {
       const newSet = new Set(s.expandedInnerIds);
       newSet.has(id) ? newSet.delete(id) : newSet.add(id);
       return { ...s, expandedInnerIds: newSet };
+    });
+  }
+
+  // ───────── CB-10/CB-12/CB-13: o painel da pendência era um mockup estático ─────────
+  // Os seletores tinham só "Selecione", o campo "Buscar lançamento" não tinha ligação
+  // nenhuma e os botões Ignorar/Conciliar não tinham handler. Daqui para baixo é a
+  // ligação desses controles ao serviço — que, no caso de buscar e conciliar, já existia.
+
+  /** CB-12 / I068: fornecedores e centros de custo do cadastro para os seletores. */
+  readonly fornecedores = signal<{ id: number; name: string }[]>([]);
+  readonly centrosCusto = signal<{ id: number; name: string }[]>([]);
+
+  /** CB-10 / I066: candidatos da busca de lançamento + o vínculo escolhido. */
+  readonly candidatos = signal<LedgerCandidate[]>([]);
+  readonly buscando = signal(false);
+  readonly acaoBusy = signal<number | null>(null);
+  readonly vinculoEscolhido = signal<{ txId: number; rotulo: string } | null>(null);
+
+  carregarLookups(): void {
+    this.lookups.getSuppliersLookup().subscribe({
+      next: v => this.fornecedores.set((v as any[]).map(r => ({ id: r.id, name: r.name }))),
+      error: () => this.fornecedores.set([]),
+    });
+    // Centro de custo só ANALÍTICO: o servidor recusa lançamento em conta sintética
+    // (totalizadora), então oferecê-la seria uma opção que só devolve erro ao salvar.
+    this.lookups.getCostCentersLookup().subscribe({
+      next: v => this.centrosCusto.set(this.lookups.apenasAnaliticas(v as any).map((r: any) => ({ id: r.id, name: r.name }))),
+      error: () => this.centrosCusto.set([]),
+    });
+  }
+
+  /** CB-10: busca títulos de pagar/receber por descrição e/ou valor. */
+  buscarCandidatos(termo: string, valor?: number): void {
+    const t = (termo ?? '').trim();
+    if (!t && valor == null) { this.candidatos.set([]); return; }
+    this.buscando.set(true);
+    this.svc.searchEntries({ ...(t ? { description: t } : {}), ...(valor != null ? { value: valor } : {}) }).subscribe({
+      next: r => { this.candidatos.set([...(r.payables ?? []), ...(r.receivables ?? [])]); this.buscando.set(false); },
+      error: () => { this.candidatos.set([]); this.buscando.set(false); this.notify.error('Não foi possível buscar lançamentos para conciliar.'); },
+    });
+  }
+  limparCandidatos(): void { this.candidatos.set([]); }
+
+  /** CB-13: concilia a pendência (com ou sem vínculo a um título) e recarrega a conta. */
+  conciliar(
+    txId: number,
+    payload: { description?: string; category?: string; stakeholderId?: number; costCenterId?: number; accountPayableId?: number; accountReceivableId?: number },
+    rotuloVinculo?: string,
+  ): void {
+    this.acaoBusy.set(txId);
+    this.svc.match(txId, payload).subscribe({
+      next: () => {
+        this.acaoBusy.set(null);
+        if (rotuloVinculo) this.vinculoEscolhido.set({ txId, rotulo: rotuloVinculo });
+        this.candidatos.set([]);
+        this.notify.success(rotuloVinculo ? `Movimento conciliado com ${rotuloVinculo}.` : 'Movimento conciliado.');
+        const id = this.selectedAccountId();
+        if (id) this.selectAccount(id);
+      },
+      error: err => { this.acaoBusy.set(null); this.notify.error(err?.error?.message ?? 'Não foi possível conciliar o movimento.'); },
+    });
+  }
+
+  /** CB-13: ignora a pendência — sai da fila sem ser conciliada — e recarrega a conta. */
+  ignorar(txId: number): void {
+    this.acaoBusy.set(txId);
+    this.svc.ignore(txId, true).subscribe({
+      next: () => {
+        this.acaoBusy.set(null);
+        this.notify.success('Pendência ignorada: saiu da fila de conciliação.');
+        const id = this.selectedAccountId();
+        if (id) this.selectAccount(id);
+      },
+      error: err => { this.acaoBusy.set(null); this.notify.error(err?.error?.message ?? 'Não foi possível ignorar a pendência.'); },
     });
   }
 }
