@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conex3s — Portal de Cotação</title>
+<!--
+  Portal público de cotação — o fornecedor abre por link com token, sem login.
+
+  ONDE ISTO MORA: /var/www/html/cotacao/index.html na VPS de homologação.
+  Até o card #588 o arquivo existia SÓ lá, sem fonte em repositório nenhum: quem
+  precisasse mexer teria de editar direto no servidor, sem histórico e sem
+  revisão. Passou a viver aqui; o deploy é copiar este arquivo para aquela pasta
+  (ver DevOps-card-588).
+
+  COMP-23 (reteste 18/10): a proposta era por CAMPOS GERAIS — um "valor unitário"
+  e um "valor total" para o conjunto todo, com os itens listados apenas para
+  leitura. O fornecedor fazia a conta de cabeça e o comprador recebia um número
+  que não dava para comparar item a item — que é exatamente o que o Mapa de
+  Cotação existe para fazer. Agora a proposta é uma TABELA, um preço por item.
+-->
+<style>
+  :root{ --azul:#17608f; --azuld:#0f2f4a; --bg:#f4f7fa; --card:#fff; --bd:#e2e8ef; --txt:#1f2630; --mut:#5b6b7b; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;line-height:1.5;font-size:15px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 16px 80px}
+  header{background:linear-gradient(135deg,var(--azuld),var(--azul));color:#fff;padding:30px 22px;border-radius:0 0 18px 18px;margin-bottom:22px}
+  .brand{font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:.85}
+  header h1{margin:8px 0 4px;font-size:22px} header p{margin:0;opacity:.95}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:16px}
+  table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #eef2f6} th{color:var(--mut);font-weight:600}
+  td.num,th.num{text-align:right}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  label.lbl{display:block;font-weight:600;font-size:13px;margin:0 0 5px}
+  input,textarea{width:100%;border:1px solid var(--bd);border-radius:9px;padding:10px 12px;font:inherit}
+  input:focus,textarea:focus{outline:2px solid #bcd6ea;border-color:var(--azul)}
+  input.preco{text-align:right;padding:8px 10px}
+  textarea{min-height:64px;resize:vertical}
+  button.go{background:var(--azul);color:#fff;border:none;border-radius:10px;padding:14px 22px;font-size:16px;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.go:disabled{opacity:.55;cursor:not-allowed}
+  .ok{background:#e6f4ea;border:1px solid #b6e0c2;color:#1e7d3a;border-radius:12px;padding:26px;text-align:center}
+  .err{background:#fdecec;border:1px solid #f5b5b0;color:#b4231a;border-radius:12px;padding:16px;margin-top:12px}
+  .muted{color:var(--mut);font-size:13px}
+  .totais{border-top:2px solid var(--bd)}
+  .totais td{font-weight:600}
+  .totais .geral{font-size:16px;color:var(--azuld)}
+  .item-desc{display:block;color:var(--mut);font-size:12.5px;margin-top:2px}
+</style>
+</head>
+<body>
+<header><div class="wrap" style="padding:0"><div class="brand">Conex3s · Portal de Cotação</div>
+  <h1 id="title">Carregando cotação…</h1>
+  <p id="subtitle" class="muted" style="color:#dfeaf3"></p>
+</div></header>
+
+<div class="wrap" id="root">
+  <div class="card"><p class="muted">Aguarde…</p></div>
+</div>
+
+<script>
+const API = "https://homolog.crosoften.com:8047/v1";
+const params = new URLSearchParams(location.search);
+const token = params.get('t') || params.get('token') || '';
+const root = document.getElementById('root');
+
+let ITENS = [];   // COMP-23: os itens da requisição, cada um com o seu preço
+
+function brl(n){ return (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function num(v){ const s=String(v||'').trim().replace(/\./g,'').replace(',','.'); const n=Number(s); return isNaN(n)?0:n; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function money(id, label, ph, val){ return `<div><label class="lbl">${label}</label><input id="${id}" class="preco" inputmode="decimal" placeholder="${ph||'0,00'}" value="${val==null||val===0?'':String(val).replace('.',',')}"></div>`; }
+
+async function load(){
+  if(!token){ root.innerHTML = '<div class="err">Link inválido — token ausente.</div>'; return; }
+  let d;
+  try{
+    const r = await fetch(`${API}/no-auth/quotation/${token}`);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    d = await r.json();
+  }catch(e){ root.innerHTML = '<div class="err">Não foi possível abrir a cotação ('+e.message+'). O link pode ter expirado.</div>'; return; }
+
+  document.getElementById('title').textContent = d.requestTitle || 'Cotação';
+  document.getElementById('subtitle').textContent = 'Fornecedor: ' + (d.supplierName || '');
+  ITENS = d.items || [];
+
+  const aviso = d.status === 'Answered'
+    ? '<div class="ok"><h3>Proposta já recebida ✓</h3><p class="muted">Obrigado! Os valores abaixo são os que você enviou — pode ajustar e enviar de novo.</p></div>'
+    : '';
+  root.innerHTML = aviso + propostaHtml(d);
+  bind();
+}
+
+/**
+ * COMP-23: uma linha por item, com o preço unitário de cada um.
+ * Antes esta área era "Valor unitário / Valor total" para o conjunto inteiro, e
+ * os itens apareciam numa tabela separada, só de leitura.
+ */
+function propostaHtml(d){
+  const e = d.existing || {};
+  const linhas = ITENS.length ? ITENS.map(i => `
+      <tr data-item="${i.id}">
+        <td>${esc(i.name)}${i.description ? `<span class="item-desc">${esc(i.description)}</span>` : ''}</td>
+        <td>${esc(i.unit||'—')}</td>
+        <td class="num">${i.quantity}</td>
+        <td><input class="preco u" data-item="${i.id}" inputmode="decimal" placeholder="0,00"
+             value="${i.unitValue==null||i.unitValue===0?'':String(i.unitValue).replace('.',',')}"></td>
+        <td class="num t" data-item="${i.id}">${brl(i.totalValue||0)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="muted">Esta requisição não detalhou itens — use o campo de observações para descrever a proposta.</td></tr>';
+
+  return `<div class="card">
+    <h3>Sua proposta, item a item</h3>
+    <p class="muted">Informe o valor unitário de cada item. O total de cada linha e o total geral são calculados automaticamente.</p>
+    <table>
+      <thead><tr><th>Item</th><th>Un.</th><th class="num">Qtd.</th><th>Valor unitário (R$)</th><th class="num">Total</th></tr></thead>
+      <tbody>${linhas}</tbody>
+      <tfoot class="totais">
+        <tr><td colspan="4">Soma dos itens</td><td class="num" id="somaItens">${brl(0)}</td></tr>
+        <tr><td colspan="4">Frete</td><td class="num" id="freteOut">${brl(e.freight||0)}</td></tr>
+        <tr><td colspan="4">Desconto</td><td class="num" id="descontoOut">− ${brl(e.discount||0)}</td></tr>
+        <tr><td colspan="4" class="geral">Total da proposta</td><td class="num geral" id="totalGeral">${brl(0)}</td></tr>
+      </tfoot>
+    </table>
+
+    <div class="grid" style="margin-top:16px">
+      ${money('freight','Frete (R$)','0,00', e.freight)}
+      ${money('discount','Desconto (R$)','0,00', e.discount)}
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><label class="lbl">Prazo de entrega</label><input id="deliveryTime" placeholder="ex.: 10 dias úteis" value="${esc(e.deliveryTime)}"></div>
+      <div><label class="lbl">Condições de pagamento</label><input id="paymentConditions" placeholder="ex.: 30 dias" value="${esc(e.paymentConditions)}"></div>
+    </div>
+    <div style="margin-top:12px"><label class="lbl">Observações</label><textarea id="observation" placeholder="Opcional">${esc(e.observation)}</textarea></div>
+    <button class="go" id="send">Enviar proposta</button>
+    <div class="err" id="err" style="display:none"></div>
+  </div>`;
+}
+
+/** Recalcula a tabela a cada tecla: o fornecedor vê o total antes de enviar. */
+function recalcular(){
+  let soma = 0;
+  document.querySelectorAll('input.u').forEach(inp => {
+    const id = inp.dataset.item;
+    const item = ITENS.find(i => String(i.id) === String(id));
+    const total = num(inp.value) * (item ? item.quantity : 0);
+    soma += total;
+    const celula = document.querySelector(`td.t[data-item="${id}"]`);
+    if (celula) celula.textContent = brl(total);
+  });
+  const frete = num((document.getElementById('freight')||{}).value);
+  const desconto = num((document.getElementById('discount')||{}).value);
+  document.getElementById('somaItens').textContent = brl(soma);
+  document.getElementById('freteOut').textContent = brl(frete);
+  document.getElementById('descontoOut').textContent = '− ' + brl(desconto);
+  document.getElementById('totalGeral').textContent = brl(soma + frete - desconto);
+  return { soma, frete, desconto, total: soma + frete - desconto };
+}
+
+function bind(){
+  document.querySelectorAll('input.u').forEach(i => i.addEventListener('input', recalcular));
+  ['freight','discount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcular);
+  });
+  recalcular();
+
+  const btn = document.getElementById('send'); if(!btn) return;
+  btn.onclick = async ()=>{
+    const err = document.getElementById('err'); err.style.display='none';
+    const totais = recalcular();
+
+    // COMP-23: só vão os itens com preço. Item deixado em branco não é "grátis":
+    // é item não cotado, e mandar zero faria o comparativo premiar o fornecedor
+    // que esqueceu de preencher.
+    const itens = Array.from(document.querySelectorAll('input.u'))
+      .map(i => ({ purchaseRequestItemId: Number(i.dataset.item), unitValue: num(i.value) }))
+      .filter(i => i.unitValue > 0);
+
+    if (ITENS.length && !itens.length){
+      err.textContent = 'Informe o valor unitário de ao menos um item.';
+      err.style.display = 'block';
+      return;
+    }
+
+    const body = {
+      items: itens,
+      freight: totais.frete,
+      discount: totais.desconto,
+      deliveryTime: document.getElementById('deliveryTime').value.trim(),
+      paymentConditions: document.getElementById('paymentConditions').value.trim(),
+      observation: document.getElementById('observation').value.trim(),
+    };
+
+    btn.disabled=true; btn.textContent='Enviando…';
+    try{
+      const r = await fetch(`${API}/no-auth/quotation/${token}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const res = await r.json().catch(()=>({}));
+      document.getElementById('root').innerHTML = '<div class="ok"><h3>Proposta enviada! Obrigado.</h3>'
+        + '<p class="muted">' + (res.itens ? res.itens + ' item(ns) cotado(s) · total ' + brl(res.total) : 'Sua cotação foi registrada.')
+        + '</p><p class="muted">Você pode fechar esta página.</p></div>';
+      window.scrollTo(0,0);
+    }catch(e){ btn.disabled=false; btn.textContent='Enviar proposta'; err.textContent='Não foi possível enviar ('+e.message+'). Tente novamente.'; err.style.display='block'; }
+  };
+}
+load();
+</script>
+</body>
+</html>
