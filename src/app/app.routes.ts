@@ -32,7 +32,12 @@ export const appRoutes: Routes = [
       { path: 'taxes',                canActivate: [permissionGuard], data: { module: 'Financeiro', subMenu: 'Impostos e Retenções' },          loadChildren: () => import('./features/taxes/taxes.routes').then(m => m.taxesRoutes) },
       { path: 'cost-centers',         canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Centro de Custo/Projeto/Atividade' }, loadChildren: () => import('./features/cost-centers/cost-centers.routes').then(m => m.costCentersRoutes) },
       { path: 'chart-of-accounts',    canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Plano de Contas' },                loadChildren: () => import('./features/chart-of-accounts/chart-of-accounts.routes').then(m => m.chartOfAccountsRoutes) },
-      // { path: 'general-settings',  loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
+      // TR-08/I041: a rota estava comentada enquanto o item do menu já apontava para ela —
+      // clicar em "Configurações gerais" caía em 404 e a preferência de descrição da
+      // transferência ficava inalcançável. Sem permissionGuard de propósito: o item não tem
+      // entrada no permission-map (ver o comentário lá), e exigir permissão inexistente
+      // apenas trocaria o 404 por um bloqueio.
+      { path: 'general-settings',     loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
 
       // Entidades
       { path: 'entity-registry',    canActivate: [permissionGuard], data: { module: 'Institucional', subMenu: 'Entidades' },                 loadChildren: () => import('./features/entity-registry/entity-registry.routes').then(m => m.entityRegistryRoutes) },

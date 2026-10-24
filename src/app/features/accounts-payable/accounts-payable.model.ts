@@ -10,6 +10,20 @@ export interface SummaryCard {
   account?: string;
 }
 
+/**
+ * CP-10 / I077: uma parcela do título. A segunda visão do seletor mostra uma linha
+ * por VENCIMENTO, e não uma por título — é o que a torna uma visão de conteúdo
+ * próprio, e não a mesma tabela com outro rótulo.
+ */
+export interface PayableInstallment {
+  numero: number;
+  dueDate: string;
+  value: string;
+  paid: string;
+  status: string;
+  balanceNum: number;
+}
+
 export interface PayableAccount {
   id: string;
   displayId: string;
@@ -27,6 +41,8 @@ export interface PayableAccount {
   balance: string;
   balanceNum: number;
   canPay: boolean;
+  /** CP-10/I077: as parcelas do título, para a visão "Parcelas". */
+  installments: PayableInstallment[];
 }
 
 export interface AdvancedFilters {

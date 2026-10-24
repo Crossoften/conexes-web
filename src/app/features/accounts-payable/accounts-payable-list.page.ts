@@ -37,6 +37,8 @@ export class AccountsPayableListPage implements OnInit {
   readonly optRemittance  = this.svc.remittanceStatusOptions;
   readonly optPayment     = this.svc.paymentMethodOptions;
   readonly optSupplier    = signal<FilterOption[]>([]);
+  // CP-01/I070: "Tipo Despesa" era o único campo de texto livre da Busca Detalhada.
+  readonly optExpenseType = signal<FilterOption[]>([]);
   readonly optContract    = signal<FilterOption[]>([]);
   readonly optRequisition = signal<FilterOption[]>([]);
   readonly optBankAccount = signal<FilterOption[]>([]);
@@ -57,6 +59,12 @@ export class AccountsPayableListPage implements OnInit {
     });
     this.lookups.getAccountPlansLookup().subscribe({
       next: v => this.optAccountPlan.set(comoOpcao(v as any)), error: () => this.optAccountPlan.set([]),
+    });
+    // CP-01/I070: o tipo de despesa é texto no título (não há cadastro próprio),
+    // então as opções são os tipos realmente usados.
+    this.svc.getExpenseTypes().subscribe({
+      next: v => this.optExpenseType.set(v.map(t => ({ value: t, label: t }))),
+      error: () => this.optExpenseType.set([]),
     });
     // Prefixo da entidade no valor: o back precisa saber se o id é de centro de
     // custo ou de projeto — id 12 de um não é id 12 do outro.
@@ -218,10 +226,35 @@ export class AccountsPayableListPage implements OnInit {
     this.carregarOpcoesDeFiltro();
   }
 
+  /**
+   * CP-10 / I077: a segunda opção se chamava "Visão 2" (valor "VISA0_2", com erro de
+   * digitação) e não mudava nada — o seletor trocava o rótulo e mostrava a MESMA
+   * tabela. Agora cada visão diz o que mostra e tem conteúdo próprio: uma linha por
+   * título, ou uma linha por vencimento.
+   */
   readonly viewOptions = [
-    { label: 'Lançamentos', value: 'LANÇAMENTOS' },
-    { label: 'Visão 2', value: 'VISA0_2' },
+    { label: 'Lançamentos (um por título)', value: 'LANCAMENTOS' },
+    { label: 'Parcelas (uma por vencimento)', value: 'PARCELAS' },
   ];
+
+  readonly ehVisaoParcelas = computed(() => this.store.view() === 'PARCELAS');
+
+  /** CP-10/I077: expande cada título da página em suas parcelas. */
+  readonly parcelaRows = computed(() =>
+    this.store.pageItems().flatMap(t =>
+      (t.installments ?? []).map(p => ({
+        tituloId: t.id,
+        displayId: t.displayId,
+        company: t.company,
+        history: t.history,
+        rotulo: `${p.numero}/${t.installments.length}`,
+        dueDate: p.dueDate,
+        value: p.value,
+        paid: p.paid,
+        status: p.status,
+      })),
+    ),
+  );
 
   readonly pageSizeOptions = [10, 25, 50];
 

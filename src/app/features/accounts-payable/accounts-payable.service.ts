@@ -29,6 +29,11 @@ interface ApiAccountPayable {
   amountPaid?: number | null;
   status?: string | null;
   stakeholder?: { name?: string | null } | null;
+  /** CP-10/I077: findAll já devolve as parcelas (include installments). */
+  installments?: {
+    installment?: number | null; dueDate?: string | null;
+    amount?: number | null; amountPaid?: number | null; status?: string | null;
+  }[] | null;
 }
 
 export interface PayableListResult {
@@ -276,6 +281,16 @@ export class AccountsPayableService {
     );
   }
 
+  /**
+   * CP-01 / I070: os tipos de despesa já usados nos títulos, para o filtro
+   * "Tipo Despesa" oferecer opções em vez de exigir que se adivinhe o texto.
+   */
+  getExpenseTypes(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/v1/accounts-payable/expense-types`).pipe(
+      map(res => (Array.isArray(res) ? res : []).filter(t => !!t && String(t).trim().length > 0)),
+    );
+  }
+
   /** CP-17: contratos com valor, saldo e vigência (o saldo vem calculado do back). */
   getContracts(): Observable<{ id: number; label: string; value: number; balance: number; startDate: string; endDate: string }[]> {
     return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/contracts`, { params: new HttpParams().set('take', 500) }).pipe(
@@ -350,6 +365,17 @@ export class AccountsPayableService {
     balanceNum: Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0)),
     balance: brl.format(Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0))),
     canPay: (r.status === 'Open' || r.status === 'PartiallyPaid'),
+    // CP-10/I077: ordenadas pelo número, que é como a parcela é lida.
+    installments: [...(r.installments ?? [])]
+      .sort((a, b) => (a.installment ?? 0) - (b.installment ?? 0))
+      .map(p => ({
+        numero: p.installment ?? 0,
+        dueDate: fmtDate(p.dueDate),
+        value: brl.format(p.amount ?? 0),
+        paid: brl.format(p.amountPaid ?? 0),
+        status: STATUS_LABEL[p.status ?? ''] ?? (p.status ?? '—'),
+        balanceNum: Math.max(0, (p.amount ?? 0) - (p.amountPaid ?? 0)),
+      })),
   });
 }
 

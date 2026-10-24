@@ -44,10 +44,10 @@ export class FinancialTransfersListPage implements OnInit {
     this.router.navigate(['/financial-transfers/new'], { state: { duplicate: item } });
   }
 
-  /** B5: abre o lançamento no formulário, em modo edição. */
-  onEdit(item: FinancialTransfer): void {
-    this.router.navigate(['/financial-transfers', 'entry', item.id, 'edit']);
-  }
+  // LB-06 / I053: a ação "Editar" saiu da lista de Lançamentos — o pedido original
+  // define o mesmo padrão das Transferências (visualizar, duplicar e excluir). A rota
+  // /financial-transfers/entry/:id/edit continua registrada e o PATCH segue existindo;
+  // apenas não há mais entrada por esta lista.
 
   ngOnInit(): void {
     this.svc.getBankAccounts().subscribe({

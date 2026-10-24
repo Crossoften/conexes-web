@@ -118,6 +118,49 @@
       </div>
     }
 
+    <!-- CP-10/I077: a visão "Parcelas" mostra uma linha por VENCIMENTO, com o número da
+         parcela, o quanto já foi pago e a situação de cada uma — conteúdo próprio, e não
+         a mesma tabela de títulos com outro rótulo. -->
+    @if (ehVisaoParcelas()) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Título</th>
+              <th class="th">Fornecedor</th>
+              <th class="th">Histórico</th>
+              <th class="th">Parcela</th>
+              <th class="th">Vencimento</th>
+              <th class="th">Valor</th>
+              <th class="th">Pago</th>
+              <th class="th">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of parcelaRows(); track p.tituloId + '-' + p.rotulo) {
+              <tr class="tr">
+                <td class="td td--mono">{{ p.displayId }}</td>
+                <td class="td">{{ p.company }}</td>
+                <td class="td">{{ p.history }}</td>
+                <td class="td td--mono">{{ p.rotulo }}</td>
+                <td class="td">{{ p.dueDate }}</td>
+                <td class="td">{{ p.value }}</td>
+                <td class="td">{{ p.paid }}</td>
+                <td class="td">{{ p.status }}</td>
+              </tr>
+            }
+            @if (!store.loading() && parcelaRows().length === 0) {
+              <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">
+                Nenhum título desta página tem parcelas. Use "Lançamentos (um por título)" para ver as contas.
+              </td></tr>
+            }
+            @if (store.loading()) {
+              <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -190,6 +233,7 @@
         </tbody>
       </table>
     </div>
+    }
 
     <div class="pagination">
       <div class="pagination__nav">
@@ -263,9 +307,18 @@
               @for (o of optRemittance; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
             </select>
           </div>
-          <!-- Tipo de despesa é texto livre no cadastro do título (o seletor de
-               serviço é o CP-14); aqui a busca é por parte do texto. -->
-          <div class="form-group"><label>Tipo Despesa</label><input type="text" class="input" placeholder="Digite parte do tipo" [(ngModel)]="localFilters.expenseType"></div>
+          <!-- CP-01/I070: era o único campo de texto livre ("Digite parte do tipo") numa
+               janela em que todo o resto carrega as opções do sistema — quem filtrava
+               tinha de adivinhar como o tipo havia sido escrito. O tipo de despesa é
+               texto no próprio título (não há cadastro), então as opções são os tipos
+               realmente usados. -->
+          <div class="form-group">
+            <label>Tipo Despesa</label>
+            <select class="select" [(ngModel)]="localFilters.expenseType">
+              <option value="">Todos</option>
+              @for (o of optExpenseType(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
           <div class="form-group">
             <label>Tipo de Pagamento</label>
             <select class="select" [(ngModel)]="localFilters.paymentType">
