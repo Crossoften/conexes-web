@@ -206,6 +206,17 @@ export class AccountsReceivableService {
     return this.http.get<ApiAccountReceivable>(`${this.base}/${id}`);
   }
 
+  // ── CR-04/I094: anexos do título (a aba Anexos não existia nesta tela) ─────
+  listFiles(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/${id}/files`);
+  }
+  attachFile(id: number, payload: { fileUrl: string; fileKey?: string }): Observable<unknown> {
+    return this.http.post(`${this.base}/${id}/files`, payload);
+  }
+  removeFile(id: number, fileId: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/${id}/files/${fileId}`);
+  }
+
   /**
    * CR-01: monta os cards a partir do resumo do servidor. Antes recebia a página
    * carregada e somava no navegador — a partir do segundo título fora da página
