@@ -34,6 +34,21 @@ export class QuotationsListPage {
 
   readonly sectionTitle = computed(() => this.route.snapshot.data['title'] ?? 'Requisições');
 
+  /**
+   * COM-E6 / I026-I028-I030 (decisão D2): nas Etapas 5 e 6 o PEDIDO é o registro
+   * central ligado à requisição, então a coluna só aparece onde o pedido existe.
+   * (stage 4 = Etapa 5, stage 5 = Etapa 6, stage 6 = Histórico.)
+   */
+  readonly mostraPedido = this.routeStage >= 4;
+
+  /** D2: a coluna extra muda o colspan da linha de "nenhum resultado". */
+  readonly colunas = this.mostraPedido ? 10 : 9;
+
+  /** D2: abrir o pedido — onde ficam itens, recebimentos e histórico. */
+  abrirPedido(o: { id: number }): void {
+    this.router.navigate(['/purchasing-orders'], { queryParams: { order: o.id } });
+  }
+
   // ── Ações disponíveis por etapa × papel de compras ─────────────────────────
   // Papel aprovador: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
   // = Supervisor de Compras. Gestor sempre pode. (Backend valida a alçada por valor.)

@@ -91,6 +91,11 @@
             <th class="th th--sortable" (click)="store.setSort('reqStatus')">
               Status Requisição <span class="sort-icon" [ngClass]="'sort--' + getSortState('reqStatus')"></span>
             </th>
+            <!-- COM-E6/I026-I028-I030 (D2): nas Etapas 5 e 6 o PEDIDO é o registro
+                 central. A lista mostrava só a situação da requisição, e nunca qual
+                 pedido havia saído — dava para uma requisição estar em "Pedidos
+                 finalizados" com o pedido ainda em recebimento. -->
+            @if (mostraPedido) { <th class="th">Pedido</th> }
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -99,19 +104,19 @@
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
               <tr class="tr--skeleton">
-                <td colspan="9"><div class="skeleton"></div></td>
+                <td [attr.colspan]="colunas"><div class="skeleton"></div></td>
               </tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" [attr.colspan]="colunas">
                 <p class="empty-title">{{ store.error() }}</p>
                 <button type="button" class="link-retry" (click)="store.load(routeStage)">Tentar novamente</button>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" [attr.colspan]="colunas">
                 <p class="empty-title">Nenhuma requisição encontrada</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -164,6 +169,25 @@
                     {{ reqConfig[item.reqStatus].label }}
                   </span>
                 </td>
+
+                <!-- D2: o pedido emitido e a SITUAÇÃO DELE, que é diferente da
+                     situação da requisição. Clicar abre o pedido — o registro
+                     central, onde ficam itens, recebimentos e histórico. -->
+                @if (mostraPedido) {
+                  <td class="td">
+                    @if (item.orders.length) {
+                      @for (o of item.orders; track o.id) {
+                        <button type="button" class="pedido-link" (click)="abrirPedido(o)"
+                                [title]="'Abrir o pedido ' + o.number + ' — ' + o.supplier">
+                          <span class="pedido-link__num">{{ o.number }}</span>
+                          <span class="pedido-link__situacao pedido-link__situacao--{{ o.status }}">{{ o.label }}</span>
+                        </button>
+                      }
+                    } @else {
+                      <span class="pedido-vazio">Sem pedido emitido</span>
+                    }
+                  </td>
+                }
 
                 <!-- Ações por etapa -->
                 <td class="td td--center">

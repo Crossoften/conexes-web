@@ -31,6 +31,18 @@ function formatDate(iso?: string | null): string {
   return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
 }
 
+/**
+ * D2: a situação do PEDIDO em português. Entrar na Etapa 6 significa pedido
+ * emitido; o recebimento continua explícito até a conclusão física, e é por isso
+ * que "Emitido" e "Em recebimento" são estados distintos de "Concluído".
+ */
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  Open:       'Emitido',
+  InProgress: 'Em recebimento',
+  Completed:  'Concluído',
+  Cancelled:  'Cancelado',
+};
+
 function toRow(r: PurchaseRequest): Quotation {
   return {
     id:           String(r.id),
@@ -44,6 +56,14 @@ function toRow(r: PurchaseRequest): Quotation {
     requestDate:  formatDate(r.requestDate),
     deliveryDate: formatDate(r.expectedDeliveryDate),
     reqStatus:    r.status,
+    // D2: o pedido ligado à requisição — o registro central da Etapa 6.
+    orders: ((r as any).orders ?? []).map((o: any) => ({
+      id:       o.id,
+      number:   o.number ?? `PED-${String(o.id).padStart(4, '0')}`,
+      status:   o.status,
+      label:    ORDER_STATUS_LABEL[o.status] ?? o.status,
+      supplier: o.supplier?.name ?? '—',
+    })),
   };
 }
 
