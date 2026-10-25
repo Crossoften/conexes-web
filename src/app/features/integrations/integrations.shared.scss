@@ -97,3 +97,23 @@
 .card-title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
 .modal-body { padding: 20px 22px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--surface-border, #E5E7EB); }
+
+/* ── COM-Sincronizar / I032 e COM-Captura / I031 (decisão D3) ────────────────
+   O intervalo da sincronização na própria barra de ações, e o aviso de que a
+   configuração do certificado/captura tem origem única na organização. */
+.sync-periodo {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--text-secondary, #6B7280);
+  span { font-weight: 600; }
+}
+.input-date {
+  padding: 8px 10px; border: 1.5px solid var(--surface-border-mid, #E5E7EB);
+  border-radius: 8px; font: inherit; font-size: 12.5px; color: var(--text-primary, #111827);
+  background: #fff; outline: none;
+}
+.origem-unica {
+  margin: 0 0 14px; padding: 10px 14px; border-radius: 10px;
+  background: #F8FAFC; border: 1px solid var(--surface-border, #E5E7EB);
+  font-size: 12.5px; color: var(--text-secondary, #6B7280);
+  a { color: var(--brand-purple, #7C3AED); font-weight: 600; }
+}

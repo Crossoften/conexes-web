@@ -1,7 +1,8 @@
 // src/app/features/integrations/fiscal/fiscal-documents.page.ts
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { IntegrationsService } from '../integrations.service';
@@ -30,7 +31,9 @@ const TYPE_LABEL: Record<string, string> = {
 @Component({
   selector: 'app-fiscal-documents',
   standalone: true,
-  imports: [NgClass, DatePipe, DecimalPipe, ReactiveFormsModule],
+  // D3/I031-I032: FormsModule para o intervalo da sincronização; RouterLink para
+  // o atalho à origem única da configuração (Configurações gerais).
+  imports: [NgClass, DatePipe, DecimalPipe, ReactiveFormsModule, FormsModule, RouterLink],
   templateUrl: './fiscal-documents.page.html',
   styleUrls: ['../integrations.shared.scss'],
 })
@@ -137,12 +140,40 @@ export class FiscalDocumentsPage implements OnInit {
     });
   }
 
+  // ── COM-Sincronizar / I032 (decisão D3): a sincronização PEDE INTERVALO ────
+  // Antes o botão trazia "as últimas 20" e ninguém sabia de qual período.
+  periodoDe = '';
+  periodoAte = '';
+  get periodoInvalido(): boolean {
+    return !!this.periodoDe && !!this.periodoAte && this.periodoDe > this.periodoAte;
+  }
+  get periodoIncompleto(): boolean { return !this.periodoDe || !this.periodoAte; }
+
   syncNfse(): void {
+    if (this.periodoIncompleto) {
+      this.banner.set({ kind: 'err', msg: 'Informe o período (data inicial e final) para sincronizar as notas recebidas.' });
+      return;
+    }
+    if (this.periodoInvalido) {
+      this.banner.set({ kind: 'err', msg: 'A data inicial não pode ser depois da data final.' });
+      return;
+    }
     this.busy.set(true); this.banner.set(null);
-    this.svc.syncNfseInbound().subscribe({
-      next: r => { this.busy.set(false); this.banner.set({ kind: 'ok', msg: `Sincronização concluída: ${r.imported} nota(s) recebida(s) importada(s).` }); this.load(); },
+    this.svc.syncNfseInboundPeriodo(this.periodoDe, this.periodoAte).subscribe({
+      next: r => {
+        this.busy.set(false);
+        const fora = r.descartadas ? ` ${r.descartadas} nota(s) fora do período foram ignoradas.` : '';
+        this.banner.set({ kind: 'ok', msg: `Sincronização de ${this.dataBR(this.periodoDe)} a ${this.dataBR(this.periodoAte)}: ${r.imported} nota(s) recebida(s) importada(s).${fora}` });
+        this.load();
+      },
       error: err => { this.busy.set(false); this.banner.set({ kind: 'err', msg: err?.error?.message ?? 'Falha ao sincronizar as notas recebidas.' }); },
     });
+  }
+
+  dataBR(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso + 'T00:00:00');
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
   }
 
   enableNfse(): void {

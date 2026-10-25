@@ -60,6 +60,31 @@ interface Configuracoes {
             </button>
           </div>
         </div>
+
+        <!-- COM-Captura / I031 (decisão D3): certificado e captura de notas são
+             configurados UMA VEZ, aqui no cadastro da organização. Antes o botão de
+             habilitar a captura ficava na tela de Notas fiscais, dando a entender
+             que era ajuste daquele módulo — e Pedido, recebimento e Financeiro
+             precisam consultar a MESMA origem. -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Documentos fiscais</h2>
+            <p class="card-subtitle">Vale para {{ c.organizacao }}. Pedido, recebimento e Financeiro consultam esta mesma configuração.</p>
+          </div>
+          <div class="card-body">
+            <p class="hint">
+              A captura de NFS-e recebidas é habilitada uma única vez para o CNPJ da organização.
+              Depois disso, a sincronização das notas é feita por período em
+              <strong>Financeiro › Notas fiscais e cobranças</strong>.
+            </p>
+            @if (capturaMsg()) { <div class="hint" [class.erro]="capturaErro()">{{ capturaMsg() }}</div> }
+          </div>
+          <div class="card-footer">
+            <button type="button" class="btn-solid btn-solid--orange" [disabled]="habilitando()" (click)="habilitarCaptura()">
+              {{ habilitando() ? 'Habilitando…' : 'Habilitar captura de NFS-e' }}
+            </button>
+          </div>
+        </div>
       } @else {
         <div class="card"><div class="card-body"><p class="muted">Carregando…</p></div></div>
       }
@@ -80,6 +105,7 @@ interface Configuracoes {
     .hint { display:block; margin-top:8px; font-size:12.5px; color:var(--text-secondary,#6B7280); line-height:1.5; }
     code { background:#F3F4F6; padding:1px 5px; border-radius:4px; font-size:12px; }
     .error-banner { background:#FEF2F2; border:1.5px solid #FECACA; color:#B91C1C; padding:12px 16px; border-radius:10px; margin-bottom:14px; }
+    .hint.erro { color:#B91C1C; }
     .btn-solid--orange { background:var(--brand-orange,#F97316); color:#fff; border:none; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; }
     .muted { color:var(--text-muted,#9CA3AF); }
   `],
@@ -93,6 +119,32 @@ export class GeneralSettingsPage {
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
   modo = 'Manual';
+
+  // ── COM-Captura / I031 (D3): a captura de notas é configurada AQUI, uma vez ──
+  readonly habilitando = signal(false);
+  readonly capturaMsg = signal<string | null>(null);
+  readonly capturaErro = signal(false);
+
+  habilitarCaptura(): void {
+    this.habilitando.set(true);
+    this.capturaMsg.set(null);
+    this.capturaErro.set(false);
+    this.http.post(`${environment.apiUrl}/v1/integrations/nfeio/inbound/nfse/enable`, { initialNsu: 0 }).subscribe({
+      next: () => {
+        this.habilitando.set(false);
+        this.capturaErro.set(false);
+        this.capturaMsg.set('Captura de NFS-e habilitada para o CNPJ da organização.');
+        this.notify.success('Captura de NFS-e habilitada.');
+      },
+      error: e => {
+        this.habilitando.set(false);
+        this.capturaErro.set(true);
+        // A mensagem do provedor é o que diz se falta certificado/credencial — mostre-a.
+        const m = e?.error?.message;
+        this.capturaMsg.set(Array.isArray(m) ? m.join('; ') : (m ?? 'Não foi possível habilitar a captura.'));
+      },
+    });
+  }
 
   constructor() { this.carregar(); }
 

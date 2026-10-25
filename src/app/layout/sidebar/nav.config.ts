@@ -68,8 +68,12 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Pedidos',       route: '/purchasing-orders' },
       { label: 'Recebimento',   route: '/purchase-receiving' },
       { label: 'Cadastros',     route: '/purchasing-registries' },
-      // IT-05: Documentos fiscais dentro de Compras (o módulo Integrações deixou de existir).
-      { label: 'Documentos fiscais', route: '/integrations/fiscal-documents', perm: { module: 'Compras' } },
+      // COM-Documentos / I029-I034 (decisão D3): a entrada INDEPENDENTE em Compras
+      // saiu. A mesma rota aparecia em dois menus destacados — "Documentos fiscais"
+      // aqui e "Notas fiscais e cobranças" no Financeiro —, e dois caminhos para a
+      // mesma tela é justamente o que o item aponta. O acesso aos documentos
+      // continua existindo no CONTEXTO: a nota de cada recebimento aparece dentro do
+      // Pedido, e o Financeiro guarda a lista completa.
       // HI-07: telas de relatórios removidas de todos os módulos (haverá uma Central de Relatórios futura).
     ],
   },
