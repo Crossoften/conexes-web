@@ -23,22 +23,58 @@ function weekday(iso?: string | null): string {
   return isNaN(d.getTime()) ? '' : WEEKDAY[d.getUTCDay()];
 }
 
-/** Intervalo [start, end] (inclusive) a partir do período selecionado. */
-function periodRange(period: string, customStart: string, customEnd: string): { start: Date | null; end: Date | null } {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth();
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+/**
+ * CB-06 / I062 — o recorte é por DATA CIVIL, não por instante.
+ *
+ * O extrato grava datas civis à meia-noite UTC e a tela mostra exatamente essa data
+ * (ver `fmtDate`, que formata com timeZone UTC). Comparar instantes quebrava o
+ * limite: o fim do dia 02/10 em America/Sao_Paulo é 03/10 02:59:59Z, então um
+ * movimento gravado em `2026-10-03T00:00:00.000Z` — que a tela exibe como 03/10 —
+ * entrava num intervalo 01–02/10. Era exatamente o caso relatado: o crédito de
+ * R$ 5.000 de 03/10 aparecia junto do débito de R$ 15.000 de 02/10.
+ *
+ * Agora o intervalo é um par de datas civis (AAAA-MM-DD), que ordenam corretamente
+ * como texto, e os atalhos ancoram no "hoje" de quem usa — a data civil em
+ * São Paulo —, não no fuso do servidor nem no do navegador.
+ */
+const diaCivil = (iso?: string | null): string => (iso ?? '').slice(0, 10);
+
+const ymd = (a: number, m: number, d: number) =>
+  `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+/** Último dia do mês (m = 1..12), contado em UTC para não escorregar de fuso. */
+const ultimoDia = (a: number, m: number) => new Date(Date.UTC(a, m, 0)).getUTCDate();
+
+/** Hoje na data civil de São Paulo — o "hoje" de quem usa o sistema. */
+function hojeSP(): { ano: number; mes: number; dia: number } {
+  const txt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const [ano, mes, dia] = txt.split('-').map(Number);
+  return { ano, mes, dia };
+}
+
+const DATA_CIVIL = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Intervalo [start, end] de datas civis, INCLUSIVO nas duas pontas. */
+function periodRange(period: string, customStart: string, customEnd: string): { start: string | null; end: string | null } {
+  const { ano, mes, dia } = hojeSP();
   switch (period) {
-    case 'THIS_MONTH': return { start: new Date(y, m, 1), end: endOfDay(new Date(y, m + 1, 0)) };
-    case 'LAST_MONTH': return { start: new Date(y, m - 1, 1), end: endOfDay(new Date(y, m, 0)) };
-    case 'LAST_90':    return { start: startOfDay(new Date(now.getTime() - 90 * 864e5)), end: endOfDay(now) };
-    case 'THIS_YEAR':  return { start: new Date(y, 0, 1), end: endOfDay(new Date(y, 11, 31)) };
-    case 'CUSTOM': {
-      const s = customStart ? startOfDay(new Date(customStart + 'T00:00:00')) : null;
-      const e = customEnd ? endOfDay(new Date(customEnd + 'T00:00:00')) : null;
-      return { start: isNaN(s?.getTime() ?? NaN) ? null : s, end: isNaN(e?.getTime() ?? NaN) ? null : e };
+    case 'THIS_MONTH': return { start: ymd(ano, mes, 1), end: ymd(ano, mes, ultimoDia(ano, mes)) };
+    case 'LAST_MONTH': {
+      const a = mes === 1 ? ano - 1 : ano;
+      const m = mes === 1 ? 12 : mes - 1;
+      return { start: ymd(a, m, 1), end: ymd(a, m, ultimoDia(a, m)) };
     }
+    case 'LAST_90': {
+      const b = new Date(Date.UTC(ano, mes - 1, dia) - 90 * 864e5);
+      return { start: ymd(b.getUTCFullYear(), b.getUTCMonth() + 1, b.getUTCDate()), end: ymd(ano, mes, dia) };
+    }
+    case 'THIS_YEAR':  return { start: ymd(ano, 1, 1), end: ymd(ano, 12, 31) };
+    case 'CUSTOM': return {
+      start: DATA_CIVIL.test(customStart) ? customStart : null,
+      end: DATA_CIVIL.test(customEnd) ? customEnd : null,
+    };
     default: return { start: null, end: null }; // '' / ALL = sem filtro
   }
 }
@@ -154,15 +190,18 @@ export class BankReconciliationStore {
     return { accountInfo: accInfo, pendingItems, movementItems };
   }
 
-  /** CB-06: aplica o período selecionado a uma lista de itens. */
+  /**
+   * CB-06: aplica o período selecionado a uma lista de itens, comparando DATAS CIVIS
+   * (AAAA-MM-DD) — as mesmas que a tela mostra. Os dois limites são inclusivos: num
+   * intervalo 01–02/10 entram os movimentos de 01/10 e de 02/10, e só eles.
+   */
   private noPeriodo(items: ReconciliationItem[]): ReconciliationItem[] {
     const f = this.filters();
     const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
     if (!start && !end) return items;
     return items.filter(item => {
-      if (!item.rawDate) return false;
-      const d = new Date(item.rawDate);
-      if (isNaN(d.getTime())) return false;
+      const d = diaCivil(item.rawDate);
+      if (!DATA_CIVIL.test(d)) return false;
       if (start && d < start) return false;
       if (end && d > end) return false;
       return true;
@@ -213,19 +252,10 @@ export class BankReconciliationStore {
         (item.description ?? '').toLowerCase().includes(term));
     }
 
-    // Filtro por período (Este mês, Mês passado, Últimos 90 dias, Este ano, Personalizado).
-    const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
-    if (start || end) {
-      result = result.filter(item => {
-        if (!item.rawDate) return false;
-        const d = new Date(item.rawDate);
-        if (isNaN(d.getTime())) return false;
-        if (start && d < start) return false;
-        if (end && d > end) return false;
-        return true;
-      });
-    }
-    return result;
+    // CB-06/I062: o recorte por período da LISTA é o mesmo dos cards — uma só
+    // implementação (`noPeriodo`). Havia aqui uma segunda cópia que comparava
+    // instantes; lista e cards podiam discordar sobre o mesmo intervalo.
+    return this.noPeriodo(result);
   });
 
   readonly filteredTotal = computed(() => this.filteredItems().length);
@@ -347,12 +377,16 @@ export class BankReconciliationStore {
 
   // ───────── CB-07 / CB-08 / CB-09: trazer o extrato e casar em lote ─────────
 
-  /** O período selecionado em ISO (yyyy-mm-dd), para mandar ao banco (CB-08). */
+  /**
+   * O período selecionado em ISO (yyyy-mm-dd), para mandar ao banco (CB-08).
+   * CB-06/I062: `periodRange` já devolve datas civis nesse formato — não há mais
+   * conversão de Date para texto no meio do caminho, que era por onde o dia
+   * escorregava.
+   */
   readonly periodoIso = computed((): { from?: string; to?: string } => {
     const f = this.filters();
     const { start, end } = periodRange(f.period, f.customStart, f.customEnd);
-    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    return { ...(start ? { from: iso(start) } : {}), ...(end ? { to: iso(end) } : {}) };
+    return { ...(start ? { from: start } : {}), ...(end ? { to: end } : {}) };
   });
 
   /**
