@@ -44,6 +44,9 @@ export interface ReceivableListResult {
 
 const STATUS_LABEL: Record<string, string> = {
   Open: 'Em aberto', PartiallyPaid: 'Parcialmente recebido', Paid: 'Recebido', Cancelled: 'Cancelado', Reconciled: 'Conciliado',
+  // CR-01/I091: faltavam estas três — qualquer título nesses estados exibia o nome
+  // do enum em inglês, que é o defeito que COM-Status PT corrigiu em Contas a pagar.
+  UnderReview: 'Em análise', Returned: 'Devolvido', Renegotiated: 'Renegociado',
 };
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -57,6 +60,13 @@ export class AccountsReceivableService {
     let params = new HttpParams();
     if (filters.status)     params = params.set('status', filters.status);
     if (filters.contractor) params = params.set('stakeholderId', filters.contractor);
+    // CR-02/I092: o servidor já aceitava partnershipId; faltava a tela mandá-lo.
+    if (filters.partnership) params = params.set('partnershipId', filters.partnership);
+    // CR-02/I092: filtros equivalentes aos de Contas a pagar.
+    if (filters.contract)    params = params.set('contractId', filters.contract);
+    if (filters.accountPlan) params = params.set('accountPlanId', filters.accountPlan);
+    if (filters.project)     params = params.set('projectId', filters.project);
+    if (filters.costCenter)  params = params.set('costCenterId', filters.costCenter);
     // CR-01: o campo "Período" era texto livre e nunca chegava ao servidor.
     if (filters.dateStart)  params = params.set('startDate', filters.dateStart);
     if (filters.dateEnd)    params = params.set('endDate', filters.dateEnd);
@@ -122,10 +132,31 @@ export class AccountsReceivableService {
   readonly statusOptions: FilterOption[] =
     Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }));
 
+  // CR-02/I092: mesmas bases de data de Contas a pagar (menos Competência, que
+  // ainda não existe no título a receber).
   readonly dateFieldOptions: FilterOption[] = [
     { value: 'dueDate',   label: 'Vencimento' },
     { value: 'issueDate', label: 'Emissão' },
+    { value: 'createdAt', label: 'Cadastro' },
   ];
+
+  /** CR-01/I091: a situação em português, para quem lê o título fora da lista. */
+  statusLabel(raw?: string | null): string {
+    return STATUS_LABEL[raw ?? ''] ?? (raw ?? '—');
+  }
+
+  /** CR-02/I092: termos/parcerias para o filtro que o servidor já aceitava. */
+  getPartnerships(): Observable<FilterOption[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/partnerships`, { params: new HttpParams().set('take', 500) }).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(t => ({
+          value: String(t.id),
+          label: [t.termNumber ?? t.number, t.title ?? t.name].filter(Boolean).join(' — ') || `Termo #${t.id}`,
+        }));
+      }),
+    );
+  }
 
   /** CR-02: contratantes para o filtro, que era uma caixa de texto. */
   getContractors(): Observable<FilterOption[]> {
@@ -170,6 +201,27 @@ export class AccountsReceivableService {
     return this.http.post(`${this.base}/${id}/renegotiate`, payload);
   }
 
+  /** CR-01/I091: copiar o título — a ação existia em Contas a pagar e não aqui. */
+  copy(id: number): Observable<ApiAccountReceivable> {
+    return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/copy`, {});
+  }
+
+  /** CR-01/I091: o título completo, para a janela de visualização. */
+  getOne(id: number): Observable<ApiAccountReceivable> {
+    return this.http.get<ApiAccountReceivable>(`${this.base}/${id}`);
+  }
+
+  // ── CR-04/I094: anexos do título (a aba Anexos não existia nesta tela) ─────
+  listFiles(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/${id}/files`);
+  }
+  attachFile(id: number, payload: { fileUrl: string; fileKey?: string }): Observable<unknown> {
+    return this.http.post(`${this.base}/${id}/files`, payload);
+  }
+  removeFile(id: number, fileId: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/${id}/files/${fileId}`);
+  }
+
   /**
    * CR-01: monta os cards a partir do resumo do servidor. Antes recebia a página
    * carregada e somava no navegador — a partir do segundo título fora da página
@@ -200,6 +252,17 @@ export class AccountsReceivableService {
     // que mais importa numa lista de cobrança.
     dueDate: fmtDate(r.dueDate),
     installmentsCount: (r.installments ?? []).length,
+    // CR-01/I091: as parcelas, no formato que a visão "Parcelas" usa (padrão de Pagar).
+    installments: (r.installments ?? [])
+      .slice()
+      .sort((a, b) => (a.installment ?? 0) - (b.installment ?? 0))
+      .map(p => ({
+        numero: p.installment,
+        dueDate: fmtDate(p.dueDate),
+        value: brl.format(p.amount ?? 0),
+        paid: brl.format(p.amountReceived ?? 0),
+        status: STATUS_LABEL[p.status ?? ''] ?? (p.status ?? '—'),
+      })),
     invoiceNumber: r.invoiceNumber ?? r.document ?? '—',
     status: STATUS_LABEL[r.status ?? ''] ?? (r.status ?? '—'),
     // FIN-01: valor, saldo e situação crua para a baixa (recebimento).

@@ -37,6 +37,8 @@ export class AccountsPayableListPage implements OnInit {
   readonly optRemittance  = this.svc.remittanceStatusOptions;
   readonly optPayment     = this.svc.paymentMethodOptions;
   readonly optSupplier    = signal<FilterOption[]>([]);
+  // CP-01/I070: "Tipo Despesa" era o único campo de texto livre da Busca Detalhada.
+  readonly optExpenseType = signal<FilterOption[]>([]);
   readonly optContract    = signal<FilterOption[]>([]);
   readonly optRequisition = signal<FilterOption[]>([]);
   readonly optBankAccount = signal<FilterOption[]>([]);
@@ -57,6 +59,12 @@ export class AccountsPayableListPage implements OnInit {
     });
     this.lookups.getAccountPlansLookup().subscribe({
       next: v => this.optAccountPlan.set(comoOpcao(v as any)), error: () => this.optAccountPlan.set([]),
+    });
+    // CP-01/I070: o tipo de despesa é texto no título (não há cadastro próprio),
+    // então as opções são os tipos realmente usados.
+    this.svc.getExpenseTypes().subscribe({
+      next: v => this.optExpenseType.set(v.map(t => ({ value: t, label: t }))),
+      error: () => this.optExpenseType.set([]),
     });
     // Prefixo da entidade no valor: o back precisa saber se o id é de centro de
     // custo ou de projeto — id 12 de um não é id 12 do outro.
@@ -112,6 +120,75 @@ export class AccountsPayableListPage implements OnInit {
   readonly viewItem = signal<PayableAccount | null>(null);
   openView(item: PayableAccount): void { this.viewItem.set(item); }
   closeView(): void { this.viewItem.set(null); }
+
+  // ── FIN-N6 / I101 (D5): comprovante e estorno controlado ──────────────────
+
+  /** D5: o comprovante é o anexo gravado na baixa manual. */
+  openComprovante(item: PayableAccount): void {
+    this.svc.listFiles(Number(item.id)).subscribe({
+      next: arquivos => {
+        const comp = (arquivos ?? []).filter(a => /comprovante/i.test(a.description ?? ''));
+        const alvo = comp.length ? comp : (arquivos ?? []);
+        if (!alvo.length) {
+          this.notify.info('Este título não tem comprovante anexado.');
+          return;
+        }
+        // Abre o mais recente; os demais seguem acessíveis na aba Anexos do título.
+        window.open(alvo[alvo.length - 1].fileUrl, '_blank', 'noopener');
+      },
+      error: e => this.notify.error(e?.error?.message ?? 'Não foi possível abrir o comprovante.'),
+    });
+  }
+
+  /**
+   * D5: estorno CONTROLADO — escolhe QUAL baixa desfazer e exige motivo.
+   * Apagar a baixa sem motivo registrado é justamente o que "controlado" exclui.
+   */
+  readonly estornoItem  = signal<PayableAccount | null>(null);
+  readonly estornoBaixas = signal<any[]>([]);
+  readonly estornoBusy  = signal(false);
+  estornoPaymentId = '';
+  estornoMotivo = '';
+
+  openEstorno(item: PayableAccount): void {
+    this.estornoItem.set(item);
+    this.estornoPaymentId = '';
+    this.estornoMotivo = '';
+    this.estornoBaixas.set([]);
+    this.svc.getById(Number(item.id)).subscribe({
+      next: (r: any) => {
+        const pagamentos = r?.payments ?? [];
+        this.estornoBaixas.set(pagamentos);
+        if (pagamentos.length === 1) this.estornoPaymentId = String(pagamentos[0].id);
+      },
+      error: () => this.estornoBaixas.set([]),
+    });
+  }
+  closeEstorno(): void { this.estornoItem.set(null); }
+
+  confirmEstorno(): void {
+    const item = this.estornoItem();
+    if (!item || !this.estornoPaymentId || !this.estornoMotivo.trim()) return;
+    this.estornoBusy.set(true);
+    this.svc.reversePayment(Number(item.id), Number(this.estornoPaymentId), this.estornoMotivo.trim()).subscribe({
+      next: (r: any) => {
+        this.estornoBusy.set(false);
+        this.closeEstorno();
+        this.notify.success(r?.message ?? 'Baixa estornada.');
+        this.store.load();
+      },
+      error: e => {
+        this.estornoBusy.set(false);
+        this.notify.error(e?.error?.message ?? 'Não foi possível estornar a baixa.');
+      },
+    });
+  }
+
+  rotuloDaBaixa(p: any): string {
+    const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const d = p?.paymentDate ? new Date(p.paymentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—';
+    return `#${p.id} · ${d} · ${brl.format(p.amount ?? 0)}${p.installmentId ? ' (parcela)' : ''}`;
+  }
   closePay(): void { this.payItem.set(null); }
 
   onBaixaConfirm(r: BaixaResult): void {
@@ -145,6 +222,65 @@ export class AccountsPayableListPage implements OnInit {
     });
   }
 
+  // ── I071 (CP-02): importação de XML de NF-e ────────────────────────────────
+  // Os dois botões da barra ("Importar XML" e "Upload de arquivo") eram inertes:
+  // não tinham handler nenhum e nenhum seletor de arquivo abria. Agora os dois
+  // abrem o seletor, importam cada XML e mostram a leitura da nota (prévia), o
+  // resultado e o erro legível, recarregando a lista com os títulos criados.
+  readonly importBusy = signal(false);
+  readonly importResultados = signal<{ arquivo: string; ok: boolean; mensagem: string; resumo: string }[]>([]);
+
+  limparResultadoImport(): void { this.importResultados.set([]); }
+
+  onImportXml(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const arquivos = Array.from(input.files ?? []);
+    input.value = '';                       // permite reenviar o mesmo arquivo
+    if (!arquivos.length) return;
+
+    const dinheiro = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const dia = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—');
+
+    this.importBusy.set(true);
+    this.importResultados.set([]);
+    let pendentes = arquivos.length;
+    const encerrar = () => {
+      if (--pendentes === 0) {
+        this.importBusy.set(false);
+        this.store.load();                  // os registros importados aparecem na lista
+      }
+    };
+
+    for (const arquivo of arquivos) {
+      this.svc.importXml(arquivo).subscribe({
+        next: res => {
+          const n = res.nota;
+          const resumo = n
+            ? [
+                `Nota ${n.numero}${n.serie ? '/' + n.serie : ''}`,
+                `emitente ${n.emitenteNome || n.emitenteDoc}`,
+                dinheiro.format(n.valor ?? 0),
+                `emissão ${dia(n.emissao)}`,
+                `vencimento ${dia(n.vencimento)}`,
+                `${n.itens} item(ns)`,
+                ...(n.chave ? [`chave ${n.chave}`] : []),
+              ].join(' · ')
+            : '';
+          this.importResultados.update(l => [...l, { arquivo: arquivo.name, ok: res.criado, mensagem: res.mensagem, resumo }]);
+          if (res.criado) this.notify.success(res.mensagem); else this.notify.error(res.mensagem);
+          encerrar();
+        },
+        error: err => {
+          const raw = err?.error?.message ?? 'Falha ao importar o XML.';
+          const msg = Array.isArray(raw) ? raw.join(', ') : String(raw);
+          this.importResultados.update(l => [...l, { arquivo: arquivo.name, ok: false, mensagem: msg, resumo: '' }]);
+          this.notify.error(msg);
+          encerrar();
+        },
+      });
+    }
+  }
+
   ngOnInit(): void {
     this.store.load();
     // CP-09: contas para o seletor da baixa. CP-01: as mesmas contas servem aos
@@ -159,10 +295,35 @@ export class AccountsPayableListPage implements OnInit {
     this.carregarOpcoesDeFiltro();
   }
 
+  /**
+   * CP-10 / I077: a segunda opção se chamava "Visão 2" (valor "VISA0_2", com erro de
+   * digitação) e não mudava nada — o seletor trocava o rótulo e mostrava a MESMA
+   * tabela. Agora cada visão diz o que mostra e tem conteúdo próprio: uma linha por
+   * título, ou uma linha por vencimento.
+   */
   readonly viewOptions = [
-    { label: 'Lançamentos', value: 'LANÇAMENTOS' },
-    { label: 'Visão 2', value: 'VISA0_2' },
+    { label: 'Lançamentos (um por título)', value: 'LANCAMENTOS' },
+    { label: 'Parcelas (uma por vencimento)', value: 'PARCELAS' },
   ];
+
+  readonly ehVisaoParcelas = computed(() => this.store.view() === 'PARCELAS');
+
+  /** CP-10/I077: expande cada título da página em suas parcelas. */
+  readonly parcelaRows = computed(() =>
+    this.store.pageItems().flatMap(t =>
+      (t.installments ?? []).map(p => ({
+        tituloId: t.id,
+        displayId: t.displayId,
+        company: t.company,
+        history: t.history,
+        rotulo: `${p.numero}/${t.installments.length}`,
+        dueDate: p.dueDate,
+        value: p.value,
+        paid: p.paid,
+        status: p.status,
+      })),
+    ),
+  );
 
   readonly pageSizeOptions = [10, 25, 50];
 
@@ -245,6 +406,47 @@ export class AccountsPayableListPage implements OnInit {
 
   onSendToRemittance(item: PayableAccount) {
     this.store.sendToRemittance(item.id);
+  }
+
+  /**
+   * I101/D5: a conferência do título "Em análise". A matriz do servidor já dizia
+   * `conferir: true` nessa situação e já barrava baixa e renegociação antes dela,
+   * mas a linha não oferecia saída nenhuma — o título ficava parado sem botão.
+   * São as duas únicas saídas: conferir (vira Em aberto) ou devolver com motivo.
+   */
+  readonly conferindo = signal<string | null>(null);
+
+  onConferir(item: PayableAccount) {
+    if (!confirm(`Conferir o lançamento ${item.displayId ?? item.id}? Ele passa de "Em análise" para "Em aberto" e aceita baixa.`)) return;
+    this.conferindo.set(item.id);
+    this.svc.conferir(Number(item.id)).subscribe({
+      next: () => {
+        this.conferindo.set(null);
+        this.notify.success('Lançamento conferido — agora está Em aberto.');
+        this.store.load();
+      },
+      error: e => {
+        this.conferindo.set(null);
+        this.notify.error(e?.error?.message ?? 'Não foi possível conferir o lançamento.');
+      },
+    });
+  }
+
+  onDevolver(item: PayableAccount) {
+    const motivo = (prompt(`Devolver o lançamento ${item.displayId ?? item.id} ao Compras. Qual o motivo?`) ?? '').trim();
+    if (!motivo) return;   // devolver sem motivo não ajuda quem recebe de volta
+    this.conferindo.set(item.id);
+    this.svc.devolver(Number(item.id), motivo).subscribe({
+      next: () => {
+        this.conferindo.set(null);
+        this.notify.success('Lançamento devolvido ao Compras com o motivo registrado.');
+        this.store.load();
+      },
+      error: e => {
+        this.conferindo.set(null);
+        this.notify.error(e?.error?.message ?? 'Não foi possível devolver o lançamento.');
+      },
+    });
   }
 
   onDeleteSelected() {

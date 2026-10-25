@@ -145,8 +145,11 @@
               <div class="form-group"><label>Qtd. de Fornecedores</label><input type="number" class="form-control" placeholder="0" formControlName="supplierCount"></div>
 
               <!-- CP-15: fornecedores sugeridos — vinculados à requisição e levados para a Cotação -->
+              <!-- COM-8/I008: ganhou busca; era preciso percorrer a lista inteira. -->
               <div class="form-group">
                 <label>Fornecedores sugeridos</label>
+                <input class="form-control busca-vinculo" type="text" placeholder="Buscar fornecedor…"
+                       [value]="buscaFornecedor()" (input)="buscaFornecedor.set($any($event.target).value)">
                 <div class="select-wrap">
                   <select class="form-control" (change)="addSupplier($event)">
                     <option value="">Selecione para adicionar…</option>
@@ -170,14 +173,34 @@
                     Novo
                   </button>
                 </label>
+                <!-- COM-8/I008: busca + seleção MÚLTIPLA. Era um select simples de um
+                     contrato só; o primeiro escolhido segue sendo o principal. -->
+                <input class="form-control busca-vinculo" type="text" placeholder="Buscar contrato…"
+                       [value]="buscaContrato()" (input)="buscaContrato.set($any($event.target).value)">
                 <div class="select-wrap">
-                  <select class="form-control" formControlName="contractId">
-                    <option value="">Selecione</option>
-                    @for (c of contracts(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  <select class="form-control" (change)="addContract($event)">
+                    <option value="">Selecione para adicionar…</option>
+                    @for (c of availableContracts(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
+            </div>
+
+            <!-- COM-8/I008: os contratos escolhidos, em linha cheia como os fornecedores. -->
+            <div class="suppliers-help">
+              @if (selectedContracts().length) {
+                <div class="supplier-chips">
+                  @for (c of selectedContracts(); track c.id) {
+                    <span class="supplier-chip">
+                      {{ c.name }}@if ($first) { <em class="chip-principal">principal</em> }
+                      <button type="button" title="Remover" (click)="removeContract(c.id!)">×</button>
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="suppliers-empty">Nenhum contrato vinculado.</p>
+              }
             </div>
 
             <!-- A dica e os fornecedores escolhidos ficam em linha cheia, abaixo dos três
@@ -296,23 +319,41 @@
         <!-- ══ LOCAL ══════════════════════════════════════════════════════ -->
         @if (activeTab === 'LOCAL') {
           <h3 class="section-title">Local de Entrega / Prestação do Serviço</h3>
-          <p class="section-subtitle">Selecione um local de entrega cadastrado.</p>
+          <!-- COM-8/I008: busca + seleção MÚLTIPLA. Era um select simples de um local só. -->
+          <p class="section-subtitle">Busque e selecione um ou mais locais de entrega cadastrados.</p>
           <div class="form-grid">
             <div class="form-row grid-cols-2">
               <div class="form-group">
                 <label>Local de entrega</label>
+                <input class="form-control busca-vinculo" type="text" placeholder="Buscar local…"
+                       [value]="buscaLocal()" (input)="buscaLocal.set($any($event.target).value)">
                 <!-- CMP-07: inclusão rápida de local sem sair da requisição -->
                 <div style="display:flex; gap:6px; align-items:center;">
                 <div class="select-wrap" style="flex:1;">
-                  <select class="form-control" formControlName="deliveryLocationId">
-                    <option value="">Selecione</option>
-                    @for (l of deliveryLocations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
+                  <select class="form-control" (change)="addLocation($event)">
+                    <option value="">Selecione para adicionar…</option>
+                    @for (l of availableLocations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
                 <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar local" (click)="quickAddLocation()" style="padding:8px 12px;">+</button>
                 </div>
               </div>
+            </div>
+
+            <div class="suppliers-help">
+              @if (selectedLocations().length) {
+                <div class="supplier-chips">
+                  @for (l of selectedLocations(); track l.id) {
+                    <span class="supplier-chip">
+                      {{ l.name }}@if ($first) { <em class="chip-principal">principal</em> }
+                      <button type="button" title="Remover" (click)="removeLocation(l.id!)">×</button>
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="suppliers-empty">Nenhum local de entrega selecionado.</p>
+              }
             </div>
           </div>
         }

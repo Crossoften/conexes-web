@@ -1,11 +1,14 @@
-<div class="page">
-  <div class="page-header">
-    <h1 class="page-title">Mapa de Cotação</h1>
-    <!-- COMP-21: aberto de dentro da Etapa 4, o caminho de volta é para lá -->
-    @if (fromStage) {
-      <a class="btn-outline btn-outline--orange" routerLink="/quotations/stage-4">Voltar à Etapa 4</a>
-    }
-  </div>
+<div class="page" [class.page--embedded]="embedded">
+  <!-- I023: no modo modal (dentro de Cotações) o título e o "Voltar" são do modal. -->
+  @if (!embedded) {
+    <div class="page-header">
+      <h1 class="page-title">Mapa de Cotação</h1>
+      <!-- COMP-21: aberto de dentro da Etapa 4, o caminho de volta é para lá -->
+      @if (fromStage) {
+        <a class="btn-outline btn-outline--orange" routerLink="/quotations/stage-4">Voltar à Etapa 4</a>
+      }
+    </div>
+  }
 
   <!-- COMP-21: o seletor de requisição só existe no acesso direto. Vindo da
        Etapa 4 a requisição já está escolhida — era essa segunda escolha que
@@ -39,7 +42,7 @@
             <table class="map-table">
               <thead>
                 <tr>
-                  <th>Fornecedor</th><th>Unitário</th><th>Total</th><th>Frete</th><th>Desconto</th>
+                  <th>Fornecedor</th><th>Subtotal dos itens</th><th>Frete</th><th>Desconto</th>
                   <th>Total efetivo</th><th>Prazo</th><th>Pagamento</th>
                 </tr>
               </thead>
@@ -47,8 +50,7 @@
                 @for (q of map().quotations; track q.quotationId) {
                   <tr [class.best]="q.isBest">
                     <td>{{ q.supplierName }} @if (q.isBest) { <span class="tag-best">melhor</span> }</td>
-                    <td>{{ brl(q.unitValue) }}</td>
-                    <td>{{ brl(q.totalValue) }}</td>
+                    <td>{{ brl(q.subtotal) }}</td>
                     <td>{{ brl(q.freight) }}</td>
                     <td>{{ brl(q.discount) }}</td>
                     <td class="strong">{{ brl(q.effectiveTotal) }}</td>
@@ -72,9 +74,16 @@
     <div class="card">
       <div class="card-header"><h2 class="card-title">Portal de Cotação — convidar fornecedores</h2></div>
       <div class="card-body">
-        <p class="muted">Selecione os fornecedores e gere os links. Cada fornecedor responde a proposta sem precisar de login.</p>
+        <!-- I023: os convidados são os fornecedores SUGERIDOS na requisição, já
+             marcados. Antes a lista era o cadastro inteiro, ignorando quem a
+             requisição tinha indicado para cotar. -->
+        @if (usandoSugeridos()) {
+          <p class="muted">Fornecedores sugeridos nesta requisição, já marcados. O convite é enviado por e-mail e o link também pode ser copiado.</p>
+        } @else {
+          <p class="muted">Esta requisição não indicou fornecedores — escolha abaixo no cadastro. O convite é enviado por e-mail e o link também pode ser copiado.</p>
+        }
         <div class="supp-grid">
-          @for (s of suppliers(); track s.id) {
+          @for (s of listaDeConvidados(); track s.id) {
             <label class="supp-check">
               <input type="checkbox" [checked]="isSupplierChecked(s.id)" (change)="toggleSupplier(s.id)">
               <span>{{ s.name }}</span>
@@ -82,17 +91,30 @@
           }
         </div>
         <button class="btn-primary" [disabled]="generating()" (click)="generateInvites()">
-          {{ generating() ? 'Gerando…' : 'Gerar convites' }}
+          {{ generating() ? 'Gerando…' : 'Gerar e enviar convites' }}
         </button>
+
+        <!-- I023: o resultado do envio, dito por extenso — gerar o link e o
+             fornecedor receber o e-mail são coisas diferentes. -->
+        @if (aviso()) { <p class="invite-aviso">{{ aviso() }}</p> }
 
         @if (invites().length) {
           <div class="invites">
-            <h3>Links gerados</h3>
-            @for (i of invites(); track i.supplierId) {
+            <h3>Convites desta requisição</h3>
+            @for (i of invites(); track i.id) {
               <div class="invite-row">
-                <span class="invite-supp">{{ i.supplierName }}</span>
+                <span class="invite-supp">
+                  {{ i.supplierName }}
+                  <em class="invite-status" [class.invite-status--ok]="i.status === 'Answered'">
+                    {{ i.status === 'Answered' ? 'respondeu' : 'aguardando' }}
+                  </em>
+                </span>
                 <input class="invite-link" readonly [value]="i.link">
                 <button class="btn-outline" (click)="copy(i.link)">{{ copied() === i.link ? 'Copiado!' : 'Copiar' }}</button>
+                <button class="btn-outline" [disabled]="reenviando() === i.id" (click)="reenviar(i)">
+                  {{ reenviando() === i.id ? 'Reenviando…' : 'Reenviar' }}
+                </button>
+                <span class="invite-email">{{ i.email || 'sem e-mail no cadastro' }}</span>
               </div>
             }
           </div>

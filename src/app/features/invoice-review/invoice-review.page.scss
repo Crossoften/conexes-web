@@ -43,6 +43,14 @@
    precisa caber item, unidade, quantidade e dois valores sem espremer. */
 .modal--wide { width: 820px; }
 
+/* ── I020: a conferência abre nota E pedido, então o corpo pode passar da tela.
+   Rola o conteúdo e mantém cabeçalho e ações sempre visíveis. */
+.modal-body--scroll { max-height: calc(100vh - 220px); overflow-y: auto; }
+.btn-outline--danger {
+  border-color: #FCA5A5; color: #DC2626;
+  &:hover { background: #FEF2F2; border-color: #DC2626; }
+}
+
 .hint--error { color: var(--brand-danger, #DC2626); font-weight: 600; }
 .muted { color: var(--text-muted, #9CA3AF); }
 .right { text-align: right; }

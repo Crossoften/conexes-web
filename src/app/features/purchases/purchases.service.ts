@@ -385,6 +385,10 @@ export class PurchasesService {
   generateOrderPdf(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/orders/${id}/pdf`, { responseType: 'blob' });
   }
+  // I019: o mesmo pedido em Excel (identificação + itens com subtotal/frete/desconto).
+  generateOrderExcel(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/orders/${id}/excel`, { responseType: 'blob' });
+  }
 
   /** FE-8: adjudicação (Etapa 4) — by_supplier (1 pedido) ou by_item (N pedidos). */
   award(id: number, payload: AwardPayload): Observable<PurchaseRequest> {

@@ -32,6 +32,7 @@ export interface BankMovementRateio {
   accountPlanId?: number;
   projectId?:     number;
   costCenterId?:  number;
+  activityId?:    number;   // LB-05 / I052: atividade por linha de rateio
   percentage?:    number;
   amount?:        number;
 }

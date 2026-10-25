@@ -34,7 +34,9 @@ export const ROUTE_PERMISSIONS: Record<string, RoutePermission> = {
   '/taxes':                 { module: 'Financeiro', subMenu: 'Impostos e Retenções' },
   '/users':                 { module: 'Usuários e Permissões', subMenu: 'Usuários' },
   '/approval-tiers':        { module: 'Compras', subMenu: 'Alçadas de Aprovação' },
-  // '/general-settings' fica de fora: item desabilitado ("Em breve").
+  // '/general-settings' fica de fora de propósito: a tela existe (TR-08) e é aberta a quem
+  // enxerga o menu. Não há módulo/subMenu correspondente no cadastro de permissões, então
+  // mapeá-la aqui bloquearia o acesso em vez de controlá-lo.
 
   // ── Minha Organização ──────────────────────────────────────────────────────
   '/entity-registry':       { module: 'Institucional', subMenu: 'Entidades' },

@@ -1,0 +1,17 @@
+<!-- I023: Mapa de Cotação dentro de Cotações, como modal. -->
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-text">
+        <h2>Mapa de Cotação</h2>
+        <p>Comparativo de propostas e convites da requisição {{ requestCode }}.</p>
+      </div>
+      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <app-quotation-map [requestIdInput]="requestId" [embedded]="true"></app-quotation-map>
+    </div>
+  </div>
+</div>

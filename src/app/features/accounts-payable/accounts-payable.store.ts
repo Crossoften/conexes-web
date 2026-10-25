@@ -37,7 +37,8 @@ export class AccountsPayableStore {
     total: 0,
     loading: false,
     error: null,
-    view: 'LANÇAMENTOS',
+    // CP-10/I077: o valor acompanha viewOptions da página (sem acento no valor).
+    view: 'LANCAMENTOS',
     filters: { ...INITIAL_FILTERS },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },

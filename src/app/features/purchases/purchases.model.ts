@@ -310,6 +310,10 @@ export interface CreatePurchaseRequestPayload {
   activity?: string;
   supplierCount?: number;
   supplierIds?: number[];  // CP-15: fornecedores sugeridos vinculados à requisição
+  // COM-8/I008: seleção múltipla — o primeiro de cada lista vira o vínculo principal
+  // (contractId / deliveryLocationId), que é de onde os documentos leem.
+  contractIds?: number[];
+  deliveryLocationIds?: number[];
   newDeliveryLocation?: DeliveryLocationPayload;
   items: PurchaseRequestItemPayload[];
 }

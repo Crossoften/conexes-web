@@ -310,3 +310,24 @@
   margin-top: 8px; background: none; border: none; color: var(--brand-purple);
   font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline;
 }
+
+/* ── COM-E6 / I026-I028-I030 (decisão D2) ────────────────────────────────────
+   O pedido na Etapa 6, com a SITUAÇÃO DELE — que é diferente da situação da
+   requisição. Entrar na Etapa 6 significa pedido emitido; "Em recebimento" e
+   "Concluído" continuam distintos até a conclusão física. */
+.pedido-link {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  padding: 2px 0; margin-bottom: 4px;
+  background: none; border: none; cursor: pointer; text-align: left;
+  &:hover .pedido-link__num { text-decoration: underline; }
+  &__num { font-size: 12.5px; font-weight: 700; color: var(--brand-purple, #7C3AED); font-variant-numeric: tabular-nums; }
+  &__situacao {
+    padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    background: #F1F5F9; color: #64748B;
+    &--Open       { background: #EEF2FF; color: #4338CA; }
+    &--InProgress { background: #FFF7ED; color: #9A3412; }
+    &--Completed  { background: #ECFDF5; color: #065F46; }
+    &--Cancelled  { background: #FEF2F2; color: #B91C1C; }
+  }
+}
+.pedido-vazio { font-size: 12px; color: var(--text-muted, #9CA3AF); }

@@ -37,6 +37,31 @@ export interface OrderDetail {
   files: OrderFile[];
 }
 
+/**
+ * COM-Faturar / I020: o que o cartão da fila precisa abrir para conferência.
+ *
+ * O cartão da "Análise de notas" é o pré-lançamento (a NOTA). Conferir exige ver
+ * também o PEDIDO que a originou — itens, valores e anexos. Antes só dava para
+ * Validar ou Devolver direto do cartão, sem abrir nada.
+ */
+export interface NotaDetail {
+  id: number;
+  description: string | null;
+  document: string | null;
+  supplier: string | null;
+  grossAmount: number;
+  netAmount: number;
+  issueDate: string | null;
+  dueDate: string | null;
+  status: string;
+  observation: string | null;
+  orderCode: string | null;
+  orderId: number | null;
+  requestId: number | null;
+  files: OrderFile[];
+}
+export interface ReviewDetail { nota: NotaDetail; pedido: OrderDetail | null; }
+
 @Injectable({ providedIn: 'root' })
 export class InvoiceReviewService {
   private http = inject(HttpClient);
@@ -86,6 +111,48 @@ export class InvoiceReviewService {
         return anexos.pipe(map(files => this.montarDetalhe(o, files)));
       }),
     );
+  }
+
+  /**
+   * COM-Faturar / I020: abre o cartão da fila para conferência — a nota com seus
+   * anexos e, quando existir vínculo, o pedido que a originou.
+   *
+   * O pedido é opcional de propósito: nota lançada à mão (sem pedido) continua
+   * precisando ser conferida, e um vínculo ausente não pode derrubar a tela.
+   */
+  reviewDetail(apId: number): Observable<ReviewDetail> {
+    const anexos$ = this.http.get<any[]>(`${this.ap}/${apId}/files`).pipe(catchError(() => of([] as any[])));
+    return this.http.get<any>(`${this.ap}/${apId}`).pipe(
+      switchMap(r => anexos$.pipe(
+        switchMap(files => {
+          const nota = this.montarNota(r, files);
+          if (!nota.orderId) return of({ nota, pedido: null } as ReviewDetail);
+          return this.orderDetail(nota.orderId).pipe(
+            catchError(() => of(null)),
+            map(pedido => ({ nota, pedido }) as ReviewDetail),
+          );
+        }),
+      )),
+    );
+  }
+
+  private montarNota(r: any, files: any[]): NotaDetail {
+    return {
+      id: r.id,
+      description: r.description ?? r.history ?? null,
+      document: r.document ?? null,
+      supplier: r.stakeholder?.name ?? null,
+      grossAmount: r.grossAmount ?? r.amount ?? 0,
+      netAmount: r.netAmount ?? r.amount ?? r.grossAmount ?? 0,
+      issueDate: r.issueDate ?? null,
+      dueDate: r.dueDate ?? null,
+      status: r.status ?? '—',
+      observation: r.observation ?? null,
+      orderCode: r.orderCode ?? null,
+      orderId: r.orderId ?? null,
+      requestId: r.purchaseRequestId ?? null,
+      files: (files ?? []).map(f => ({ id: f.id, fileUrl: f.fileUrl, fileKey: f.fileKey ?? null })),
+    };
   }
 
   private montarDetalhe(o: any, files: any[]): OrderDetail {

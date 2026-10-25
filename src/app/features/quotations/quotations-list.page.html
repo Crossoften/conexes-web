@@ -91,6 +91,11 @@
             <th class="th th--sortable" (click)="store.setSort('reqStatus')">
               Status Requisição <span class="sort-icon" [ngClass]="'sort--' + getSortState('reqStatus')"></span>
             </th>
+            <!-- COM-E6/I026-I028-I030 (D2): nas Etapas 5 e 6 o PEDIDO é o registro
+                 central. A lista mostrava só a situação da requisição, e nunca qual
+                 pedido havia saído — dava para uma requisição estar em "Pedidos
+                 finalizados" com o pedido ainda em recebimento. -->
+            @if (mostraPedido) { <th class="th">Pedido</th> }
             <th class="th th--center">Ações</th>
           </tr>
         </thead>
@@ -99,19 +104,19 @@
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
               <tr class="tr--skeleton">
-                <td colspan="9"><div class="skeleton"></div></td>
+                <td [attr.colspan]="colunas"><div class="skeleton"></div></td>
               </tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" [attr.colspan]="colunas">
                 <p class="empty-title">{{ store.error() }}</p>
                 <button type="button" class="link-retry" (click)="store.load(routeStage)">Tentar novamente</button>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" colspan="9">
+              <td class="td--empty" [attr.colspan]="colunas">
                 <p class="empty-title">Nenhuma requisição encontrada</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -165,6 +170,25 @@
                   </span>
                 </td>
 
+                <!-- D2: o pedido emitido e a SITUAÇÃO DELE, que é diferente da
+                     situação da requisição. Clicar abre o pedido — o registro
+                     central, onde ficam itens, recebimentos e histórico. -->
+                @if (mostraPedido) {
+                  <td class="td">
+                    @if (item.orders.length) {
+                      @for (o of item.orders; track o.id) {
+                        <button type="button" class="pedido-link" (click)="abrirPedido(o)"
+                                [title]="'Abrir o pedido ' + o.number + ' — ' + o.supplier">
+                          <span class="pedido-link__num">{{ o.number }}</span>
+                          <span class="pedido-link__situacao pedido-link__situacao--{{ o.status }}">{{ o.label }}</span>
+                        </button>
+                      }
+                    } @else {
+                      <span class="pedido-vazio">Sem pedido emitido</span>
+                    }
+                  </td>
+                }
+
                 <!-- Ações por etapa -->
                 <td class="td td--center">
                   <div class="action-icons">
@@ -177,6 +201,13 @@
                     @if (canQuotations) {
                       <button class="icon-btn" appTooltip="Cotações" aria-label="Cotações" (click)="openQuotations(item)">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+                      </button>
+                    }
+                    <!-- I023: o Mapa de Cotação é ação direta da Etapa 4 (dentro de
+                         Cotações, como modal) — saiu de "Mais opções". -->
+                    @if (canQuotationMap) {
+                      <button class="icon-btn" appTooltip="Mapa de cotação" aria-label="Mapa de cotação" (click)="quotationMap(item)">
+                        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
                       </button>
                     }
                     @if (canAward()) {
@@ -233,18 +264,22 @@
                         </button>
                         @if (menuOpenId() === item.id) {
                           <div class="row-menu" [style.top.px]="menuPos().top" [style.left.px]="menuPos().left" (click)="$event.stopPropagation()">
-                            @if (canExcel)    { <button type="button" (click)="excel(item); closeMenu()">Gerar Excel</button> }
-                            <!-- "da requisição" no rótulo: da Etapa 4 em diante convivem dois
-                                 documentos, e o cliente clicou neste esperando o da cotação. -->
-                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar PDF da requisição</button> }
-                            <!-- COMP-21: o mapa, de dentro da Etapa 4 -->
-                            @if (canQuotationMap) {
-                              <button type="button" (click)="quotationMap(item); closeMenu()">Mapa de cotação</button>
-                            }
+                            <!-- I019: rótulos paralelos e inequívocos. Nas Etapas 4/5/6 convivem
+                                 TRÊS documentos — requisição, cotação e pedido — cada um em PDF e
+                                 Excel. "Gerar Excel" e "Exportar PDF da requisição" não diziam de
+                                 qual documento se tratava, e o Excel chegava a baixar com nome de
+                                 pedido sendo o da requisição. -->
+                            @if (canPdf)      { <button type="button" (click)="pdf(item); closeMenu()">Exportar requisição (PDF)</button> }
+                            @if (canExcel)    { <button type="button" (click)="excel(item); closeMenu()">Exportar requisição (Excel)</button> }
                             <!-- COMP-16/COMP-17 -->
                             @if (canQuotationDoc) {
                               <button type="button" (click)="quotationPdf(item); closeMenu()">Exportar cotação (PDF)</button>
                               <button type="button" (click)="quotationExcel(item); closeMenu()">Exportar cotação (Excel)</button>
+                            }
+                            <!-- I019: o pedido — tinha só PDF e só pelo submódulo Pedidos -->
+                            @if (canOrderDoc) {
+                              <button type="button" (click)="orderPdf(item); closeMenu()">Exportar pedido (PDF)</button>
+                              <button type="button" (click)="orderExcel(item); closeMenu()">Exportar pedido (Excel)</button>
                             }
                             @if (canCancel()) { <button type="button" (click)="cancel(item); closeMenu()">Cancelar</button> }
                             @if (canDelete)   { <button type="button" class="row-menu__danger" (click)="remove(item); closeMenu()">Excluir</button> }
@@ -345,6 +380,15 @@
       (awarded)="store.onAwarded()"
       (close)="store.closeAward()">
     </app-purchase-award-modal>
+  }
+
+  <!-- I023: Mapa de Cotação dentro de Cotações (modal). -->
+  @if (store.mapFor(); as m) {
+    <app-purchase-quotation-map-modal
+      [requestId]="m.id"
+      [requestCode]="m.code"
+      (close)="store.closeMap()">
+    </app-purchase-quotation-map-modal>
   }
 
   <!-- item 11: confirmação de avanço de etapa / ações que alteram dados ou status -->

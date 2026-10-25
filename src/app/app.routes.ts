@@ -32,7 +32,12 @@ export const appRoutes: Routes = [
       { path: 'taxes',                canActivate: [permissionGuard], data: { module: 'Financeiro', subMenu: 'Impostos e Retenções' },          loadChildren: () => import('./features/taxes/taxes.routes').then(m => m.taxesRoutes) },
       { path: 'cost-centers',         canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Centro de Custo/Projeto/Atividade' }, loadChildren: () => import('./features/cost-centers/cost-centers.routes').then(m => m.costCentersRoutes) },
       { path: 'chart-of-accounts',    canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Plano de Contas' },                loadChildren: () => import('./features/chart-of-accounts/chart-of-accounts.routes').then(m => m.chartOfAccountsRoutes) },
-      // { path: 'general-settings',  loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
+      // TR-08/I041: a rota estava comentada enquanto o item do menu já apontava para ela —
+      // clicar em "Configurações gerais" caía em 404 e a preferência de descrição da
+      // transferência ficava inalcançável. Sem permissionGuard de propósito: o item não tem
+      // entrada no permission-map (ver o comentário lá), e exigir permissão inexistente
+      // apenas trocaria o 404 por um bloqueio.
+      { path: 'general-settings',     loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
 
       // Entidades
       { path: 'entity-registry',    canActivate: [permissionGuard], data: { module: 'Institucional', subMenu: 'Entidades' },                 loadChildren: () => import('./features/entity-registry/entity-registry.routes').then(m => m.entityRegistryRoutes) },
@@ -53,7 +58,10 @@ export const appRoutes: Routes = [
       // { path: 'purchasing-reports', ... }
       { path: 'quotations',           canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Cotações' },         loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
       { path: 'quotation-map',        canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/quotation-map/quotation-map.routes').then(m => m.quotationMapRoutes) },
-      { path: 'purchase-receiving',   canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/purchase-receiving/purchase-receiving.routes').then(m => m.purchaseReceivingRoutes) },
+      // COM-Pedidos x Recebimento / I027: o recebimento foi unificado dentro do Pedido.
+      // A tela independente saiu; a rota antiga redireciona para Pedidos para não quebrar
+      // link salvo. (É onde o usuário abre o pedido e clica em "Registrar recebimento".)
+      { path: 'purchase-receiving',   redirectTo: 'purchasing-orders', pathMatch: 'full' },
       { path: 'purchasing-management', canActivate: [permissionGuard], data: { module: 'Compras' },                             loadChildren: () => import('./features/purchasing-management/purchasing-management.routes').then(m => m.purchasingManagementRoutes) },
       { path: 'purchasing-orders',     canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Pedidos de Compra' }, loadChildren: () => import('./features/purchasing-orders/purchasing-orders.routes').then(m => m.purchasingOrdersRoutes) },
       { path: 'purchasing-registries', canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Produtos e Serviços' }, loadChildren: () => import('./features/purchasing-registries/purchasing-registries.routes').then(m => m.purchasingRegistriesRoutes) },

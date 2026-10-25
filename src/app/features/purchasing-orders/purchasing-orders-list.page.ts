@@ -1,5 +1,6 @@
 // src/app/features/purchasing-orders/purchasing-orders-list.page.ts
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PurchasingOrdersStore } from './purchasing-orders.store';
 import { OrderRow, ORDER_STATUS_CONFIG } from './purchasing-orders.model';
 import { OrderDetailModalComponent } from './components/order-detail.modal';
@@ -14,10 +15,21 @@ import { PurchasesService } from '../purchases/purchases.service';
   templateUrl: './purchasing-orders-list.page.html',
   styleUrl: './purchasing-orders-list.page.scss',
 })
-export class PurchasingOrdersListPage {
+export class PurchasingOrdersListPage implements OnInit {
   readonly store = inject(PurchasingOrdersStore);
   private readonly purchasesSvc = inject(PurchasesService);
+  private readonly route = inject(ActivatedRoute);
   readonly statusConfig = ORDER_STATUS_CONFIG;
+
+  /**
+   * COM-E6 / I026 (decisão D2): o Pedido é o registro central, e a Etapa 6 leva
+   * até ele. Sem ler este parâmetro, o link da Etapa 6 só abria a LISTA e quem
+   * clicou tinha de procurar o pedido na mão — meio caminho.
+   */
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.queryParamMap.get('order'));
+    if (Number.isInteger(id) && id > 0) this.store.openDetail(id);
+  }
 
   readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.store.total() / this.store.pagination().pageSize)),

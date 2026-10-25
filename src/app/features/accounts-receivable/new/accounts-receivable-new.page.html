@@ -91,6 +91,175 @@
           </div>
 
         </div>
+
+        <!-- ══ CR-04 / I094: as cinco abas, no mesmo desenho de Contas a pagar ══
+             O formulário era uma tela única de nove campos: competência,
+             classificação, rateio, impostos retidos e anexos não existiam. -->
+        <div class="segmented-tabs mt-4">
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'COMPETENCIA'" (click)="setMainTab('COMPETENCIA')">Competência e dados de contrato</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'CLASSIFICACAO'" (click)="setMainTab('CLASSIFICACAO')">Classificação do serviço e documento</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'RATEIO'" (click)="setMainTab('RATEIO')">Rateio</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'IMPOSTOS'" (click)="setMainTab('IMPOSTOS')">Impostos retidos</button>
+          <button type="button" class="segmented-tab-btn" [class.active]="activeMainTab === 'ANEXOS'" (click)="setMainTab('ANEXOS')">Anexos</button>
+        </div>
+
+        @if (activeMainTab === 'COMPETENCIA') {
+          <h3 class="section-title">Competência e dados de contrato</h3>
+          <div class="form-grid">
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>Competência</label>
+                <input type="date" class="form-control" formControlName="competencyDate">
+              </div>
+              <div class="form-group">
+                <label>Contrato</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="contractId">
+                    <option value="">Nenhum</option>
+                    @for (c of contratos(); track c.id) { <option [value]="c.id">{{ c.label }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Forma de recebimento</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="receiptMethod">
+                    <option value="">Selecione</option>
+                    @for (m of receiptMethods; track m.value) { <option [value]="m.value">{{ m.label }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="form-row grid-cols-1">
+              <div class="form-group">
+                <label>Observações</label>
+                <input type="text" class="form-control" placeholder="Opcional" formControlName="observation">
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeMainTab === 'CLASSIFICACAO') {
+          <h3 class="section-title">Classificação do serviço e documento</h3>
+          <div class="form-grid">
+            <div class="form-row grid-cols-2">
+              <div class="form-group">
+                <label>Serviço (cadastro)</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="serviceId">
+                    <option value="">Selecione</option>
+                    @for (s of servicos(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tipo do documento</label>
+                <input type="text" class="form-control" placeholder="Ex.: NF, Recibo" formControlName="type">
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeMainTab === 'RATEIO') {
+          <h3 class="section-title">Rateio da receita</h3>
+          <p class="section-subtitle">
+            Classifique a receita por categoria, projeto/centro de custo e subprojeto.
+            Informe o percentual OU o valor — o outro é calculado.
+          </p>
+          <div formArrayName="rateios">
+            @for (linha of rateios.controls; track linha; let i = $index) {
+              <div class="form-row grid-cols-6" [formGroupName]="i" style="align-items:end;">
+                <div class="form-group"><label>Categoria</label>
+                  <select class="form-control" formControlName="accountPlanId">
+                    <option value="">Selecione</option>
+                    @for (p of planos(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select></div>
+                <div class="form-group"><label>Centro de custo</label>
+                  <select class="form-control" formControlName="costCenterId">
+                    <option value="">Selecione</option>
+                    @for (c of centros(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select></div>
+                <div class="form-group"><label>Projeto</label>
+                  <select class="form-control" formControlName="projectId">
+                    <option value="">Selecione</option>
+                    @for (p of projetos(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                  </select></div>
+                <div class="form-group"><label>Subprojeto</label>
+                  <select class="form-control" formControlName="subProjectId">
+                    <option value="">Selecione</option>
+                    @for (a of atividades(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+                  </select></div>
+                <div class="form-group"><label>%</label>
+                  <input type="text" inputmode="decimal" class="form-control" placeholder="0,00" formControlName="percentage"></div>
+                <div class="form-group" style="display:flex; gap:6px; align-items:end;">
+                  <div style="flex:1;"><label>Valor</label>
+                    <input type="text" inputmode="decimal" class="form-control" placeholder="0,00" formControlName="amount"></div>
+                  <button type="button" class="btn-outline btn-outline--orange" title="Remover linha" (click)="removeRateio(i)">×</button>
+                </div>
+              </div>
+            }
+          </div>
+          <button type="button" class="btn-outline btn-outline--orange mt-2" (click)="addRateio()">+ Adicionar linha</button>
+          @if (rateios.length) {
+            <p class="hint">
+              Distribuído: <strong>{{ rateioDistribuido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+              de {{ valorLiquido + totalRetido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}.
+            </p>
+          }
+        }
+
+        @if (activeMainTab === 'IMPOSTOS') {
+          <h3 class="section-title">Alíquotas</h3>
+          <p class="section-subtitle">Retenções sobre a receita. O valor de cada uma é calculado sobre o valor do título.</p>
+          <div class="form-grid">
+            @for (t of TAX_DEFS; track t.type) {
+              <div class="form-row grid-cols-2" style="align-items:end;">
+                <div class="form-group">
+                  <label>Alíquota % {{ t.type }}</label>
+                  <input type="text" inputmode="decimal" class="form-control" placeholder="%" [formControlName]="t.ctrl">
+                </div>
+                <div class="form-group">
+                  <label>Valor retido <span class="muted-label">(calculado)</span></label>
+                  <input type="text" class="form-control disabled-bg" readonly
+                         [value]="valorDaRetencao(t.ctrl) | currency:'BRL':'symbol':'1.2-2':'pt-BR'">
+                </div>
+              </div>
+            }
+          </div>
+          <p class="hint">
+            Total retido: <strong>{{ totalRetido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong> ·
+            Valor líquido a receber: <strong>{{ valorLiquido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>.
+          </p>
+        }
+
+        @if (activeMainTab === 'ANEXOS') {
+          <h3 class="section-title">Anexos</h3>
+          <p class="section-subtitle">Nota fiscal, recibos e comprovantes ligados a este título.</p>
+          @if (!ehEdicao()) {
+            <p class="section-subtitle">Salve o título primeiro — o anexo precisa de um título para ficar guardado.</p>
+          } @else {
+            <label class="dropzone" style="cursor:pointer; display:block; text-align:center; padding:18px; border:1.5px dashed var(--surface-border,#E5E7EB); border-radius:10px; margin-bottom:14px;">
+              <input type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onAnexoSelecionado($event)">
+              {{ enviandoAnexo() ? 'Enviando…' : '+ Selecionar arquivo' }}
+            </label>
+            @if (erroAnexo()) { <div class="form-alert form-alert--error">{{ erroAnexo() }}</div> }
+            @for (a of anexosDoTitulo(); track a.id) {
+              <div class="attachment-card">
+                <span class="attachment-name">{{ nomeDoAnexo(a) }}</span>
+                <span style="display:flex; gap:8px;">
+                  <a class="btn-outline btn-outline--sm" [href]="a.fileUrl" target="_blank" rel="noopener">Baixar</a>
+                  <button type="button" class="btn-outline btn-outline--sm" (click)="removerAnexo(a.id)">Remover</button>
+                </span>
+              </div>
+            }
+            @if (!anexosDoTitulo().length) {
+              <p class="hint">Nenhum anexo neste título.</p>
+            }
+          }
+        }
       </form>
     </div>
 

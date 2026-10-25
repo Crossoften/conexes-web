@@ -40,6 +40,16 @@ export class IntegrationsService {
     return this.http.get<{ imported: number }>(`${this.nfeio}/inbound/nfse`, { params: { pageCount: '20' } });
   }
 
+  /**
+   * COM-Sincronizar / I032 (D3): a sincronização PEDE INTERVALO. Antes trazia "as
+   * últimas 20", sem que quem clicou soubesse de qual período vieram.
+   */
+  syncNfseInboundPeriodo(from: string, to: string): Observable<{ imported: number; descartadas: number; periodo: { from: string | null; to: string | null } }> {
+    return this.http.get<{ imported: number; descartadas: number; periodo: { from: string | null; to: string | null } }>(
+      `${this.nfeio}/inbound/nfse`, { params: { pageCount: '200', from, to } },
+    );
+  }
+
   enableNfseInbound(): Observable<any> {
     return this.http.post<any>(`${this.nfeio}/inbound/nfse/enable`, { initialNsu: 0 });
   }

@@ -10,6 +10,7 @@ import { PurchaseRequestDetailModalComponent } from '../purchases/components/pur
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
 import { PurchaseQuotationsModalComponent } from '../purchases/components/purchase-quotations.modal';
 import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
+import { PurchaseQuotationMapModalComponent } from '../purchases/components/purchase-quotation-map.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { TooltipDirective } from '../../shared/directives/tooltip.directive';
@@ -17,7 +18,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, ConfirmDialogComponent, TooltipDirective],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, PurchaseQuotationMapModalComponent, ConfirmDialogComponent, TooltipDirective],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',
@@ -34,6 +35,21 @@ export class QuotationsListPage {
 
   readonly sectionTitle = computed(() => this.route.snapshot.data['title'] ?? 'Requisições');
 
+  /**
+   * COM-E6 / I026-I028-I030 (decisão D2): nas Etapas 5 e 6 o PEDIDO é o registro
+   * central ligado à requisição, então a coluna só aparece onde o pedido existe.
+   * (stage 4 = Etapa 5, stage 5 = Etapa 6, stage 6 = Histórico.)
+   */
+  readonly mostraPedido = this.routeStage >= 4;
+
+  /** D2: a coluna extra muda o colspan da linha de "nenhum resultado". */
+  readonly colunas = this.mostraPedido ? 10 : 9;
+
+  /** D2: abrir o pedido — onde ficam itens, recebimentos e histórico. */
+  abrirPedido(o: { id: number }): void {
+    this.router.navigate(['/purchasing-orders'], { queryParams: { order: o.id } });
+  }
+
   // ── Ações disponíveis por etapa × papel de compras ─────────────────────────
   // Papel aprovador: Etapa 2 (stage 1) = Supervisor de Requisição; Etapa 4 (stage 3)
   // = Supervisor de Compras. Gestor sempre pode. (Backend valida a alçada por valor.)
@@ -47,11 +63,17 @@ export class QuotationsListPage {
       (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager()))
     );
   });
-  // CP-fix (Bug 3): aprovar disponível na Etapa 2 (2→3) e também na Etapa 4 (4→5).
-  // Na Etapa 4 a adjudicação (award) exige propostas elegíveis; quando não há, o admin
-  // ficava travado. O POST /approve conclui a aprovação da cotação e leva ao Pedido
-  // (o back gera o pedido a partir da cotação aprovada, quando existe).
-  readonly canApprove = computed(() => (this.routeStage === 1 || this.routeStage === 3) && this.hasApprovalRole());
+  /**
+   * COM-Adjudicação / I017 — decisão D1: "Aprovar" sai da Etapa 4.
+   *
+   * O botão existia aqui como atalho para concluir a cotação e gerar o Pedido.
+   * Só que isso é escolher o vencedor por fora da adjudicação — sem justificativa
+   * e sem poder distribuir por item — e, quando não havia proposta aprovada,
+   * levava a requisição para a Etapa 5 sem pedido nenhum. A saída da Etapa 4 passa
+   * a ser uma só: Adjudicar, que pede o motivo e gera o(s) Pedido(s). O servidor
+   * recusa o atalho de qualquer forma; aqui ele deixa de ser oferecido.
+   */
+  readonly canApprove = computed(() => this.routeStage === 1 && this.hasApprovalRole());
   readonly canReject = this.hasApprovalRole;
   // Solicitar ajustes (FE-6): mesmos perfis/etapas do reprovar (Etapa 2/4).
   readonly canRequestChanges = this.hasApprovalRole;
@@ -79,7 +101,10 @@ export class QuotationsListPage {
 
   // Consultar/Duplicar/Excel/PDF disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
-  readonly canExcel  = this.routeStage === 0 || this.routeStage === 2;
+  // I019: a planilha da REQUISIÇÃO também nas Etapas 4/5/6. Ela existia só nas Etapas 1 e 3
+  // (e escondida no modal Visualizar), então da Etapa 4 em diante o conjunto pedido pelo
+  // cliente — Requisição + Cotação + Pedido, cada um em PDF e Excel — ficava incompleto.
+  readonly canExcel  = this.routeStage === 0 || (this.routeStage >= 2 && this.routeStage <= 5);
   readonly canPdf    = true;                                           // FE-12: consulta em qualquer etapa
   readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
   readonly canEdit   = this.routeStage === 0;                          // Etapa 1
@@ -95,6 +120,11 @@ export class QuotationsListPage {
   // Etapa 4. Era um item de menu lateral próprio, que abria do zero e pedia para
   // escolher de novo a requisição que já se estava olhando.
   readonly canQuotationMap = this.routeStage === 3;
+
+  // I019: documento do PEDIDO (PDF/Excel) no contexto das Etapas 4, 5 e 6. Na Etapa 4 o
+  // pedido normalmente ainda não existe (nasce da adjudicação) — nesse caso a ação avisa
+  // que o documento ainda não foi gerado, em vez de baixar arquivo vazio.
+  readonly canOrderDoc = this.routeStage >= 3 && this.routeStage <= 5;
 
   readonly statusOptions: { label: string; value: PurchaseRequestStatus | '' }[] = [
     { label: 'Selecione o status', value: '' },
@@ -166,9 +196,13 @@ export class QuotationsListPage {
   // COMP-16/COMP-17: documento da cotação (com vencedor, itens e valores).
   quotationPdf(item: Quotation)   { this.store.exportQuotationPdf(item.apiId); }
   quotationExcel(item: Quotation) { this.store.exportQuotationExcel(item.apiId); }
+  // I019: documento do pedido gerado por esta requisição.
+  orderPdf(item: Quotation)       { this.store.exportOrderDoc(item.apiId, 'pdf'); }
+  orderExcel(item: Quotation)     { this.store.exportOrderDoc(item.apiId, 'excel'); }
 
-  // COMP-21: o mapa é um passo da Etapa 4, aberto a partir da requisição.
-  quotationMap(item: Quotation)   { this.router.navigate(['/quotation-map', item.apiId]); }
+  // COMP-21/I023: o mapa é um passo da Etapa 4 — agora abre COMO MODAL, dentro de
+  // Cotações, sem trocar de tela.
+  quotationMap(item: Quotation)   { this.store.openMap(item); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
 

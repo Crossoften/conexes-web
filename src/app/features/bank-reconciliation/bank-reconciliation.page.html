@@ -13,15 +13,53 @@
     </div>
 
     <div class="select-wrap">
-      <select class="select select--pill" [value]="store.filters().period" (change)="store.setPeriod($any($event.target).value)">
+      <select class="select select--pill" [value]="store.filters().period" (change)="aoEscolherAtalho($any($event.target).value)">
         @for (opt of periodOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
       </select>
     </div>
 
-    @if (store.filters().period === 'CUSTOM') {
-      <input class="select select--pill" type="date" [value]="store.filters().customStart" (change)="store.setCustomStart($any($event.target).value)" aria-label="Data inicial">
-      <input class="select select--pill" type="date" [value]="store.filters().customEnd" (change)="store.setCustomEnd($any($event.target).value)" aria-label="Data final">
-    }
+      <!-- CB-05 / I061: um calendário SÓ, de intervalo — um clique marca o início, o
+           seguinte marca o fim e o período é aplicado quando o intervalo fecha.
+           O calendário fica sempre à mão: antes era preciso escolher "Personalizado"
+           no seletor para ele aparecer, e essa etapa é justamente o que o pedido
+           dispensa ("não há etapa de período personalizado"). O seletor ao lado
+           continua existindo só como atalho (este mês, mês passado...). -->
+      <div class="range-wrap">
+        <button type="button" class="select select--pill range-btn" (click)="abrirCalendario()" aria-label="Escolher intervalo de datas">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>{{ rotuloIntervalo() }}</span>
+        </button>
+
+        @if (calendarioAberto()) {
+          <div class="range-cal">
+            <div class="range-cal__head">
+              <button type="button" class="range-cal__nav" (click)="mesAnterior()" aria-label="Mês anterior">‹</button>
+              <span class="range-cal__mes">{{ rotuloMes() }}</span>
+              <button type="button" class="range-cal__nav" (click)="mesProximo()" aria-label="Próximo mês">›</button>
+            </div>
+            <div class="range-cal__semana">
+              @for (d of diasSemana; track $index) { <span>{{ d }}</span> }
+            </div>
+            <div class="range-cal__grid">
+              @for (d of diasDoMes(); track d.iso) {
+                <button type="button" class="range-cal__dia"
+                        [class.range-cal__dia--fora]="!d.noMes"
+                        [class.range-cal__dia--hoje]="d.hoje"
+                        [class.range-cal__dia--ini]="d.inicio"
+                        [class.range-cal__dia--fim]="d.fim"
+                        [class.range-cal__dia--entre]="d.entre"
+                        (click)="clicarDia(d.iso)">{{ d.dia }}</button>
+              }
+            </div>
+            <div class="range-cal__pe">
+              <span class="range-cal__resumo">
+                {{ inicioSel() ? dataBR(inicioSel()) : 'Data inicial' }} → {{ fimSel() ? dataBR(fimSel()) : 'Data final' }}
+              </span>
+              <button type="button" class="btn-outline btn-sm" (click)="limparIntervalo()">Limpar</button>
+            </div>
+          </div>
+        }
+      </div>
 
     <div class="select-wrap">
       <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
@@ -29,7 +67,185 @@
       </select>
     </div>
 
-    <button class="btn-outline btn-pill">Conciliar automaticamente</button>
+    <!-- CB-07/I063, CB-08/I064 e CB-09/I065: o "Conciliar automaticamente" não tinha
+         ação nenhuma, e não havia como trazer extrato (nem arquivo, nem do banco). -->
+    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.painelAuto()" (click)="store.abrirPainelAuto()">
+      Conciliar automaticamente
+    </button>
+
+    <label class="btn-outline btn-pill btn-pill--file">
+      {{ store.importBusy() ? 'Importando extrato…' : 'Importar extrato (OFX/Excel)' }}
+      <input type="file" accept=".ofx,.OFX,.qfx,.xls,.xlsx" hidden (change)="onImportarExtrato($event)">
+    </label>
+
+    <button type="button" class="btn-outline btn-pill" [disabled]="store.bancoBusy()" (click)="store.importarDoBanco()">
+      {{ store.bancoBusy() ? 'Consultando o banco…' : 'Importar do banco (período)' }}
+    </button>
+
+    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.lotesVisiveis()" (click)="store.alternarLotes()">
+      Importações
+    </button>
+  </div>
+
+  <!-- CB-07 / I063: a regra aparece ANTES de executar — era o que faltava para o
+       usuário saber por qual critério o sistema ia casar extrato e títulos. -->
+  @if (store.painelAuto()) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">{{ store.regraAuto()?.titulo || 'Conciliação automática' }}</h3>
+        <button type="button" class="painel__fechar" (click)="store.fecharPainelAuto()" aria-label="Fechar">×</button>
+      </div>
+
+      @if (store.regraAuto()) {
+        <ol class="painel__regra">
+          @for (linha of store.regraAuto()!.regra; track $index) { <li>{{ linha }}</li> }
+        </ol>
+        <div class="painel__acoes">
+          <button type="button" class="btn-solid btn-solid--orange" [disabled]="store.autoBusy()" (click)="store.executarAuto()">
+            {{ store.autoBusy() ? 'Conciliando…' : 'Executar conciliação automática' }}
+          </button>
+          <span class="painel__nota">Nada é conciliado antes de você executar.</span>
+        </div>
+      } @else {
+        <p class="painel__nota">Carregando a regra…</p>
+      }
+
+      @if (store.autoResultado(); as r) {
+        <p class="painel__mensagem">{{ r.mensagem }}</p>
+
+        @if (r.conciliados.length) {
+          <p class="painel__sub">Conciliados ({{ r.conciliados.length }}):</p>
+          <ul class="painel__lista painel__lista--ok">
+            @for (c of r.conciliados; track c.id) {
+              <li>{{ c.descricao }} · {{ dinheiro(c.valor) }} → {{ c.vinculo }}{{ c.tituloDescricao ? ' — ' + c.tituloDescricao : '' }}</li>
+            }
+          </ul>
+        }
+
+        @if (r.naoResolvidos.length) {
+          <p class="painel__sub">Não conciliados ({{ r.naoResolvidos.length }}) — e por quê:</p>
+          <ul class="painel__lista">
+            @for (n of r.naoResolvidos; track n.id) {
+              <li>
+                {{ n.descricao }}{{ n.valor != null ? ' · ' + dinheiro(n.valor) : '' }} — {{ n.motivo }}
+                @if (n.candidatos?.length) { <span class="painel__cands">({{ n.candidatos!.join(' / ') }})</span> }
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  }
+
+  <!-- CB-08 / I064: o resultado da importação do banco, inclusive quando a conta
+       ainda não tem conexão bancária habilitada (a perna externa é pendência). -->
+  @if (store.bancoResultado()) {
+    <div class="card painel painel--aviso">
+      <p class="painel__mensagem">{{ store.bancoResultado() }}</p>
+    </div>
+  }
+
+  <!-- CB-09 / I065: resultado da importação de arquivo, linha por linha. -->
+  @if (store.importResultado(); as imp) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">Extrato importado — {{ imp.arquivo }} ({{ imp.formato }})</h3>
+        @if (imp.batchId) {
+          <button type="button" class="btn-outline btn-sm" [disabled]="store.loteBusy() === imp.batchId" (click)="store.desfazerLote(imp.batchId!)">
+            {{ store.loteBusy() === imp.batchId ? 'Desfazendo…' : 'Desfazer esta importação' }}
+          </button>
+        }
+      </div>
+      <p class="painel__mensagem">
+        {{ imp.total }} movimento(s) no arquivo · {{ imp.success }} importado(s) · {{ imp.failed }} não importado(s).
+      </p>
+      @if (imp.results.length) {
+        <ul class="painel__lista">
+          @for (l of imp.results; track $index) {
+            <li [class.painel__linha--erro]="l.status !== 'success'">Linha {{ l.row }}: {{ l.message }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <!-- CB-09 / I065: os lotes de extrato e o Desfazer (mesma infra de lote do TR-14). -->
+  @if (store.lotesVisiveis()) {
+    <div class="card painel">
+      <div class="painel__head">
+        <h3 class="painel__titulo">Extratos importados</h3>
+        <button type="button" class="painel__fechar" (click)="store.alternarLotes()" aria-label="Fechar">×</button>
+      </div>
+      @if (store.lotes().length) {
+        <table class="painel__tabela">
+          <thead>
+            <tr><th>#</th><th>Arquivo</th><th>Quando</th><th>Quem</th><th>Importados</th><th>Restantes</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (l of store.lotes(); track l.id) {
+              <tr>
+                <td>{{ l.id }}</td>
+                <td>{{ l.fileName }}</td>
+                <td>{{ dataBR(l.createdAt) }}</td>
+                <td>{{ l.user?.name || '—' }}</td>
+                <td>{{ l.success }} de {{ l.total }}</td>
+                <td>{{ l.restantes }}</td>
+                <td>
+                  <button type="button" class="btn-outline btn-sm"
+                          [disabled]="store.loteBusy() === l.id || l.restantes === 0"
+                          (click)="store.desfazerLote(l.id)">
+                    {{ store.loteBusy() === l.id ? 'Desfazendo…' : (l.restantes === 0 ? 'Já desfeito' : 'Desfazer') }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="painel__nota">Nenhum extrato importado nesta empresa ainda.</p>
+      }
+    </div>
+  }
+
+  <!-- CB-01/I058: "A posição das contas lista as contas com o conciliado, o pendente
+       e a contagem de pendências." A tela mostrava só a conta selecionada e o saldo;
+       a contagem aparecia apenas no nome dentro do seletor. Agora cada conta tem a
+       sua linha, com os três números, e clicar na linha abre a conta. -->
+  <div class="card posicao-contas">
+    <h3 class="posicao-contas__titulo">Posição das contas</h3>
+    <div class="table-wrap">
+      <table class="table posicao-contas__tabela">
+        <thead>
+          <tr>
+            <th class="th">Conta</th>
+            <th class="th th--num">Conciliado</th>
+            <th class="th th--num">Pendente</th>
+            <th class="th th--num">Pendências</th>
+            <th class="th th--num">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of store.accounts(); track a.id) {
+            <tr class="tr posicao-contas__linha"
+                [class.posicao-contas__linha--ativa]="a.id === store.selectedAccountId()"
+                (click)="store.selectAccount(a.id)">
+              <td class="td">{{ a.name }}</td>
+              <td class="td td--num">{{ dinheiro(a.conciliated) }}</td>
+              <td class="td td--num">{{ dinheiro(a.pending) }}</td>
+              <td class="td td--num">
+                <span class="posicao-contas__badge" [class.posicao-contas__badge--zero]="!a.pendingCount">
+                  {{ a.pendingCount }}
+                </span>
+              </td>
+              <td class="td td--num">{{ dinheiro(a.balance) }}</td>
+            </tr>
+          }
+          @if (!store.accounts().length) {
+            <tr class="tr"><td class="td" colspan="5" style="text-align:center;padding:24px;color:var(--text-secondary);">Nenhuma conta bancária cadastrada.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="summary-cards-grid">
@@ -50,6 +266,11 @@
           <p class="summary-card__line summary-card__line--bold">{{ summary.credit }}</p>
           <p class="summary-card__line summary-card__line--bold" style="margin-top: 4px;">Débito</p>
           <p class="summary-card__line summary-card__line--bold">{{ summary.debit }}</p>
+          <!-- CB-01/I058: a contagem existia só no seletor de contas; agora também no card,
+               e CB-06/I062: tanto valor quanto contagem respeitam o período escolhido. -->
+          @if (summary.count !== undefined) {
+            <p class="summary-card__line summary-card__count">{{ summary.count }} lançamento(s) no período</p>
+          }
         </div>
       </div>
     }
@@ -75,7 +296,7 @@
           
           <div class="accordion-card" [class.accordion-card--expanded]="store.expandedIds().has(item.id)">
             
-            <div class="accordion-header" (click)="store.toggleExpand(item.id)">
+            <div class="accordion-header" (click)="onToggle(item)">
               <div class="accordion-left">
                 <span class="accordion-date">{{ item.date }}</span>
                 <span class="accordion-day">{{ item.dayOfWeek }}</span>
@@ -112,21 +333,77 @@
                         </div>
                       </div>
 
+                      <!-- CB-10/I066: a busca de lançamento não tinha ligação nenhuma e o
+                           seletor só oferecia "Novo lançamento". Agora consulta contas a
+                           pagar/receber (pelo texto e pelo valor do próprio movimento) e o
+                           título escolhido fica visível como vínculo antes de conciliar. -->
                       <div class="form-filters">
-                        <select class="select select--bg-gray"><option>Novo lançamento</option></select>
-                        <div class="search-wrap" style="flex: 1;"><input class="search search--bg-gray" type="text" placeholder="Buscar lançamento"><svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+                        <div class="search-wrap" style="flex: 1;">
+                          <input class="search search--bg-gray" type="text" placeholder="Buscar conta a pagar/receber para vincular"
+                                 [value]="campo(item, 'busca')"
+                                 (input)="setCampo(item, 'busca', $any($event.target).value)"
+                                 (keyup.enter)="buscar(item, campo(item, 'busca'))">
+                          <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                        <button type="button" class="btn-outline btn-sm" (click)="buscar(item, campo(item, 'busca'))">
+                          {{ store.buscando() ? 'Buscando…' : 'Buscar' }}
+                        </button>
                       </div>
 
+                      @if (store.candidatos().length) {
+                        <div class="candidatos">
+                          <p class="candidatos__titulo">{{ store.candidatos().length }} título(s) encontrado(s) — clique para vincular:</p>
+                          @for (c of store.candidatos(); track c.type + '-' + c.id) {
+                            <button type="button" class="candidato" (click)="escolherCandidato(item, c)">
+                              <span class="candidato__tipo">{{ c.type === 'payable' ? 'A pagar' : 'A receber' }} #{{ c.id }}</span>
+                              <span class="candidato__desc">{{ c.description || '—' }}</span>
+                              <span class="candidato__parte">{{ c.party || '' }}</span>
+                              <span class="candidato__valor">{{ dinheiro(c.value) }} · vence {{ dataBR(c.dueDate) }}</span>
+                            </button>
+                          }
+                        </div>
+                      }
+
+                      @if (campo(item, 'vinculoRotulo')) {
+                        <p class="vinculo-escolhido">
+                          Vínculo escolhido: <strong>{{ campo(item, 'vinculoRotulo') }}</strong>
+                          <button type="button" class="btn-outline btn-sm" (click)="setCampo(item, 'vinculo', ''); setCampo(item, 'vinculoRotulo', '')">remover</button>
+                        </p>
+                      }
+
+                      <!-- CB-03/I060 + CB-12/I068: os campos abrem preenchidos com os dados da
+                           própria movimentação, e Fornecedor/Centro de custo carregam o cadastro
+                           (antes tinham só "Selecione"). -->
                       <div class="form-grid">
-                        <div class="form-group"><label>Descrição<span class="req">*</span></label><input type="text" class="input" placeholder="Digite aqui..."></div>
-                        <div class="form-group"><label>Categoria<span class="req">*</span></label><input type="text" class="input" placeholder="Digite aqui..."></div>
-                        <div class="form-group"><label>Fornecedor</label><select class="select"><option>Selecione</option></select></div>
-                        <div class="form-group"><label>Centro de custo</label><select class="select"><option>Selecione</option></select></div>
+                        <div class="form-group"><label>Descrição<span class="req">*</span></label>
+                          <input type="text" class="input" placeholder="Digite aqui..."
+                                 [value]="campo(item, 'description')" (input)="setCampo(item, 'description', $any($event.target).value)"></div>
+                        <div class="form-group"><label>Categoria</label>
+                          <input type="text" class="input" placeholder="Digite aqui..."
+                                 [value]="campo(item, 'category')" (input)="setCampo(item, 'category', $any($event.target).value)"></div>
+                        <div class="form-group"><label>Fornecedor</label>
+                          <select class="select" [value]="campo(item, 'stakeholderId')" (change)="setCampo(item, 'stakeholderId', $any($event.target).value)">
+                            <option value="">Selecione</option>
+                            @for (f of store.fornecedores(); track f.id) { <option [value]="f.id">{{ f.name }}</option> }
+                          </select></div>
+                        <div class="form-group"><label>Centro de custo</label>
+                          <select class="select" [value]="campo(item, 'costCenterId')" (change)="setCampo(item, 'costCenterId', $any($event.target).value)">
+                            <option value="">Selecione</option>
+                            @for (cc of store.centrosCusto(); track cc.id) { <option [value]="cc.id">{{ cc.name }}</option> }
+                          </select></div>
                       </div>
 
+                      <!-- CB-13/I069: os dois botões não tinham handler — a pendência voltava
+                           igual ao recarregar. Agora persistem e a lista/contagem se atualizam. -->
                       <div class="form-actions">
-                        <button class="btn-outline btn-outline--orange">Ignorar</button>
-                        <button class="btn-solid btn-solid--orange">Conciliar</button>
+                        <button type="button" class="btn-outline btn-outline--orange"
+                                [disabled]="store.acaoBusy() === item.txId" (click)="ignorar(item)">
+                          {{ store.acaoBusy() === item.txId ? 'Aguarde…' : 'Ignorar' }}
+                        </button>
+                        <button type="button" class="btn-solid btn-solid--orange"
+                                [disabled]="store.acaoBusy() === item.txId" (click)="conciliar(item)">
+                          {{ store.acaoBusy() === item.txId ? 'Aguarde…' : 'Conciliar' }}
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -9,13 +9,34 @@
       </p>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="enableNfse()">Habilitar captura NFS-e</button>
-      <button type="button" class="btn-outline btn-outline--orange" [disabled]="busy()" (click)="syncNfse()">
+      <!-- COM-Sincronizar / I032 (decisão D3): a sincronização PEDE INTERVALO.
+           O botão trazia "as últimas 20" sem dizer de qual período vinham. -->
+      <label class="sync-periodo">
+        <span>De</span>
+        <input type="date" class="input-date" [(ngModel)]="periodoDe" [ngModelOptions]="{standalone: true}">
+      </label>
+      <label class="sync-periodo">
+        <span>Até</span>
+        <input type="date" class="input-date" [(ngModel)]="periodoAte" [ngModelOptions]="{standalone: true}">
+      </label>
+      <button type="button" class="btn-outline btn-outline--orange"
+              [disabled]="busy() || periodoIncompleto || periodoInvalido"
+              [title]="periodoIncompleto ? 'Informe o período para sincronizar' : (periodoInvalido ? 'A data inicial não pode ser depois da final' : 'Sincronizar as notas recebidas no período')"
+              (click)="syncNfse()">
         @if (busy()) { <span class="btn-spinner" aria-hidden="true"></span> } @else { Sincronizar recebidas }
       </button>
       <button type="button" class="btn-solid btn-solid--orange" (click)="openEmit()">Emitir NFS-e</button>
     </div>
   </div>
+
+  <!-- COM-Captura / I031 (D3): certificado e captura são configurados UMA VEZ no
+       cadastro da organização. Aqui fica só o atalho — o botão que habilitava a
+       captura nesta tela dava a entender que era configuração deste módulo. -->
+  <p class="origem-unica">
+    Certificado e captura de notas são configurados uma única vez em
+    <a routerLink="/general-settings">Cadastros e configurações › Configurações gerais</a>.
+    Pedido, recebimento e Financeiro consultam esta mesma origem.
+  </p>
 
   @if (banner(); as b) {
     <div class="banner" [class.banner--ok]="b.kind === 'ok'" [class.banner--err]="b.kind === 'err'" role="alert">{{ b.msg }}</div>
@@ -110,6 +131,11 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="card-title">Emitir NFS-e (serviço)</h2>
+        @if (origemReceita()) {
+          <!-- I033 (D3): a emissão veio de uma receita; dizer isso evita emitir
+               contra o título errado depois de trocar de aba. -->
+          <p class="origem-unica">Emitindo para a conta a receber <strong>#{{ origemReceita() }}</strong>. Confira os dados antes de enviar.</p>
+        }
         <button type="button" class="icon-btn" (click)="closeEmit()" aria-label="Fechar">✕</button>
       </div>
       <form [formGroup]="form" (ngSubmit)="submitEmit()">

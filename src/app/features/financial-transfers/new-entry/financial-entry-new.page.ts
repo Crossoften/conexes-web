@@ -158,6 +158,8 @@ export class FinancialEntryNewPage implements OnInit {
           this.rateios.push(this.fb.group({
             costCenterId:  [linha.costCenterId  ? String(linha.costCenterId)  : ''],
             projectId:     [linha.projectId     ? String(linha.projectId)     : ''],
+            // I052 (LB-05): recarregar a atividade na edição — antes a linha reabria sem ela.
+            activityId:    [linha.activityId    ? String(linha.activityId)    : ''],
             accountPlanId: [linha.accountPlanId ? String(linha.accountPlanId) : ''],
             percentage:    [linha.percentage ?? ''],
           }));
@@ -236,6 +238,9 @@ export class FinancialEntryNewPage implements OnInit {
         ? this.rateios.controls.map(c => ({
             costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
             projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
+            // I052 (LB-05): a atividade da linha precisa ir no payload — antes ficava no
+            // formulário e nunca era enviada, então o banco gravava activityId null.
+            activityId:    c.get('activityId')?.value    ? Number(c.get('activityId')!.value)    : undefined,
             accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
             percentage:    Number(c.get('percentage')?.value) || 0,
           }))

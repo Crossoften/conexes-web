@@ -31,6 +31,18 @@ function formatDate(iso?: string | null): string {
   return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
 }
 
+/**
+ * D2: a situação do PEDIDO em português. Entrar na Etapa 6 significa pedido
+ * emitido; o recebimento continua explícito até a conclusão física, e é por isso
+ * que "Emitido" e "Em recebimento" são estados distintos de "Concluído".
+ */
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  Open:       'Emitido',
+  InProgress: 'Em recebimento',
+  Completed:  'Concluído',
+  Cancelled:  'Cancelado',
+};
+
 function toRow(r: PurchaseRequest): Quotation {
   return {
     id:           String(r.id),
@@ -44,6 +56,14 @@ function toRow(r: PurchaseRequest): Quotation {
     requestDate:  formatDate(r.requestDate),
     deliveryDate: formatDate(r.expectedDeliveryDate),
     reqStatus:    r.status,
+    // D2: o pedido ligado à requisição — o registro central da Etapa 6.
+    orders: ((r as any).orders ?? []).map((o: any) => ({
+      id:       o.id,
+      number:   o.number ?? `PED-${String(o.id).padStart(4, '0')}`,
+      status:   o.status,
+      label:    ORDER_STATUS_LABEL[o.status] ?? o.status,
+      supplier: o.supplier?.name ?? '—',
+    })),
   };
 }
 
@@ -219,6 +239,13 @@ export class QuotationsStore {
   /** Após adjudicar, a requisição migra de etapa — recarrega a lista. */
   onAwarded(): void { this.awardFor.set(null); this.reload(); }
 
+  // ── Modal do Mapa de Cotação (I023) ──────────────────────────────────────────
+  // O mapa abre DENTRO de Cotações, como modal, sem trocar de tela. A rota
+  // /quotation-map/:requestId continua existindo para o link compartilhável.
+  readonly mapFor = signal<{ id: number; code: string } | null>(null);
+  openMap(item: Quotation): void { this.mapFor.set({ id: item.apiId, code: item.typeId }); }
+  closeMap(): void { this.mapFor.set(null); }
+
   // ── Modais de ação + ações diretas ──────────────────────────────────────────
   readonly action           = signal<{ kind: PurchaseActionKind; request: PurchaseRequest } | null>(null);
   readonly users            = signal<PurchaseRef[]>([]);
@@ -324,8 +351,35 @@ export class QuotationsStore {
     this.svc.copyRequest(apiId).subscribe({ next: () => this.reload(), error: err => this.notify.error(this.errMsg(err)) });
   }
 
+  // I019: este é o documento da REQUISIÇÃO (generateRequestExcel). O nome do arquivo e a
+  // mensagem diziam "pedido", que é OUTRO documento — exatamente a confusão de rótulo que
+  // o relatório apontou nas Etapas 4/5/6, onde os dois documentos convivem.
   exportExcel(apiId: number): void {
-    this.baixar(this.svc.generateRequestExcel(apiId), `pedido-${apiId}.xlsx`, 'a planilha do pedido');
+    this.baixar(this.svc.generateRequestExcel(apiId), `requisicao-${apiId}.xlsx`, 'a planilha da requisição');
+  }
+
+  /**
+   * I019: documento do PEDIDO (PDF/Excel) a partir da linha da requisição. Uma requisição
+   * pode ter mais de um pedido (adjudicação por item), então resolve os pedidos dela e baixa
+   * um documento por pedido. Sem pedido gerado, diz isso em vez de baixar arquivo nenhum —
+   * é o "distinguir documentos ainda não gerados" que o pedido original cobra.
+   */
+  exportOrderDoc(apiId: number, formato: 'pdf' | 'excel'): void {
+    this.svc.getOrders({ requestId: apiId, take: 50 }).subscribe({
+      next: page => {
+        const pedidos = page?.data ?? [];
+        if (!pedidos.length) {
+          this.notify.error('Esta requisição ainda não gerou pedido — o documento do pedido passa a existir depois da adjudicação (Etapa 4).');
+          return;
+        }
+        for (const p of pedidos) {
+          const obs = formato === 'pdf' ? this.svc.generateOrderPdf(p.id) : this.svc.generateOrderExcel(p.id);
+          this.baixar(obs, `pedido-${p.id}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`,
+            formato === 'pdf' ? 'o PDF do pedido' : 'a planilha do pedido');
+        }
+      },
+      error: err => this.notify.error(this.errMsg(err) || 'Não foi possível localizar o pedido desta requisição.'),
+    });
   }
 
   remove(apiId: number): void {
