@@ -155,15 +155,29 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     });
   }
 
+  /**
+   * COM-Adjudicação / I017 (D1): aprovar a proposta a torna ELEGÍVEL à adjudicação.
+   * Não escolhe vencedor e não reprova as demais — antes fazia as duas coisas, e
+   * por isso o modo por item ficava sem candidatos antes da escolha.
+   */
   approve(q: PurchaseQuotation): void {
     this.error.set(null);
-    this.svc.approveQuotation(q.id).subscribe({ next: () => { this.notify.success('Cotação aprovada.'); this.load(); }, error: err => this.error.set(this.msg(err, 'Erro ao aprovar a cotação.')) });
+    this.svc.approveQuotation(q.id).subscribe({
+      next: () => { this.notify.success('Proposta aprovada — o fornecedor está elegível à adjudicação.'); this.load(); },
+      error: err => this.error.set(this.msg(err, 'Erro ao aprovar a proposta.')),
+    });
   }
 
   reject(q: PurchaseQuotation): void {
     this.error.set(null);
-    this.svc.rejectQuotation(q.id).subscribe({ next: () => { this.notify.success('Cotação reprovada.'); this.load(); }, error: err => this.error.set(this.msg(err, 'Erro ao reprovar a cotação.')) });
+    this.svc.rejectQuotation(q.id).subscribe({
+      next: () => { this.notify.success('Proposta reprovada — sai da disputa.'); this.load(); },
+      error: err => this.error.set(this.msg(err, 'Erro ao reprovar a proposta.')),
+    });
   }
+
+  /** D1: a proposta já aprovada (elegível) pode ser desaprovada enquanto não se adjudica. */
+  ehElegivel(q: PurchaseQuotation): boolean { return !!(q as any).eligible; }
 
   onClose(): void { this.close.emit(); }
 
@@ -192,12 +206,20 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     return (q.status === 'Pending' || q.status === 'Sent') && !this.isAwaitingProposal(q);
   }
 
-  /** Rótulo por linha (trata o placeholder do fornecedor sugerido). */
+  /**
+   * Rótulo por linha (trata o placeholder do fornecedor sugerido).
+   * D1: "Elegível" é um estado próprio — a proposta foi aprovada e disputa a
+   * adjudicação, mas ainda não venceu. Antes, aprovada e vencedora eram a mesma coisa.
+   */
   rowStatusLabel(q: PurchaseQuotation): string {
-    return this.isAwaitingProposal(q) ? 'Aguardando proposta' : this.statusLabel(q.status);
+    if (this.isAwaitingProposal(q)) return 'Aguardando proposta';
+    if (this.ehElegivel(q) && q.status !== 'Approved') return 'Elegível (aprovada)';
+    return this.statusLabel(q.status);
   }
   rowStatusVariant(q: PurchaseQuotation): string {
-    return this.isAwaitingProposal(q) ? 'neutral' : this.statusVariant(q.status);
+    if (this.isAwaitingProposal(q)) return 'neutral';
+    if (this.ehElegivel(q) && q.status !== 'Approved') return 'ok';
+    return this.statusVariant(q.status);
   }
 
   supplierName(q: PurchaseQuotation): string {
