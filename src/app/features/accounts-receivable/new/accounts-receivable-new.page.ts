@@ -166,11 +166,10 @@ export class AccountsReceivableNewPage implements OnInit {
       },
       error: () => this.contratos.set([]),
     });
-    this.http.get<any>(`${environment.apiUrl}/v1/product-services?take=500`).subscribe({
-      next: res => {
-        const rows: any[] = Array.isArray(res) ? res : (res?.data ?? []);
-        this.servicos.set(rows.map(s => ({ id: s.id, name: s.name ?? `#${s.id}` })));
-      },
+    // Usa o MESMO lookup do formulário de contas a pagar: montar o caminho à mão
+    // aqui já me custou um 404 silencioso, com o seletor abrindo vazio.
+    this.lookups.getProductsServicesLookup().subscribe({
+      next: v => this.servicos.set((v as any[]).map(r => ({ id: r.id, name: r.name }))),
       error: () => this.servicos.set([]),
     });
 
