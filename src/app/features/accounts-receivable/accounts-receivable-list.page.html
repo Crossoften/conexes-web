@@ -71,6 +71,13 @@
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Importar XML
         </button>
+        <!-- CR-01/I091: "Upload de arquivo" existia em Contas a pagar e faltava aqui.
+             É a mesma importação do XML, pelo segundo caminho que o relatório nomeia. -->
+        <input #uploadInput type="file" accept=".xml" multiple hidden (change)="onImportXml($event)">
+        <button class="btn-outline" title="Enviar o arquivo XML da NF-e" (click)="uploadInput.click()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload de arquivo
+        </button>
         <button class="btn-outline">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
           Captura de NF
@@ -124,6 +131,9 @@
               
               <td class="td td--center">
                 <div class="action-icons">
+                  <!-- CR-01/I091: Visualizar abria só pela edição; agora há a janela
+                       de leitura, como em Contas a pagar. -->
+                  <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                   @if (item.canReceive) {
                     <!-- FIN-01: baixa (recebimento) total ou parcial -->
                     <button class="icon-btn" title="Receber (baixar)" (click)="openReceive(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -136,8 +146,12 @@
                   @if (item.canReceive) {
                     <button class="icon-btn" [title]="item.installmentsCount > 0 ? 'Já dividido em ' + item.installmentsCount + ' parcela(s) — refazer a divisão' : 'Parcelar'" (click)="openSplit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
                   }
+                  <!-- CR-01/I091: Copiar, como em Contas a pagar. A cópia nasce em
+                       aberto, sem recebimentos nem parcelas do título original. -->
+                  <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Opções"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+                  <!-- CR-01/I091: o botão "Opções" não tinha ação nenhuma. As ações que
+                       ele sugeria agora estão explícitas na linha, como em Contas a pagar. -->
                 </div>
               </td>
             </tr>
@@ -209,6 +223,15 @@
             <select class="select" [(ngModel)]="localFilters.status">
               <option value="">Todos</option>
               @for (o of optStatus; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <!-- CR-02/I092: o servidor já filtrava por parceria e a tela não tinha o
+               campo — o filtro existia sem porta de entrada. -->
+          <div class="form-group">
+            <label>Termo / parceria</label>
+            <select class="select" [(ngModel)]="localFilters.partnership">
+              <option value="">Todas</option>
+              @for (o of optPartnership(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
             </select>
           </div>
           <div class="form-group col-span-2">
@@ -286,6 +309,43 @@
       <div class="modal-footer">
         <button class="btn-outline" (click)="closeSplit()">Cancelar</button>
         <button class="btn-solid btn-solid--purple" [disabled]="splitCount < 2" (click)="confirmSplit()">Parcelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ CR-01 / I091: janela de visualização, no mesmo padrão de Contas a pagar ══
+     A linha só permitia abrir o título pela edição; ver sem risco de alterar não
+     existia. Os termos são os de receita (contratante, recebido, a receber). -->
+@if (viewBusy()) {
+  <div style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;">
+    <div style="background:#fff;border-radius:12px;padding:18px 22px;font-size:13.5px;color:#374151;">Abrindo o título…</div>
+  </div>
+}
+@if (viewItem(); as r) {
+  <div (click)="closeView()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
+    <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+        <h2 style="font-size:16px;font-weight:700;color:#111827;margin:0;">Conta a receber #{{ r.id }}</h2>
+        <button type="button" (click)="closeView()" aria-label="Fechar" style="border:none;background:transparent;font-size:15px;cursor:pointer;color:#6B7280;">✕</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#111827;">
+        <div><span style="color:#6B7280;">Contratante:</span> {{ r.stakeholder?.name || '—' }}</div>
+        <div><span style="color:#6B7280;">Descrição:</span> {{ r.description || '—' }}</div>
+        <div><span style="color:#6B7280;">Documento:</span> {{ r.document || '—' }}</div>
+        <div><span style="color:#6B7280;">Nº da NF:</span> {{ r.invoiceNumber || '—' }}</div>
+        <div><span style="color:#6B7280;">Emissão:</span> {{ dataBR(r.issueDate) }}</div>
+        <div><span style="color:#6B7280;">Vencimento:</span> {{ dataBR(r.dueDate) }}</div>
+        <div><span style="color:#6B7280;">Valor:</span> {{ dinheiro(r.amount) }}</div>
+        <div><span style="color:#6B7280;">Recebido:</span> {{ dinheiro(r.amountReceived) }}</div>
+        <div><span style="color:#6B7280;">Saldo a receber:</span> {{ dinheiro((r.amount || 0) - (r.amountReceived || 0)) }}</div>
+        <div><span style="color:#6B7280;">Situação:</span> {{ r.status }}</div>
+        @if (r.installments?.length) {
+          <div><span style="color:#6B7280;">Parcelas:</span> {{ r.installments.length }}</div>
+        }
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
       </div>
     </div>
   </div>

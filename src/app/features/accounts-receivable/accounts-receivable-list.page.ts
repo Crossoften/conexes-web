@@ -32,6 +32,8 @@ export class AccountsReceivableListPage implements OnInit {
   readonly optStatus     = this.svc.statusOptions;
   readonly optDateField  = this.svc.dateFieldOptions;
   readonly optContractor = signal<FilterOption[]>([]);
+  /** CR-02/I092: o filtro de parceria existia no servidor e não tinha campo na tela. */
+  readonly optPartnership = signal<FilterOption[]>([]);
 
   // FA-09: cadastro manual de conta a receber.
   goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
@@ -96,6 +98,11 @@ export class AccountsReceivableListPage implements OnInit {
       next: v => this.optContractor.set(v),
       error: () => this.optContractor.set([]),
     });
+    // CR-02/I092: termos/parcerias para o novo campo do filtro.
+    this.svc.getPartnerships().subscribe({
+      next: v => this.optPartnership.set(v),
+      error: () => this.optPartnership.set([]),
+    });
   }
 
   readonly viewOptions = [
@@ -106,7 +113,7 @@ export class AccountsReceivableListPage implements OnInit {
   readonly pageSizeOptions = [10, 25, 50];
 
   localFilters: ReceivableFilters = {
-    status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: ''
+    status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: ''
   };
 
   /** CR-02: o intervalo precisa fechar — de depois de até não filtra nada. */
@@ -166,6 +173,39 @@ export class AccountsReceivableListPage implements OnInit {
   /** CR-04: abre o título no formulário, em modo edição — a ação não existia. */
   onEdit(item: ReceivableAccount) {
     this.router.navigate(['/accounts-receivable', item.id, 'edit']);
+  }
+
+  // ── CR-01 / I091: as duas ações que Contas a pagar tinha e aqui faltavam ────
+
+  /** Visualizar o título sem abrir o formulário de edição. */
+  readonly viewItem = signal<any | null>(null);
+  readonly viewBusy = signal(false);
+
+  openView(item: ReceivableAccount): void {
+    this.viewBusy.set(true);
+    this.viewItem.set(null);
+    this.svc.getOne(Number(item.id)).subscribe({
+      next: r => { this.viewItem.set(r); this.viewBusy.set(false); },
+      error: err => { this.viewBusy.set(false); this.notify.error(err?.error?.message ?? 'Não foi possível abrir o título.'); },
+    });
+  }
+  closeView(): void { this.viewItem.set(null); }
+
+  /** Copiar o título: nasce em aberto, sem recebimentos nem parcelas. */
+  onCopy(item: ReceivableAccount): void {
+    this.svc.copy(Number(item.id)).subscribe({
+      next: () => { this.notify.success('Conta a receber copiada.'); this.store.load(); },
+      error: err => this.notify.error(err?.error?.message ?? 'Não foi possível copiar o título.'),
+    });
+  }
+
+  dataBR(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  }
+  dinheiro(v?: number | null): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0);
   }
 
   // ── E2: parcelamento (a API já gerava as parcelas; faltava o comando) ──────

@@ -57,6 +57,8 @@ export class AccountsReceivableService {
     let params = new HttpParams();
     if (filters.status)     params = params.set('status', filters.status);
     if (filters.contractor) params = params.set('stakeholderId', filters.contractor);
+    // CR-02/I092: o servidor já aceitava partnershipId; faltava a tela mandá-lo.
+    if (filters.partnership) params = params.set('partnershipId', filters.partnership);
     // CR-01: o campo "Período" era texto livre e nunca chegava ao servidor.
     if (filters.dateStart)  params = params.set('startDate', filters.dateStart);
     if (filters.dateEnd)    params = params.set('endDate', filters.dateEnd);
@@ -122,10 +124,26 @@ export class AccountsReceivableService {
   readonly statusOptions: FilterOption[] =
     Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }));
 
+  // CR-02/I092: mesmas bases de data de Contas a pagar (menos Competência, que
+  // ainda não existe no título a receber).
   readonly dateFieldOptions: FilterOption[] = [
     { value: 'dueDate',   label: 'Vencimento' },
     { value: 'issueDate', label: 'Emissão' },
+    { value: 'createdAt', label: 'Cadastro' },
   ];
+
+  /** CR-02/I092: termos/parcerias para o filtro que o servidor já aceitava. */
+  getPartnerships(): Observable<FilterOption[]> {
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/partnerships`, { params: new HttpParams().set('take', 500) }).pipe(
+      map(res => {
+        const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
+        return rows.map(t => ({
+          value: String(t.id),
+          label: [t.termNumber ?? t.number, t.title ?? t.name].filter(Boolean).join(' — ') || `Termo #${t.id}`,
+        }));
+      }),
+    );
+  }
 
   /** CR-02: contratantes para o filtro, que era uma caixa de texto. */
   getContractors(): Observable<FilterOption[]> {
@@ -168,6 +186,16 @@ export class AccountsReceivableService {
   /** FIN-03: renegocia o saldo a receber gerando um novo título. */
   renegotiate(id: number, payload: { interest?: number; fine?: number; discount?: number; installmentsCount: number; firstDueDate: string; note?: string }): Observable<unknown> {
     return this.http.post(`${this.base}/${id}/renegotiate`, payload);
+  }
+
+  /** CR-01/I091: copiar o título — a ação existia em Contas a pagar e não aqui. */
+  copy(id: number): Observable<ApiAccountReceivable> {
+    return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/copy`, {});
+  }
+
+  /** CR-01/I091: o título completo, para a janela de visualização. */
+  getOne(id: number): Observable<ApiAccountReceivable> {
+    return this.http.get<ApiAccountReceivable>(`${this.base}/${id}`);
   }
 
   /**

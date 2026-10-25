@@ -38,6 +38,11 @@ export interface ReceivableFilters {
   dateStart: string;
   dateEnd: string;
   contractor: string;
+  /**
+   * CR-02/I092: o servidor já filtrava por parceria (partnershipId) e a tela não
+   * oferecia o campo — o filtro existia e ninguém conseguia usá-lo.
+   */
+  partnership: string;
 }
 
 /** Uma opção de select do filtro. */

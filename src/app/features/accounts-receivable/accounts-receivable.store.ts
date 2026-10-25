@@ -21,7 +21,7 @@ interface State {
 
 const INITIAL_FILTERS: ReceivableFilters = {
   // CR-01: a data-base começa em Vencimento — é a pergunta de uma tela de cobrança.
-  status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: ''
+  status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: ''
 };
 
 @Injectable()
