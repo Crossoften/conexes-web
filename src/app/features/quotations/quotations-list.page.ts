@@ -10,6 +10,7 @@ import { PurchaseRequestDetailModalComponent } from '../purchases/components/pur
 import { PurchaseRequestActionModalComponent } from '../purchases/components/purchase-request-action.modal';
 import { PurchaseQuotationsModalComponent } from '../purchases/components/purchase-quotations.modal';
 import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
+import { PurchaseQuotationMapModalComponent } from '../purchases/components/purchase-quotation-map.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { TooltipDirective } from '../../shared/directives/tooltip.directive';
@@ -17,7 +18,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, ConfirmDialogComponent, TooltipDirective],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, PurchaseQuotationMapModalComponent, ConfirmDialogComponent, TooltipDirective],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',
@@ -199,8 +200,9 @@ export class QuotationsListPage {
   orderPdf(item: Quotation)       { this.store.exportOrderDoc(item.apiId, 'pdf'); }
   orderExcel(item: Quotation)     { this.store.exportOrderDoc(item.apiId, 'excel'); }
 
-  // COMP-21: o mapa é um passo da Etapa 4, aberto a partir da requisição.
-  quotationMap(item: Quotation)   { this.router.navigate(['/quotation-map', item.apiId]); }
+  // COMP-21/I023: o mapa é um passo da Etapa 4 — agora abre COMO MODAL, dentro de
+  // Cotações, sem trocar de tela.
+  quotationMap(item: Quotation)   { this.store.openMap(item); }
 
   onActionConfirm(result: PurchaseActionResult) { this.store.submitAction(result); }
 

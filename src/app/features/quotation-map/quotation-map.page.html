@@ -1,11 +1,14 @@
-<div class="page">
-  <div class="page-header">
-    <h1 class="page-title">Mapa de Cotação</h1>
-    <!-- COMP-21: aberto de dentro da Etapa 4, o caminho de volta é para lá -->
-    @if (fromStage) {
-      <a class="btn-outline btn-outline--orange" routerLink="/quotations/stage-4">Voltar à Etapa 4</a>
-    }
-  </div>
+<div class="page" [class.page--embedded]="embedded">
+  <!-- I023: no modo modal (dentro de Cotações) o título e o "Voltar" são do modal. -->
+  @if (!embedded) {
+    <div class="page-header">
+      <h1 class="page-title">Mapa de Cotação</h1>
+      <!-- COMP-21: aberto de dentro da Etapa 4, o caminho de volta é para lá -->
+      @if (fromStage) {
+        <a class="btn-outline btn-outline--orange" routerLink="/quotations/stage-4">Voltar à Etapa 4</a>
+      }
+    </div>
+  }
 
   <!-- COMP-21: o seletor de requisição só existe no acesso direto. Vindo da
        Etapa 4 a requisição já está escolhida — era essa segunda escolha que

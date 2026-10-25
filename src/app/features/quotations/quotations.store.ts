@@ -239,6 +239,13 @@ export class QuotationsStore {
   /** Após adjudicar, a requisição migra de etapa — recarrega a lista. */
   onAwarded(): void { this.awardFor.set(null); this.reload(); }
 
+  // ── Modal do Mapa de Cotação (I023) ──────────────────────────────────────────
+  // O mapa abre DENTRO de Cotações, como modal, sem trocar de tela. A rota
+  // /quotation-map/:requestId continua existindo para o link compartilhável.
+  readonly mapFor = signal<{ id: number; code: string } | null>(null);
+  openMap(item: Quotation): void { this.mapFor.set({ id: item.apiId, code: item.typeId }); }
+  closeMap(): void { this.mapFor.set(null); }
+
   // ── Modais de ação + ações diretas ──────────────────────────────────────────
   readonly action           = signal<{ kind: PurchaseActionKind; request: PurchaseRequest } | null>(null);
   readonly users            = signal<PurchaseRef[]>([]);

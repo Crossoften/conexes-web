@@ -1,6 +1,6 @@
 // src/app/features/quotation-map/quotation-map.page.ts
 // Feature 3 (front): Mapa de Cotação — comparar propostas + gerar convites do Portal.
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -31,9 +31,15 @@ export class QuotationMapPage implements OnInit {
    * COMP-21: quando o mapa é aberto de dentro da Etapa 4, a requisição vem na
    * rota. Nesse caso o seletor "Selecione uma requisição" não aparece — escolher
    * de novo o que já se estava olhando é o que fazia dele um módulo à parte.
+   *
+   * I023: o mapa agora também abre COMO MODAL dentro de Cotações (sem trocar de
+   * tela). Nesse uso a requisição chega por @Input, não pela rota, e `embedded`
+   * esconde o título e o "Voltar à Etapa 4" — quem fecha é o modal.
    */
-  readonly fixedRequestId = Number(this.route.snapshot.paramMap.get('requestId')) || null;
-  readonly fromStage      = this.fixedRequestId != null;
+  @Input() requestIdInput?: number | null;
+  @Input() embedded = false;
+  fixedRequestId: number | null = null;
+  fromStage = false;
   private api = environment.apiUrl + '/v1';
   // I023: o endereço do Portal saiu daqui. Quem monta o link é o servidor
   // (PORTAL_COTACAO_URL), que é também quem manda o e-mail — com o endereço nos dois
@@ -67,6 +73,11 @@ export class QuotationMapPage implements OnInit {
   readonly usandoSugeridos = computed(() => (this.suppliersDaRequisicao()?.length ?? 0) > 0);
 
   ngOnInit(): void {
+    // A requisição fixa vem do @Input (modal dentro de Cotações) ou da rota
+    // (/quotation-map/:requestId, link compartilhável). O acesso direto sem id
+    // mantém o seletor de requisição.
+    this.fixedRequestId = this.requestIdInput ?? (Number(this.route.snapshot.paramMap.get('requestId')) || null);
+    this.fromStage = this.fixedRequestId != null;
     // COMP-21: veio da Etapa 4 com a requisição escolhida — carrega direto.
     if (this.fixedRequestId) {
       this.selectedRequestId.set(this.fixedRequestId);

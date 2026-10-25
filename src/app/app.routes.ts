@@ -58,7 +58,10 @@ export const appRoutes: Routes = [
       // { path: 'purchasing-reports', ... }
       { path: 'quotations',           canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Cotações' },         loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
       { path: 'quotation-map',        canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/quotation-map/quotation-map.routes').then(m => m.quotationMapRoutes) },
-      { path: 'purchase-receiving',   canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/purchase-receiving/purchase-receiving.routes').then(m => m.purchaseReceivingRoutes) },
+      // COM-Pedidos x Recebimento / I027: o recebimento foi unificado dentro do Pedido.
+      // A tela independente saiu; a rota antiga redireciona para Pedidos para não quebrar
+      // link salvo. (É onde o usuário abre o pedido e clica em "Registrar recebimento".)
+      { path: 'purchase-receiving',   redirectTo: 'purchasing-orders', pathMatch: 'full' },
       { path: 'purchasing-management', canActivate: [permissionGuard], data: { module: 'Compras' },                             loadChildren: () => import('./features/purchasing-management/purchasing-management.routes').then(m => m.purchasingManagementRoutes) },
       { path: 'purchasing-orders',     canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Pedidos de Compra' }, loadChildren: () => import('./features/purchasing-orders/purchasing-orders.routes').then(m => m.purchasingOrdersRoutes) },
       { path: 'purchasing-registries', canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Produtos e Serviços' }, loadChildren: () => import('./features/purchasing-registries/purchasing-registries.routes').then(m => m.purchasingRegistriesRoutes) },
