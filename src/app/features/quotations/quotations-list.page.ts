@@ -62,11 +62,17 @@ export class QuotationsListPage {
       (this.routeStage === 3 && (this.perms.isPurchaseSupervisor() || this.perms.isManager()))
     );
   });
-  // CP-fix (Bug 3): aprovar disponível na Etapa 2 (2→3) e também na Etapa 4 (4→5).
-  // Na Etapa 4 a adjudicação (award) exige propostas elegíveis; quando não há, o admin
-  // ficava travado. O POST /approve conclui a aprovação da cotação e leva ao Pedido
-  // (o back gera o pedido a partir da cotação aprovada, quando existe).
-  readonly canApprove = computed(() => (this.routeStage === 1 || this.routeStage === 3) && this.hasApprovalRole());
+  /**
+   * COM-Adjudicação / I017 — decisão D1: "Aprovar" sai da Etapa 4.
+   *
+   * O botão existia aqui como atalho para concluir a cotação e gerar o Pedido.
+   * Só que isso é escolher o vencedor por fora da adjudicação — sem justificativa
+   * e sem poder distribuir por item — e, quando não havia proposta aprovada,
+   * levava a requisição para a Etapa 5 sem pedido nenhum. A saída da Etapa 4 passa
+   * a ser uma só: Adjudicar, que pede o motivo e gera o(s) Pedido(s). O servidor
+   * recusa o atalho de qualquer forma; aqui ele deixa de ser oferecido.
+   */
+  readonly canApprove = computed(() => this.routeStage === 1 && this.hasApprovalRole());
   readonly canReject = this.hasApprovalRole;
   // Solicitar ajustes (FE-6): mesmos perfis/etapas do reprovar (Etapa 2/4).
   readonly canRequestChanges = this.hasApprovalRole;
