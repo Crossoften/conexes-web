@@ -71,9 +71,16 @@
     <div class="card">
       <div class="card-header"><h2 class="card-title">Portal de Cotação — convidar fornecedores</h2></div>
       <div class="card-body">
-        <p class="muted">Selecione os fornecedores e gere os links. Cada fornecedor responde a proposta sem precisar de login.</p>
+        <!-- I023: os convidados são os fornecedores SUGERIDOS na requisição, já
+             marcados. Antes a lista era o cadastro inteiro, ignorando quem a
+             requisição tinha indicado para cotar. -->
+        @if (usandoSugeridos()) {
+          <p class="muted">Fornecedores sugeridos nesta requisição, já marcados. O convite é enviado por e-mail e o link também pode ser copiado.</p>
+        } @else {
+          <p class="muted">Esta requisição não indicou fornecedores — escolha abaixo no cadastro. O convite é enviado por e-mail e o link também pode ser copiado.</p>
+        }
         <div class="supp-grid">
-          @for (s of suppliers(); track s.id) {
+          @for (s of listaDeConvidados(); track s.id) {
             <label class="supp-check">
               <input type="checkbox" [checked]="isSupplierChecked(s.id)" (change)="toggleSupplier(s.id)">
               <span>{{ s.name }}</span>
@@ -81,17 +88,30 @@
           }
         </div>
         <button class="btn-primary" [disabled]="generating()" (click)="generateInvites()">
-          {{ generating() ? 'Gerando…' : 'Gerar convites' }}
+          {{ generating() ? 'Gerando…' : 'Gerar e enviar convites' }}
         </button>
+
+        <!-- I023: o resultado do envio, dito por extenso — gerar o link e o
+             fornecedor receber o e-mail são coisas diferentes. -->
+        @if (aviso()) { <p class="invite-aviso">{{ aviso() }}</p> }
 
         @if (invites().length) {
           <div class="invites">
-            <h3>Links gerados</h3>
-            @for (i of invites(); track i.supplierId) {
+            <h3>Convites desta requisição</h3>
+            @for (i of invites(); track i.id) {
               <div class="invite-row">
-                <span class="invite-supp">{{ i.supplierName }}</span>
+                <span class="invite-supp">
+                  {{ i.supplierName }}
+                  <em class="invite-status" [class.invite-status--ok]="i.status === 'Answered'">
+                    {{ i.status === 'Answered' ? 'respondeu' : 'aguardando' }}
+                  </em>
+                </span>
                 <input class="invite-link" readonly [value]="i.link">
                 <button class="btn-outline" (click)="copy(i.link)">{{ copied() === i.link ? 'Copiado!' : 'Copiar' }}</button>
+                <button class="btn-outline" [disabled]="reenviando() === i.id" (click)="reenviar(i)">
+                  {{ reenviando() === i.id ? 'Reenviando…' : 'Reenviar' }}
+                </button>
+                <span class="invite-email">{{ i.email || 'sem e-mail no cadastro' }}</span>
               </div>
             }
           </div>
