@@ -354,6 +354,11 @@ export class AccountsPayableNewPage implements OnInit {
           this.form.get('parcelas')?.setValue(parcelasGravadas.length);
           for (const p of parcelasGravadas) {
             this.parcelasLista.push(this.fb.group({
+              // CP-20/I086: o id da parcela viaja com a linha. É por ele que o
+              // servidor casa a linha editada com a parcela existente e preserva
+              // o que já foi pago nela e o vínculo da baixa — casar só pelo número
+              // erraria assim que alguém renumerasse as parcelas.
+              id: [p.id],
               installment: [p.installment],
               dueDate: [iso(p.dueDate)],
               amount: [p.amount],
@@ -586,13 +591,16 @@ export class AccountsPayableNewPage implements OnInit {
     const nParcelas = Number(v.parcelas);
     if (v.parcelar === 'Sim' && nParcelas >= 2) {
       const total = num(v.valorLiquido) || num(v.valorBruto);
-      // CP-21 / I087: em edição só reenvia as parcelas se o usuário as regerou (installmentsTocadas)
-      // ou editou uma linha (parcelasLista.dirty). Senão as parcelas e baixas gravadas são
-      // preservadas, porque o backend as recria (deleteMany+create) sempre que installments chega.
+      // CP-21/I087 + CP-20/I086: em edição só reenvia as parcelas se o usuário as
+      // regerou ou editou uma linha. O servidor já não recria o parcelamento do
+      // zero (ele casa linha a linha e preserva a baixa), mas continua não fazendo
+      // sentido reenviar o que ninguém tocou.
       const reenviarParcelas = !this.ehEdicao() || this.installmentsTocadas || this.parcelasLista.dirty;
       if (reenviarParcelas) {
         payload.installments = this.parcelasLista.length
           ? this.parcelasLista.controls.map((c, i) => ({
+              // CP-20/I086: o id identifica a parcela existente no servidor.
+              id: c.get('id')?.value ?? undefined,
               installment: Number(c.get('installment')?.value) || i + 1,
               dueDate: c.get('dueDate')?.value,
               amount: Number(c.get('amount')?.value) || 0,
