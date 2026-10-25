@@ -226,6 +226,19 @@ export class AccountsPayableService {
     return this.http.post(`${this.base}/${id}/renegotiate`, payload);
   }
 
+  /**
+   * I101/D5: a conferência do título Em análise. São as duas únicas saídas dessa
+   * situação — conferir (vira Em aberto) ou devolver ao Compras com motivo. Baixa
+   * e renegociação continuam bloqueadas até a conferência (matriz do servidor).
+   */
+  conferir(id: number): Observable<ApiAccountPayable> {
+    return this.http.patch<ApiAccountPayable>(`${this.base}/${id}/validate`, {});
+  }
+
+  devolver(id: number, reason: string): Observable<ApiAccountPayable> {
+    return this.http.patch<ApiAccountPayable>(`${this.base}/${id}/return`, { reason });
+  }
+
   update(id: number, payload: unknown): Observable<ApiAccountPayable> {
     return this.http.patch<ApiAccountPayable>(`${this.base}/${id}`, payload);
   }

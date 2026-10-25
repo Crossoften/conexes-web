@@ -203,6 +203,19 @@
                 <div class="action-icons">
                   <!-- CP-03: visualizar o lançamento -->
                   <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <!-- I101/D5: "Em análise" só tem duas saídas — conferir ou devolver.
+                       A matriz já barrava baixa e renegociação antes da conferência,
+                       mas a linha não oferecia nenhuma saída: o título ficava parado. -->
+                  @if (item.acoes.conferir) {
+                    <button class="icon-btn icon-btn--ok" title="Conferir (passa para Em aberto)" aria-label="Conferir"
+                            [disabled]="conferindo() === item.id" (click)="onConferir(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button class="icon-btn icon-btn--warn" title="Devolver ao Compras (com motivo)" aria-label="Devolver"
+                            [disabled]="conferindo() === item.id" (click)="onDevolver(item)">
+                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5L3 10l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 10h9a5 5 0 0 1 5 5v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  }
                   @if (item.acoes.pagar) {
                     <!-- FIN-01: baixa (pagamento) total ou parcial -->
                     <button class="icon-btn" title="Baixar (pagar)" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -570,6 +583,14 @@
         <div><span style="color:#6B7280;">Situação:</span> {{ p.status }}</div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        <!-- I101/D5: a conferência também sai daqui, não só da linha. Em análise só
+             tem estas duas saídas; baixa e renegociação seguem bloqueadas até conferir. -->
+        @if (p.acoes.conferir) {
+          <button type="button" class="btn-outline" [disabled]="conferindo() === p.id"
+                  (click)="onDevolver(p); closeView()">Devolver ao Compras</button>
+          <button type="button" class="btn-solid btn-solid--orange" [disabled]="conferindo() === p.id"
+                  (click)="onConferir(p); closeView()">Conferir</button>
+        }
         <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
       </div>
     </div>

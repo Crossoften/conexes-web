@@ -13,15 +13,17 @@
     </div>
 
     <div class="select-wrap">
-      <select class="select select--pill" [value]="store.filters().period" (change)="store.setPeriod($any($event.target).value)">
+      <select class="select select--pill" [value]="store.filters().period" (change)="aoEscolherAtalho($any($event.target).value)">
         @for (opt of periodOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
       </select>
     </div>
 
-    @if (store.filters().period === 'CUSTOM') {
-      <!-- CB-05 / I061: eram dois campos de data soltos ("Data inicial" e "Data final").
-           O cliente pediu um calendário só, de intervalo: um clique marca o início,
-           o seguinte marca o fim e o período é aplicado quando o intervalo fecha. -->
+      <!-- CB-05 / I061: um calendário SÓ, de intervalo — um clique marca o início, o
+           seguinte marca o fim e o período é aplicado quando o intervalo fecha.
+           O calendário fica sempre à mão: antes era preciso escolher "Personalizado"
+           no seletor para ele aparecer, e essa etapa é justamente o que o pedido
+           dispensa ("não há etapa de período personalizado"). O seletor ao lado
+           continua existindo só como atalho (este mês, mês passado...). -->
       <div class="range-wrap">
         <button type="button" class="select select--pill range-btn" (click)="abrirCalendario()" aria-label="Escolher intervalo de datas">
           <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -58,7 +60,6 @@
           </div>
         }
       </div>
-    }
 
     <div class="select-wrap">
       <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
@@ -205,6 +206,47 @@
       }
     </div>
   }
+
+  <!-- CB-01/I058: "A posição das contas lista as contas com o conciliado, o pendente
+       e a contagem de pendências." A tela mostrava só a conta selecionada e o saldo;
+       a contagem aparecia apenas no nome dentro do seletor. Agora cada conta tem a
+       sua linha, com os três números, e clicar na linha abre a conta. -->
+  <div class="card posicao-contas">
+    <h3 class="posicao-contas__titulo">Posição das contas</h3>
+    <div class="table-wrap">
+      <table class="table posicao-contas__tabela">
+        <thead>
+          <tr>
+            <th class="th">Conta</th>
+            <th class="th th--num">Conciliado</th>
+            <th class="th th--num">Pendente</th>
+            <th class="th th--num">Pendências</th>
+            <th class="th th--num">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of store.accounts(); track a.id) {
+            <tr class="tr posicao-contas__linha"
+                [class.posicao-contas__linha--ativa]="a.id === store.selectedAccountId()"
+                (click)="store.selectAccount(a.id)">
+              <td class="td">{{ a.name }}</td>
+              <td class="td td--num">{{ dinheiro(a.conciliated) }}</td>
+              <td class="td td--num">{{ dinheiro(a.pending) }}</td>
+              <td class="td td--num">
+                <span class="posicao-contas__badge" [class.posicao-contas__badge--zero]="!a.pendingCount">
+                  {{ a.pendingCount }}
+                </span>
+              </td>
+              <td class="td td--num">{{ dinheiro(a.balance) }}</td>
+            </tr>
+          }
+          @if (!store.accounts().length) {
+            <tr class="tr"><td class="td" colspan="5" style="text-align:center;padding:24px;color:var(--text-secondary);">Nenhuma conta bancária cadastrada.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <div class="summary-cards-grid">
     <div class="summary-card">

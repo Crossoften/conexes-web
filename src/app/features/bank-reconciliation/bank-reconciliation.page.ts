@@ -51,14 +51,33 @@ export class BankReconciliationPage implements OnInit {
     this.store.load();
   }
 
+  /**
+   * CB-05/I061: "Personalizado" saiu da lista. Ele era uma ETAPA — escolher
+   * Personalizado só para então o calendário aparecer —, e o pedido diz que não
+   * há etapa de período personalizado. O calendário de intervalo fica sempre
+   * visível ao lado; estes valores continuam como atalhos de um clique.
+   */
   readonly periodOptions = [
     { label: 'Todo o período', value: '' },
     { label: 'Este mês', value: 'THIS_MONTH' },
     { label: 'Mês passado', value: 'LAST_MONTH' },
     { label: 'Últimos 90 dias', value: 'LAST_90' },
     { label: 'Este ano', value: 'THIS_YEAR' },
-    { label: 'Personalizado', value: 'CUSTOM' },
   ];
+
+  /**
+   * CB-05/I061: escolher um atalho descarta o intervalo marcado no calendário —
+   * senão o botão continuaria exibindo "01/10 a 15/10" enquanto a lista já mostra
+   * "Este mês", e o rótulo mentiria sobre o que está filtrado.
+   */
+  aoEscolherAtalho(valor: string): void {
+    this.inicioSel.set('');
+    this.fimSel.set('');
+    this.store.setCustomStart('');
+    this.store.setCustomEnd('');
+    this.store.setPeriod(valor);
+    this.calendarioAberto.set(false);
+  }
 
   readonly typeOptions = [
     { label: 'Selecione o tipo', value: '' },

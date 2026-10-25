@@ -408,6 +408,47 @@ export class AccountsPayableListPage implements OnInit {
     this.store.sendToRemittance(item.id);
   }
 
+  /**
+   * I101/D5: a conferência do título "Em análise". A matriz do servidor já dizia
+   * `conferir: true` nessa situação e já barrava baixa e renegociação antes dela,
+   * mas a linha não oferecia saída nenhuma — o título ficava parado sem botão.
+   * São as duas únicas saídas: conferir (vira Em aberto) ou devolver com motivo.
+   */
+  readonly conferindo = signal<string | null>(null);
+
+  onConferir(item: PayableAccount) {
+    if (!confirm(`Conferir o lançamento ${item.displayId ?? item.id}? Ele passa de "Em análise" para "Em aberto" e aceita baixa.`)) return;
+    this.conferindo.set(item.id);
+    this.svc.conferir(Number(item.id)).subscribe({
+      next: () => {
+        this.conferindo.set(null);
+        this.notify.success('Lançamento conferido — agora está Em aberto.');
+        this.store.load();
+      },
+      error: e => {
+        this.conferindo.set(null);
+        this.notify.error(e?.error?.message ?? 'Não foi possível conferir o lançamento.');
+      },
+    });
+  }
+
+  onDevolver(item: PayableAccount) {
+    const motivo = (prompt(`Devolver o lançamento ${item.displayId ?? item.id} ao Compras. Qual o motivo?`) ?? '').trim();
+    if (!motivo) return;   // devolver sem motivo não ajuda quem recebe de volta
+    this.conferindo.set(item.id);
+    this.svc.devolver(Number(item.id), motivo).subscribe({
+      next: () => {
+        this.conferindo.set(null);
+        this.notify.success('Lançamento devolvido ao Compras com o motivo registrado.');
+        this.store.load();
+      },
+      error: e => {
+        this.conferindo.set(null);
+        this.notify.error(e?.error?.message ?? 'Não foi possível devolver o lançamento.');
+      },
+    });
+  }
+
   onDeleteSelected() {
     const n = this.store.selectedCount();
     if (!n) return;

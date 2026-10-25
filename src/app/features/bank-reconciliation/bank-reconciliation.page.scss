@@ -224,3 +224,27 @@
     td { padding: 10px; color: var(--text-secondary); border-bottom: 1px solid var(--surface-border-mid); }
   }
 }
+/* CB-01/I058: posição das contas — conciliado, pendente e contagem de pendências,
+   uma linha por conta. Antes a contagem só existia dentro do nome no seletor. */
+.posicao-contas {
+  padding: 16px 20px 6px;
+  margin-bottom: 16px;
+}
+.posicao-contas__titulo {
+  font-size: 14px; font-weight: 700; color: var(--text-primary, #111827); margin: 0 0 10px;
+}
+.posicao-contas__tabela {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  th { padding: 8px 10px; text-align: left; font-weight: 600; color: var(--text-muted, #6B7280); border-bottom: 1px solid var(--surface-border-mid, #E5E7EB); }
+  td { padding: 10px; color: var(--text-primary, #111827); border-bottom: 1px solid var(--surface-border-mid, #EEF0F5); }
+}
+.posicao-contas__tabela .th--num,
+.posicao-contas__tabela .td--num { text-align: right; }
+.posicao-contas__linha { cursor: pointer; transition: background .15s; }
+.posicao-contas__linha:hover { background: #FAFAFE; }
+.posicao-contas__linha--ativa { background: var(--brand-purple-light, #EDE9FE); }
+.posicao-contas__badge {
+  display: inline-block; min-width: 24px; padding: 2px 8px; border-radius: 10px;
+  background: #FEF3C7; color: #92400E; font-weight: 700; font-size: 12px; text-align: center;
+}
+.posicao-contas__badge--zero { background: #ECFDF5; color: #065F46; }
