@@ -207,6 +207,8 @@ export class AccountsReceivableListPage implements OnInit {
   dinheiro(v?: number | null): string {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0);
   }
+  /** O detalhe do servidor traz a situação crua; a tela mostra em português. */
+  situacao(raw?: string | null): string { return this.svc.statusLabel(raw); }
 
   // ── E2: parcelamento (a API já gerava as parcelas; faltava o comando) ──────
   readonly splitTarget = signal<ReceivableAccount | null>(null);

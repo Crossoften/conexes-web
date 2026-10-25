@@ -339,7 +339,7 @@
         <div><span style="color:#6B7280;">Valor:</span> {{ dinheiro(r.amount) }}</div>
         <div><span style="color:#6B7280;">Recebido:</span> {{ dinheiro(r.amountReceived) }}</div>
         <div><span style="color:#6B7280;">Saldo a receber:</span> {{ dinheiro((r.amount || 0) - (r.amountReceived || 0)) }}</div>
-        <div><span style="color:#6B7280;">Situação:</span> {{ r.status }}</div>
+        <div><span style="color:#6B7280;">Situação:</span> {{ situacao(r.status) }}</div>
         @if (r.installments?.length) {
           <div><span style="color:#6B7280;">Parcelas:</span> {{ r.installments.length }}</div>
         }

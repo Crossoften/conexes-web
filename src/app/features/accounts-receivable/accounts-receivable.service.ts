@@ -44,6 +44,9 @@ export interface ReceivableListResult {
 
 const STATUS_LABEL: Record<string, string> = {
   Open: 'Em aberto', PartiallyPaid: 'Parcialmente recebido', Paid: 'Recebido', Cancelled: 'Cancelado', Reconciled: 'Conciliado',
+  // CR-01/I091: faltavam estas três — qualquer título nesses estados exibia o nome
+  // do enum em inglês, que é o defeito que COM-Status PT corrigiu em Contas a pagar.
+  UnderReview: 'Em análise', Returned: 'Devolvido', Renegotiated: 'Renegociado',
 };
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -131,6 +134,11 @@ export class AccountsReceivableService {
     { value: 'issueDate', label: 'Emissão' },
     { value: 'createdAt', label: 'Cadastro' },
   ];
+
+  /** CR-01/I091: a situação em português, para quem lê o título fora da lista. */
+  statusLabel(raw?: string | null): string {
+    return STATUS_LABEL[raw ?? ''] ?? (raw ?? '—');
+  }
 
   /** CR-02/I092: termos/parcerias para o filtro que o servidor já aceitava. */
   getPartnerships(): Observable<FilterOption[]> {
