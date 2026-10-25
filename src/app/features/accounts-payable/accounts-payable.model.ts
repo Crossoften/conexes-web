@@ -43,6 +43,28 @@ export interface PayableAccount {
   canPay: boolean;
   /** CP-10/I077: as parcelas do título, para a visão "Parcelas". */
   installments: PayableInstallment[];
+  /**
+   * FIN-N6/I101 (D5): o que a SITUAÇÃO do título permite. Vem calculado do
+   * servidor — a tela desenha a linha a partir daqui em vez de repetir a matriz,
+   * que é como as duas começariam a divergir.
+   */
+  acoes: PayableActions;
+}
+
+/** D5/I101: matriz de ações permitidas para um título. */
+export interface PayableActions {
+  visualizar: boolean;
+  conferir: boolean;
+  editar: boolean;
+  pagar: boolean;
+  renegociar: boolean;
+  comprovante: boolean;
+  estornar: boolean;
+  copiar: boolean;
+  multiplicar: boolean;
+  remessa: boolean;
+  excluir: boolean;
+  motivoExcluir: string | null;
 }
 
 export interface AdvancedFilters {

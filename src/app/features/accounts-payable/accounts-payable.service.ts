@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PayableAccount, SummaryCard, AdvancedFilters, FilterOption } from './accounts-payable.model';
+import { PayableAccount, SummaryCard, AdvancedFilters, FilterOption, PayableActions } from './accounts-payable.model';
 
 /** Envelope de listagem padrão do back ({ data, count, pages }). */
 interface ListEnvelope<T> {
@@ -34,6 +34,8 @@ interface ApiAccountPayable {
     installment?: number | null; dueDate?: string | null;
     amount?: number | null; amountPaid?: number | null; status?: string | null;
   }[] | null;
+  /** D5/I101: a matriz de ações calculada pelo servidor. */
+  acoes?: Partial<PayableActions> | null;
 }
 
 export interface PayableListResult {
@@ -285,6 +287,11 @@ export class AccountsPayableService {
    * CP-01 / I070: os tipos de despesa já usados nos títulos, para o filtro
    * "Tipo Despesa" oferecer opções em vez de exigir que se adivinhe o texto.
    */
+  /** D5/I101: estorno controlado de uma baixa — exige motivo. */
+  reversePayment(id: number, paymentId: number, motivo: string): Observable<unknown> {
+    return this.http.post(`${this.base}/${id}/payments/${paymentId}/reverse`, { motivo });
+  }
+
   getExpenseTypes(): Observable<string[]> {
     return this.http.get<string[]>(`${environment.apiUrl}/v1/accounts-payable/expense-types`).pipe(
       map(res => (Array.isArray(res) ? res : []).filter(t => !!t && String(t).trim().length > 0)),
@@ -365,6 +372,22 @@ export class AccountsPayableService {
     balanceNum: Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0)),
     balance: brl.format(Math.max(0, (r.netAmount ?? r.amount ?? r.grossAmount ?? 0) - (r.amountPaid ?? 0))),
     canPay: (r.status === 'Open' || r.status === 'PartiallyPaid'),
+    // D5/I101: se o servidor não mandar a matriz (resposta antiga), o padrão é
+    // conservador — só visualizar — em vez de liberar tudo.
+    acoes: {
+      visualizar: true,
+      conferir: !!r.acoes?.conferir,
+      editar: !!r.acoes?.editar,
+      pagar: !!r.acoes?.pagar,
+      renegociar: !!r.acoes?.renegociar,
+      comprovante: !!r.acoes?.comprovante,
+      estornar: !!r.acoes?.estornar,
+      copiar: !!r.acoes?.copiar,
+      multiplicar: !!r.acoes?.multiplicar,
+      remessa: !!r.acoes?.remessa,
+      excluir: !!r.acoes?.excluir,
+      motivoExcluir: r.acoes?.motivoExcluir ?? null,
+    },
     // CP-10/I077: ordenadas pelo número, que é como a parcela é lida.
     installments: [...(r.installments ?? [])]
       .sort((a, b) => (a.installment ?? 0) - (b.installment ?? 0))
@@ -384,6 +407,8 @@ export interface PayableFile {
   id: number;
   fileUrl: string;
   fileKey?: string | null;
+  /** D5/I101: é por ela que o comprovante da baixa se distingue dos demais anexos. */
+  description?: string | null;
   userId?: number | null;
   createdAt?: string;
 }

@@ -120,6 +120,75 @@ export class AccountsPayableListPage implements OnInit {
   readonly viewItem = signal<PayableAccount | null>(null);
   openView(item: PayableAccount): void { this.viewItem.set(item); }
   closeView(): void { this.viewItem.set(null); }
+
+  // ── FIN-N6 / I101 (D5): comprovante e estorno controlado ──────────────────
+
+  /** D5: o comprovante é o anexo gravado na baixa manual. */
+  openComprovante(item: PayableAccount): void {
+    this.svc.listFiles(Number(item.id)).subscribe({
+      next: arquivos => {
+        const comp = (arquivos ?? []).filter(a => /comprovante/i.test(a.description ?? ''));
+        const alvo = comp.length ? comp : (arquivos ?? []);
+        if (!alvo.length) {
+          this.notify.info('Este título não tem comprovante anexado.');
+          return;
+        }
+        // Abre o mais recente; os demais seguem acessíveis na aba Anexos do título.
+        window.open(alvo[alvo.length - 1].fileUrl, '_blank', 'noopener');
+      },
+      error: e => this.notify.error(e?.error?.message ?? 'Não foi possível abrir o comprovante.'),
+    });
+  }
+
+  /**
+   * D5: estorno CONTROLADO — escolhe QUAL baixa desfazer e exige motivo.
+   * Apagar a baixa sem motivo registrado é justamente o que "controlado" exclui.
+   */
+  readonly estornoItem  = signal<PayableAccount | null>(null);
+  readonly estornoBaixas = signal<any[]>([]);
+  readonly estornoBusy  = signal(false);
+  estornoPaymentId = '';
+  estornoMotivo = '';
+
+  openEstorno(item: PayableAccount): void {
+    this.estornoItem.set(item);
+    this.estornoPaymentId = '';
+    this.estornoMotivo = '';
+    this.estornoBaixas.set([]);
+    this.svc.getById(Number(item.id)).subscribe({
+      next: (r: any) => {
+        const pagamentos = r?.payments ?? [];
+        this.estornoBaixas.set(pagamentos);
+        if (pagamentos.length === 1) this.estornoPaymentId = String(pagamentos[0].id);
+      },
+      error: () => this.estornoBaixas.set([]),
+    });
+  }
+  closeEstorno(): void { this.estornoItem.set(null); }
+
+  confirmEstorno(): void {
+    const item = this.estornoItem();
+    if (!item || !this.estornoPaymentId || !this.estornoMotivo.trim()) return;
+    this.estornoBusy.set(true);
+    this.svc.reversePayment(Number(item.id), Number(this.estornoPaymentId), this.estornoMotivo.trim()).subscribe({
+      next: (r: any) => {
+        this.estornoBusy.set(false);
+        this.closeEstorno();
+        this.notify.success(r?.message ?? 'Baixa estornada.');
+        this.store.load();
+      },
+      error: e => {
+        this.estornoBusy.set(false);
+        this.notify.error(e?.error?.message ?? 'Não foi possível estornar a baixa.');
+      },
+    });
+  }
+
+  rotuloDaBaixa(p: any): string {
+    const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const d = p?.paymentDate ? new Date(p.paymentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—';
+    return `#${p.id} · ${d} · ${brl.format(p.amount ?? 0)}${p.installmentId ? ' (parcela)' : ''}`;
+  }
   closePay(): void { this.payItem.set(null); }
 
   onBaixaConfirm(r: BaixaResult): void {

@@ -202,3 +202,12 @@
 .import-xml-result__row.is-error { border-color: #FECACA; background: #FEF2F2; }
 .import-xml-result__msg { color: #111827; }
 .import-xml-result__nota { margin-top: 3px; color: #4B5563; font-size: 12.5px; word-break: break-word; }
+
+/* ── FIN-N6 / I101 (D5): ação bloqueada pela situação do título ──────────────
+   Em vez de a ação apenas sumir, um marcador explica no título do elemento por
+   que ela não está disponível (baixa registrada, origem em Compras, pago). */
+.acao-bloqueada {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; color: var(--text-muted, #9CA3AF);
+  font-size: 15px; cursor: help;
+}

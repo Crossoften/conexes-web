@@ -195,21 +195,49 @@
               <td class="td">{{ item.status }}</td>
               
               <td class="td td--center">
+                <!-- FIN-N6/I101 (D5): a linha oferece só o que a SITUAÇÃO do título
+                     permite. Antes todas as ações apareciam em qualquer estado — dava
+                     para mandar à remessa um título em análise, multiplicar um pago e
+                     excluir um vindo de Compras. A matriz vem do servidor, que é
+                     também quem barra: a tela não é a única trava. -->
                 <div class="action-icons">
                   <!-- CP-03: visualizar o lançamento -->
                   <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  @if (item.canPay) {
+                  @if (item.acoes.pagar) {
                     <!-- FIN-01: baixa (pagamento) total ou parcial -->
                     <button class="icon-btn" title="Baixar (pagar)" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  }
+                  @if (item.acoes.renegociar) {
                     <!-- FIN-03: renegociar o saldo -->
                     <button class="icon-btn" title="Renegociar" (click)="openRenegotiate(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 8a6 6 0 0 1 10-2M16 12a6 6 0 0 1-10 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3M6 17v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   }
-                  <!-- CP-04: a ação Editar não existia na linha. -->
-                  <button class="icon-btn" title="Editar" (click)="onEdit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Multiplicar lançamento (gerar parcelas)" (click)="openMultiply(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn" title="Enviar para remessa" (click)="onSendToRemittance(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M18 3L9 12M18 3l-6 15-3-6-6-3 15-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  @if (item.acoes.comprovante) {
+                    <!-- D5: título pago/parcial dá acesso ao comprovante da baixa. -->
+                    <button class="icon-btn" title="Comprovante do pagamento" (click)="openComprovante(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M5 2h7l3 3v13H5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 2v3h3M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                  }
+                  @if (item.acoes.estornar) {
+                    <!-- D5: estorno CONTROLADO — escolhe a baixa e exige motivo. -->
+                    <button class="icon-btn" title="Estornar baixa" (click)="openEstorno(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10a6 6 0 1 1 2 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 6v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  }
+                  @if (item.acoes.editar) {
+                    <!-- CP-04: a ação Editar não existia na linha. -->
+                    <button class="icon-btn" title="Editar" (click)="onEdit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  }
+                  @if (item.acoes.copiar) {
+                    <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  }
+                  @if (item.acoes.multiplicar) {
+                    <button class="icon-btn" title="Multiplicar lançamento (gerar parcelas)" (click)="openMultiply(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+                  }
+                  @if (item.acoes.remessa) {
+                    <button class="icon-btn" title="Enviar para remessa" (click)="onSendToRemittance(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M18 3L9 12M18 3l-6 15-3-6-6-3 15-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  }
+                  @if (item.acoes.excluir) {
+                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else if (item.acoes.motivoExcluir) {
+                    <!-- Em vez de sumir sem explicação, diz por que não dá. -->
+                    <span class="acao-bloqueada" [title]="'Não pode ser excluído: ' + item.acoes.motivoExcluir">⃠</span>
+                  }
                 </div>
               </td>
             </tr>
@@ -480,6 +508,51 @@
 }
 
 <!-- CP-03: visualização read-only de Contas a pagar -->
+<!-- ══ FIN-N6 / I101 (D5): estorno CONTROLADO de uma baixa ═══════════════════
+     Controlado é o que o separa de apagar o pagamento: escolhe-se QUAL baixa
+     desfazer e o motivo é obrigatório, ficando registrado no título. -->
+@if (estornoItem(); as e) {
+  <div (click)="closeEstorno()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
+    <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;">
+        <h2 style="font-size:16px;font-weight:700;color:#111827;margin:0;">Estornar baixa — {{ e.displayId }}</h2>
+        <button type="button" (click)="closeEstorno()" aria-label="Fechar" style="border:none;background:transparent;font-size:15px;cursor:pointer;color:#6B7280;">✕</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;font-size:13.5px;color:#111827;">
+        @if (!estornoBaixas().length) {
+          <p style="color:#6B7280;margin:0;">Este título não tem baixa registrada para estornar.</p>
+        } @else {
+          <div class="form-group">
+            <label>Baixa a estornar</label>
+            <select class="select" [(ngModel)]="estornoPaymentId" [ngModelOptions]="{standalone: true}">
+              <option value="">Selecione</option>
+              @for (p of estornoBaixas(); track p.id) { <option [value]="p.id">{{ rotuloDaBaixa(p) }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Motivo do estorno <span class="req">*</span></label>
+            <input type="text" class="input" placeholder="Por que esta baixa está sendo desfeita?"
+                   [(ngModel)]="estornoMotivo" [ngModelOptions]="{standalone: true}">
+          </div>
+          <p style="color:#6B7280;margin:0;font-size:12.5px;">
+            O saldo volta a ficar em aberto no valor amortizado por esta baixa. Juros e multa
+            não são devolvidos ao saldo — eles aumentaram o desembolso, não abateram o título.
+            O motivo fica registrado nas observações.
+          </p>
+        }
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="closeEstorno()">Cancelar</button>
+        <button type="button" class="btn-solid btn-solid--orange"
+                [disabled]="estornoBusy() || !estornoPaymentId || !estornoMotivo.trim()"
+                (click)="confirmEstorno()">
+          {{ estornoBusy() ? 'Estornando…' : 'Estornar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (viewItem(); as p) {
   <div (click)="closeView()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
     <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
