@@ -131,6 +131,11 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="card-title">Emitir NFS-e (serviço)</h2>
+        @if (origemReceita()) {
+          <!-- I033 (D3): a emissão veio de uma receita; dizer isso evita emitir
+               contra o título errado depois de trocar de aba. -->
+          <p class="origem-unica">Emitindo para a conta a receber <strong>#{{ origemReceita() }}</strong>. Confira os dados antes de enviar.</p>
+        }
         <button type="button" class="icon-btn" (click)="closeEmit()" aria-label="Fechar">✕</button>
       </div>
       <form [formGroup]="form" (ngSubmit)="submitEmit()">

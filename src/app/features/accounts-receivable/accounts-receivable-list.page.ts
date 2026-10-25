@@ -191,6 +191,29 @@ export class AccountsReceivableListPage implements OnInit {
   }
   closeView(): void { this.viewItem.set(null); }
 
+  /**
+   * COM-Emitir / I033 (decisão D3): a emissão de nota fiscal fica em Contas a
+   * receber. A nota é emitida CONTRA UMA RECEITA, então a ação é da linha e leva
+   * os dados do título para o formulário de emissão — contratante, documento,
+   * valor e descrição. O código do serviço é dado fiscal e continua sendo escolha
+   * de quem emite; nada é transmitido sem a confirmação dele.
+   */
+  onEmitirNf(item: ReceivableAccount): void {
+    this.svc.getOne(Number(item.id)).subscribe({
+      next: (r: any) => this.router.navigate(['/integrations/fiscal-documents'], {
+        queryParams: {
+          emitir: 1,
+          receivableId: r.id,
+          descricao: r.description ?? '',
+          valor: r.amount ?? 0,
+          tomador: r.stakeholder?.name ?? '',
+          documento: r.document ?? r.stakeholder?.document ?? '',
+        },
+      }),
+      error: err => this.notify.error(err?.error?.message ?? 'Não foi possível abrir a emissão para este título.'),
+    });
+  }
+
   /** Copiar o título: nasce em aberto, sem recebimentos nem parcelas. */
   onCopy(item: ReceivableAccount): void {
     this.svc.copy(Number(item.id)).subscribe({

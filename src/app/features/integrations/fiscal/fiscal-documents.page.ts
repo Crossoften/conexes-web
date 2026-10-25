@@ -2,7 +2,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { IntegrationsService } from '../integrations.service';
@@ -41,6 +41,8 @@ export class FiscalDocumentsPage implements OnInit {
   private svc = inject(IntegrationsService);
   private fb  = inject(FormBuilder);
   private http = inject(HttpClient);
+  // I033: a emissão pode chegar de Contas a receber, com os dados do título.
+  private route = inject(ActivatedRoute);
 
   // IT-09: contatos (clientes) para autofill do tomador na emissão de NFS-e.
   readonly contatos = signal<ContatoOption[]>([]);
@@ -102,7 +104,30 @@ export class FiscalDocumentsPage implements OnInit {
     this.load();
     this.loadContatos();
     this.svc.getCompany().subscribe({ next: c => this.company.set(c), error: () => {} });
+
+    /**
+     * COM-Emitir / I033 (decisão D3): a emissão parte de Contas a receber, contra
+     * uma receita. Quando se chega por ali, o formulário abre já preenchido com os
+     * dados do título — o que falta é só o dado fiscal, que é de quem emite.
+     * Nada é transmitido sem a confirmação dele.
+     */
+    const q = this.route.snapshot.queryParamMap;
+    if (q.get('emitir')) {
+      const idReceita = q.get('receivableId');
+      this.form.patchValue({
+        externalId:   idReceita ? `AR-${idReceita}` : '',
+        description:  q.get('descricao') ?? '',
+        servicesAmount: q.get('valor') ? Number(q.get('valor')) : null,
+        borrowerName: q.get('tomador') ?? '',
+        borrowerDoc:  q.get('documento') ?? '',
+      });
+      this.origemReceita.set(idReceita);
+      this.showEmit.set(true);
+    }
   }
+
+  /** I033: de qual conta a receber veio esta emissão (para a tela dizer). */
+  readonly origemReceita = signal<string | null>(null);
 
   statusCfg(s: FiscalStatus) { return STATUS_CFG[s] ?? { label: s, variant: 'info' as StatusVariant }; }
   typeLabel(t: string) { return TYPE_LABEL[t] ?? t; }
