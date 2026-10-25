@@ -98,6 +98,46 @@
       </div>
     }
 
+    <!-- CR-01/I091: visão "Parcelas (uma por vencimento)" — uma linha por parcela,
+         com conteúdo próprio, no mesmo padrão de Contas a pagar. -->
+    @if (ehVisaoParcelas()) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Título</th>
+              <th class="th">Contratante</th>
+              <th class="th">Parcela</th>
+              <th class="th">Vencimento</th>
+              <th class="th">Valor</th>
+              <th class="th">Recebido</th>
+              <th class="th">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of parcelaRows(); track p.tituloId + '-' + p.rotulo) {
+              <tr class="tr">
+                <td class="td td--mono">{{ p.code }}</td>
+                <td class="td">{{ p.contractorName }}</td>
+                <td class="td td--mono">{{ p.rotulo }}</td>
+                <td class="td">{{ p.dueDate }}</td>
+                <td class="td">{{ p.value }}</td>
+                <td class="td">{{ p.paid }}</td>
+                <td class="td">{{ p.status }}</td>
+              </tr>
+            }
+            @if (!store.loading() && parcelaRows().length === 0) {
+              <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">
+                Nenhum título desta página tem parcelas. Use "Lançamentos (um por título)" para ver as contas.
+              </td></tr>
+            }
+            @if (store.loading()) {
+              <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -174,6 +214,7 @@
         </tbody>
       </table>
     </div>
+    }
 
     <div class="pagination">
       <div class="pagination__nav">
@@ -246,6 +287,35 @@
             <select class="select" [(ngModel)]="localFilters.contractor">
               <option value="">Todos os contratantes</option>
               @for (o of optContractor(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <!-- CR-02/I092: filtros equivalentes aos de Contas a pagar. -->
+          <div class="form-group">
+            <label>Contrato</label>
+            <select class="select" [(ngModel)]="localFilters.contract">
+              <option value="">Todos</option>
+              @for (o of optContract(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Categoria/Conta</label>
+            <select class="select" [(ngModel)]="localFilters.accountPlan">
+              <option value="">Todas</option>
+              @for (o of optAccountPlan(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Projeto</label>
+            <select class="select" [(ngModel)]="localFilters.project">
+              <option value="">Todos</option>
+              @for (o of optProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Centro de custo</label>
+            <select class="select" [(ngModel)]="localFilters.costCenter">
+              <option value="">Todos</option>
+              @for (o of optCostCenter(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
             </select>
           </div>
         </div>

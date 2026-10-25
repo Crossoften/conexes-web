@@ -1,10 +1,13 @@
 // src/app/features/accounts-receivable/accounts-receivable-list.page.ts
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgClass, CurrencyPipe } from '@angular/common';
+import { environment } from '../../../environments/environment';
 import { AccountsReceivableStore } from './accounts-receivable.store';
 import { AccountsReceivableService } from './accounts-receivable.service';
+import { PurchasesService } from '../purchases/purchases.service';
 import { ReceivableAccount, ReceivableFilters, FilterOption } from './accounts-receivable.model';
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
@@ -20,9 +23,11 @@ import { NotificationService } from '../../shared/services/notification.service'
 })
 export class AccountsReceivableListPage implements OnInit {
   readonly store = inject(AccountsReceivableStore);
-  private svc    = inject(AccountsReceivableService);
-  private notify = inject(NotificationService);
-  private router = inject(Router);
+  private svc     = inject(AccountsReceivableService);
+  private lookups = inject(PurchasesService);
+  private http    = inject(HttpClient);
+  private notify  = inject(NotificationService);
+  private router  = inject(Router);
 
   /** CR-03: contas bancárias para o seletor do modal de recebimento. */
   readonly contasBancarias = signal<{ id: number; label: string }[]>([]);
@@ -34,6 +39,12 @@ export class AccountsReceivableListPage implements OnInit {
   readonly optContractor = signal<FilterOption[]>([]);
   /** CR-02/I092: o filtro de parceria existia no servidor e não tinha campo na tela. */
   readonly optPartnership = signal<FilterOption[]>([]);
+  /** CR-02/I092: filtros equivalentes aos de Contas a pagar (contrato, categoria/conta,
+   *  projeto, centro de custo). As três últimas filtram pelo rateio do título. */
+  readonly optContract    = signal<FilterOption[]>([]);
+  readonly optAccountPlan = signal<FilterOption[]>([]);
+  readonly optProject     = signal<FilterOption[]>([]);
+  readonly optCostCenter  = signal<FilterOption[]>([]);
 
   // FA-09: cadastro manual de conta a receber.
   goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
@@ -103,17 +114,60 @@ export class AccountsReceivableListPage implements OnInit {
       next: v => this.optPartnership.set(v),
       error: () => this.optPartnership.set([]),
     });
+    // CR-02/I092: contrato, categoria/conta, projeto e centro de custo — os mesmos
+    // lookups que Contas a pagar usa, para o filtro ter a mesma paridade.
+    this.lookups.getAccountPlansLookup().subscribe({
+      next: v => this.optAccountPlan.set((v as any[]).map(r => ({ value: String(r.id), label: r.name }))),
+      error: () => this.optAccountPlan.set([]),
+    });
+    this.lookups.getProjectsLookup().subscribe({
+      next: v => this.optProject.set(this.lookups.apenasAnaliticas(v as any).map((r: any) => ({ value: String(r.id), label: r.name }))),
+      error: () => this.optProject.set([]),
+    });
+    this.lookups.getCostCentersLookup().subscribe({
+      next: v => this.optCostCenter.set(this.lookups.apenasAnaliticas(v as any).map((r: any) => ({ value: String(r.id), label: r.name }))),
+      error: () => this.optCostCenter.set([]),
+    });
+    this.http.get<any>(`${environment.apiUrl}/v1/purchases/contracts?take=500`).subscribe({
+      next: res => {
+        const rows: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+        this.optContract.set(rows.map(c => ({ value: String(c.id), label: [c.number, c.title].filter(Boolean).join(' — ') || `Contrato #${c.id}` })));
+      },
+      error: () => this.optContract.set([]),
+    });
   }
 
+  // CR-01/I091: as mesmas visões de Contas a pagar. Antes "Captura de Nota Fiscal" e
+  // "Lançamentos" mostravam a MESMA tabela (sem paridade); a captura de NF já é a ação
+  // "Emitir nota fiscal" de cada linha (I033), não uma visão.
   readonly viewOptions = [
-    { label: 'Captura de Nota Fiscal', value: 'CAPTURA_NF' },
-    { label: 'Lançamentos', value: 'LANCAMENTOS' },
+    { label: 'Lançamentos (um por título)', value: 'LANCAMENTOS' },
+    { label: 'Parcelas (uma por vencimento)', value: 'PARCELAS' },
   ];
+
+  readonly ehVisaoParcelas = computed(() => this.store.view() === 'PARCELAS');
+
+  /** CR-01/I091: expande cada título da página em suas parcelas, igual a Pagar. */
+  readonly parcelaRows = computed(() =>
+    this.store.pageItems().flatMap(t =>
+      (t.installments ?? []).map(p => ({
+        tituloId: t.id,
+        code: t.code,
+        contractorName: t.contractorName,
+        rotulo: `${p.numero}/${t.installments.length}`,
+        dueDate: p.dueDate,
+        value: p.value,
+        paid: p.paid,
+        status: p.status,
+      })),
+    ),
+  );
 
   readonly pageSizeOptions = [10, 25, 50];
 
   localFilters: ReceivableFilters = {
-    status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: ''
+    status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: '',
+    contract: '', accountPlan: '', project: '', costCenter: ''
   };
 
   /** CR-02: o intervalo precisa fechar — de depois de até não filtra nada. */

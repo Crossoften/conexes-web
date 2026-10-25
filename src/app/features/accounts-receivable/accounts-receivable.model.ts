@@ -28,6 +28,18 @@ export interface ReceivableAccount {
   canReceive: boolean;
   /** E2: quantas parcelas o título já tem, para a tela saber o que oferecer. */
   installmentsCount: number;
+  /** CR-01/I091: as parcelas do título, para a visão "Parcelas (uma por vencimento)",
+   *  no mesmo padrão de Contas a pagar. */
+  installments: ReceivableInstallmentRow[];
+}
+
+/** CR-01/I091: uma parcela na visão "Parcelas". */
+export interface ReceivableInstallmentRow {
+  numero: number;
+  dueDate: string;
+  value: string;
+  paid: string;
+  status: string;
 }
 
 export interface ReceivableFilters {
@@ -43,6 +55,14 @@ export interface ReceivableFilters {
    * oferecia o campo — o filtro existia e ninguém conseguia usá-lo.
    */
   partnership: string;
+  /**
+   * CR-02/I092: filtros equivalentes aos de Contas a pagar. Contrato é vínculo
+   * direto; categoria/conta, projeto e centro de custo vêm do rateio do título.
+   */
+  contract: string;
+  accountPlan: string;
+  project: string;
+  costCenter: string;
 }
 
 /** Uma opção de select do filtro. */

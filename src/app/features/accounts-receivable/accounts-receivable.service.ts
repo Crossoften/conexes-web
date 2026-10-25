@@ -62,6 +62,11 @@ export class AccountsReceivableService {
     if (filters.contractor) params = params.set('stakeholderId', filters.contractor);
     // CR-02/I092: o servidor já aceitava partnershipId; faltava a tela mandá-lo.
     if (filters.partnership) params = params.set('partnershipId', filters.partnership);
+    // CR-02/I092: filtros equivalentes aos de Contas a pagar.
+    if (filters.contract)    params = params.set('contractId', filters.contract);
+    if (filters.accountPlan) params = params.set('accountPlanId', filters.accountPlan);
+    if (filters.project)     params = params.set('projectId', filters.project);
+    if (filters.costCenter)  params = params.set('costCenterId', filters.costCenter);
     // CR-01: o campo "Período" era texto livre e nunca chegava ao servidor.
     if (filters.dateStart)  params = params.set('startDate', filters.dateStart);
     if (filters.dateEnd)    params = params.set('endDate', filters.dateEnd);
@@ -247,6 +252,17 @@ export class AccountsReceivableService {
     // que mais importa numa lista de cobrança.
     dueDate: fmtDate(r.dueDate),
     installmentsCount: (r.installments ?? []).length,
+    // CR-01/I091: as parcelas, no formato que a visão "Parcelas" usa (padrão de Pagar).
+    installments: (r.installments ?? [])
+      .slice()
+      .sort((a, b) => (a.installment ?? 0) - (b.installment ?? 0))
+      .map(p => ({
+        numero: p.installment,
+        dueDate: fmtDate(p.dueDate),
+        value: brl.format(p.amount ?? 0),
+        paid: brl.format(p.amountReceived ?? 0),
+        status: STATUS_LABEL[p.status ?? ''] ?? (p.status ?? '—'),
+      })),
     invoiceNumber: r.invoiceNumber ?? r.document ?? '—',
     status: STATUS_LABEL[r.status ?? ''] ?? (r.status ?? '—'),
     // FIN-01: valor, saldo e situação crua para a baixa (recebimento).

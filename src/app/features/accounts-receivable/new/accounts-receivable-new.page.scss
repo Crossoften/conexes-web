@@ -52,3 +52,58 @@
 @media (max-width: 820px) {
   .grid-cols-2, .grid-cols-3 { grid-template-columns: 1fr; }
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   CR-04 / I094: paridade visual com Contas a pagar. A tela usava as mesmas
+   classes de Pagar (segmented-tabs, section-title, grid-cols-6, rateio,
+   anexos), mas o SCSS da pagina nao as definia — as abas saiam como botoes
+   nativos sem estilo e o rateio sem desenho. Abaixo, as mesmas definicoes de
+   accounts-payable-new.page.scss, para a receita ficar no padrao da despesa.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Abas (segmented tabs) — pilula roxa, igual a Pagar */
+.segmented-tabs { display: flex; background: #F3F4F6; border-radius: 50px; padding: 4px; flex-wrap: wrap; }
+.segmented-tab-btn {
+  flex: 1; border: none; background: transparent; border-radius: 50px; padding: 10px 14px;
+  font-size: 13.5px; font-weight: 600; color: var(--text-secondary, #6B7280); cursor: pointer;
+  transition: all var(--transition, 0.2s); white-space: nowrap;
+  &.active { background: var(--brand-purple, #7C3AED); color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  &:hover:not(.active) { color: var(--text-primary, #111827); }
+}
+
+/* Titulos de secao */
+.section-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-primary, #12212f); margin: 16px 0 4px 0; }
+.section-subtitle { font-size: 13.5px; color: var(--text-secondary, #5b6b7b); margin: 0 0 8px; }
+
+/* Espacamentos utilitarios */
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+
+/* Rateio: seis colunas, como em Pagar; quebra em tres abaixo de 1500px */
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
+@media (max-width: 1500px) { .grid-cols-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 820px)  { .grid-cols-6 { grid-template-columns: 1fr; } }
+
+/* Campo calculado (somente leitura) */
+.disabled-bg {
+  background-color: #F3F4F6; color: var(--text-muted, #6B7280); border-color: #E5E7EB;
+  cursor: not-allowed; pointer-events: none; font-weight: 500;
+}
+.muted-label { font-size: 12px; color: var(--text-muted, #9CA3AF); font-weight: 500; }
+
+/* Dicas e alertas */
+.hint { font-size: 13px; color: var(--text-secondary, #5b6b7b); margin: 10px 0 0; }
+.form-alert { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin: 8px 0; }
+.form-alert--error { background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; }
+
+/* Botao pequeno (baixar/remover anexo) */
+.btn-outline--sm { padding: 6px 16px; font-size: 13px; border-radius: 8px; text-decoration: none; }
+
+/* Anexos — cartao no padrao de Pagar */
+.dropzone { color: var(--text-secondary, #5b6b7b); transition: border-color .2s, background .2s; }
+.dropzone:hover { border-color: var(--brand-purple-mid, #C4B5FD); background: #FAFAFE; }
+.attachment-card {
+  display: flex; justify-content: space-between; align-items: center; padding: 14px 18px;
+  background: #fff; border: 1px solid var(--surface-border-mid, #e2e8ef); border-radius: 12px; margin-bottom: 10px;
+}
+.attachment-name { font-weight: 600; font-size: 14px; color: var(--text-primary, #12212f); }

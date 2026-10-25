@@ -21,7 +21,9 @@ interface State {
 
 const INITIAL_FILTERS: ReceivableFilters = {
   // CR-01: a data-base começa em Vencimento — é a pergunta de uma tela de cobrança.
-  status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: ''
+  status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: '',
+  // CR-02/I092: filtros equivalentes aos de Contas a pagar.
+  contract: '', accountPlan: '', project: '', costCenter: ''
 };
 
 @Injectable()
@@ -35,7 +37,7 @@ export class AccountsReceivableStore {
     total: 0,
     loading: false,
     error: null,
-    view: 'CAPTURA_NF',
+    view: 'LANCAMENTOS',
     filters: { ...INITIAL_FILTERS },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
