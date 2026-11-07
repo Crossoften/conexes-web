@@ -137,6 +137,15 @@
             </div>
           </div>
 
+          <!-- card #720 (AC-04 / RF32): centros de custo nas permissões do usuário -->
+          <div class="form-row grid-cols-1">
+            <div class="form-group">
+              <label>Centros de custo permitidos</label>
+              <app-cost-center-picker [selected]="costCenterIds" (selectedChange)="costCenterIds = $event" />
+              <span class="field-hint">Nenhum marcado: o usuário trabalha em todos os centros de custo. Marcados: requisições só nesses centros.</span>
+            </div>
+          </div>
+
         </div>
       </form>
     </div>

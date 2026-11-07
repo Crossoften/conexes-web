@@ -5,11 +5,12 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { UsersService } from '../../users.service';
 import { PermissionProfile, EntityLite, PositionOption } from '../../users.model';
+import { CostCenterPickerComponent } from '../../components/cost-center-picker.component';
 
 @Component({
   selector: 'app-user-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, NgClass, CostCenterPickerComponent],
   templateUrl: './user-new.page.html',
   styleUrl: './user-new.page.scss',
 })
@@ -24,6 +25,7 @@ export class UserNewPage implements OnInit {
   readonly profilesLoading = signal(false);
   readonly entities        = signal<EntityLite[]>([]);
   readonly positions       = signal<PositionOption[]>([]);   // US-fix: catálogo de cargos
+  costCenterIds: number[] = [];                                // card #720 (AC-04)
 
   entityLabel(e: EntityLite): string {
     return e.tradeName || e.legalName || (e.cnpj ? `CNPJ ${e.cnpj}` : `Entidade #${e.id}`);
@@ -140,6 +142,7 @@ export class UserNewPage implements OnInit {
     if (v.permissionProfileId) {
       payload.permissionProfileId = +v.permissionProfileId;
     }
+    if (this.costCenterIds.length) payload.costCenterIds = this.costCenterIds; // card #720 (AC-04)
 
     this.svc.createUser(payload).subscribe({
       next: () => {

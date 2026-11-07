@@ -327,7 +327,12 @@ export class QuotationNewPage {
     });
     this.svc.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
     this.svc.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
-    this.svc.getCostCentersLookup().subscribe({ next: v => this.costCenters.set(v), error: () => {} });
+    // card #720 (AC-04): quem tem centros de custo vinculados só vê esses (o back recusa os demais).
+    const permitidos = this.auth.user()?.role === 'Master' ? [] : (this.auth.user()?.costCenterIds ?? []);
+    this.svc.getCostCentersLookup().subscribe({
+      next: v => this.costCenters.set(permitidos.length ? v.filter(c => permitidos.includes(Number(c.id))) : v),
+      error: () => {},
+    });
     this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
     this.svc.getProductsServicesLookup().subscribe({ next: v => { this.products.set(v); this.syncProductQueries(); }, error: () => {} });
     this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
