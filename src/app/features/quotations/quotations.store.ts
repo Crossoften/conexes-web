@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Quotation } from './quotations.model';
 import { PurchasesService } from '../purchases/purchases.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { formatCivilDateBR } from '../../shared/utils/format';
 import {
   PurchaseRequest,
   PurchaseRequestStatus,
@@ -25,11 +26,8 @@ interface State {
   selected:    Set<string>;
 }
 
-function formatDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
-}
+// card #720 (CP-01): data civil gravada à meia-noite UTC não recua um dia
+const formatDate = (iso?: string | null): string => formatCivilDateBR(iso);
 
 /**
  * D2: a situação do PEDIDO em português. Entrar na Etapa 6 significa pedido

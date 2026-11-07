@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { PurchasesService } from '../purchases/purchases.service';
+import { formatCivilDateBR } from '../../shared/utils/format';
 import {
   PurchaseDashboardResponse,
   PurchaseDashboardDistribution,
@@ -138,8 +139,6 @@ export class PurchasingDashboardPage {
   }
 
   private formatDate(iso?: string | null): string {
-    if (!iso) return '—';
-    const date = new Date(iso);
-    return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
+    return formatCivilDateBR(iso); // card #720: data civil sem recuar um dia
   }
 }

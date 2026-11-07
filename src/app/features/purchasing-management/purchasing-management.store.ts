@@ -2,6 +2,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { PurchasingReq } from './purchasing-management.model';
 import { PurchasesService } from '../purchases/purchases.service';
+import { formatCivilDateBR } from '../../shared/utils/format';
 import {
   PurchaseRequest,
   PurchaseRequestStatus,
@@ -24,11 +25,8 @@ interface State {
   selectedIds: Set<string>;
 }
 
-function formatDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
-}
+// card #720 (CP-01): datas civis da requisição — 07/11 gravado aparecia 06/11
+const formatDate = (iso?: string | null): string => formatCivilDateBR(iso);
 
 function toRow(r: PurchaseRequest): PurchasingReq {
   return {

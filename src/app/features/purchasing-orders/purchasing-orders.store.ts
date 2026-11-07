@@ -2,13 +2,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { PurchasesService } from '../purchases/purchases.service';
 import { PurchaseOrder } from '../purchases/purchases.model';
+import { formatCivilDateBR } from '../../shared/utils/format';
 import { OrderRow } from './purchasing-orders.model';
 
-function fmtDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR');
-}
+// card #720 (CP-01): data civil gravada à meia-noite UTC não recua um dia
+const fmtDate = (iso?: string | null): string => formatCivilDateBR(iso);
 
 function fmtCurrency(v?: number | null): string {
   return (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
