@@ -135,6 +135,9 @@ export class BudgetNewPage implements OnInit {
             .map(p => ({ id: `cc:${p.id}`, nome: `Centro de custo: ${nome(p)}` })),
           ...list.filter(p => p._entityType === 'project' && analitica(p))
             .map(p => ({ id: `pr:${p.id}`, nome: `Projeto: ${nome(p)}` })),
+          // atividade também é registro de projeto (kind Atividade) e já era aceita como projectId
+          ...list.filter(p => p._entityType === 'activity' && analitica(p))
+            .map(p => ({ id: `pr:${p.id}`, nome: `Atividade: ${nome(p)}` })),
         ];
         this.atividades = list
           .filter(p => p._entityType === 'activity' && analitica(p))
