@@ -55,8 +55,12 @@ export class BudgetNewPage implements OnInit {
   readonly tiposLancamento = ['Receita', 'Despesa'];
 
   // FA-10: Projeto/CC e Atividade carregados do cadastro (GET /v1/projects).
-  projetos: { id: number; nome: string }[] = [];
-  atividades: { id: number; nome: string }[] = [];
+  // Card #720 (FN-07): /v1/projects devolve centros de custo E projetos, de tabelas diferentes
+  // (ids podem coincidir). O valor da opção leva o tipo — "cc:22" / "pr:18" — e o envio separa
+  // costCenterId de projectId; antes o centro de custo ia como projectId e a API dava 400.
+  projetos: { id: string; nome: string }[] = [];
+  atividades: { id: string; nome: string }[] = [];
+  readonly errorMsg = signal<string | null>(null);
   // OR-01: contas analíticas do plano de contas, para as rubricas do orçamento.
   contas: AccountPlanOption[] = [];
 
@@ -123,13 +127,18 @@ export class BudgetNewPage implements OnInit {
     this.http.get<any>(`${environment.apiUrl}/v1/projects?take=1000`).subscribe({
       next: (res) => {
         const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
-        const nome = (p: any) => p.name ?? p.title ?? `#${p.id}`;
-        this.projetos = list
-          .filter((p) => p.type !== 'atividade')
-          .map((p) => ({ id: p.id, nome: nome(p) }));
+        const nome = (p: any) => `${p.code ? p.code + ' — ' : ''}${p.name ?? p.title ?? `#${p.id}`}`;
+        // CC-01: só as analíticas recebem lançamento (o back recusa a sintética com 400).
+        const analitica = (p: any) => p.classification !== 'Sintetica';
+        this.projetos = [
+          ...list.filter(p => p._entityType === 'cost_center' && analitica(p))
+            .map(p => ({ id: `cc:${p.id}`, nome: `Centro de custo: ${nome(p)}` })),
+          ...list.filter(p => p._entityType === 'project' && analitica(p))
+            .map(p => ({ id: `pr:${p.id}`, nome: `Projeto: ${nome(p)}` })),
+        ];
         this.atividades = list
-          .filter((p) => p.type === 'atividade')
-          .map((p) => ({ id: p.id, nome: nome(p) }));
+          .filter(p => p._entityType === 'activity' && analitica(p))
+          .map(p => ({ id: `pr:${p.id}`, nome: nome(p) }));
       },
       error: () => {},
     });
@@ -166,10 +175,12 @@ export class BudgetNewPage implements OnInit {
       const item: any = { amount: Number(iv.valor) || 0 };
       const conta = Number(iv.contaPlano);
       if (conta) item.accountPlanId = conta;
-      const proj = Number(iv.projetoItem || v.projetoCentroCusto);
-      if (proj) item.projectId = proj;
-      const sub = Number(v.subprojeto);
-      if (sub) item.subProjectId = sub;
+      const [tipo, idTxt] = String(iv.projetoItem || v.projetoCentroCusto || '').split(':');
+      const alvo = Number(idTxt);
+      if (alvo && tipo === 'cc') item.costCenterId = alvo;
+      if (alvo && tipo === 'pr') item.projectId = alvo;
+      const [subTipo, subId] = String(v.subprojeto || '').split(':');
+      if (subTipo === 'pr' && Number(subId)) item.subProjectId = Number(subId);
       const atv = this.atividades.find((a) => String(a.id) === String(v.atividade));
       if (atv) item.activity = atv.nome;
       return item;
@@ -188,10 +199,27 @@ export class BudgetNewPage implements OnInit {
     };
   }
 
+  /** Card #720 (FN-07): o motivo fica escrito na tela (o toast some em 4 s). */
+  private falhar(msg: string): void {
+    this.errorMsg.set(msg);
+    this.notify.error(msg);
+  }
+
   onSubmit() {
+    this.errorMsg.set(null);
     if (!this.form.valid) {
       this.form.markAllAsTouched();
-      this.notify.error('Preencha os campos obrigatórios e ao menos uma rubrica com valor.');
+      const semValor = this.itens.controls
+        .map((c, i) => (c.get('valor')?.invalid ? i + 1 : 0))
+        .filter(Boolean);
+      const cabecalhoOk = Object.keys(this.form.controls)
+        .filter(k => k !== 'itens')
+        .every(k => this.form.get(k)?.valid);
+      this.falhar(
+        cabecalhoOk && semValor.length
+          ? `Rubrica ${semValor.join(', ')} sem valor: informe o valor ou clique em "Remover".`
+          : 'Preencha os campos obrigatórios destacados (título, periodicidade, tipo, período) e ao menos uma rubrica com valor.',
+      );
       return;
     }
     this.saving.set(true);
@@ -203,7 +231,7 @@ export class BudgetNewPage implements OnInit {
       error: (err) => {
         this.saving.set(false);
         const msg = err?.error?.message;
-        this.notify.error(Array.isArray(msg) ? msg[0] : (msg ?? 'Erro ao salvar o orçamento.'));
+        this.falhar(Array.isArray(msg) ? msg.join(' ') : (msg ?? 'Erro ao salvar o orçamento.'));
       },
     });
   }
