@@ -54,8 +54,9 @@ export const appRoutes: Routes = [
 
       // Compras
       { path: 'purchasing-dashboard', canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/purchasing-dashboard/purchasing-dashboard.routes').then(m => m.purchasingDashboardRoutes) },
-      // HI-07: rota de relatórios de Compras removida do menu e do roteamento (Central de Relatórios futura).
-      // { path: 'purchasing-reports', ... }
+      // HI-07 + card #720 (FN-08): o relatório de Compras mora na Central de Relatórios; a rota
+      // antiga deixou de dar 404 e leva para a aba dele.
+      { path: 'purchasing-reports', redirectTo: 'reports?aba=compras', pathMatch: 'full' },
       { path: 'quotations',           canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Cotações' },         loadChildren: () => import('./features/quotations/quotations.routes').then(m => m.quotationsRoutes) },
       { path: 'quotation-map',        canActivate: [permissionGuard], data: { module: 'Compras' },                              loadChildren: () => import('./features/quotation-map/quotation-map.routes').then(m => m.quotationMapRoutes) },
       // COM-Pedidos x Recebimento / I027: o recebimento foi unificado dentro do Pedido.
@@ -65,7 +66,6 @@ export const appRoutes: Routes = [
       { path: 'purchasing-management', canActivate: [permissionGuard], data: { module: 'Compras' },                             loadChildren: () => import('./features/purchasing-management/purchasing-management.routes').then(m => m.purchasingManagementRoutes) },
       { path: 'purchasing-orders',     canActivate: [permissionGuard], data: { module: 'Compras', subMenu: 'Pedidos de Compra' }, loadChildren: () => import('./features/purchasing-orders/purchasing-orders.routes').then(m => m.purchasingOrdersRoutes) },
       { path: 'purchasing-registries', canActivate: [permissionGuard], data: { module: 'Cadastros', subMenu: 'Produtos e Serviços' }, loadChildren: () => import('./features/purchasing-registries/purchasing-registries.routes').then(m => m.purchasingRegistriesRoutes) },
-      // { path: 'purchasing-reports',    loadChildren: () => import('./features/purchasing-reports/purchasing-reports.routes').then(m => m.purchasingReportsRoutes) },
 
       // Financeiro
       { path: 'financial-transfers',  canActivate: [permissionGuard], data: { module: 'Financeiro' },                          loadChildren: () => import('./features/financial-transfers/financial-transfers.routes').then(m => m.financialTransfersRoutes) },
@@ -74,8 +74,9 @@ export const appRoutes: Routes = [
       { path: 'accounts-receivable',  canActivate: [permissionGuard], data: { module: 'Financeiro', subMenu: 'Contas a Receber' }, loadChildren: () => import('./features/accounts-receivable/accounts-receivable.routes').then(m => m.accountsReceivableRoutes) },
       { path: 'budgets',              canActivate: [permissionGuard], data: { module: 'Financeiro', subMenu: 'Orçamentos' },       loadChildren: () => import('./features/budgets/budgets.routes').then(m => m.budgetsRoutes) },
       { path: 'invoice-review',       canActivate: [permissionGuard], data: { module: 'Financeiro' },                          loadChildren: () => import('./features/invoice-review/invoice-review.routes').then(m => m.invoiceReviewRoutes) },
-      // HI-07: rota de relatórios financeiros removida do menu e do roteamento (Central de Relatórios futura).
-      // { path: 'financial-reports', ... }
+      // HI-07 + card #720 (FN-08): relatórios financeiros na Central de Relatórios (aba Financeiro).
+      { path: 'financial-reports', redirectTo: 'reports?aba=financeiro', pathMatch: 'full' },
+      { path: 'reports', loadComponent: () => import('./features/reports/reports.page').then(m => m.ReportsPage) },
       { path: 'integrations',         loadChildren: () => import('./features/integrations/integrations.routes').then(m => m.integrationsRoutes) },
 
       // Outros
