@@ -86,7 +86,10 @@ export class InvoiceReviewService {
 
   /** Pedidos de compra disponíveis para faturar (pré-lançar). */
   orders(): Observable<OrderOption[]> {
-    return this.http.get<any>(`${environment.apiUrl}/v1/purchases/orders`).pipe(map(res => {
+    // card #720 (CP-05): só os ainda não faturados (o já faturado continuava no seletor) e
+    // não apenas os 10 mais recentes (padrão da paginação da API).
+    const params = { billable: 'true', take: '200' };
+    return this.http.get<any>(`${environment.apiUrl}/v1/purchases/orders`, { params }).pipe(map(res => {
       const rows: any[] = Array.isArray(res) ? res : res?.data ?? [];
       return rows.map(o => ({ id: o.id, supplier: o.supplier?.name ?? `Fornecedor #${o.supplierId}`, total: o.totalValue ?? 0 }));
     }));

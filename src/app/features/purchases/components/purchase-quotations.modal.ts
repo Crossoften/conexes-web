@@ -230,6 +230,26 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     return (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
+  /**
+   * Card #720 (CP-03): a proposta por item (portal do fornecedor, registro na Etapa 3)
+   * grava o preço em cada item e deixa `unitValue` da proposta em 0 — a coluna mostrava
+   * R$ 0,00. Com um item cotado, mostra o unitário dele; com vários, o intervalo.
+   */
+  unitValueLabel(q: PurchaseQuotation): string {
+    const cotados = (q.items ?? []).filter(it => !it.unavailable && Number(it.unitValue) > 0);
+    if (!cotados.length) return this.fmtCurrency(q.unitValue);
+    const valores = cotados.map(it => Number(it.unitValue));
+    const min = Math.min(...valores), max = Math.max(...valores);
+    return min === max ? this.fmtCurrency(min) : `${this.fmtCurrency(min)} a ${this.fmtCurrency(max)}`;
+  }
+
+  unitValueTitle(q: PurchaseQuotation): string {
+    const nomes = new Map(this.requestItems().map(ri => [ri.id, ri.name]));
+    return (q.items ?? [])
+      .map(it => `${nomes.get(it.purchaseRequestItemId) ?? 'Item #' + it.purchaseRequestItemId}: ${it.unavailable ? 'não disponível' : this.fmtCurrency(it.unitValue)}`)
+      .join('\n');
+  }
+
   statusLabel(s: QuotationStatus): string   { return this.statusConfig[s]?.label ?? s; }
   statusVariant(s: QuotationStatus): string { return this.statusConfig[s]?.variant ?? 'neutral'; }
 
