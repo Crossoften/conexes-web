@@ -8,6 +8,10 @@ import { environment } from '../../../../environments/environment';
 import { IntegrationsService } from '../integrations.service';
 import { FiscalDocument, FiscalStatus } from '../integrations.model';
 
+/** Hoje (AAAA-MM-DD) na data civil de São Paulo — o "hoje" de quem usa o sistema. */
+const hojeSP = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+
 interface ContatoOption { id: number; name: string; document: string; }
 
 type StatusVariant = 'success' | 'warning' | 'danger' | 'info';
@@ -167,8 +171,11 @@ export class FiscalDocumentsPage implements OnInit {
 
   // ── COM-Sincronizar / I032 (decisão D3): a sincronização PEDE INTERVALO ────
   // Antes o botão trazia "as últimas 20" e ninguém sabia de qual período.
-  periodoDe = '';
-  periodoAte = '';
+  // card #720 (NF-02): com o período vazio o botão ficava desabilitado e o clique não dava
+  // retorno nenhum. O intervalo já nasce preenchido (do dia 1º do mês até hoje, data civil
+  // de São Paulo) e continua editável.
+  periodoDe = hojeSP().slice(0, 8) + '01';
+  periodoAte = hojeSP();
   get periodoInvalido(): boolean {
     return !!this.periodoDe && !!this.periodoAte && this.periodoDe > this.periodoAte;
   }
@@ -188,7 +195,9 @@ export class FiscalDocumentsPage implements OnInit {
       next: r => {
         this.busy.set(false);
         const fora = r.descartadas ? ` ${r.descartadas} nota(s) fora do período foram ignoradas.` : '';
-        this.banner.set({ kind: 'ok', msg: `Sincronização de ${this.dataBR(this.periodoDe)} a ${this.dataBR(this.periodoAte)}: ${r.imported} nota(s) recebida(s) importada(s).${fora}` });
+        const nenhuma = !r.imported && !r.descartadas
+          ? ' O provedor não devolveu nenhuma nota para este período.' : '';
+        this.banner.set({ kind: 'ok', msg: `Sincronização de ${this.dataBR(this.periodoDe)} a ${this.dataBR(this.periodoAte)}: ${r.imported} nota(s) recebida(s) importada(s).${fora}${nenhuma}` });
         this.load();
       },
       error: err => { this.busy.set(false); this.banner.set({ kind: 'err', msg: err?.error?.message ?? 'Falha ao sincronizar as notas recebidas.' }); },
