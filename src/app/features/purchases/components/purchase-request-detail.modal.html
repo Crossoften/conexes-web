@@ -39,6 +39,7 @@
         <button class="tab-btn" [class.active]="activeTab === 'LOCAL'" (click)="setTab('LOCAL')">Local de entrega</button>
         <button class="tab-btn" [class.active]="activeTab === 'ANEXOS'" (click)="setTab('ANEXOS')">Anexos</button>
         <button class="tab-btn" [class.active]="activeTab === 'HISTORICO'" (click)="setTab('HISTORICO')">Histórico</button>
+        <button class="tab-btn" [class.active]="activeTab === 'COMUNICACAO'" (click)="setTab('COMUNICACAO')">Comunicação</button>
       </div>
 
       @if (loading) {
@@ -245,6 +246,11 @@
                 }
               </div>
             }
+          }
+
+          <!-- ══ COMUNICAÇÃO (card #720, CM-01) ═══════════════════════════ -->
+          @if (activeTab === 'COMUNICACAO') {
+            <app-process-chat processType="purchase_request" [processId]="request.id" />
           }
 
         </div>

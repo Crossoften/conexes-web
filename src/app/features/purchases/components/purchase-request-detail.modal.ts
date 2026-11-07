@@ -4,8 +4,9 @@ import { PurchaseRequest, PurchaseRequestActionLog, PurchaseFile, PurchaseRef, P
 import { PurchasesService } from '../purchases.service';
 import { UploadService } from '../../../shared/services/upload.service';
 import { formatCivilDateBR } from '../../../shared/utils/format';
+import { ProcessChatComponent } from '../../../shared/components/process-chat/process-chat.component';
 
-type DetailTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS' | 'HISTORICO';
+type DetailTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS' | 'HISTORICO' | 'COMUNICACAO';
 
 /** Rótulos amigáveis para os códigos de ação do histórico (fallback prettifica o código). */
 const ACTION_LABELS: Record<string, string> = {
@@ -118,7 +119,7 @@ const EVENT_ACTIONS = new Set(['AWARD', 'ORDER_RECEIPT', 'APPROVE_LEVEL', ...QUO
 @Component({
   selector: 'app-purchase-request-detail-modal',
   standalone: true,
-  imports: [],
+  imports: [ProcessChatComponent],
   templateUrl: './purchase-request-detail.modal.html',
   styleUrl: './purchase-request-detail.modal.scss',
 })

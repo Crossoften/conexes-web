@@ -6,11 +6,12 @@ import { AccountabilityService } from './accountability.service';
 import { AccountabilityDetail, ACC_STATUS_LABEL, ITEM_STATUS_LABEL } from './accountability.model';
 import { NotificationService } from '../../shared/services/notification.service';
 import { formatCivilDateBR } from '../../shared/utils/format';
+import { ProcessChatComponent } from '../../shared/components/process-chat/process-chat.component';
 
 @Component({
   selector: 'app-accountability-detail',
   standalone: true,
-  imports: [NgClass, RouterLink],
+  imports: [NgClass, RouterLink, ProcessChatComponent],
   templateUrl: './accountability-detail.page.html',
   styleUrl: './accountability-detail.page.scss',
 })
