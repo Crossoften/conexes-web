@@ -75,6 +75,8 @@ export class FinancialReportsPage implements OnInit {
     const map: Record<string, string> = {
       Open: 'Em aberto', Paid: 'Pago/Recebido', UnderReview: 'Em análise',
       Returned: 'Devolvido', Cancelled: 'Cancelado', Reconciled: 'Conciliado',
+      // card #720 (FN-08): status das baixas parciais/renegociação apareciam em inglês
+      PartiallyPaid: 'Parcialmente pago', Renegotiated: 'Renegociado', Overdue: 'Vencido',
     };
     return map[s] ?? s;
   }
