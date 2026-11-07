@@ -59,7 +59,10 @@
 </div>
 
 <script>
-const API = "https://homolog.crosoften.com:8047/v1";
+// card #720: o portal fala com a API do ambiente onde foi publicado (homologação nunca chega à produção)
+const API = /(^|\.)conexao3setor\.com\.br$/.test(location.hostname)
+  ? "https://conexao3setor.com.br:3000/v1"
+  : "https://homolog.crosoften.com:8047/v1";
 const params = new URLSearchParams(location.search);
 const token = params.get('t') || params.get('token') || '';
 const root = document.getElementById('root');
