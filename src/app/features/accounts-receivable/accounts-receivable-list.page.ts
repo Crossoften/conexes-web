@@ -245,6 +245,21 @@ export class AccountsReceivableListPage implements OnInit {
   }
   closeView(): void { this.viewItem.set(null); }
 
+  // card #720 (PG-01): tentar de novo a cobrança Asaas e mostrar o resultado no próprio detalhe.
+  readonly cobrancaBusy = signal(false);
+  gerarCobranca(r: any): void {
+    this.cobrancaBusy.set(true);
+    this.svc.retryAsaasCharge(r.id).subscribe({
+      next: atualizado => {
+        this.cobrancaBusy.set(false);
+        this.viewItem.set({ ...r, ...atualizado });
+        if (atualizado?.asaasInvoiceUrl) this.notify.success('Cobrança gerada no Asaas.');
+        else this.notify.error(`Cobrança não gerada: ${atualizado?.asaasChargeError ?? 'motivo não informado'}`);
+      },
+      error: err => { this.cobrancaBusy.set(false); this.notify.error(err?.error?.message ?? 'Não foi possível gerar a cobrança.'); },
+    });
+  }
+
   /**
    * COM-Emitir / I033 (decisão D3): a emissão de nota fiscal fica em Contas a
    * receber. A nota é emitida CONTRA UMA RECEITA, então a ação é da linha e leva
