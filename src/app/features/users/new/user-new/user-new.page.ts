@@ -102,9 +102,17 @@ export class UserNewPage implements OnInit {
     this.errorMsg.set(null);
   }
 
+  /** card #720 (CD-02): mesmo padrão do cadastro de fornecedor — borda + "Campo obrigatório". */
+  isInvalid(name: string): boolean {
+    const c = this.form.get(name);
+    return !!c && c.invalid && c.touched;
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // card #720 (CD-02): o envio vazio só escurecia as bordas, sem texto nenhum.
+      this.errorMsg.set('Preencha os campos obrigatórios destacados.');
       return;
     }
 

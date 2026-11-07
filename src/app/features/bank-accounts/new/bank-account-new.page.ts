@@ -159,10 +159,34 @@ export class BankAccountNewPage implements OnInit {
     return isNaN(n) ? 0 : n;
   }
 
+  // card #720 (CD-02): o aviso citava sempre "banco, entidade dona, tipo de conta e saldo
+  // inicial", mesmo quando o que travava eram telefones e e-mail. Agora lista os que faltam.
+  private readonly rotulos: Record<string, string> = {
+    banco: 'banco', entidadeDona: 'entidade dona', tipoConta: 'tipo de conta',
+    dataAbertura: 'data de abertura', apelidoConta: 'apelido da conta', agenciaDigito: 'agência',
+    numeroContaDigito: 'número da conta', saldoInicial: 'saldo inicial',
+    telefonePrincipal: 'telefone principal', telefoneCelular: 'telefone celular', emailContato: 'e-mail de contato',
+  };
+
+  isInvalid(name: string): boolean {
+    const c = this.form.get(name);
+    return !!c && c.invalid && c.touched;
+  }
+
+  camposPendentes(): string[] {
+    return Object.keys(this.rotulos).filter(k => this.form.get(k)?.invalid)
+      .map(k => k === 'emailContato' && this.form.get(k)?.hasError('email') ? 'e-mail de contato (inválido)' : this.rotulos[k]);
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.errorMsg.set('Preencha os campos obrigatórios destacados (banco, entidade dona, tipo de conta e saldo inicial).');
+      const faltam = this.camposPendentes();
+      this.errorMsg.set(
+        faltam.length
+          ? `Preencha os campos obrigatórios destacados: ${faltam.join(', ')}.`
+          : 'Preencha os campos obrigatórios destacados.',
+      );
       return;
     }
 

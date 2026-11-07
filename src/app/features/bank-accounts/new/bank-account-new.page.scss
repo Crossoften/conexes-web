@@ -181,3 +181,6 @@
   }
   &__empty { padding: 12px; color: var(--text-muted, #98A2B3); font-size: 13px; }
 }
+
+// card #720 (CD-02): padrão de erro dos obrigatórios, igual ao cadastro de fornecedor
+.field-error { display: block; margin-top: 4px; font-size: 11.5px; color: #EF4444; }

@@ -23,21 +23,24 @@
               <label>Nome <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="Digite aqui..."
                 formControlName="name"
-                [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
+                [class.is-invalid]="isInvalid('name')">
+              @if (isInvalid('name')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>Sobrenome <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="Digite aqui..."
                 formControlName="surname"
-                [class.is-invalid]="form.get('surname')?.invalid && form.get('surname')?.touched">
+                [class.is-invalid]="isInvalid('surname')">
+              @if (isInvalid('surname')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>CPF <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="000.000.000-00"
                 formControlName="document"
-                [class.is-invalid]="form.get('document')?.invalid && form.get('document')?.touched"
+                [class.is-invalid]="isInvalid('document')"
                 (input)="applyCpfMask($event)"
                 (keydown)="onlyNumbers($event)">
+              @if (isInvalid('document')) { <span class="field-error">Campo obrigatório</span> }
             </div>
           </div>
 
@@ -93,7 +96,10 @@
               <label>E-mail <span class="req">*</span></label>
               <input type="email" class="form-control" placeholder="email@exemplo.com"
                 formControlName="email"
-                [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
+                [class.is-invalid]="isInvalid('email')">
+              @if (isInvalid('email')) {
+                <span class="field-error">{{ form.get('email')?.hasError('email') ? 'E-mail inválido' : 'Campo obrigatório' }}</span>
+              }
             </div>
             <div class="form-group">
               <label>Senha</label>
@@ -117,7 +123,7 @@
               } @else {
                 <div class="select-wrap">
                   <select class="form-control" formControlName="permissionProfileId"
-                    [class.is-invalid]="form.get('permissionProfileId')?.invalid && form.get('permissionProfileId')?.touched">
+                    [class.is-invalid]="isInvalid('permissionProfileId')">
                     <option [ngValue]="null">Selecione um perfil</option>
                     @for (p of profiles(); track p.id) {
                       <option [value]="p.id">{{ p.name }}</option>
@@ -125,6 +131,7 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
+                @if (isInvalid('permissionProfileId')) { <span class="field-error">Campo obrigatório</span> }
               }
               <span class="field-hint">As permissões do usuário são herdadas do perfil selecionado. Crie ou ajuste perfis em Permissões.</span>
             </div>
