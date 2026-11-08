@@ -10,11 +10,12 @@ import { Router, RouterLink } from "@angular/router";
 import { BaixaModalComponent, BaixaResult, BaixaParcela } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
+import { ProcessChatComponent } from '../../shared/components/process-chat/process-chat.component';
 
 @Component({
   selector: 'app-accounts-payable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent, RenegotiateModalComponent],
+  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent, RenegotiateModalComponent, ProcessChatComponent],
   providers: [AccountsPayableStore],
   templateUrl: './accounts-payable-list.page.html',
   styleUrl: './accounts-payable-list.page.scss',

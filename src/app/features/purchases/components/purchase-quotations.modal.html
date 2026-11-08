@@ -117,7 +117,7 @@
               @for (q of quotations(); track q.id) {
                 <tr>
                   <td>{{ supplierName(q) }}</td>
-                  <td class="right">{{ fmtCurrency(q.unitValue) }}</td>
+                  <td class="right" [title]="unitValueTitle(q)">{{ unitValueLabel(q) }}</td>
                   <td class="right">{{ fmtCurrency(q.totalValue) }}</td>
                   <td class="right">{{ q.freight != null ? fmtCurrency(q.freight) : '—' }}</td>
                   <td class="right">{{ q.discount != null ? fmtCurrency(q.discount) : '—' }}</td>

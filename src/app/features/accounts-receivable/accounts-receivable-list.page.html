@@ -420,8 +420,27 @@
         @if (r.installments?.length) {
           <div><span style="color:#6B7280;">Parcelas:</span> {{ r.installments.length }}</div>
         }
+        <!-- card #720 (PG-01): quem lança precisa saber se a cobrança saiu — link ou motivo -->
+        <div data-testid="asaas-cobranca" style="margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid #E5E7EB;background:#F9FAFB;">
+          <div style="font-weight:600;margin-bottom:4px;">Cobrança Asaas</div>
+          @if (r.asaasInvoiceUrl) {
+            <div>Gerada · <a [href]="r.asaasInvoiceUrl" target="_blank" rel="noopener" style="color:#7C3AED;font-weight:600;">Abrir cobrança</a></div>
+            <div style="color:#6B7280;font-size:12px;word-break:break-all;">{{ r.asaasInvoiceUrl }}</div>
+          } @else if (r.asaasPaymentId) {
+            <div>Registrada ({{ r.asaasPaymentId }}), sem link de pagamento.</div>
+          } @else if (r.asaasChargeError) {
+            <div style="color:#B91C1C;">Não gerada: {{ r.asaasChargeError }}</div>
+          } @else {
+            <div style="color:#6B7280;">Não gerada.</div>
+          }
+        </div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
+        @if (!r.asaasPaymentId && (r.status === 'Open' || r.status === 'PartiallyPaid')) {
+          <button type="button" class="btn-outline btn-outline--orange" [disabled]="cobrancaBusy()" (click)="gerarCobranca(r)">
+            {{ cobrancaBusy() ? 'Gerando…' : 'Gerar cobrança' }}
+          </button>
+        }
         <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
       </div>
     </div>

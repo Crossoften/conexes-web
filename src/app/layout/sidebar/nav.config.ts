@@ -103,6 +103,14 @@ export const NAV_ITEMS: NavItem[] = [
     route: '/accountability',
     icon:  'accountability',
   },
+  {
+    // card #720 (FN-08): os relatórios saíram dos módulos (HI-07) e ficaram sem acesso
+    // nenhum (404). Voltam concentrados numa Central, como HI-07 pede; cada aba aparece
+    // para quem enxerga o módulo dela (Financeiro / Compras).
+    label: 'Relatórios',
+    route: '/reports',
+    icon:  'reports',
+  },
   // IT-01/HI-05: o módulo individual "Integrações" foi ELIMINADO do menu (diretriz confirmada no
   // Dossiê Consolidado 24/08). Cada função migrou para o módulo dono do processo (Compras/Financeiro);
   // os parâmetros técnicos ficam em Configurações gerais (IT-02).

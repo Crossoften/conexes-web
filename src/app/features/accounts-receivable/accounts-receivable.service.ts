@@ -30,6 +30,8 @@ interface ApiAccountReceivable {
   amountReceived?: number | null;
   status?: string | null;
   asaasInvoiceUrl?: string | null;
+  asaasPaymentId?: string | null;
+  asaasChargeError?: string | null;
   stakeholder?: { name?: string | null } | null;
   /** E2: parcelas, quando o título já foi dividido. */
   installments?: { id: number; installment: number; dueDate?: string | null; amount?: number | null; amountReceived?: number | null; status?: string | null }[] | null;
@@ -209,6 +211,11 @@ export class AccountsReceivableService {
   /** CR-01/I091: o título completo, para a janela de visualização. */
   getOne(id: number): Observable<ApiAccountReceivable> {
     return this.http.get<ApiAccountReceivable>(`${this.base}/${id}`);
+  }
+
+  /** card #720 (PG-01): gera de novo a cobrança Asaas; devolve o título com link ou erro. */
+  retryAsaasCharge(id: number): Observable<ApiAccountReceivable> {
+    return this.http.post<ApiAccountReceivable>(`${this.base}/${id}/asaas-charge`, {});
   }
 
   // ── CR-04/I094: anexos do título (a aba Anexos não existia nesta tela) ─────

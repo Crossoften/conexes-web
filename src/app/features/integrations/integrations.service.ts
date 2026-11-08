@@ -46,7 +46,8 @@ export class IntegrationsService {
    */
   syncNfseInboundPeriodo(from: string, to: string): Observable<{ imported: number; descartadas: number; periodo: { from: string | null; to: string | null } }> {
     return this.http.get<{ imported: number; descartadas: number; periodo: { from: string | null; to: string | null } }>(
-      `${this.nfeio}/inbound/nfse`, { params: { pageCount: '200', from, to } },
+      // card #720 (NF-02): a NFe.io recusa pageCount acima de 100 ("must not exceed 100").
+      `${this.nfeio}/inbound/nfse`, { params: { pageCount: '100', from, to } },
     );
   }
 

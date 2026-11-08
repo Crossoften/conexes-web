@@ -184,6 +184,7 @@ export interface PurchaseQuotationItem {
   quantity: number;
   unitValue: number;
   totalValue: number;
+  unavailable?: boolean; // COMP-23: o fornecedor não tem o item
 }
 
 export interface PurchaseQuotation {

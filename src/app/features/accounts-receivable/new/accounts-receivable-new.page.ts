@@ -361,10 +361,16 @@ export class AccountsReceivableNewPage implements OnInit {
       : this.svc.update(editId, payload);
 
     requisicao.subscribe({
-      next: () => {
+      next: (salvo: any) => {
         this.notify.success(editId === null
           ? 'Conta a receber cadastrada com sucesso.'
           : 'Conta a receber atualizada com sucesso.');
+        // card #720 (PG-01): o título nasce e a cobrança Asaas pode não sair — avisar na hora.
+        if (editId === null && salvo?.asaasChargeError) {
+          this.notify.error(`Cobrança Asaas não gerada: ${salvo.asaasChargeError}`);
+        } else if (editId === null && salvo?.asaasInvoiceUrl) {
+          this.notify.info('Cobrança Asaas gerada — o link está no detalhe do título.');
+        }
         this.router.navigate(['/accounts-receivable']);
       },
       error: (err) => {

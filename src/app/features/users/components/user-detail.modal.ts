@@ -9,13 +9,14 @@ import {
   PermissionProfile, EntityLite, PositionOption,
 } from '../users.model';
 import { UsersService } from '../users.service';
+import { CostCenterPickerComponent } from './cost-center-picker.component';
 
 type ModalTab = 'DADOS' | 'PERMISSOES';
 
 @Component({
   selector: 'app-user-detail-modal',
   standalone: true,
-  imports: [NgClass, ReactiveFormsModule],
+  imports: [NgClass, ReactiveFormsModule, CostCenterPickerComponent],
   templateUrl: './user-detail.modal.html',
   styleUrl: './user-detail.modal.scss',
 })
@@ -90,6 +91,15 @@ export class UserDetailModalComponent implements OnInit {
 
   /** BK-2: marca que o usuário editou a matriz — bloqueia o re-patch por corrida. */
   private matrixDirty = false;
+
+  /** card #720 (AC-04): centros de custo vinculados ao usuário (vazio = todos). */
+  costCenterIds: number[] = [];
+  private costCentersDirty = false;
+  onCostCentersChange(ids: number[]): void { this.costCenterIds = ids; this.costCentersDirty = true; }
+  get costCentersLabel(): string {
+    const cc = this.user()?.costCenters ?? [];
+    return cc.length ? cc.map(c => `${c.code} — ${c.name}`).join(', ') : 'Todos os centros de custo';
+  }
 
   constructor() {
     this.svc.getProfiles({ take: 100 }).subscribe({ next: r => this.profiles.set(r.data ?? (r as any)), error: () => {} });
@@ -171,9 +181,11 @@ export class UserDetailModalComponent implements OnInit {
     });
 
     this.applyModules(u);
+    this.costCenterIds = [...(u.costCenterIds ?? [])];
     // BK-2: estado "limpo" após carregar os dados oficiais.
     this.form.markAsPristine();
     this.matrixDirty = false;
+    this.costCentersDirty = false;
   }
 
   // ── Accessors view ────────────────────────────────────────────────────────
@@ -263,6 +275,7 @@ export class UserDetailModalComponent implements OnInit {
 
     // BK-2: matriz intocada fica fora do payload — não vira permissão direta que mascara o perfil.
     if (this.matrixDirty) payload.modulePermissions = this.modules;
+    if (this.costCentersDirty) payload.costCenterIds = this.costCenterIds; // card #720 (AC-04)
     if (v.password) payload.password = v.password;
     if (v.entityId) payload.entityId = v.entityId;
     // permissionProfileId: envia inclusive quando limpo? Só quando definido (US-3).

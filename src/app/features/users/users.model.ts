@@ -74,6 +74,9 @@ export interface User {
   effectivePermissions?: ModulePermission[];
   /** BK-3: perfil de permissão vinculado (nome + matriz do perfil). */
   permissionProfile?:  { id: number; name: string; description?: string; permissions?: ModulePermission[] };
+  /** card #720 (AC-04): centros de custo vinculados (vazio = todos). */
+  costCenterIds?:      number[];
+  costCenters?:        { id: number; code: string; name: string }[];
   createdAt?:          string;
   updatedAt?:          string;
 }
@@ -116,6 +119,7 @@ export interface UserPayload {
   entityId?:            number;
   permissionProfileId?: number;
   modulePermissions?:   ModulePermission[];
+  costCenterIds?:       number[];   // card #720 (AC-04)
 }
 
 export interface UserUpdatePayload {
@@ -133,6 +137,7 @@ export interface UserUpdatePayload {
   entityId?:            number;
   permissionProfileId?: number;
   modulePermissions?:   ModulePermission[];
+  costCenterIds?:       number[];   // card #720 (AC-04)
 }
 
 // ── Labels e configs de UI ────────────────────────────────────────────────────

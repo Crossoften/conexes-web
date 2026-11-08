@@ -10,6 +10,7 @@ import {
   ApprovalLimit,
   PURCHASE_REQUEST_STATUS_CONFIG,
 } from '../purchases.model';
+import { formatCivilDateBR } from '../../../shared/utils/format';
 
 interface ActionConfig {
   title:        string;
@@ -162,9 +163,7 @@ export class PurchaseRequestActionModalComponent implements OnChanges {
   // item 6 (reteste 22.09): a tela de cancelamento deve identificar claramente a
   // requisição (nº, título, tipo, data, valor, status, demandante, Projeto/CC).
   fmtDate(iso?: string | null): string {
-    if (!iso) return 'N/A';
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString('pt-BR');
+    return formatCivilDateBR(iso, 'N/A'); // card #720: data civil sem recuar um dia
   }
 
   fmtCurrency(value?: number | null): string {

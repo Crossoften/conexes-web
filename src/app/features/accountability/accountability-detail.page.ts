@@ -5,11 +5,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AccountabilityService } from './accountability.service';
 import { AccountabilityDetail, ACC_STATUS_LABEL, ITEM_STATUS_LABEL } from './accountability.model';
 import { NotificationService } from '../../shared/services/notification.service';
+import { formatCivilDateBR } from '../../shared/utils/format';
+import { ProcessChatComponent } from '../../shared/components/process-chat/process-chat.component';
 
 @Component({
   selector: 'app-accountability-detail',
   standalone: true,
-  imports: [NgClass, RouterLink],
+  imports: [NgClass, RouterLink, ProcessChatComponent],
   templateUrl: './accountability-detail.page.html',
   styleUrl: './accountability-detail.page.scss',
 })
@@ -49,8 +51,7 @@ export class AccountabilityDetailPage implements OnInit {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0);
   }
   date(iso: string | null | undefined): string {
-    if (!iso) return '—';
-    const d = new Date(iso); return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+    return formatCivilDateBR(iso); // card #720: período é data civil (01/10 aparecia 30/09)
   }
 
   validate(itemId: number): void {

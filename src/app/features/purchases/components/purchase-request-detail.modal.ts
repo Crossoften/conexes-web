@@ -3,8 +3,10 @@ import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, injec
 import { PurchaseRequest, PurchaseRequestActionLog, PurchaseFile, PurchaseRef, PURCHASE_REQUEST_STATUS_CONFIG } from '../purchases.model';
 import { PurchasesService } from '../purchases.service';
 import { UploadService } from '../../../shared/services/upload.service';
+import { formatCivilDateBR } from '../../../shared/utils/format';
+import { ProcessChatComponent } from '../../../shared/components/process-chat/process-chat.component';
 
-type DetailTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS' | 'HISTORICO';
+type DetailTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS' | 'HISTORICO' | 'COMUNICACAO';
 
 /** Rótulos amigáveis para os códigos de ação do histórico (fallback prettifica o código). */
 const ACTION_LABELS: Record<string, string> = {
@@ -117,7 +119,7 @@ const EVENT_ACTIONS = new Set(['AWARD', 'ORDER_RECEIPT', 'APPROVE_LEVEL', ...QUO
 @Component({
   selector: 'app-purchase-request-detail-modal',
   standalone: true,
-  imports: [],
+  imports: [ProcessChatComponent],
   templateUrl: './purchase-request-detail.modal.html',
   styleUrl: './purchase-request-detail.modal.scss',
 })
@@ -328,9 +330,7 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
   }
 
   fmtDate(iso?: string | null): string {
-    if (!iso) return 'N/A';
-    const date = new Date(iso);
-    return isNaN(date.getTime()) ? iso : date.toLocaleDateString('pt-BR');
+    return formatCivilDateBR(iso, 'N/A'); // card #720: data civil sem recuar um dia
   }
 
   /** Data + hora (dd/mm/aaaa HH:mm) para o histórico. */

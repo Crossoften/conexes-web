@@ -6,7 +6,7 @@ import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
 import { BankAccountOption, CreateBankEntryPayload, BankMovementRateio } from '../financial-transfers.model';
 import { PurchasesService } from '../../purchases/purchases.service';
-import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
+import { dateBRValidator, maskMoney, parseDateBR, parseDecimalBR } from '../../../shared/utils/format';
 
 /** Lançamento bancário avulso (crédito/débito) — POST /v1/banking/entries. */
 @Component({
@@ -63,7 +63,7 @@ export class FinancialEntryNewPage implements OnInit {
     description:   ['', Validators.required],
     type:          ['Credit', Validators.required],
     amount:        ['', Validators.required],
-    date:          ['', Validators.required],
+    date:          ['', [Validators.required, dateBRValidator]],
     category:      [''],
     stakeholderId: [''],   // LB-12: fornecedor (opcional)
     accountPlanId: [''],   // LB-04: conta do plano de contas
@@ -185,12 +185,9 @@ export class FinancialEntryNewPage implements OnInit {
     this.form.get('date')?.setValue(masked, { emitEvent: false });
   }
 
+  // card #720 (FN-05): 20/26/1105 era aceito e gravava o ano 1107 (Date.UTC rola o mês)
   private toIso(value: string): string | undefined {
-    const s = (value ?? '').trim();
-    const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!br) return undefined;
-    const date = new Date(Date.UTC(+br[3], +br[2] - 1, +br[1]));
-    return isNaN(date.getTime()) ? undefined : date.toISOString();
+    return parseDateBR(value);
   }
 
   resetForm(): void {
@@ -200,6 +197,11 @@ export class FinancialEntryNewPage implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.form.get('date')?.hasError('dateBR')) {
+      this.form.markAllAsTouched();
+      this.errorMsg.set('Data inválida: confira dia, mês e ano (dd/mm/aaaa).');
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.errorMsg.set(

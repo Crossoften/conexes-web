@@ -53,6 +53,11 @@ const ICONS: Record<string, string> = {
     <path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7"
           stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`,
+
+  // card #720 (FN-08): Central de Relatórios
+  reports: `<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 17V9m6 8V3m6 14v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`,
 };
 
 // Cor de fundo + cor do ícone por módulo
@@ -65,6 +70,7 @@ export const ICON_COLORS: Record<string, { bg: string; color: string }> = {
   financial:      { bg: '#F0FDF4', color: '#16A34A' },
   accountability: { bg: '#FFFBEB', color: '#D97706' },
   profile:        { bg: '#F5F3FF', color: '#7C3AED' },
+  reports:        { bg: '#ECFEFF', color: '#0891B2' },
 };
 
 @Component({

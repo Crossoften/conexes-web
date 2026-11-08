@@ -71,6 +71,11 @@
         </table>
       </div>
     </div>
+
+    <!-- card #720 (CM-01): pedir correção / responder dentro da prestação, com registro -->
+    <div style="margin-top:16px;">
+      <app-process-chat processType="accountability" [processId]="d.id" />
+    </div>
   } @else if (loading()) {
     <p class="muted" style="padding:32px;">Carregando…</p>
   }

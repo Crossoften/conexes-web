@@ -137,8 +137,24 @@ export class BankReconciliationStore {
   selectAccount(bankAccountId: number): void {
     this.state.update(s => ({ ...s, loading: true, selectedAccountId: bankAccountId, expandedIds: new Set(), expandedInnerIds: new Set() }));
     this.svc.getAccountReconciliation(bankAccountId).subscribe({
-      next: data => this.state.update(s => ({ ...s, ...this.mapReconciliation(data), loading: false })),
+      next: data => {
+        this.state.update(s => ({ ...s, ...this.mapReconciliation(data), loading: false }));
+        this.recarregarPosicao();
+      },
       error: () => this.state.update(s => ({ ...s, loading: false, error: 'Não foi possível carregar a conta.' })),
+    });
+  }
+
+  /**
+   * Card #720 (FN-06): o seletor e a "Posição das contas" eram carregados uma vez, na
+   * abertura; importar extrato, ignorar ou conciliar recarregava só a conta. A tela passava
+   * a se contradizer (posição: 1 pendência e R$ 987,50; dados da conta: R$ 1.175,00 e os
+   * movimentos do OFX). Toda recarga da conta recarrega também a posição.
+   */
+  private recarregarPosicao(): void {
+    this.svc.getAccounts().subscribe({
+      next: accounts => this.state.update(s => ({ ...s, accounts })),
+      error: () => {},
     });
   }
 

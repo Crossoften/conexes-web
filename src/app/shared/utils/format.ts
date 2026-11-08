@@ -21,6 +21,41 @@ export function formatDateBR(value: string | null | undefined): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
 }
 
+/**
+ * Card #720 (CP-01/PC-01): data vinda da API → `dd/mm/aaaa`.
+ * Data civil (requisição, entrega, período) é gravada à meia-noite UTC; formatada no fuso
+ * do navegador (UTC−3) virava o dia anterior (07/11 → 06/11). Meia-noite UTC é lida como o
+ * dia civil; qualquer outro instante (createdAt etc.) segue no fuso de quem usa.
+ */
+export function formatCivilDateBR(value: string | null | undefined, empty = '—'): string {
+  if (!value) return empty;
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z)?$/.test(s)) return formatDateBR(s);
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? s : d.toLocaleDateString('pt-BR');
+}
+
+/**
+ * Card #720 (FN-05): `dd/mm/aaaa` → ISO (meia-noite UTC), ou `undefined` se a data não existe.
+ * `Date.UTC` "rola" dia/mês fora da faixa (20/26/1105 virava 1107); aqui a data precisa voltar
+ * igual ao que foi digitado e o ano ficar entre 1900 e 2100.
+ */
+export function parseDateBR(value: string | null | undefined): string | undefined {
+  const br = (value ?? '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!br) return undefined;
+  const [dia, mes, ano] = [+br[1], +br[2], +br[3]];
+  if (ano < 1900 || ano > 2100) return undefined;
+  const d = new Date(Date.UTC(ano, mes - 1, dia));
+  if (d.getUTCFullYear() !== ano || d.getUTCMonth() !== mes - 1 || d.getUTCDate() !== dia) return undefined;
+  return d.toISOString();
+}
+
+/** Validator de formulário para `parseDateBR` (vazio fica com o `required`). */
+export function dateBRValidator(control: { value: unknown }): { dateBR: true } | null {
+  const v = String(control.value ?? '').trim();
+  return !v || parseDateBR(v) ? null : { dateBR: true };
+}
+
 // ── Máscaras de input (aplicar no (input); a API recebe os dígitos crus) ───────
 
 /** Máscara de CNPJ a partir dos dígitos: `00.000.000/0000-00`. */

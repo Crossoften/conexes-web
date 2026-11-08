@@ -100,6 +100,8 @@
               @if (linkedProfileName) {
                 <p class="perms-profile">Perfil de permissão: <strong>{{ linkedProfileName }}</strong></p>
               }
+              <!-- card #720 (AC-04): centros de custo vinculados -->
+              <p class="perms-profile" data-testid="user-cost-centers">Centros de custo: <strong>{{ costCentersLabel }}</strong></p>
               @if (!effectiveModules.length) {
                 <p class="empty-perms">Nenhuma permissão de módulo cadastrada.</p>
               } @else {
@@ -225,6 +227,11 @@
                 <div class="field field--wide">
                   <label class="field-label">Nova senha <span class="field-hint-inline">(deixe em branco para manter)</span></label>
                   <input class="input" type="password" formControlName="password" placeholder="Mínimo 6 caracteres">
+                </div>
+                <!-- card #720 (AC-04 / RF32): centros de custo nas permissões do usuário -->
+                <div class="field field--wide" style="grid-column: 1 / -1;">
+                  <label class="field-label">Centros de custo permitidos <span class="field-hint-inline">(nenhum marcado = todos)</span></label>
+                  <app-cost-center-picker [selected]="costCenterIds" (selectedChange)="onCostCentersChange($event)" />
                 </div>
               </div>
             </div>

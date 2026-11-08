@@ -32,6 +32,8 @@ interface MySelfResponse {
   purchaseRoles?: string[];
   /** PERM-fix: permissões efetivas (perfil + diretas) mescladas pelo back em /my-self. */
   effectivePermissions?: EffectivePermission[];
+  /** card #720 (AC-04): centros de custo vinculados ao usuário (vazio = todos). */
+  costCenterIds?: number[];
 }
 
 // ── Model interno do front ────────────────────────────────────────────────────
@@ -63,6 +65,8 @@ export interface AuthUser {
   purchaseRoles: string[];
   /** PERM-fix: permissões efetivas do usuário (vazio quando ainda não carregou). */
   effectivePermissions: EffectivePermission[];
+  /** card #720 (AC-04): centros de custo vinculados (vazio = todos). */
+  costCenterIds?: number[];
 }
 
 // ── Chaves do localStorage ────────────────────────────────────────────────────
@@ -122,6 +126,7 @@ export class AuthService {
       avatar:        null,
       purchaseRoles: me.purchaseRoles ?? [],
       effectivePermissions: me.effectivePermissions ?? [],
+      costCenterIds: me.costCenterIds ?? [],
     };
 
     this._user.set(user);
@@ -153,6 +158,7 @@ export class AuthService {
         avatar:        current?.avatar ?? null,
         purchaseRoles: me.purchaseRoles ?? [],
         effectivePermissions: me.effectivePermissions ?? [],
+        costCenterIds: me.costCenterIds ?? [],
       };
       this._user.set(user);
       localStorage.setItem(STORAGE_USER, JSON.stringify(user));

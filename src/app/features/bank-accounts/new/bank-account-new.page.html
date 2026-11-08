@@ -32,7 +32,7 @@
                   (focus)="bankOpen.set(true)"
                   (blur)="onBankBlur()"
                   [placeholder]="loadingLists() ? 'Carregando...' : 'Digite o código ou o nome do banco'"
-                  [class.is-invalid]="form.get('banco')?.invalid && form.get('banco')?.touched">
+                  [class.is-invalid]="isInvalid('banco')">
                 <svg class="typeahead__icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 @if (bankOpen() && filteredBanks().length) {
                   <ul class="typeahead__list">
@@ -47,6 +47,7 @@
                   <ul class="typeahead__list"><li class="typeahead__empty">Nenhum banco encontrado</li></ul>
                 }
               </div>
+              @if (isInvalid('banco')) { <span class="field-error">Campo obrigatório</span> }
             </div>
 
             <!-- FA-02: Entidade DONA da conta (obrigatória) -->
@@ -54,7 +55,7 @@
               <label>Entidade (dona da conta) <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="entidadeDona"
-                  [class.is-invalid]="form.get('entidadeDona')?.invalid && form.get('entidadeDona')?.touched">
+                  [class.is-invalid]="isInvalid('entidadeDona')">
                   <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
                   @for (entity of entities(); track entity.id) {
                     <option [value]="entity.id">{{ entity.tradeName || entity.legalName }}</option>
@@ -62,6 +63,7 @@
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              @if (isInvalid('entidadeDona')) { <span class="field-error">Campo obrigatório</span> }
             </div>
 
             <!-- FA-02: Fonte Pagadora agora é opcional e separada da entidade dona -->
@@ -82,7 +84,7 @@
               <label>Tipo de conta <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="tipoConta"
-                  [class.is-invalid]="form.get('tipoConta')?.invalid && form.get('tipoConta')?.touched">
+                  [class.is-invalid]="isInvalid('tipoConta')">
                   <option value="">Selecione</option>
                   <option value="Checking">Conta Corrente</option>
                   <option value="Savings">Conta Poupança</option>
@@ -91,12 +93,14 @@
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              @if (isInvalid('tipoConta')) { <span class="field-error">Campo obrigatório</span> }
             </div>
 
             <div class="form-group">
               <label>Data de abertura <span class="req">*</span></label>
               <input type="date" class="form-control" formControlName="dataAbertura"
-                [class.is-invalid]="form.get('dataAbertura')?.invalid && form.get('dataAbertura')?.touched">
+                [class.is-invalid]="isInvalid('dataAbertura')">
+              @if (isInvalid('dataAbertura')) { <span class="field-error">Campo obrigatório</span> }
             </div>
 
           </div>
@@ -105,23 +109,27 @@
             <div class="form-group">
               <label>Apelido da conta <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="Digite aqui..." formControlName="apelidoConta"
-                [class.is-invalid]="form.get('apelidoConta')?.invalid && form.get('apelidoConta')?.touched">
+                [class.is-invalid]="isInvalid('apelidoConta')">
+              @if (isInvalid('apelidoConta')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>Agência + Dígito <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="00000 0" formControlName="agenciaDigito"
-                [class.is-invalid]="form.get('agenciaDigito')?.invalid && form.get('agenciaDigito')?.touched">
+                [class.is-invalid]="isInvalid('agenciaDigito')">
+              @if (isInvalid('agenciaDigito')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>Número da conta + Dígito <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="00000 0" formControlName="numeroContaDigito"
-                [class.is-invalid]="form.get('numeroContaDigito')?.invalid && form.get('numeroContaDigito')?.touched">
+                [class.is-invalid]="isInvalid('numeroContaDigito')">
+              @if (isInvalid('numeroContaDigito')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>Saldo inicial <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="0,00" formControlName="saldoInicial"
                 (input)="onMoneyInput($event)"
-                [class.is-invalid]="form.get('saldoInicial')?.invalid && form.get('saldoInicial')?.touched">
+                [class.is-invalid]="isInvalid('saldoInicial')">
+              @if (isInvalid('saldoInicial')) { <span class="field-error">Campo obrigatório</span> }
             </div>
           </div>
 
@@ -130,18 +138,21 @@
               <label>Telefone principal <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefonePrincipal"
                 (input)="onPhoneInput($event, 'telefonePrincipal')"
-                [class.is-invalid]="form.get('telefonePrincipal')?.invalid && form.get('telefonePrincipal')?.touched">
+                [class.is-invalid]="isInvalid('telefonePrincipal')">
+              @if (isInvalid('telefonePrincipal')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group">
               <label>Telefone celular <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="(00) 00000-0000" formControlName="telefoneCelular"
                 (input)="onPhoneInput($event, 'telefoneCelular')"
-                [class.is-invalid]="form.get('telefoneCelular')?.invalid && form.get('telefoneCelular')?.touched">
+                [class.is-invalid]="isInvalid('telefoneCelular')">
+              @if (isInvalid('telefoneCelular')) { <span class="field-error">Campo obrigatório</span> }
             </div>
             <div class="form-group col-span-2">
               <label>E-mail de contato <span class="req">*</span></label>
               <input type="email" class="form-control" placeholder="email@exemplo.com" formControlName="emailContato"
-                [class.is-invalid]="form.get('emailContato')?.invalid && form.get('emailContato')?.touched">
+                [class.is-invalid]="isInvalid('emailContato')">
+              @if (isInvalid('emailContato')) { <span class="field-error">{{ form.get('emailContato')?.hasError('email') ? 'E-mail inválido' : 'Campo obrigatório' }}</span> }
             </div>
           </div>
 

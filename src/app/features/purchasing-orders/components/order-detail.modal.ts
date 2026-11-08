@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PurchaseOrder, PurchaseOrderItem } from '../../purchases/purchases.model';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { ORDER_STATUS_CONFIG } from '../purchasing-orders.model';
+import { formatCivilDateBR } from '../../../shared/utils/format';
 
 // CP-33: linha do formulário de recebimento (uma por item do pedido).
 interface ReceiveLine {
@@ -62,9 +63,7 @@ export class OrderDetailModalComponent {
   fmtText(v?: string | null): string { return v && v.trim() ? v : '—'; }
 
   fmtDate(iso?: string | null): string {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR');
+    return formatCivilDateBR(iso); // card #720: data civil sem recuar um dia
   }
 
   fmtDateTime(iso?: string | null): string {

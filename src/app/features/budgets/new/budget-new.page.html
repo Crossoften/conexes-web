@@ -97,7 +97,7 @@
             <div class="form-group">
               <label>Subprojeto</label>
               <div class="select-wrap">
-                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option>@for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }</select>
+                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option>@for (p of projetos; track p.id) { @if (p.id.startsWith('pr:')) { <option [value]="p.id">{{ p.nome }}</option> } }</select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
@@ -228,6 +228,14 @@
 
       </form>
     </div>
+
+    <!-- card #720 (FN-07): o motivo da recusa fica visível (validação ou erro da API) -->
+    @if (errorMsg()) {
+      <div class="form-error-banner" role="alert" data-testid="budget-error"
+           style="margin:0 24px 16px;padding:12px 16px;border:1px solid #f5c2c7;border-radius:10px;background:#fdecee;color:#9b1c2c;font-size:14px;">
+        {{ errorMsg() }}
+      </div>
+    }
 
     <div class="card-footer">
       <button class="btn-outline btn-outline--orange" routerLink="/budgets">
