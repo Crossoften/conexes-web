@@ -77,3 +77,9 @@
   // o total do pedido é o número que o financeiro confronta com a nota
   &__total td { font-weight: 700; border-top: 1px solid var(--surface-border); }
 }
+
+// Card #768 (item 28): notas do pedido
+.order-detail__notes { margin: 12px 0; display: flex; flex-direction: column; gap: 6px;
+  tr.muted td { color: #94a3b8; }
+  input[type=checkbox] { width: 16px; height: 16px; accent-color: #6d28d9; }
+}

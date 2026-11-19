@@ -37,6 +37,11 @@ export class AccountsReceivableNewPage implements OnInit {
   private upload  = inject(UploadService);
   private notify  = inject(NotificationService);
 
+  /** Card #768 (item 39): aberto pela seta para cima de um crédito da conciliação. */
+  readonly doExtrato = signal<{ txId: number; bankAccountId: number; description: string; date: string; amount: number } | null>(
+    (history.state && history.state.doExtrato) || null,
+  );
+
   readonly saving   = signal(false);
   readonly clientes = signal<{ id: number; nome: string }[]>([]);
   readonly termos   = signal<{ id: number; nome: string }[]>([]);
@@ -125,6 +130,11 @@ export class AccountsReceivableNewPage implements OnInit {
   removeRateio(i: number): void { this.rateios.removeAt(i); }
 
   ngOnInit(): void {
+    const ext = this.doExtrato();
+    if (ext) {
+      const dia = (ext.date ?? '').slice(0, 10);
+      this.form.patchValue({ description: ext.description ?? '', issueDate: dia, dueDate: dia, amount: Number(ext.amount ?? 0).toFixed(2).replace('.', ',') });
+    }
     this.http.get<any>(`${environment.apiUrl}/v1/stakeholders?take=1000`).subscribe({
       next: (res) => {
         const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
@@ -370,6 +380,14 @@ export class AccountsReceivableNewPage implements OnInit {
           this.notify.error(`Cobrança Asaas não gerada: ${salvo.asaasChargeError}`);
         } else if (editId === null && salvo?.asaasInvoiceUrl) {
           this.notify.info('Cobrança Asaas gerada — o link está no detalhe do título.');
+        }
+        const ext = this.doExtrato();
+        if (editId === null && ext && salvo?.id) {
+          this.http.patch(`${environment.apiUrl}/v1/banking/reconciliation/${ext.txId}/match`, { accountReceivableId: salvo.id }).subscribe({
+            next: () => { this.notify.success('Movimento do extrato conciliado com a conta a receber.'); this.router.navigate(['/bank-reconciliation']); },
+            error: () => { this.notify.error('Conta a receber salva, mas não foi possível conciliar o movimento do extrato.'); this.router.navigate(['/bank-reconciliation']); },
+          });
+          return;
         }
         this.router.navigate(['/accounts-receivable']);
       },

@@ -1,12 +1,14 @@
 <div class="page">
 
   <!-- TR-11: esta é a visão Transferências; o título não cita Lançamentos Bancários. -->
-  <div class="page-header">
-    <h1 class="page-title">Nova transferência</h1>
-  </div>
+  @if (!embedded) {
+    <div class="page-header">
+      <h1 class="page-title">{{ titulo }}</h1>
+    </div>
+  }
 
   <div class="card">
-    
+
     <div class="card-header">
       <h2 class="card-title">Dados da transferência</h2>
       <p class="card-subtitle">Preencha todas as informações necessárias.</p>
@@ -16,20 +18,20 @@
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
         @if (errorMsg()) {
-          <div class="error-banner" role="alert" style="margin-bottom:16px;padding:10px 14px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:13px;">{{ errorMsg() }}</div>
+          <div class="error-banner" role="alert">{{ errorMsg() }}</div>
         }
 
         <div class="form-grid">
-          
-          <div class="form-row grid-cols-3">
-            <!-- TR-08: modo da descrição. Em "Automática" o sistema compõe a partir
-                 das contas de origem e destino. -->
+
+          <!-- Card #768 (item 30, cenário 19): Descrição (modo) menor; a Data da operação
+               sobe ao lado da Descrição da transferência. -->
+          <div class="form-row grid-desc">
             <div class="form-group">
               <label>Descrição</label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="descriptionMode" (change)="onDescriptionModeChange()">
                   <option value="manual">Manual</option>
-                  <option value="auto">Automática (origem → destino)</option>
+                  <option value="auto">Automática</option>
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -38,12 +40,20 @@
             <div class="form-group">
               <label>Descrição da transferência @if (!descricaoAutomatica) {<span class="req">*</span>}</label>
               <input type="text" class="form-control"
-                     [placeholder]="descricaoAutomatica ? 'Será composta pelo sistema' : 'Digite aqui...'"
-                     [attr.disabled]="descricaoAutomatica ? true : null"
+                     [placeholder]="descricaoAutomatica ? 'Será composta pelo sistema: Transferência Entre Contas - origem > destino' : 'Digite aqui...'"
+                     [readOnly]="descricaoAutomatica"
                      formControlName="description"
                      [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched">
             </div>
 
+            <div class="form-group">
+              <label>Data da operação<span class="req">*</span></label>
+              <input type="date" class="form-control" formControlName="operationDate" (click)="abrirCalendario($event)" (keydown)="$event.key !== 'Tab' && $event.preventDefault()" [class.is-invalid]="form.get('operationDate')?.invalid && form.get('operationDate')?.touched">
+            </div>
+          </div>
+
+          <!-- Origem, Destino e o Valor no lugar da data -->
+          <div class="form-row grid-cols-3">
             <div class="form-group">
               <label>Origem transferência<span class="req">*</span></label>
               <div class="select-wrap">
@@ -65,41 +75,16 @@
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
-          </div>
-
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>Data da operação<span class="req">*</span></label>
-              <input type="date" class="form-control" formControlName="operationDate" [class.is-invalid]="form.get('operationDate')?.invalid && form.get('operationDate')?.touched">
-            </div>
 
             <div class="form-group">
               <label>Valor transferência<span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="0,00" inputmode="decimal" formControlName="transferValue" (input)="onMoneyInput($event)" [class.is-invalid]="form.get('transferValue')?.invalid && form.get('transferValue')?.touched">
             </div>
-
-            <div class="form-group">
-              <label>Crédito em data diferente</label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="differentDateCredit" (change)="onCreditDateToggle()">
-                  <option [ngValue]="false">Não</option>
-                  <option [ngValue]="true">Sim</option>
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
           </div>
 
-          <!-- TR-07: escolher "Sim" acima abre a data do crédito (antes não abria nada). -->
-          <!-- TR-09: natureza do recurso de cada ponta. -->
+          <!-- TR-09: cada Natureza do recurso abaixo da sua Origem ou Destino;
+               TR-07: o crédito em data diferente na terceira coluna. -->
           <div class="form-row grid-cols-3">
-            @if (form.get('differentDateCredit')?.value) {
-              <div class="form-group">
-                <label>Data do crédito<span class="req">*</span></label>
-                <input type="date" class="form-control" formControlName="creditDate">
-              </div>
-            }
-
             <div class="form-group">
               <label>Natureza do recurso (origem)</label>
               <div class="select-wrap">
@@ -121,6 +106,22 @@
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
+
+            <div class="form-group">
+              <label>Crédito em data diferente</label>
+              <div class="credit-wrap">
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="differentDateCredit" (change)="onCreditDateToggle()">
+                    <option [ngValue]="false">Não</option>
+                    <option [ngValue]="true">Sim</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                @if (form.get('differentDateCredit')?.value) {
+                  <input type="date" class="form-control" title="Data do crédito" formControlName="creditDate" (click)="abrirCalendario($event)">
+                }
+              </div>
+            </div>
           </div>
 
           <div class="form-row grid-cols-1">
@@ -130,80 +131,75 @@
             </div>
           </div>
 
-          <!-- TR-RATEIO: rateio por classificação, multilinha. -->
-          <div class="form-row grid-cols-1">
-            <div class="form-group">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <label style="margin:0;">Rateio por classificação</label>
-                <button type="button" class="btn-outline btn-outline--orange" (click)="adicionarRateio()">+ Adicionar classificação</button>
-              </div>
+          <!-- TR-RATEIO: rateio por classificação, em colunas (Categoria = conta do plano). -->
+          <div class="rateio">
+            <div class="rateio__head">
+              <h3 class="rateio__title">Rateio por classificação</h3>
+              <button type="button" class="btn-outline btn-outline--orange" (click)="adicionarRateio()">+ Adicionar classificação</button>
+            </div>
 
-              @if (rateios.length === 0) {
-                <p style="font-size:13px;color:#6B7280;margin:4px 0 0;">Nenhuma classificação. O rateio é opcional.</p>
-              } @else {
-                <div formArrayName="rateios">
-                  @for (linha of rateios.controls; track $index; let i = $index) {
-                    <div [formGroupName]="i" class="form-row grid-cols-5" style="align-items:end;gap:12px;margin-bottom:8px;">
-                      <div class="form-group">
-                        <label>Centro de custo</label>
-                        <div class="select-wrap">
-                          <select class="form-control" formControlName="costCenterId">
-                            <option value="">Selecione</option>
-                            @for (c of costCenters(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-                          </select>
-                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label>Projeto</label>
-                        <div class="select-wrap">
-                          <select class="form-control" formControlName="projectId">
-                            <option value="">Selecione</option>
-                            @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
-                          </select>
-                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
-                      </div>
-                      <!-- LB-05: a ATIVIDADE e campo proprio. O rotulo dizia
-                           "Projeto / atividade" sobre um unico seletor de projeto:
-                           quem rateasse por atividade nao tinha onde dizer qual. -->
-                      <div class="form-group">
-                        <label>Atividade</label>
-                        <div class="select-wrap">
-                          <select class="form-control" formControlName="activityId">
-                            <option value="">Selecione</option>
-                            @for (a of atividadesDaLinha(i); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
-                          </select>
-                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label>Conta do plano</label>
-                        <div class="select-wrap">
-                          <select class="form-control" formControlName="accountPlanId">
-                            <option value="">Selecione</option>
-                            @for (a of accountPlans(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
-                          </select>
-                          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label>%</label>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                          <input type="number" class="form-control" min="0" max="100" step="0.01" placeholder="0" formControlName="percentage" style="max-width:90px;">
-                          <span style="font-size:12.5px;color:#6B7280;white-space:nowrap;">{{ valorDaLinha(i) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span>
-                          <button type="button" class="btn-outline" (click)="removerRateio(i)" title="Remover" style="padding:6px 10px;">✕</button>
-                        </div>
+            @if (rateios.length === 0) {
+              <p class="rateio__vazio">Nenhuma classificação. O rateio é opcional.</p>
+            } @else {
+              <div class="rateio__box" formArrayName="rateios">
+                @for (linha of rateios.controls; track $index; let i = $index) {
+                  <div [formGroupName]="i" class="rateio__linha">
+                    <div class="form-group">
+                      <label>Categoria</label>
+                      <div class="select-wrap">
+                        <select class="form-control" formControlName="accountPlanId">
+                          <option value="">Selecione</option>
+                          @for (a of accountPlans(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+                        </select>
+                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </div>
                     </div>
-                  }
-                  <p style="font-size:13px;margin:4px 0 0;" [style.color]="somaPercentual() > 100 ? '#B91C1C' : '#6B7280'">
-                    Soma dos percentuais: <strong>{{ somaPercentual() | number:'1.2-2':'pt-BR' }}%</strong>
-                    @if (somaPercentual() > 100) { — não pode passar de 100% }
-                  </p>
-                </div>
-              }
-            </div>
+                    <div class="form-group">
+                      <label>Centro de custo</label>
+                      <div class="select-wrap">
+                        <select class="form-control" formControlName="costCenterId">
+                          <option value="">Selecione</option>
+                          @for (c of costCenters(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                        </select>
+                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Projeto</label>
+                      <div class="select-wrap">
+                        <select class="form-control" formControlName="projectId">
+                          <option value="">Selecione</option>
+                          @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                        </select>
+                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Atividade</label>
+                      <div class="select-wrap">
+                        <select class="form-control" formControlName="activityId">
+                          <option value="">Selecione</option>
+                          @for (a of atividadesDaLinha(i); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+                        </select>
+                        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>%</label>
+                      <div class="rateio__pct">
+                        <input type="number" class="form-control" min="0" max="100" step="0.01" placeholder="0" formControlName="percentage">
+                        <button type="button" class="btn-x" (click)="removerRateio(i)" title="Remover linha" aria-label="Remover linha">✕</button>
+                      </div>
+                      <span class="rateio__valor">{{ valorDaLinha(i) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span>
+                    </div>
+                  </div>
+                }
+                <p class="rateio__soma" [class.rateio__soma--erro]="somaPercentual() > 100">
+                  Soma dos percentuais: <strong>{{ somaPercentual() | number:'1.2-2':'pt-BR' }}%</strong>
+                  @if (somaPercentual() > 100) { — não pode passar de 100% }
+                </p>
+              </div>
+            }
           </div>
 
         </div>
@@ -212,7 +208,7 @@
     </div>
 
     <div class="card-footer">
-      <button class="btn-outline btn-outline--orange" routerLink="/financial-transfers">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="voltar()">
         Voltar
       </button>
 
@@ -221,13 +217,12 @@
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <polyline points="3 3 3 8 8 8"></polyline>
-            <rect x="10" y="10" width="4" height="4" rx="1"></rect>
           </svg>
           Reiniciar formulário
         </button>
 
-        <button type="submit" class="btn-solid btn-solid--orange" (click)="onSubmit()">
-          Salvar
+        <button type="submit" class="btn-solid btn-solid--orange" [disabled]="loading()" (click)="onSubmit()">
+          {{ loading() ? 'Salvando…' : 'Salvar' }}
         </button>
       </div>
     </div>

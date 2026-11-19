@@ -1,12 +1,12 @@
 // src/app/features/financial-transfers/new-entry/financial-entry-new.page.ts
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
-import { BankAccountOption, CreateBankEntryPayload, BankMovementRateio } from '../financial-transfers.model';
+import { BankAccountOption, CreateBankEntryPayload, BankMovementRateio, NATUREZAS_RECURSO, StatementPrefill } from '../financial-transfers.model';
 import { PurchasesService } from '../../purchases/purchases.service';
-import { dateBRValidator, maskMoney, parseDateBR, parseDecimalBR } from '../../../shared/utils/format';
+import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
 /** Lançamento bancário avulso (crédito/débito) — POST /v1/banking/entries. */
 @Component({
@@ -23,14 +23,27 @@ export class FinancialEntryNewPage implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  // Card #768 (itens 35, 36 e 38): o formulário abre em pop-up — na lista de
+  // Lançamentos (novo/editar) e na conciliação (preenchido com a linha do extrato).
+  @Input() embedded = false;
+  @Input() editId: number | null = null;
+  @Input() prefill: StatementPrefill | null = null;
+  @Output() saved     = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  @HostBinding('class.is-embedded') get isEmbedded() { return this.embedded; }
+
   // B5: o mesmo formulário cadastra e edita o lançamento.
   readonly editandoId = signal<number | null>(null);
   readonly ehEdicao = computed(() => this.editandoId() !== null);
+  /** Card #768 (item 38): a linha do extrato que está sendo lançada. */
+  readonly doExtrato = signal(false);
 
   readonly accounts = signal<BankAccountOption[]>([]);
   readonly suppliers = signal<{ id: number; name: string }[]>([]);
   readonly loading  = signal(false);
   readonly errorMsg = signal<string | null>(null);
+
+  readonly naturezas = NATUREZAS_RECURSO;
 
   // LB-03: categoria vira lista de seleção (era digitação livre).
   readonly categorias = [
@@ -61,31 +74,40 @@ export class FinancialEntryNewPage implements OnInit {
   form: FormGroup = this.fb.group({
     bankAccountId: ['', Validators.required],
     description:   ['', Validators.required],
-    type:          ['Credit', Validators.required],
+    type:          ['Debit', Validators.required],
     amount:        ['', Validators.required],
-    date:          ['', [Validators.required, dateBRValidator]],
+    date:          ['', Validators.required],
     category:      [''],
     stakeholderId: [''],   // LB-12: fornecedor (opcional)
-    accountPlanId: [''],   // LB-04: conta do plano de contas
+    resourceNature: [''],  // Card #768 (item 35)
     observations:  [''],
     rateios:       this.fb.array([]),  // LB-05
   });
 
   get rateios(): FormArray { return this.form.get('rateios') as FormArray; }
 
+  get titulo(): string {
+    if (this.doExtrato()) return 'Novo lançamento bancário';
+    return this.ehEdicao() ? 'Editar lançamento bancário' : 'Novo lançamento bancário';
+  }
+
   novaLinhaRateio(valor: Partial<BankMovementRateio> = {}): FormGroup {
+    const s = (v: any) => (v ? String(v) : '');
     return this.fb.group({
-      costCenterId:  [valor.costCenterId ?? ''],
-      projectId:     [valor.projectId ?? ''],
-      // LB-05: a atividade da linha
-      activityId:    [(valor as any).activityId ?? ''],
-      accountPlanId: [valor.accountPlanId ?? ''],
-      percentage:    [valor.percentage ?? ''],
+      accountPlanId: [s(valor.accountPlanId)],
+      costCenterId:  [s(valor.costCenterId)],
+      projectId:     [s(valor.projectId)],
+      activityId:    [s(valor.activityId)],
+      percentage:    [valor.percentage ?? (this.rateios?.length ? '' : 100)],
     });
   }
 
   adicionarRateio(): void { this.rateios.push(this.novaLinhaRateio()); }
-  removerRateio(i: number): void { this.rateios.removeAt(i); }
+  removerRateio(i: number): void {
+    // Card #768 (item 35): a classificação é obrigatória — fica ao menos uma linha.
+    if (this.rateios.length <= 1) return;
+    this.rateios.removeAt(i);
+  }
 
   somaPercentual(): number {
     return this.rateios.controls.reduce((s, c) => s + (Number(c.get('percentage')?.value) || 0), 0);
@@ -97,6 +119,12 @@ export class FinancialEntryNewPage implements OnInit {
     return Math.round(total * pct) / 100;
   }
 
+  /** Card #768 (cenário 19/22): a data abre o calendário ao clicar, sem digitar. */
+  abrirCalendario(ev: Event): void {
+    const el = ev.target as HTMLInputElement & { showPicker?: () => void };
+    try { el.showPicker?.(); } catch { /* navegador sem showPicker */ }
+  }
+
   ngOnInit(): void {
     this.svc.getBankAccounts().subscribe({
       next: list => this.accounts.set(list),
@@ -106,7 +134,7 @@ export class FinancialEntryNewPage implements OnInit {
       next: v => this.suppliers.set(v as { id: number; name: string }[]),
       error: () => this.suppliers.set([]),
     });
-    // LB-04: contas analíticas do plano cadastrado.
+    // LB-04: contas analíticas do plano cadastrado (a Categoria do rateio).
     this.lookups.getAccountPlansLookup().subscribe({
       next: v => this.accountPlans.set(v as { id: number; name: string }[]),
       error: () => this.accountPlans.set([]),
@@ -117,7 +145,6 @@ export class FinancialEntryNewPage implements OnInit {
       next: v => this.costCenters.set(this.lookups.apenasAnaliticas(v) as { id: number; name: string }[]),
       error: () => this.costCenters.set([]),
     });
-    // LB-05: atividades (nível abaixo de projeto), para a coluna Atividade do rateio.
     this.lookups.getActivitiesLookup().subscribe({
       next: v => this.activities.set(v as { id: number; name: string; parentProjectId?: number | null }[]),
       error: () => this.activities.set([]),
@@ -127,9 +154,25 @@ export class FinancialEntryNewPage implements OnInit {
       error: () => this.projects.set([]),
     });
 
-    // B5: com id na rota, carrega o lançamento para edição.
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id && !isNaN(Number(id))) this.carregarParaEdicao(Number(id));
+    // B5: com id (rota ou pop-up), carrega o lançamento para edição.
+    const id = this.editId ?? Number(this.route.snapshot.paramMap.get('id'));
+    if (id && !isNaN(Number(id))) { this.carregarParaEdicao(Number(id)); return; }
+
+    // Card #768 (item 38): tipo, descrição, data, valor e conta vêm do extrato.
+    if (this.prefill) {
+      const p = this.prefill;
+      this.doExtrato.set(true);
+      this.form.patchValue({
+        bankAccountId: String(p.bankAccountId),
+        type: p.type,
+        description: p.description ?? '',
+        date: (p.date ?? '').slice(0, 10),
+        amount: Number(p.amount ?? 0).toFixed(2).replace('.', ','),
+      });
+      // o que veio do extrato não muda — só a classificação é informada aqui
+      for (const k of ['bankAccountId', 'type', 'date', 'amount']) this.form.get(k)?.disable();
+    }
+    this.rateios.push(this.novaLinhaRateio());
   }
 
   /** B5: traz o lançamento gravado para o formulário, com a classificação. */
@@ -137,32 +180,22 @@ export class FinancialEntryNewPage implements OnInit {
     this.svc.getEntry(id).subscribe({
       next: (r: any) => {
         this.editandoId.set(id);
-        const dataBR = (iso?: string | null) => {
-          if (!iso) return '';
-          const d = new Date(iso);
-          return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-        };
         this.form.patchValue({
           bankAccountId: r.bankAccountId ? String(r.bankAccountId) : '',
           description:   r.description ?? '',
           type:          r.type ?? 'Credit',
           amount:        r.amount != null ? Number(r.amount).toFixed(2).replace('.', ',') : '',
-          date:          dataBR(r.date),
+          date:          (r.date ?? '').slice(0, 10),
           category:      r.category ?? '',
           stakeholderId: r.stakeholderId ? String(r.stakeholderId) : '',
-          accountPlanId: r.accountPlanId ? String(r.accountPlanId) : '',
+          resourceNature: r.resourceNature ?? '',
           observations:  r.observation ?? '',
         });
         this.rateios.clear();
-        for (const linha of r.rateios ?? []) {
-          this.rateios.push(this.fb.group({
-            costCenterId:  [linha.costCenterId  ? String(linha.costCenterId)  : ''],
-            projectId:     [linha.projectId     ? String(linha.projectId)     : ''],
-            // I052 (LB-05): recarregar a atividade na edição — antes a linha reabria sem ela.
-            activityId:    [linha.activityId    ? String(linha.activityId)    : ''],
-            accountPlanId: [linha.accountPlanId ? String(linha.accountPlanId) : ''],
-            percentage:    [linha.percentage ?? ''],
-          }));
+        for (const linha of r.rateios ?? []) this.rateios.push(this.novaLinhaRateio(linha));
+        // lançamento antigo sem rateio: a classificação que estava no topo vira a 1ª linha
+        if (!this.rateios.length) {
+          this.rateios.push(this.novaLinhaRateio({ accountPlanId: r.accountPlanId, costCenterId: r.costCenterId, percentage: 100 }));
         }
       },
       error: () => this.errorMsg.set('Não foi possível carregar o lançamento para edição.'),
@@ -175,89 +208,104 @@ export class FinancialEntryNewPage implements OnInit {
     this.form.get('amount')?.setValue(el.value, { emitEvent: false });
   }
 
-  onDateInput(event: Event): void {
-    const el = event.target as HTMLInputElement;
-    const d = el.value.replace(/\D/g, '').slice(0, 8);
-    let masked = d;
-    if (d.length > 4)      masked = `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
-    else if (d.length > 2) masked = `${d.slice(0, 2)}/${d.slice(2)}`;
-    el.value = masked;
-    this.form.get('date')?.setValue(masked, { emitEvent: false });
-  }
-
-  // card #720 (FN-05): 20/26/1105 era aceito e gravava o ano 1107 (Date.UTC rola o mês)
   private toIso(value: string): string | undefined {
-    return parseDateBR(value);
+    const iso = (value ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!iso) return undefined;
+    const d = new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3]));
+    return isNaN(d.getTime()) ? undefined : d.toISOString();
   }
 
   resetForm(): void {
+    const preservar = this.doExtrato() ? this.form.getRawValue() : null;
     this.rateios.clear();
-    this.form.reset({ type: 'Credit' });
+    this.form.reset({ type: 'Debit' });
+    if (preservar) {
+      this.form.patchValue({ bankAccountId: preservar.bankAccountId, type: preservar.type, date: preservar.date, amount: preservar.amount, description: this.prefill?.description ?? '' });
+    }
+    this.rateios.push(this.novaLinhaRateio());
     this.errorMsg.set(null);
   }
 
+  voltar(): void {
+    if (this.embedded) { this.cancelled.emit(); return; }
+    this.router.navigate(['/financial-transfers'], { queryParams: { view: 'entries' } });
+  }
+
   onSubmit(): void {
-    if (this.form.get('date')?.hasError('dateBR')) {
-      this.form.markAllAsTouched();
-      this.errorMsg.set('Data inválida: confira dia, mês e ano (dd/mm/aaaa).');
-      return;
-    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.errorMsg.set(
         this.accounts().length === 0
           ? 'Não há conta bancária cadastrada. Cadastre uma conta bancária antes de registrar lançamentos.'
-          : 'Preencha os campos obrigatórios destacados (conta, descrição, tipo, data e valor).',
+          : 'Preencha os campos obrigatórios destacados (tipo, descrição, data, conta bancária e valor).',
       );
       return;
     }
 
-    const v = this.form.value;
+    const v = this.form.getRawValue();
     const date = this.toIso(v.date);
     if (!date) {
-      this.errorMsg.set('Data inválida. Use o formato dd/mm/aaaa.');
+      this.errorMsg.set('Data inválida. Escolha a data no calendário.');
       return;
     }
 
-    // LB-05: a soma dos percentuais não pode passar de 100.
+    // Card #768 (item 35): Categoria, Centro de custo e % são obrigatórios em cada linha.
+    const linhas = this.rateios.controls;
+    const incompleta = linhas.findIndex(c => !c.get('accountPlanId')?.value || !c.get('costCenterId')?.value || !(Number(c.get('percentage')?.value) > 0));
+    if (!linhas.length || incompleta >= 0) {
+      this.errorMsg.set(`Rateio por classificação: informe Categoria, Centro de custo e % ${linhas.length > 1 ? 'na linha ' + (incompleta + 1) : 'da classificação'}.`);
+      return;
+    }
     const soma = this.somaPercentual();
-    if (this.rateios.length && Math.round(soma * 100) > 10000) {
+    if (Math.round(soma * 100) > 10000) {
       this.errorMsg.set(`A soma dos percentuais do rateio é ${soma.toFixed(2)}% — não pode passar de 100%.`);
       return;
     }
 
-    const payload: CreateBankEntryPayload = {
-      bankAccountId: Number(v.bankAccountId),
-      description:   v.description,
-      amount:        parseDecimalBR(v.amount),
-      type:          v.type,
-      category:      v.category || undefined,
-      date,
-      observation:   v.observations || undefined,
-      stakeholderId: v.stakeholderId ? Number(v.stakeholderId) : undefined,
-      accountPlanId: v.accountPlanId ? Number(v.accountPlanId) : undefined,
-      rateios: this.rateios.length
-        ? this.rateios.controls.map(c => ({
-            costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
-            projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
-            // I052 (LB-05): a atividade da linha precisa ir no payload — antes ficava no
-            // formulário e nunca era enviada, então o banco gravava activityId null.
-            activityId:    c.get('activityId')?.value    ? Number(c.get('activityId')!.value)    : undefined,
-            accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
-            percentage:    Number(c.get('percentage')?.value) || 0,
-          }))
-        : undefined,
+    const num = (c: any, k: string) => (c.get(k)?.value ? Number(c.get(k)!.value) : undefined);
+    const rateios = linhas.map(c => ({
+      accountPlanId: num(c, 'accountPlanId'),
+      costCenterId:  num(c, 'costCenterId'),
+      projectId:     num(c, 'projectId'),
+      activityId:    num(c, 'activityId'),
+      percentage:    Number(c.get('percentage')?.value) || 0,
+    }));
+    // a primeira linha também classifica o lançamento (relatórios e filtros usam o topo)
+    const classificacao = {
+      category:       v.category || undefined,
+      stakeholderId:  v.stakeholderId ? Number(v.stakeholderId) : undefined,
+      accountPlanId:  rateios[0].accountPlanId,
+      costCenterId:   rateios[0].costCenterId,
+      resourceNature: v.resourceNature || undefined,
+      observation:    v.observations || undefined,
+      rateios,
     };
 
     this.loading.set(true);
     this.errorMsg.set(null);
-    // B5: em edição, PATCH; senão, POST de um novo lançamento.
-    const id = this.editandoId();
-    const requisicao = id === null ? this.svc.createEntry(payload) : this.svc.updateEntry(id, payload);
+    let requisicao;
+    if (this.doExtrato() && this.prefill) {
+      requisicao = this.svc.launchStatementEntry(this.prefill.transactionId, { description: v.description, ...classificacao });
+    } else {
+      const payload: CreateBankEntryPayload = {
+        bankAccountId: Number(v.bankAccountId),
+        description:   v.description,
+        amount:        parseDecimalBR(v.amount),
+        type:          v.type,
+        date,
+        ...classificacao,
+      };
+      const id = this.editandoId();
+      requisicao = id === null ? this.svc.createEntry(payload) : this.svc.updateEntry(id, payload);
+    }
 
     requisicao.subscribe({
-      next: () => { this.loading.set(false); this.router.navigate(['/financial-transfers'], { queryParams: { view: 'entries' } }); },
-      error: err => {
+      next: (r: unknown) => {
+        this.loading.set(false);
+        if (this.embedded) { this.saved.emit(r); return; }
+        this.router.navigate(['/financial-transfers'], { queryParams: { view: 'entries' } });
+      },
+      error: (err: any) => {
         this.loading.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar o lançamento. Tente novamente.';
         this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);

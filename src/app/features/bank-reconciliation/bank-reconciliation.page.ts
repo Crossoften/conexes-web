@@ -6,6 +6,13 @@ import { Router } from '@angular/router';
 import { BankReconciliationStore } from './bank-reconciliation.store';
 import { ReconciliationItem } from './bank-reconciliation.model';
 import { LedgerCandidate } from './bank-reconciliation.service';
+import { PopupShellComponent } from '../../shared/components/popup-shell/popup-shell.component';
+import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
+import { IconLegendComponent, IconLegendGroup } from '../../shared/components/icon-legend/icon-legend.component';
+import { FinancialEntryNewPage } from '../financial-transfers/new-entry/financial-entry-new.page';
+import { FinancialTransferNewPage } from '../financial-transfers/new/financial-transfer-new.page';
+import { StatementPrefill } from '../financial-transfers/financial-transfers.model';
+import { NotificationService } from '../../shared/services/notification.service';
 
 /** CB-03/CB-10/CB-13: estado do formulário de uma pendência aberta. */
 interface PendenciaForm {
@@ -34,7 +41,7 @@ function primeiroDoMes(d: Date): Date { return new Date(d.getFullYear(), d.getMo
 @Component({
   selector: 'app-bank-reconciliation',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, PopupShellComponent, PeriodFieldComponent, IconLegendComponent, FinancialEntryNewPage, FinancialTransferNewPage],
   providers: [BankReconciliationStore],
   templateUrl: './bank-reconciliation.page.html',
   styleUrl: './bank-reconciliation.page.scss',
@@ -43,9 +50,59 @@ export class BankReconciliationPage implements OnInit {
   readonly store = inject(BankReconciliationStore);
   private router = inject(Router);
 
-  // CB-11: abrir o cadastro correspondente a partir da conciliação.
-  goNewEntry(): void { this.router.navigate(['/financial-transfers/new-entry']); }
-  goNewTransfer(): void { this.router.navigate(['/financial-transfers/new']); }
+  private notify = inject(NotificationService);
+
+  // ── Card #768 (item 38): novo lançamento e nova transferência em pop-up, sem sair
+  // da conciliação, preenchidos com tipo, descrição, data, valor e conta do extrato.
+  readonly popupLancamento = signal<StatementPrefill | null>(null);
+  readonly popupTransferencia = signal<StatementPrefill | null>(null);
+
+  private prefillDe(item: ReconciliationItem): StatementPrefill {
+    return {
+      transactionId: item.txId!,
+      bankAccountId: item.bankAccountId ?? this.store.selectedAccountId() ?? 0,
+      type: item.type === 'Credit' ? 'Credit' : 'Debit',
+      amount: Math.abs(item.rawValue ?? 0),
+      date: item.rawDate ?? '',
+      description: item.description ?? '',
+    };
+  }
+  abrirLancamento(item: ReconciliationItem): void { this.popupLancamento.set(this.prefillDe(item)); }
+  abrirTransferencia(item: ReconciliationItem): void { this.popupTransferencia.set(this.prefillDe(item)); }
+  aoLancar(msg: string): void {
+    this.popupLancamento.set(null);
+    this.popupTransferencia.set(null);
+    this.notify.success(msg);
+    this.store.recarregarConta();
+  }
+
+  // ── Card #768 (item 39): débito → Nova conta a pagar; crédito → Nova conta a receber,
+  // já preenchida com os dados do extrato. Ao salvar, o movimento fica conciliado.
+  abrirConta(item: ReconciliationItem): void {
+    const doExtrato = { txId: item.txId, ...this.prefillDe(item) };
+    this.router.navigate([item.type === 'Credit' ? '/accounts-receivable/new' : '/accounts-payable/new'], { state: { doExtrato } });
+  }
+
+  desfazer(loteId: number): void {
+    if (!confirm('Desfazer esta importação? Os movimentos do extrato que ainda não foram conciliados saem da conciliação.')) return;
+    this.store.desfazerLote(loteId);
+  }
+
+  // Card #768 (cenário 24): legenda dos ícones.
+  readonly legenda: IconLegendGroup[] = [
+    { title: 'Barra superior', items: [
+      { icon: 'auto', name: 'Conciliar automaticamente', desc: 'Concilia sozinho os lançamentos que combinam com o extrato.' },
+      { icon: 'upload', name: 'Importar extrato (OFX/Excel)', desc: 'Importa um arquivo de extrato bancário.' },
+      { icon: 'bank', name: 'Importar do banco (período)', desc: 'Busca o extrato direto do banco, por período.' },
+      { icon: 'history', name: 'Lotes de upload', desc: 'Abre o pop-up com os extratos importados, para ver e desfazer cada importação.' },
+      { icon: 'calendar', name: 'Período', desc: 'Todo o período, Este mês, Mês passado, Últimos 90 dias, Este ano ou o intervalo personalizado.' },
+    ] },
+    { title: 'Em cada lançamento', items: [
+      { icon: 'payable', name: 'Lançar em Contas a pagar', desc: 'Débitos: abre a Nova conta a pagar com descrição, data e valor do extrato.' },
+      { icon: 'receivable', name: 'Lançar em Contas a receber', desc: 'Créditos: abre a Nova conta a receber com os dados do extrato.' },
+      { icon: 'chevron', name: 'Expandir / recolher', desc: 'Abre o lançamento para vincular, criar lançamento ou transferência, ignorar ou conciliar.' },
+    ] },
+  ];
 
   ngOnInit(): void {
     this.store.load();
@@ -80,9 +137,16 @@ export class BankReconciliationPage implements OnInit {
   }
 
   readonly typeOptions = [
-    { label: 'Selecione o tipo', value: '' },
+    { label: 'Tipo: todos', value: '' },
     { label: 'Crédito', value: 'CREDIT' },
     { label: 'Débito', value: 'DEBIT' },
+  ];
+
+  // Card #768 (item 40): status ao lado da busca.
+  readonly statusOptions = [
+    { label: 'Status: todos', value: '' },
+    { label: 'Conciliados', value: 'RECONCILED' },
+    { label: 'Não conciliados', value: 'PENDING' },
   ];
 
   readonly pageSizeOptions = [10, 25, 50];

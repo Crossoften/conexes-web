@@ -9,6 +9,10 @@
     
     <div class="card-body" style="padding-top: 32px;">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Card #768 (item 39) -->
+      @if (doExtrato(); as ext) {
+        <div class="aviso-extrato">Aberto a partir da conciliação bancária: histórico, datas e valor vêm do extrato. Ao salvar, o movimento fica conciliado com esta conta a pagar.</div>
+      }
         
 
         <!-- ══ CP-15/CP-24: Dados gerais FIXO no topo ═══════════════════════

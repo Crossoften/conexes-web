@@ -1,10 +1,10 @@
 // src/app/features/financial-transfers/new/financial-transfer-new.page.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { NgClass, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FinancialTransfersService } from '../financial-transfers.service';
-import { BankAccountOption, CreateBankTransferPayload, BankMovementRateio, NATUREZAS_RECURSO } from '../financial-transfers.model';
+import { BankAccountOption, CreateBankTransferPayload, BankMovementRateio, NATUREZAS_RECURSO, StatementPrefill } from '../financial-transfers.model';
 import { PurchasesService } from '../../purchases/purchases.service';
 import { maskMoney, parseDecimalBR } from '../../../shared/utils/format';
 
@@ -20,6 +20,17 @@ export class FinancialTransferNewPage implements OnInit {
   private svc     = inject(FinancialTransfersService);
   private lookups = inject(PurchasesService);
   private router  = inject(Router);
+
+  // Card #768 (itens 30, 31 e 38): o formulário abre em pop-up — na lista de
+  // Transferências (nova/editar) e na conciliação (preenchido com o extrato).
+  @Input() embedded = false;
+  @Input() editId: number | null = null;
+  @Input() prefill: StatementPrefill | null = null;
+  @Input() statementTransactionId: number | null = null;
+  @Input() duplicate: any = null;
+  @Output() saved     = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  @HostBinding('class.is-embedded') get isEmbedded() { return this.embedded; }
 
   readonly accounts = signal<BankAccountOption[]>([]);
   readonly loading  = signal(false);
@@ -65,6 +76,10 @@ export class FinancialTransferNewPage implements OnInit {
 
   get rateios(): FormArray { return this.form.get('rateios') as FormArray; }
 
+  get titulo(): string {
+    return this.editId ? 'Editar transferência' : 'Nova transferência';
+  }
+
   /** TR-08: no modo automático a descrição é composta pelo servidor. */
   get descricaoAutomatica(): boolean {
     return this.form.get('descriptionMode')?.value === 'auto';
@@ -87,13 +102,20 @@ export class FinancialTransferNewPage implements OnInit {
     if (!this.form.get('differentDateCredit')?.value) this.form.get('creditDate')?.setValue('');
   }
 
+  /** Card #768 (cenário 19): a data abre o calendário ao clicar, sem digitar. */
+  abrirCalendario(ev: Event): void {
+    const el = ev.target as HTMLInputElement & { showPicker?: () => void };
+    try { el.showPicker?.(); } catch { /* navegador sem showPicker */ }
+  }
+
   novaLinhaRateio(valor: Partial<BankMovementRateio> = {}): FormGroup {
+    const s = (v: any) => (v ? String(v) : '');
     return this.fb.group({
-      costCenterId:  [valor.costCenterId ?? ''],
-      projectId:     [valor.projectId ?? ''],
+      costCenterId:  [s(valor.costCenterId)],
+      projectId:     [s(valor.projectId)],
       // LB-05: a atividade da linha
-      activityId:    [(valor as any).activityId ?? ''],
-      accountPlanId: [valor.accountPlanId ?? ''],
+      activityId:    [s(valor.activityId)],
+      accountPlanId: [s(valor.accountPlanId)],
       percentage:    [valor.percentage ?? ''],
     });
   }
@@ -139,8 +161,25 @@ export class FinancialTransferNewPage implements OnInit {
       error: () => this.accountPlans.set([]),
     });
 
+    // Card #768 (item 31): editar carrega a transferência gravada, com o rateio.
+    if (this.editId) { this.carregarParaEdicao(this.editId); return; }
+
+    // Card #768 (item 38): aberto da conciliação — conta, valor, data e descrição do extrato.
+    if (this.prefill) {
+      const p = this.prefill;
+      this.form.patchValue({
+        description: p.description ?? '',
+        // débito sai da conta do extrato; crédito entra nela
+        origin: p.type === 'Debit' ? String(p.bankAccountId) : '',
+        destination: p.type === 'Credit' ? String(p.bankAccountId) : '',
+        operationDate: (p.date ?? '').slice(0, 10),
+        transferValue: p.amount != null ? Number(p.amount).toFixed(2).replace('.', ',') : '',
+      });
+      return;
+    }
+
     // TR-04: duplicar — o formulário abre pré-preenchido com os dados do registro de origem.
-    const dup = (history.state && history.state.duplicate) || null;
+    const dup = this.duplicate || (history.state && history.state.duplicate) || null;
     if (dup) {
       this.form.patchValue({
         description: dup.description && dup.description !== '—' ? dup.description : '',
@@ -153,22 +192,36 @@ export class FinancialTransferNewPage implements OnInit {
     }
   }
 
+  private carregarParaEdicao(id: number): void {
+    this.svc.getTransfer(id).subscribe({
+      next: (t: any) => {
+        const modo = t.descriptionMode === 'auto' ? 'auto' : 'manual';
+        this.form.patchValue({
+          descriptionMode: modo,
+          description: modo === 'auto' ? '' : (t.description ?? ''),
+          origin: t.originAccountId ? String(t.originAccountId) : '',
+          destination: t.destinationAccountId ? String(t.destinationAccountId) : '',
+          operationDate: (t.operationDate ?? '').slice(0, 10),
+          transferValue: t.amount != null ? Number(t.amount).toFixed(2).replace('.', ',') : '',
+          differentDateCredit: !!t.differentCreditDate,
+          creditDate: (t.creditDate ?? '').slice(0, 10),
+          originNature: t.originResourceNature ?? '',
+          destinationNature: t.destinationResourceNature ?? '',
+          observations: t.observation ?? '',
+        });
+        this.onDescriptionModeChange();
+        this.rateios.clear();
+        for (const r of t.rateios ?? []) this.rateios.push(this.novaLinhaRateio(r));
+      },
+      error: () => this.errorMsg.set('Não foi possível carregar a transferência para edição.'),
+    });
+  }
+
   /** Máscara monetária BR no valor. */
   onMoneyInput(event: Event): void {
     const el = event.target as HTMLInputElement;
     el.value = maskMoney(el.value);
     this.form.get('transferValue')?.setValue(el.value, { emitEvent: false });
-  }
-
-  /** Máscara dd/mm/aaaa na data. */
-  onDateInput(event: Event): void {
-    const el = event.target as HTMLInputElement;
-    const d = el.value.replace(/\D/g, '').slice(0, 8);
-    let masked = d;
-    if (d.length > 4)      masked = `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
-    else if (d.length > 2) masked = `${d.slice(0, 2)}/${d.slice(2)}`;
-    el.value = masked;
-    this.form.get('operationDate')?.setValue(masked, { emitEvent: false });
   }
 
   private toIso(value: string): string | undefined {
@@ -185,7 +238,13 @@ export class FinancialTransferNewPage implements OnInit {
   resetForm(): void {
     this.rateios.clear();
     this.form.reset({ differentDateCredit: false, descriptionMode: 'manual' });
+    this.onDescriptionModeChange();
     this.errorMsg.set(null);
+  }
+
+  voltar(): void {
+    if (this.embedded) { this.cancelled.emit(); return; }
+    this.router.navigate(['/financial-transfers']);
   }
 
   onSubmit(): void {
@@ -195,7 +254,7 @@ export class FinancialTransferNewPage implements OnInit {
       this.errorMsg.set(
         this.accounts().length === 0
           ? 'Não há conta bancária cadastrada. Cadastre uma conta bancária antes de registrar transferências.'
-          : 'Preencha os campos obrigatórios destacados (origem, destino, data e valor).',
+          : 'Preencha os campos obrigatórios destacados (descrição, origem, destino, data e valor).',
       );
       return;
     }
@@ -203,7 +262,7 @@ export class FinancialTransferNewPage implements OnInit {
     const v = this.form.value;
     // TR-01: a conta de origem precisa ser diferente da conta de destino.
     if (Number(v.origin) === Number(v.destination)) {
-      this.errorMsg.set('A conta de origem deve ser diferente da conta de destino.');
+      this.errorMsg.set('A conta de destino deve ser diferente da conta de origem.');
       return;
     }
     const operationDate = this.toIso(v.operationDate);
@@ -234,9 +293,11 @@ export class FinancialTransferNewPage implements OnInit {
       return;
     }
 
+    const num = (c: any, k: string) => (c.get(k)?.value ? Number(c.get(k)!.value) : undefined);
     const payload: CreateBankTransferPayload = {
-      description:          v.description,
-      descriptionMode:      v.descriptionMode === 'auto' ? 'auto' : 'manual',
+      // Card #768 (item 29): no modo Automática a descrição vai vazia e o servidor a compõe.
+      description:          this.descricaoAutomatica ? '' : (v.description ?? ''),
+      descriptionMode:      this.descricaoAutomatica ? 'auto' : 'manual',
       originAccountId:      Number(v.origin),
       destinationAccountId: Number(v.destination),
       operationDate,
@@ -246,20 +307,28 @@ export class FinancialTransferNewPage implements OnInit {
       originResourceNature:      v.originNature || undefined,
       destinationResourceNature: v.destinationNature || undefined,
       observation:         v.observations || undefined,
-      rateios: this.rateios.length
-        ? this.rateios.controls.map(c => ({
-            costCenterId:  c.get('costCenterId')?.value  ? Number(c.get('costCenterId')!.value)  : undefined,
-            projectId:     c.get('projectId')?.value     ? Number(c.get('projectId')!.value)     : undefined,
-            accountPlanId: c.get('accountPlanId')?.value ? Number(c.get('accountPlanId')!.value) : undefined,
-            percentage:    Number(c.get('percentage')?.value) || 0,
-          }))
-        : undefined,
+      rateios: this.rateios.controls.map(c => ({
+        costCenterId:  num(c, 'costCenterId'),
+        projectId:     num(c, 'projectId'),
+        activityId:    num(c, 'activityId'),
+        accountPlanId: num(c, 'accountPlanId'),
+        percentage:    Number(c.get('percentage')?.value) || 0,
+      })),
     };
 
     this.loading.set(true);
     this.errorMsg.set(null);
-    this.svc.createTransfer(payload).subscribe({
-      next: () => { this.loading.set(false); this.router.navigate(['/financial-transfers']); },
+    const req = this.editId
+      ? this.svc.updateTransfer(this.editId, payload)
+      : this.statementTransactionId
+        ? this.svc.createTransferFromStatement(this.statementTransactionId, payload)
+        : this.svc.createTransfer(payload);
+    req.subscribe({
+      next: (r) => {
+        this.loading.set(false);
+        if (this.embedded) { this.saved.emit(r); return; }
+        this.router.navigate(['/financial-transfers']);
+      },
       error: err => {
         this.loading.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar a transferência. Tente novamente.';

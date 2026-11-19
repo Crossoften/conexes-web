@@ -192,3 +192,50 @@
     }
   }
 }
+// ── Card #768 (itens 30 e 35, cenários 19 e 22) ───────────────────────────────
+// Descrição (modo) menor; Descrição da transferência e Data da operação ao lado.
+.grid-desc { grid-template-columns: 170px 1fr 1fr; }
+.grid-cols-3 > .form-group, .grid-desc > .form-group { min-width: 0; }
+
+.credit-wrap {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+  &:has(input) { grid-template-columns: 110px 1fr; }
+}
+
+.rateio {
+  border-top: 1px solid var(--surface-border-mid, #E5E7EB);
+  padding-top: 18px;
+  display: flex; flex-direction: column; gap: 12px;
+
+  &__head { display: flex; align-items: center; justify-content: space-between; }
+  &__title { font-family: var(--font-display); font-size: 14px; font-weight: 700; margin: 0; color: var(--text-primary); }
+  &__vazio { font-size: 13px; color: #6B7280; margin: 0; }
+  &__box { background: #fff; border: 1px solid #EEF0F6; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  // Categoria, Centro de custo, Projeto, Atividade e o % no fim da linha
+  &__linha { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr 1fr 150px; gap: 12px; align-items: start;
+    .form-control { padding: 10px 14px; }
+  }
+  &__pct { display: flex; gap: 6px; align-items: center; }
+  &__valor { font-size: 12px; color: #6B7280; text-align: right; }
+  &__soma { font-size: 12.5px; color: #6B7280; margin: 0; text-align: right; }
+  &__soma--erro { color: #B91C1C; }
+}
+
+.btn-x {
+  width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; border: 1px solid #E5E7EB; background: #fff;
+  color: #6B7280; cursor: pointer; font-size: 12px;
+  &:hover { color: #B91C1C; border-color: #FECACA; }
+}
+
+// Dentro do pop-up o cartão ocupa o quadro lavanda, sem a moldura da página.
+:host(.is-embedded) {
+  .page { padding: 0; }
+  .card { box-shadow: none; border: 0; background: transparent; }
+  .card-header { padding: 0 0 14px; }
+  .card-body { padding: 0 0 8px; }
+  .card-footer { background: transparent; padding: 18px 0 0; }
+}
+
+@media (max-width: 900px) {
+  .grid-desc, .grid-cols-3, .rateio__linha { grid-template-columns: 1fr; }
+}

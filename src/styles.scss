@@ -116,3 +116,34 @@ img, svg {
 .btn-solid.btn-solid--orange { background: var(--brand-orange, #F97316); color: #fff; border: 0; border-radius: 24px; padding: 10px 22px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 2px 6px rgba(249,115,22,.25); }
 .btn-solid.btn-solid--orange:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 .btn-outline.btn-outline--orange { background: #fff; color: var(--brand-orange, #F97316); border: 1.5px solid var(--brand-orange, #F97316); border-radius: 24px; padding: 9px 20px; font-weight: 600; font-size: 14px; cursor: pointer; }
+
+// Card #768 (itens 34, 36, 37 e 69): botões só de ícone, cinza, com o nome ao passar o mouse.
+.tool-btn {
+  position: relative; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+  border: 1px solid var(--surface-border-mid, #E5E7EB); background: #fff; color: #6B7280;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  &:hover { border-color: #C4B5FD; color: var(--brand-purple, #6D28D9); background: #F5F3FF; }
+  &:disabled { opacity: .45; cursor: not-allowed; }
+  &[data-tip]:hover::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 11.5px; font-weight: 500; white-space: nowrap;
+    padding: 5px 8px; border-radius: 6px; z-index: 80; pointer-events: none;
+  }
+  &--sm { width: 30px; height: 30px; }
+}
+.tool-menu { position: relative; display: inline-flex; }
+.tool-menu__list {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 70; min-width: 190px; background: #fff;
+  border: 1px solid #E5E7EB; border-radius: 10px; box-shadow: 0 12px 28px rgba(17,24,39,.14); padding: 6px;
+  display: flex; flex-direction: column;
+  button { display: flex; align-items: center; gap: 8px; text-align: left; border: 0; background: transparent; padding: 8px 10px;
+    border-radius: 8px; font-size: 13px; color: #374151; cursor: pointer; white-space: nowrap;
+    &:hover { background: #F5F3FF; color: var(--brand-purple, #6D28D9); } }
+}
+// Ações redondas laranja no cabeçalho roxo dos pop-ups (Editar/Excluir).
+.ps-acao {
+  width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--brand-orange, #F97316); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  &:hover { filter: brightness(1.05); transform: translateY(-1px); }
+}

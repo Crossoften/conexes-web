@@ -1,7 +1,7 @@
 // src/app/features/invoice-review/invoice-review.page.ts
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InvoiceReviewService, InvoiceCard, OrderOption, OrderDetail, ReviewDetail } from './invoice-review.service';
+import { InvoiceReviewService, InvoiceCard, OrderOption, OrderDetail, ReviewDetail, OrderNote } from './invoice-review.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
@@ -28,6 +28,10 @@ export class InvoiceReviewPage implements OnInit {
   readonly detail        = signal<OrderDetail | null>(null);
   readonly loadingDetail = signal(false);
   readonly detailError   = signal<string | null>(null);
+
+  // Card #768 (item 28): o faturamento é por nota fiscal (recebimento), não pelo pedido inteiro.
+  readonly notes         = signal<OrderNote[]>([]);
+  readonly selectedNotes = signal<Set<number>>(new Set());
 
   ngOnInit(): void { this.load(); }
 
@@ -60,8 +64,15 @@ export class InvoiceReviewPage implements OnInit {
   onOrderChange(): void {
     this.detail.set(null);
     this.detailError.set(null);
+    this.notes.set([]);
+    this.selectedNotes.set(new Set());
     const id = Number(this.selectedOrder);
     if (!id) return;
+    this.svc.orderNotes(id).subscribe(ns => {
+      this.notes.set(ns);
+      // já vêm marcadas as notas ainda não faturadas
+      this.selectedNotes.set(new Set(ns.filter(n => !n.accountPayableId).map(n => n.receiptId)));
+    });
     this.loadingDetail.set(true);
     this.svc.orderDetail(id).subscribe({
       next: d => { this.detail.set(d); this.loadingDetail.set(false); },
@@ -82,10 +93,25 @@ export class InvoiceReviewPage implements OnInit {
     return decodeURIComponent(bruto.split('/').pop() || 'arquivo');
   }
 
+  toggleNote(n: OrderNote): void {
+    if (n.accountPayableId) return;
+    const s = new Set(this.selectedNotes());
+    s.has(n.receiptId) ? s.delete(n.receiptId) : s.add(n.receiptId);
+    this.selectedNotes.set(s);
+  }
+  notasPendentes(): number { return this.notes().filter(n => !n.accountPayableId).length; }
+  totalSelecionado(): number { return this.notes().filter(n => this.selectedNotes().has(n.receiptId)).reduce((s, n) => s + n.amount, 0); }
+  podeFaturar(): boolean {
+    if (!this.selectedOrder || this.loadingDetail()) return false;
+    return this.notes().length ? this.selectedNotes().size > 0 : true;
+  }
+
   invoice(): void {
     if (!this.selectedOrder) { this.notify.error('Escolha um pedido para faturar.'); return; }
-    this.svc.createFromOrder(Number(this.selectedOrder)).subscribe({
-      next: () => { this.modalOpen.set(false); this.notify.success('Pré-lançamento criado em análise.'); this.load(); },
+    if (this.notes().length && !this.selectedNotes().size) { this.notify.error('Marque ao menos uma nota fiscal para faturar.'); return; }
+    const ids = this.notes().length ? [...this.selectedNotes()] : undefined;
+    this.svc.createFromOrder(Number(this.selectedOrder), ids).subscribe({
+      next: (r: any) => { this.modalOpen.set(false); this.notify.success(r?.message ?? 'Pré-lançamento criado em análise.'); this.load(); },
       error: (e) => this.notify.error(e?.error?.message ?? 'Erro ao faturar o pedido.'),
     });
   }

@@ -123,6 +123,36 @@
                 </tfoot>
               </table>
 
+              <!-- Card #768 (item 28): um pré-lançamento por nota fiscal recebida -->
+              @if (notes().length) {
+                <div class="order-detail__notes">
+                  <strong>Notas fiscais recebidas</strong>
+                  <p class="muted">Cada nota marcada vira um pré-lançamento próprio, com o valor e a data daquela nota.</p>
+                  <table class="order-items">
+                    <thead>
+                      <tr><th></th><th>Nota fiscal</th><th>Recebida em</th><th>Itens</th><th class="right">Valor</th><th>Situação</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (n of notes(); track n.receiptId) {
+                        <tr [class.muted]="!!n.accountPayableId">
+                          <td><input type="checkbox" [checked]="selectedNotes().has(n.receiptId)" [disabled]="!!n.accountPayableId" (change)="toggleNote(n)" /></td>
+                          <td>{{ n.invoiceNumber || ('Recebimento #' + n.receiptId) }}</td>
+                          <td>{{ dataBR(n.receivedAt) }}</td>
+                          <td>
+                            @for (l of n.items; track l.orderItemId) { <div>{{ l.quantity }} × {{ l.name }}</div> }
+                          </td>
+                          <td class="right">{{ brl(n.amount) }}</td>
+                          <td>{{ n.accountPayableId ? ('Faturada (lançamento #' + n.accountPayableId + ')') : 'A faturar' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr class="order-items__total"><td colspan="4">Total das notas marcadas</td><td class="right">{{ brl(totalSelecionado()) }}</td><td></td></tr>
+                    </tfoot>
+                  </table>
+                </div>
+              }
+
               <!-- a NF e as CNDs que vão junto no pré-lançamento -->
               <div class="order-detail__files">
                 <strong>Anexos (NF/CNDs)</strong>
@@ -139,11 +169,16 @@
             </div>
           }
 
-          <p class="hint">Gera um pré-lançamento em análise no financeiro, herdando a parceria da requisição e trazendo os anexos (NF/CNDs).</p>
+          <p class="hint">
+            @if (notes().length) { Gera um pré-lançamento em análise para CADA nota fiscal marcada, herdando a classificação e a parceria da requisição e trazendo os anexos. }
+            @else { Gera um pré-lançamento em análise no financeiro, herdando a parceria da requisição e trazendo os anexos (NF/CNDs). }
+          </p>
         </div>
         <div class="modal-foot">
           <button class="btn-outline" (click)="closeInvoice()">Cancelar</button>
-          <button class="btn-primary" [disabled]="!selectedOrder || loadingDetail()" (click)="invoice()">Faturar</button>
+          <button class="btn-primary" [disabled]="!podeFaturar()" (click)="invoice()">
+            {{ notes().length ? ('Faturar ' + selectedNotes().size + ' nota(s)') : 'Faturar' }}
+          </button>
         </div>
       </div>
     </div>

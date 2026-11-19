@@ -17,6 +17,10 @@
 
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Card #768 (item 39) -->
+      @if (doExtrato(); as ext) {
+        <div class="aviso-extrato">Aberto a partir da conciliação bancária: descrição, datas e valor vêm do extrato. Ao salvar, o movimento fica conciliado com esta conta a receber.</div>
+      }
         <div class="form-grid">
 
           <div class="form-row grid-cols-2">

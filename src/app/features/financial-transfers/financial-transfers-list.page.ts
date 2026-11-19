@@ -1,17 +1,23 @@
 // src/app/features/financial-transfers/financial-transfers-list.page.ts
-import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass, DatePipe } from '@angular/common';
 import { FinancialTransfersStore } from './financial-transfers.store';
 import { FinancialTransfersService } from './financial-transfers.service';
-import { BankAccountOption, FinancialTransfer, ImportBatch, TransferView } from './financial-transfers.model';
-import { RouterLink, ActivatedRoute, Router } from "@angular/router";
+import { BankAccountOption, FinancialTransfer, ImportBatch, TransferView, NATUREZAS_RECURSO } from './financial-transfers.model';
+import { ActivatedRoute } from "@angular/router";
 import { NotificationService } from '../../shared/services/notification.service';
+import { PopupShellComponent } from '../../shared/components/popup-shell/popup-shell.component';
+import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
+import { IconLegendComponent, IconLegendGroup } from '../../shared/components/icon-legend/icon-legend.component';
+import { FinancialTransferNewPage } from './new/financial-transfer-new.page';
+import { FinancialEntryNewPage } from './new-entry/financial-entry-new.page';
+import { PurchasesService } from '../purchases/purchases.service';
 
 @Component({
   selector: 'app-financial-transfers-list',
   standalone: true,
-  imports: [FormsModule, NgClass, DatePipe, RouterLink],
+  imports: [FormsModule, NgClass, DatePipe, PopupShellComponent, PeriodFieldComponent, IconLegendComponent, FinancialTransferNewPage, FinancialEntryNewPage],
   providers: [FinancialTransfersStore],
   templateUrl: './financial-transfers-list.page.html',
   styleUrl: './financial-transfers-list.page.scss',
@@ -20,8 +26,72 @@ export class FinancialTransfersListPage implements OnInit {
   readonly store = inject(FinancialTransfersStore);
   private svc = inject(FinancialTransfersService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private notify = inject(NotificationService);
+  private lookups = inject(PurchasesService);
+
+  // Card #768 (itens 34 e 36): menu do botão Importar (Baixar modelo / Importar arquivo).
+  readonly menuImportar = signal(false);
+  @HostListener('document:click', ['$event'])
+  fecharMenus(ev: MouseEvent): void {
+    if (this.menuImportar() && !(ev.target as HTMLElement)?.closest?.('.tool-menu')) this.menuImportar.set(false);
+  }
+
+  // Card #768 (cenários 20 e 23): legenda de cada ícone, abaixo da lista.
+  readonly legenda: IconLegendGroup[] = [
+    { title: 'Barra de filtros', items: [
+      { icon: 'excel', name: 'Exportar', desc: 'Exporta a lista em Excel.' },
+      { icon: 'pdf', name: 'Relatório PDF', desc: 'Gera o relatório da lista em PDF.' },
+      { icon: 'history', name: 'Importações (lotes de upload)', desc: 'Mostra os arquivos importados e permite desfazer cada importação.' },
+      { icon: 'upload', name: 'Importar', desc: 'Abre o menu com Baixar modelo e Importar arquivo.' },
+      { icon: 'calendar', name: 'Período', desc: 'Todo o período, Este mês, Mês passado, Últimos 90 dias, Este ano ou o intervalo personalizado.' },
+    ] },
+    { title: 'Ações da linha (coluna fixa)', items: [
+      { icon: 'eye', name: 'Visualizar', desc: 'Abre o registro em pop-up, só para consulta.' },
+      { icon: 'edit', name: 'Editar', desc: 'Altera as informações.' },
+      { icon: 'copy', name: 'Duplicar', desc: 'Cria um novo registro a partir deste.' },
+      { icon: 'trash', name: 'Excluir', desc: 'Exclui o registro, com confirmação.' },
+    ] },
+  ];
+
+  // Nomes das classificações para o rateio do pop-up de visualizar.
+  private readonly nomesCategoria = signal(new Map<number, string>());
+  private readonly nomesCentro = signal(new Map<number, string>());
+  private readonly nomesProjeto = signal(new Map<number, string>());
+  nomeCategoria(id?: number | null): string { return id ? (this.nomesCategoria().get(id) ?? `#${id}`) : '—'; }
+  nomeCentro(id?: number | null): string { return id ? (this.nomesCentro().get(id) ?? `#${id}`) : '—'; }
+  nomeProjeto(id?: number | null): string { return id ? (this.nomesProjeto().get(id) ?? `#${id}`) : '—'; }
+  natureza(v?: string | null): string { return NATUREZAS_RECURSO.find(n => n.valor === v)?.rotulo ?? '—'; }
+  brl(v?: number | null): string { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0); }
+  dataBR(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  }
+
+  // ── Card #768 (itens 30, 31, 35 e 36): formulário em pop-up ────────────────
+  readonly formAberto = signal<{ titulo: string; editId: number | null; duplicate: any } | null>(null);
+
+  abrirNovo(): void {
+    this.formAberto.set({ titulo: this.newLabel(), editId: null, duplicate: null });
+  }
+  abrirEdicao(item: FinancialTransfer): void {
+    this.formAberto.set({ titulo: this.isEntries() ? 'Editar lançamento bancário' : 'Editar transferência', editId: Number(item.id), duplicate: null });
+  }
+  fecharForm(): void { this.formAberto.set(null); }
+  aoSalvarForm(editId: number | null): void {
+    this.formAberto.set(null);
+    this.notify.success(editId ? 'Alterações salvas.' : (this.isEntries() ? 'Lançamento salvo.' : 'Transferência salva.'));
+    this.store.load();
+  }
+  editarDaVisualizacao(t: FinancialTransfer): void {
+    this.viewItem.set(null);
+    this.abrirEdicao(t);
+  }
+  excluirDaVisualizacao(t: FinancialTransfer): void {
+    if (!confirm('Excluir este registro? Esta ação não pode ser desfeita.')) return;
+    this.viewItem.set(null);
+    this.store.deleteOne(t.id);
+  }
 
   // TR-12 / LB-07: contas bancárias para os filtros de origem/destino/conta.
   readonly accounts = signal<BankAccountOption[]>([]);
@@ -41,19 +111,22 @@ export class FinancialTransfersListPage implements OnInit {
       this.store.duplicarLancamento(item.id);
       return;
     }
-    this.router.navigate(['/financial-transfers/new'], { state: { duplicate: item } });
+    this.formAberto.set({ titulo: 'Nova transferência', editId: null, duplicate: item });
   }
 
-  // LB-06 / I053: a ação "Editar" saiu da lista de Lançamentos — o pedido original
-  // define o mesmo padrão das Transferências (visualizar, duplicar e excluir). A rota
-  // /financial-transfers/entry/:id/edit continua registrada e o PATCH segue existindo;
-  // apenas não há mais entrada por esta lista.
+  // Card #768 (itens 31 e 36): o cliente pediu o lápis de Editar de volta, nas duas
+  // visões (lista e pop-up de visualizar) — substitui a decisão LB-06 / I053.
 
   ngOnInit(): void {
     this.svc.getBankAccounts().subscribe({
       next: list => this.accounts.set(list),
       error: ()   => this.accounts.set([]),
     });
+    const mapa = (v: any[]) => new Map<number, string>((v ?? []).map((x: any) => [Number(x.id), x.name]));
+    this.lookups.getAccountPlansLookup().subscribe({ next: v => this.nomesCategoria.set(mapa(v as any[])) });
+    this.lookups.getCostCentersLookup().subscribe({ next: v => this.nomesCentro.set(mapa(v as any[])) });
+    this.lookups.getProjectsLookup().subscribe({ next: v => this.nomesProjeto.set(new Map([...this.nomesProjeto(), ...mapa(v as any[])])) });
+    this.lookups.getActivitiesLookup().subscribe({ next: v => this.nomesProjeto.set(new Map([...this.nomesProjeto(), ...mapa(v as any[])])) });
     // LB: ao voltar de salvar um lançamento avulso, mantém a visão Lançamentos (não cai em Transferências).
     const view = this.route.snapshot.queryParamMap.get('view');
     if (view === 'entries') this.store.setView('ENTRIES');
@@ -68,7 +141,6 @@ export class FinancialTransfersListPage implements OnInit {
   readonly pageSizeOptions = [10, 25, 50];
 
   readonly isEntries = computed(() => this.store.filters().view === 'ENTRIES');
-  readonly newRoute  = computed(() => this.isEntries() ? 'new-entry' : 'new');
   readonly newLabel  = computed(() => this.isEntries() ? 'Novo lançamento' : 'Nova transferência');
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.store.filteredTotal() / this.store.pagination().pageSize)));

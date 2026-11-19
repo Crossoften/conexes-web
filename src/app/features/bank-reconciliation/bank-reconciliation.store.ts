@@ -90,7 +90,7 @@ interface State {
   loading: boolean;
   error: string | null;
   activeTab: ReconciliationTab;
-  filters: { globalSearch: string; period: string; type: string; itemSearch: string; customStart: string; customEnd: string };
+  filters: { globalSearch: string; period: string; type: string; status: string; itemSearch: string; customStart: string; customEnd: string };
   pagination: { page: number; pageSize: number };
   expandedIds: Set<string>;
   expandedInnerIds: Set<string>; // Gerencia a expansão das sub-tabelas em Movimentações
@@ -111,7 +111,7 @@ export class BankReconciliationStore {
     loading: false,
     error: null,
     activeTab: 'PENDING',
-    filters: { globalSearch: '', period: '', type: '', itemSearch: '', customStart: '', customEnd: '' },
+    filters: { globalSearch: '', period: '', type: '', status: '', itemSearch: '', customStart: '', customEnd: '' },
     pagination: { page: 1, pageSize: 10 },
     expandedIds: new Set(),
     expandedInnerIds: new Set(),
@@ -178,11 +178,13 @@ export class BankReconciliationStore {
       stakeholderId: p.stakeholderId ?? null,
       costCenterId: p.costCenterId ?? null,
       reconciled: false,
+      fromStatement: !!(p as any).fromStatement,
+      bankAccountId: data.account.id,
     }));
     const movementItems: ReconciliationItem[] = (data.movements ?? []).map(m => ({
       id: `m-${m.id}`, date: fmtDate(m.date), dayOfWeek: weekday(m.date), rawDate: m.date,
       description: m.bankDescription ?? '—', amount: brl.format(m.bankValue ?? 0),
-      txId: m.id, rawValue: m.bankValue ?? 0, type: m.type, reconciled: m.reconciled,
+      txId: m.id, rawValue: m.bankValue ?? 0, type: m.type, reconciled: m.reconciled, bankAccountId: data.account.id,
       movementGroups: [{
         id: `g-${m.id}`,
         groupName: m.reconciled ? 'Conciliado' : 'Pendente',
@@ -268,6 +270,12 @@ export class BankReconciliationStore {
         (item.description ?? '').toLowerCase().includes(term));
     }
 
+    // Card #768 (item 40): filtros de tipo (Crédito/Débito) e de status junto da busca.
+    if (f.type === 'CREDIT') result = result.filter(i => i.type === 'Credit');
+    if (f.type === 'DEBIT') result = result.filter(i => i.type === 'Debit');
+    if (f.status === 'RECONCILED') result = result.filter(i => !!i.reconciled);
+    if (f.status === 'PENDING') result = result.filter(i => !i.reconciled);
+
     // CB-06/I062: o recorte por período da LISTA é o mesmo dos cards — uma só
     // implementação (`noPeriodo`). Havia aqui uma segunda cópia que comparava
     // instantes; lista e cards podiam discordar sobre o mesmo intervalo.
@@ -292,6 +300,20 @@ export class BankReconciliationStore {
   setPeriod(period: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, period }, pagination: { ...s.pagination, page: 1 } })); }
   setCustomStart(d: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, customStart: d }, pagination: { ...s.pagination, page: 1 } })); }
   setCustomEnd(d: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, customEnd: d }, pagination: { ...s.pagination, page: 1 } })); }
+  setStatus(status: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, status }, pagination: { ...s.pagination, page: 1 } })); }
+  /** Card #768 (cenário 25): o período chega de um só campo (atalho ou intervalo). */
+  setPeriodo(start: string, end: string) {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...s.filters, period: start || end ? 'CUSTOM' : '', customStart: start, customEnd: end },
+      pagination: { ...s.pagination, page: 1 },
+    }));
+  }
+  /** Recarrega a conta aberta (depois de lançar/transferir pela conciliação). */
+  recarregarConta(): void {
+    const id = this.selectedAccountId();
+    if (id) this.selectAccount(id);
+  }
   setType(type: string) { this.state.update(s => ({ ...s, filters: { ...s.filters, type }, pagination: { ...s.pagination, page: 1 } })); }
   
   setItemSearch(search: string) { 
@@ -466,9 +488,14 @@ export class BankReconciliationStore {
       next: r => {
         this.importBusy.set(false);
         this.importResultado.set(r);
-        this.lotesVisiveis.set(true);
+        // Card #768 (item 41): a tela inteira se atualiza depois de importar — lotes,
+        // pendências da conta (no seletor e nos cards) e a lista — sem recarregar a página.
+        // O período volta para "Todo o período" para os movimentos novos aparecerem.
+        this.state.update(s => ({ ...s, filters: { ...s.filters, period: '', customStart: '', customEnd: '', status: '', type: '' }, activeTab: 'PENDING' }));
         this.carregarLotes();
-        if (r.success) { this.notify.success(`${r.success} de ${r.total} movimento(s) importado(s) do extrato.`); this.selectAccount(id); }
+        this.selectAccount(id);
+        this.lotesVisiveis.set(true);
+        if (r.success) this.notify.success(`${r.success} de ${r.total} movimento(s) importado(s) do extrato.`);
         else this.notify.info('Nenhum movimento novo: confira o resultado da importação.');
       },
       error: err => {
@@ -486,7 +513,7 @@ export class BankReconciliationStore {
 
   carregarLotes(): void {
     this.svc.listStatementBatches().subscribe({
-      next: r => this.lotes.set(r?.data ?? []),
+      next: (r: any) => this.lotes.set(Array.isArray(r) ? r : (r?.data ?? [])),
       error: () => this.lotes.set([]),
     });
   }

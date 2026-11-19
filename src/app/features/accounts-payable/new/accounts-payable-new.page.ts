@@ -9,6 +9,8 @@ import { NotificationService } from '../../../shared/services/notification.servi
 import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
 import { parseDecimalBR } from '../../../shared/utils/format';
 import { UploadService } from '../../../shared/services/upload.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 /**
  * CP-15/CP-24: as abas do formulário, em UMA linha só.
@@ -46,6 +48,16 @@ export class AccountsPayableNewPage implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private upload = inject(UploadService);
+  private http = inject(HttpClient);
+
+  /**
+   * Card #768 (item 39): aberto pelo ícone de seta para baixo de um débito da
+   * conciliação — histórico, datas e valor vêm do extrato; ao salvar, a linha do
+   * extrato fica conciliada com esta conta a pagar e a tela volta à conciliação.
+   */
+  readonly doExtrato = signal<{ txId: number; bankAccountId: number; description: string; date: string; amount: number } | null>(
+    (history.state && history.state.doExtrato) || null,
+  );
 
   // CP-04: o mesmo formulário serve para cadastrar e editar. Com id na rota,
   // carrega o título e envia PATCH em vez de POST.
@@ -271,6 +283,13 @@ export class AccountsPayableNewPage implements OnInit {
     // CP-04: com id na rota, carrega o título para edição.
     const id = this.route.snapshot.paramMap.get('id');
     if (id && !isNaN(Number(id))) this.carregarParaEdicao(Number(id));
+
+    const ext = this.doExtrato();
+    if (ext) {
+      const dia = (ext.date ?? '').slice(0, 10);
+      this.form.patchValue({ historicoDespesa: ext.description ?? '', dataEmissao1: dia, dataEmissao2: dia, valorBruto: Math.abs(Number(ext.amount ?? 0)) });
+      setTimeout(() => this.recalcLiquido());
+    }
 
     // CP-12: recalcula o líquido quando muda o bruto ou qualquer alíquota de retenção.
     for (const c of ['valorBruto', ...this.TAX_DEFS.map(d => d.ctrl)]) {
@@ -648,8 +667,17 @@ export class AccountsPayableNewPage implements OnInit {
       : this.svc.update(id, this.buildPayload());
 
     requisicao.subscribe({
-      next: () => {
+      next: (salvo: any) => {
         this.notify.success(id === null ? 'Conta a pagar cadastrada com sucesso.' : 'Conta a pagar atualizada.');
+        const ext = this.doExtrato();
+        if (id === null && ext && salvo?.id) {
+          // a linha do extrato fica conciliada com o título recém-criado
+          this.http.patch(`${environment.apiUrl}/v1/banking/reconciliation/${ext.txId}/match`, { accountPayableId: salvo.id }).subscribe({
+            next: () => { this.notify.success('Movimento do extrato conciliado com a conta a pagar.'); this.router.navigate(['/bank-reconciliation']); },
+            error: () => { this.notify.error('Conta a pagar salva, mas não foi possível conciliar o movimento do extrato.'); this.router.navigate(['/bank-reconciliation']); },
+          });
+          return;
+        }
         this.router.navigate(['/accounts-payable']);
       },
       error: (err) => {
