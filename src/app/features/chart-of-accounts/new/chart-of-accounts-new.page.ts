@@ -82,7 +82,20 @@ export class ChartOfAccountsNewPage implements OnInit {
   private loadParents(): void {
     this.svc.maxLevels().subscribe({ next: n => this.maxLevels = n, error: () => {} });
     this.svc.flat().subscribe({
-      next: list => { this.parents = list; },
+      next: list => {
+        this.parents = list;
+        // Card #768 (item 2): a subconta herda natureza, grupo e centro de custo da conta superior.
+        const pid = this.form.get('parentId')?.value;
+        const pai = list.find(a => a.id === pid);
+        if (pai) {
+          const v = this.form.value;
+          this.form.patchValue({
+            categoryType:  v.categoryType  || pai.categoryType  || '',
+            categoryGroup: v.categoryGroup || pai.categoryGroup || '',
+            costCenter:    v.costCenter    || (pai.category ?? ''),
+          });
+        }
+      },
       error: ()   => { this.parents = []; },
     });
   }
@@ -146,6 +159,10 @@ export class ChartOfAccountsNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Card #768: o Salvar diz o que falta em vez de ficar sem resposta.
+      const rot: Record<string, string> = { categoryType: 'Natureza', categoryGroup: 'Grupo da categoria', costCenter: 'Centro de custo', categoryCode: 'Código', categoryTitle: 'Título' };
+      const faltam = Object.keys(rot).filter(k => this.form.get(k)?.invalid).map(k => rot[k]);
+      this.errorMsg.set(`Preencha os campos obrigatórios: ${faltam.join(', ')}.`);
       return;
     }
 
