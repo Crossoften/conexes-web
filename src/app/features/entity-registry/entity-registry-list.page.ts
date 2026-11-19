@@ -7,6 +7,7 @@ import { EntityRegistry, EntityRegistryListItem, EntityRegistryPayload, EntityHi
 import { EntityRegistryDetailModalComponent } from './components/entity-registry-detail.modal';
 import { EntityRegistryHistoryModalComponent } from './components/entity-registry-history.modal';
 import { EntityRegistryService } from './entity-registry.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Component({
   selector: 'app-entity-registry-list',
@@ -24,6 +25,7 @@ import { EntityRegistryService } from './entity-registry.service';
 export class EntityRegistryListPage implements OnInit {
   protected readonly store = inject(EntityRegistryStore);
   private readonly svc = inject(EntityRegistryService);
+  private readonly notify = inject(NotificationService);
 
   // ── Estado do modal ───────────────────────────────────────────────────────
   protected readonly selectedEntity  = signal<EntityRegistry | null>(null);
@@ -118,7 +120,8 @@ export class EntityRegistryListPage implements OnInit {
     const id = this.selectedEntity()?.id;
     if (!id) return;
     const ok = await this.store.updateEntity(id, payload);
-    if (ok) this.closeModal();
+    if (ok) { this.closeModal(); this.notify.success('Cadastro da organização salvo.'); }
+    else this.notify.error(this.store.error() ?? 'Não foi possível salvar o cadastro da organização.');
   }
 
   protected async onDelete(id: number): Promise<void> {

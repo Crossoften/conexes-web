@@ -100,8 +100,9 @@ export class EntityRegistryDetailModalComponent implements OnChanges, OnInit {
       // ENT-04: rótulo de "arquivo já enviado" quando a entidade já possui cert/logo.
       const certUrl = (this.entity as any).digitalCertFileUrl as string | undefined;
       const logoUrl = (this.entity as any).logoUrl as string | undefined;
-      this.certFileName.set(certUrl ? decodeURIComponent(certUrl.split('/').pop() || 'Certificado atual') : null);
-      this.logoFileName.set(logoUrl ? decodeURIComponent(logoUrl.split('/').pop() || 'Logotipo atual') : null);
+      // Card #768 (item 27): o endereço é assinado (S3) — o nome é a parte antes do "?".
+      this.certFileName.set(certUrl ? decodeURIComponent(certUrl.split('?')[0].split('/').pop() || 'Certificado atual') : null);
+      this.logoFileName.set(logoUrl ? decodeURIComponent(logoUrl.split('?')[0].split('/').pop() || 'Logotipo atual') : null);
     }
   }
 

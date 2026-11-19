@@ -144,7 +144,8 @@ export class EntityRegistryStore {
       }));
       return true;
     } catch (error) {
-      this.state.update(s => ({ ...s, loading: false }));
+      // Card #768 (item 27): a falha ao salvar passa a ser dita na tela (antes ia só para o console).
+      this.state.update(s => ({ ...s, loading: false, error: this._extractError(error) }));
       console.error('❌ Falha ao atualizar entidade:', error);
       return false;
     }
