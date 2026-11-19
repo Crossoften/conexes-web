@@ -33,7 +33,7 @@ export interface CostCenter {
   name:                 string;   // centros de custo
   title?:               string;   // projetos retornam title
   type:                 string;
-  _entityType?:         'cost_center' | 'project'; // indicador autoritativo do back (qual tabela)
+  _entityType?:         'cost_center' | 'project' | 'activity'; // indicador autoritativo do back (qual tabela/nível)
   entityKind?:          string;   // canônico do back: centro_de_custo | projeto | atividade
   classification?:      string;   // CC-01: Sintetica | Analitica
   description:          string;
@@ -45,6 +45,7 @@ export interface CostCenter {
   restrictInterestFine: boolean;
   restrictBudget:       boolean;
   costCenterId:         number | null;
+  parentId?:            number | null; // card #768: centro de custo superior (só centros de custo)
   parentProjectId?:     number | null; // projeto pai (nível Atividade)
   linkedAccounts:       LinkedAccount[];
   groups?:              CostCenterGroup[];
@@ -130,10 +131,20 @@ export function toEntityType(type: string): 'cost_center' | 'project' {
  * 404 em registros legados com `type` inconsistente.
  */
 export function resolveEntityType(
-  item: { type?: string; _entityType?: 'cost_center' | 'project' | null } | null | undefined,
+  item: { type?: string; _entityType?: 'cost_center' | 'project' | 'activity' | null } | null | undefined,
 ): 'cost_center' | 'project' {
-  if (item?._entityType === 'cost_center' || item?._entityType === 'project') {
-    return item._entityType;
-  }
+  if (item?._entityType === 'cost_center') return 'cost_center';
+  // Card #768 (itens 11 e 12): Atividade mora na tabela de projetos. Antes caía no
+  // texto `type` ("centro_de_custo") e a edição/exclusão ia para a tabela errada,
+  // respondendo "Centro de custo não encontrado".
+  if (item?._entityType === 'project' || item?._entityType === 'activity') return 'project';
   return toEntityType(item?.type ?? '');
+}
+
+/** Card #768: nível real do registro (tabela + kind), independente do texto `type`. */
+export function entityKindOf(item: { type?: string; _entityType?: string | null } | null | undefined): 'centro_de_custo' | 'projeto' | 'atividade' {
+  if (item?._entityType === 'cost_center') return 'centro_de_custo';
+  if (item?._entityType === 'activity') return 'atividade';
+  if (item?._entityType === 'project') return 'projeto';
+  return item?.type === 'centro_de_custo' ? 'centro_de_custo' : item?.type === 'atividade' ? 'atividade' : 'projeto';
 }

@@ -201,7 +201,7 @@
                     <select class="select" formControlName="parentId">
                       <option [ngValue]="null">Nenhuma (conta raiz)</option>
                       @for (p of filteredParents(); track p.id) {
-                        <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
+                        <option [ngValue]="p.id">{{ p.label }}</option>
                       }
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none">

@@ -60,7 +60,12 @@
 
               <div class="info-item">
                 <span class="info-label">Tipo</span>
-                <span class="info-value">{{ item?.type || '—' }}</span>
+                <span class="info-value">{{ kindLabel }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Superior</span>
+                <span class="info-value">{{ parentLabel }}</span>
               </div>
 
               <div class="info-item">
@@ -138,10 +143,36 @@
                       <option value="">Selecione</option>
                       <option value="centro_de_custo">Centro de Custo</option>
                       <option value="projeto">Projeto</option>
+                      <option value="atividade">Atividade</option>
                     </select>
                     <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
                 </div>
+
+                <!-- Card #768: superior conforme o Tipo (CC sintético, CC do projeto ou projeto da atividade). -->
+                @if (form.get('projectType')?.value === 'atividade') {
+                  <div class="field field--wide">
+                    <label class="field-label">Projeto pai <span class="required">*</span></label>
+                    <div class="select-wrap">
+                      <select class="select" formControlName="parentProjectId">
+                        <option [ngValue]="null">Selecione o projeto</option>
+                        @for (p of parentProjects(); track p.id) { <option [ngValue]="p.id">{{ p.code }} — {{ p.name }}</option> }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="field field--wide">
+                    <label class="field-label">{{ form.get('projectType')?.value === 'centro_de_custo' ? 'Centro de custo superior' : 'Centro de custo' }}</label>
+                    <div class="select-wrap">
+                      <select class="select" formControlName="costCenterId">
+                        <option [ngValue]="null">{{ form.get('projectType')?.value === 'centro_de_custo' ? 'Nenhum (primeiro nível)' : 'Selecione' }}</option>
+                        @for (c of parentCostCenters(); track c.id) { <option [ngValue]="c.id">{{ c.code }} — {{ c.name }}</option> }
+                      </select>
+                      <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                }
 
                 <!-- CC-01: classificação contábil (Sintética/Analítica) -->
                 <div class="field">
@@ -264,7 +295,7 @@
                 </div>
 
                 <div class="linked-box__actions">
-                  <!-- CC-02: abre o cadastro de Contas Bancárias em nova aba. -->
+                  <!-- Card #768 (item 7): cadastro de Contas Bancárias em pop-up. -->
                   <button type="button" class="btn-square-outline" title="Cadastrar nova conta bancária" (click)="openBankAccountRegister()">
                     <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </button>
@@ -280,8 +311,9 @@
                     <div class="linked-list__item">
                       <span class="linked-list__origin">{{ linked.origin }}</span>
                       <span class="linked-list__account">{{ getAccountLabel(linked.bankAccountId) }}</span>
-                      <button type="button" class="icon-btn" title="Remover" (click)="removeLinkedAccount($index)">
-                        <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                      <!-- Card #768 (item 6): lixeira visível para tirar a conta da composição. -->
+                      <button type="button" class="linked-list__remove" title="Excluir conta da composição" aria-label="Excluir conta da composição" (click)="removeLinkedAccount($index)">
+                        <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     </div>
                   }
@@ -291,6 +323,9 @@
             </div>
 
             <!-- Footer edit -->
+            @if (errorMsg()) {
+              <div class="error-banner" role="alert">{{ errorMsg() }}</div>
+            }
             <div class="edit-footer">
               <button type="button" class="btn-cancel" (click)="onCancelEdit()">Cancelar</button>
               <button type="submit" class="btn-save" [disabled]="loading()">
@@ -306,3 +341,9 @@
     </div>
   </div>
 </div>
+
+@if (showBankPopup()) {
+  <app-popup-shell title="Cadastro de conta bancária" subtitle="Preencha os dados da conta. Ao salvar, ela já fica selecionada na composição." icon="bank" [width]="1100" [plain]="true" (close)="closeBankPopup()">
+    <app-bank-account-new [embedded]="true" (created)="onBankAccountCreated($event)" (cancelled)="closeBankPopup()"></app-bank-account-new>
+  </app-popup-shell>
+}

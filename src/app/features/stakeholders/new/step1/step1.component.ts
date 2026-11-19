@@ -47,6 +47,27 @@ export class Step1Component implements OnInit {
     VIEW_TYPES[this.view()].map(t => ({ value: t, label: STAKEHOLDER_TYPE_LABELS[t] }))
   );
 
+  /** Card #768 (item 13): "Mesmo endereço do cliente" no Endereço de faturamento. */
+  readonly sameAddress = signal(false);
+  private sameAddrSub?: { unsubscribe(): void };
+  private static readonly ADDR_PAIRS: [string, string][] = [
+    ['zipCode', 'billingZipCode'], ['address', 'billingAddress'], ['addressNum', 'billingNum'],
+    ['complement', 'billingComplement'], ['district', 'billingDistrict'], ['city', 'billingCity'], ['state', 'billingState'],
+  ];
+
+  toggleSameAddress(on: boolean): void {
+    this.sameAddress.set(on);
+    this.sameAddrSub?.unsubscribe();
+    const copy = () => {
+      for (const [from, to] of Step1Component.ADDR_PAIRS) this.f[to]?.setValue(this.f[from]?.value ?? '', { emitEvent: false });
+    };
+    if (on) {
+      copy();
+      // Mantém o faturamento igual enquanto a caixa estiver marcada.
+      this.sameAddrSub = this.form().valueChanges.subscribe(() => copy());
+    }
+  }
+
   cnpjLoading  = signal(false);
   cnpjError    = signal<string | null>(null);
   accountPlans = signal<AccountPlanOption[]>([]);

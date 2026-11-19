@@ -429,3 +429,12 @@
   background: rgba(192, 57, 43, .10);
   border-color: rgba(192, 57, 43, .25);
 }
+
+// Card #768 (item 12): aviso de exclusão sem apagar a lista.
+.notice {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 24px 12px; padding: 10px 14px; border-radius: 10px;
+  background: #ecfdf3; color: #067647; border: 1px solid #abefc6; font-size: 14px;
+  &--error { background: #fef3f2; color: #b42318; border-color: #fecdca; }
+  &__close { background: none; border: 0; font-size: 18px; line-height: 1; cursor: pointer; color: inherit; }
+}

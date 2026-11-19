@@ -96,12 +96,12 @@
 
           <div class="form-row grid-cols-3">
             <div class="form-group">
-              <label>Conta superior <span class="hint">(opcional — para subcontas de Totalizadora/Sintética)</span></label>
+              <label>Conta superior <span class="hint">(opcional — até {{ maxLevels }} níveis)</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="parentId">
                   <option [ngValue]="null">Nenhuma (conta raiz)</option>
                   @for (p of filteredParents(); track p.id) {
-                    <option [ngValue]="p.id">{{ p.code }} — {{ p.title }}</option>
+                    <option [ngValue]="p.id">{{ p.label }}</option>
                   }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

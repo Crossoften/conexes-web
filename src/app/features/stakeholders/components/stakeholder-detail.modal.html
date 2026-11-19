@@ -410,6 +410,11 @@
               <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
               @if (isClient) {
                 <h3 class="edit-section-title">Endereço de faturamento</h3>
+                          <!-- Card #768 (item 13): reaproveita o endereço do cliente preenchido acima. -->
+                          <label class="same-address">
+                            <input type="checkbox" [checked]="sameAddress()" (change)="toggleSameAddress($any($event.target).checked)">
+                            <span>Mesmo endereço do cliente</span>
+                          </label>
                 <div class="edit-grid">
                   <div class="field">
                     <label class="field-label">CEP</label>

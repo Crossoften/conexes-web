@@ -175,3 +175,20 @@
   line-height: 1.35;
   color: var(--text-muted, #6B7280);
 }
+
+// Card #768 (item 6): contas adicionadas à composição, com a lixeira visível.
+.linked-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.linked-list__item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border: 1px solid var(--surface-border-mid, #E5E7EB); border-radius: 12px; background: #FAFAFE;
+}
+.linked-list__origin {
+  font-size: 12px; font-weight: 600; color: #5B21B6; background: #EDE9FE; border-radius: 999px; padding: 2px 10px;
+}
+.linked-list__account { flex: 1; font-size: 14px; color: var(--text-primary, #111827); }
+.linked-list__remove {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid #FECACA; background: #FEF2F2; color: #DC2626;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  &:hover { background: #FEE2E2; }
+}
+.error-banner--footer { margin: 0 32px 12px; }
