@@ -152,3 +152,8 @@
   .footer-right { width: 100%; }
   .page-footer .btn-back { width: 100%; }
 }
+
+// Card #768: dentro do pop-up, sem a moldura da página.
+:host(.is-embedded) {
+  .page { padding: 0; }
+}

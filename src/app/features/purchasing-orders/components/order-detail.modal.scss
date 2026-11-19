@@ -92,3 +92,11 @@
 @media (max-width: 640px) { .info-grid { grid-template-columns: 1fr; } .receive-fields { grid-template-columns: 1fr; } }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+// Card #768 (item 26)
+.receipt-item--click { padding: 0; }
+.receipt-toggle { width: 100%; text-align: left; background: none; border: 0; padding: 10px 12px; cursor: pointer; font: inherit; color: inherit; border-radius: 10px; }
+.receipt-toggle:hover { background: #F5F3FF; }
+.receipt-chevron { margin-left: auto; font-size: 11px; color: var(--brand-purple, #6366F1); }
+.receipt-body { display: flex; gap: 6px; align-items: center; }
+.receipt-detail { padding: 4px 12px 12px; }

@@ -24,6 +24,12 @@ interface ReceiveLine {
   styleUrl: './order-detail.modal.scss',
 })
 export class OrderDetailModalComponent {
+  // Card #768 (item 26): recebimento aberto para ver as quantidades de cada item naquela nota.
+  readonly openReceiptId = signal<number | null>(null);
+  toggleReceipt(id: number): void { this.openReceiptId.set(this.openReceiptId() === id ? null : id); }
+  itemName(orderItemId: number): string { return (this.order?.items ?? []).find((i: any) => i.id === orderItemId)?.name ?? `Item #${orderItemId}`; }
+  itemQty(orderItemId: number): number | string { return (this.order?.items ?? []).find((i: any) => i.id === orderItemId)?.quantity ?? '—'; }
+
   private svc = inject(PurchasesService);
 
   @Input() order: PurchaseOrder | null = null;

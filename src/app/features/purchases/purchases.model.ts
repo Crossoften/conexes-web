@@ -283,6 +283,10 @@ export interface PurchaseRequestItemPayload {
 }
 
 export interface CreatePurchaseRequestPayload {
+  // Card #768 (itens 14 e 16)
+  supplierJustification?: string | null;
+  supplierJustificationOther?: string | null;
+  existingContract?: boolean | null;
   title: string;
   area?: string;
   referenceNumber?: string;

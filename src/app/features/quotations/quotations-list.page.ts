@@ -11,6 +11,7 @@ import { PurchaseRequestActionModalComponent } from '../purchases/components/pur
 import { PurchaseQuotationsModalComponent } from '../purchases/components/purchase-quotations.modal';
 import { PurchaseAwardModalComponent } from '../purchases/components/purchase-award.modal';
 import { PurchaseQuotationMapModalComponent } from '../purchases/components/purchase-quotation-map.modal';
+import { PurchaseAnalysisModalComponent } from '../purchases/components/purchase-analysis.modal';
 import { PurchasePermissionsService } from '../purchases/purchase-permissions.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { TooltipDirective } from '../../shared/directives/tooltip.directive';
@@ -18,7 +19,7 @@ import { TooltipDirective } from '../../shared/directives/tooltip.directive';
 @Component({
   selector: 'app-quotations-list',
   standalone: true,
-  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, PurchaseQuotationMapModalComponent, ConfirmDialogComponent, TooltipDirective],
+  imports: [FormsModule, NgClass, PurchaseRequestDetailModalComponent, PurchaseRequestActionModalComponent, PurchaseQuotationsModalComponent, PurchaseAwardModalComponent, PurchaseQuotationMapModalComponent, PurchaseAnalysisModalComponent, ConfirmDialogComponent, TooltipDirective],
   providers: [QuotationsStore],
   templateUrl: './quotations-list.page.html',
   styleUrl: './quotations-list.page.scss',
@@ -93,18 +94,21 @@ export class QuotationsListPage {
   readonly canExportQuotation = this.routeStage === 2;
 
   // Cotações (FE-7): botão nas Etapas 3 (registrar) e 4 (aprovar/reprovar propostas).
-  readonly canQuotations        = this.routeStage === 2 || this.routeStage === 3;
+  // Card #768 (item 25): na Etapa 4, Cotações + Mapa + Adjudicar viram "Analisar cotações".
+  readonly canQuotations        = this.routeStage === 2;
+  readonly canAnalyze           = computed(() => this.routeStage === 3 && this.hasApprovalRole());
   readonly canRegisterQuotation = this.routeStage === 2;   // Etapa 3
 
   // Adjudicação (FE-8): Etapa 4, exige papel de aprovação (Supervisor de Compras / Gestor).
-  readonly canAward = computed(() => this.routeStage === 3 && this.hasApprovalRole());
+  readonly canAward = computed(() => false); // Card #768 (item 25): adjudicação dentro de "Analisar cotações".
 
   // Consultar/Duplicar/Excel/PDF disponíveis a todos, conforme a etapa.
   readonly canCopy   = this.routeStage === 0 || this.routeStage === 2;
   // I019: a planilha da REQUISIÇÃO também nas Etapas 4/5/6. Ela existia só nas Etapas 1 e 3
   // (e escondida no modal Visualizar), então da Etapa 4 em diante o conjunto pedido pelo
   // cliente — Requisição + Cotação + Pedido, cada um em PDF e Excel — ficava incompleto.
-  readonly canExcel  = this.routeStage === 0 || (this.routeStage >= 2 && this.routeStage <= 5);
+  // Card #768 (item 22): Excel e PDF em TODAS as etapas (a Etapa 2 só tinha PDF).
+  readonly canExcel  = true;
   readonly canPdf    = true;                                           // FE-12: consulta em qualquer etapa
   readonly canDelete = this.routeStage === 0;                          // Etapa 1 (rascunho)
   readonly canEdit   = this.routeStage === 0;                          // Etapa 1
@@ -119,7 +123,7 @@ export class QuotationsListPage {
   // COMP-21: o Mapa de cotação é onde se compara as propostas para adjudicar —
   // Etapa 4. Era um item de menu lateral próprio, que abria do zero e pedia para
   // escolher de novo a requisição que já se estava olhando.
-  readonly canQuotationMap = this.routeStage === 3;
+  readonly canQuotationMap = false; // Card #768 (item 25): o mapa está dentro de "Analisar cotações".
 
   // I019: documento do PEDIDO (PDF/Excel) no contexto das Etapas 4, 5 e 6. Na Etapa 4 o
   // pedido normalmente ainda não existe (nasce da adjudicação) — nesse caso a ação avisa
@@ -162,7 +166,10 @@ export class QuotationsListPage {
 
   constructor() {
     this.store.load(this.routeStage);
+    this.store.loadFilterOptions();
   }
+
+  analyze(item: Quotation) { this.store.openAnalysis(item); }
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   onSearch(value: string) {

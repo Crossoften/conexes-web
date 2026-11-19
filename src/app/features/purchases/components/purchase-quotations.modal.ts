@@ -8,6 +8,8 @@ import { NotificationService } from '../../../shared/services/notification.servi
 import { PurchasesService } from '../purchases.service';
 import { PurchaseQuotation, PurchaseRequestItem, PurchaseRef, QuotationStatus } from '../purchases.model';
 import { CurrencyMaskDirective } from '../../../shared/directives/currency-mask.directive';
+import { PopupShellComponent } from '../../../shared/components/popup-shell/popup-shell.component';
+import { TooltipDirective } from '../../../shared/directives/tooltip.directive';
 
 const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string }> = {
   Pending:  { label: 'Pendente',  variant: 'neutral' },
@@ -19,7 +21,7 @@ const QUOTATION_STATUS: Record<QuotationStatus, { label: string; variant: string
 @Component({
   selector: 'app-purchase-quotations-modal',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CurrencyMaskDirective],
+  imports: [ReactiveFormsModule, FormsModule, CurrencyMaskDirective, PopupShellComponent, TooltipDirective],
   templateUrl: './purchase-quotations.modal.html',
   styleUrl: './purchase-quotations.modal.scss',
 })
@@ -73,6 +75,8 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     this.resetForm();
     if (!id) return;
     this.load();
+    this.loadLinks();
+    this.loadBatches();
     // item 13: itens da requisição para montar a proposta por item.
     this.requestItems.set([]);
     this.svc.getRequestById(id).subscribe({ next: r => this.requestItems.set(r.items ?? []), error: () => {} });
@@ -181,6 +185,68 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
 
   onClose(): void { this.close.emit(); }
 
+  // ── Card #768 (item 24): link do portal por fornecedor — copiar ou enviar por e-mail ──
+  readonly invites = signal<Map<number, { id: number; link: string; email: string | null; emailedAt?: string | null; status: string }>>(new Map());
+  private loadLinks(): void {
+    if (!this.requestId) return;
+    this.svc.ensureInviteLinks(this.requestId).subscribe({
+      next: r => this.invites.set(new Map((r?.invites ?? []).map(i => [i.supplierId, i]))),
+      error: () => {},
+    });
+  }
+  inviteOf(q: PurchaseQuotation) { return this.invites().get(q.supplierId) ?? null; }
+  copyLink(q: PurchaseQuotation): void {
+    const inv = this.inviteOf(q);
+    if (!inv) { this.notify.error('Link ainda não gerado para este fornecedor.'); return; }
+    const done = () => this.notify.success(`Link do portal copiado — ${this.supplierName(q)}. Cole no WhatsApp ou onde preferir.`);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(inv.link).then(done, () => this.copyFallback(inv.link, done));
+    else this.copyFallback(inv.link, done);
+  }
+  private copyFallback(text: string, done: () => void): void {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } finally { ta.remove(); }
+  }
+  readonly sendingInvite = signal<number | null>(null);
+  emailLink(q: PurchaseQuotation): void {
+    const inv = this.inviteOf(q);
+    if (!inv) { this.notify.error('Link ainda não gerado para este fornecedor.'); return; }
+    this.sendingInvite.set(q.supplierId);
+    this.svc.sendInvite(inv.id).subscribe({
+      next: r => { this.sendingInvite.set(null); r.enviado ? this.notify.success(r.mensagem) : this.notify.error(r.mensagem); this.loadLinks(); },
+      error: err => { this.sendingInvite.set(null); this.notify.error(this.msg(err, 'Não foi possível enviar o e-mail.')); },
+    });
+  }
+
+  // ── Card #768 (item 70): menus de importar (modelo, importar, lotes) e exportar (PDF, XLS) ──
+  readonly menu = signal<'import' | 'export' | null>(null);
+  toggleMenu(m: 'import' | 'export'): void { this.menu.set(this.menu() === m ? null : m); }
+  readonly batches = signal<any[]>([]);
+  private loadBatches(): void {
+    if (!this.requestId) return;
+    this.svc.listQuotationImportBatches(this.requestId).subscribe({ next: b => this.batches.set(b ?? []), error: () => {} });
+  }
+  removeBatch(b: any): void {
+    if (!confirm(`Desfazer o lote "${b.fileName || 'importação'}"? As propostas dele voltam a "Aguardando proposta".`)) return;
+    this.svc.removeQuotationImportBatch(b.id).subscribe({
+      next: r => { this.notify.success(r.message); this.loadBatches(); this.load(); },
+      error: err => this.notify.error(this.msg(err, 'Não foi possível desfazer o lote.')),
+    });
+  }
+  readonly exportingXls = signal(false);
+  downloadCotacaoXls(): void {
+    if (!this.requestId || this.exportingXls()) return;
+    this.exportingXls.set(true);
+    this.svc.generateQuotationMapExcel(this.requestId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `cotacao-${this.requestCode || this.requestId}.xlsx`; a.click();
+        URL.revokeObjectURL(url); this.exportingXls.set(false);
+      },
+      error: () => { this.exportingXls.set(false); this.notify.error('Não foi possível gerar a planilha da cotação.'); },
+    });
+  }
+  fmtDateTime(iso?: string | null): string { return iso ? new Date(iso).toLocaleString('pt-BR') : '—'; }
+
   // DOC-COT + item 18: exporta o documento/mapa da cotação em PDF.
   readonly exportingPdf = signal(false);
   downloadCotacaoPdf(): void {
@@ -277,7 +343,7 @@ export class PurchaseQuotationsModalComponent implements OnChanges {
     if (!file || !this.requestId) return;
     this.importing.set(true);
     this.svc.importQuotations(this.requestId, file).subscribe({
-      next: res => { this.importing.set(false); input.value = ''; this.notify.success(res?.message ?? 'Propostas importadas.'); this.load(); },
+      next: res => { this.importing.set(false); input.value = ''; this.notify.success(res?.message ?? 'Propostas importadas.'); this.load(); this.loadBatches(); },
       error: err => { this.importing.set(false); input.value = ''; this.notify.error(err?.error?.message ?? 'Falha ao importar as propostas.'); },
     });
   }

@@ -214,6 +214,9 @@ export class PurchasesService {
           id: Number(r['id']),
           name: String(r['name'] ?? r['title'] ?? r['id']),
           classification: (r['classification'] as string | null) ?? null,
+          code: (r['code'] as string | null) ?? null,
+          // Card #768: superior do centro de custo (hierarquia).
+          parentProjectId: r['parentId'] != null ? Number(r['parentId']) : null,
         }));
       }));
   }
@@ -227,7 +230,8 @@ export class PurchasesService {
         const out: PurchaseRef[] = [];
         const walk = (list: any[]) => {
           for (const n of list ?? []) {
-            if (n.accountType === 'Analitica') out.push({ id: Number(n.id), name: `${n.code} — ${n.title}` });
+            // Card #768 (item 15): `category` guarda o centro de custo vinculado à conta.
+            if (n.accountType === 'Analitica') out.push({ id: Number(n.id), name: `${n.code} — ${n.title}`, code: n.code, costCenterId: n.category != null && n.category !== '' ? Number(n.category) : null });
             if (n.children?.length) walk(n.children);
           }
         };
@@ -269,6 +273,15 @@ export class PurchasesService {
 
   getDeliveryLocationsLookup(): Observable<PurchaseRef[]> {
     return this.lookup('/v1/delivery-locations', 'name');
+  }
+
+  /** Card #768 (item 19): locais com endereço e contato, para o quadro "Dados do local selecionado". */
+  getDeliveryLocationsFull(): Observable<any[]> {
+    const params = new HttpParams().set('take', '500');
+    return this.http
+      .get<RawListEnvelope<any> | any[]>(`${environment.apiUrl}/v1/delivery-locations`, { params })
+      .pipe(map(res => (Array.isArray(res) ? res : res.data ?? [])
+        .sort((a: any, b: any) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'pt-BR'))));
   }
 
   /** FE-7: fornecedores (stakeholders) para o select de cotação. */
@@ -409,6 +422,21 @@ export class PurchasesService {
   }
 
   // CMP-07: criação rápida de produto/local sem sair da requisição.
+  // Card #768 (item 24): links do portal de cotação por fornecedor.
+  ensureInviteLinks(requestId: number): Observable<{ invites: { id: number; supplierId: number; supplierName: string; email: string | null; status: string; link: string; emailedAt?: string | null }[] }> {
+    return this.http.post<any>(`${environment.apiUrl}/v1/quotation-invites/${requestId}/links`, {});
+  }
+  sendInvite(inviteId: number): Observable<{ enviado: boolean; mensagem: string; email: string | null }> {
+    return this.http.post<any>(`${environment.apiUrl}/v1/quotation-invites/${inviteId}/resend`, {});
+  }
+  // Card #768 (item 70): lotes de importação de propostas.
+  listQuotationImportBatches(requestId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/quotations/import-batches/${requestId}`);
+  }
+  removeQuotationImportBatch(batchId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/quotations/import-batches/${batchId}`);
+  }
+
   createProductQuick(name: string): Observable<{ id: number; name: string }> {
     return this.http.post<{ id: number; name: string }>(`${environment.apiUrl}/v1/products-services`, { name, type: 'Product', status: 'Active' });
   }

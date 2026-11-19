@@ -100,3 +100,14 @@ img, svg {
   background: #FEF3F2; color: #B42318; border: 1px solid #FECDCA; border-radius: 10px;
   padding: 10px 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.4;
 }
+
+// Card #768 (itens 16, 17, 18, 19, 20): botão de mais em círculo — padrão único para
+// cadastrar sem sair da tela (fornecedor, contrato, pedido, produto, local, fabricante, grupo).
+.btn-plus-circle {
+  width: 36px; height: 36px; min-width: 36px; border-radius: 50%;
+  border: 1.5px solid var(--brand-orange, #F97316); background: #fff; color: var(--brand-orange, #F97316);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  transition: background .15s, color .15s;
+  &:hover { background: var(--brand-orange, #F97316); color: #fff; }
+  &:disabled { opacity: .45; cursor: not-allowed; }
+}

@@ -2,7 +2,7 @@
 <div class="new-page">
 
   <!-- Cabeçalho -->
-  <div class="page-header">
+  <div class="page-header" [hidden]="embedded">
     <h1 class="page-title">Cadastro de {{ entityLabel() }}</h1>
   </div>
 
@@ -21,7 +21,7 @@
 
   <!-- Rodapé fixo -->
   <div class="page-footer">
-    <button class="btn-back" (click)="back()">Voltar</button>
+    <button class="btn-back" (click)="back()">{{ embedded ? 'Cancelar' : 'Voltar' }}</button>
 
     <div class="footer-right">
       <button class="btn-draft" (click)="saveDraft()">

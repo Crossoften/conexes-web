@@ -1,5 +1,5 @@
 // src/app/features/stakeholders/new/stakeholder-new.page.ts
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -24,6 +24,15 @@ export type FormSection =
   styleUrl: './stakeholder-new.page.scss',
 })
 export class StakeholderNewPage {
+  /**
+   * Card #768: a mesma tela de cadastro abre em pop-up a partir da requisição
+   * (e de Contas a pagar). Em pop-up ela não navega: devolve o registro criado para
+   * quem abriu, que já o seleciona — o usuário continua onde estava.
+   */
+  @Input() embedded = false;
+  @Output() created   = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  @HostBinding('class.is-embedded') get isEmbedded() { return this.embedded; }
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
   private svc    = inject(StakeholdersService);
@@ -57,6 +66,7 @@ export class StakeholderNewPage {
 
   back(): void {
     this.errorMsg.set(null);
+    if (this.embedded) { this.cancelled.emit(); return; }
     this.router.navigate(['/stakeholders']);
   }
 
@@ -88,8 +98,9 @@ export class StakeholderNewPage {
     const payload = mapFormToPayload(this.form.value);
 
     this.svc.create(payload).subscribe({
-      next: () => {
+      next: (criado: any) => {
         this.loading.set(false);
+        if (this.embedded) { this.created.emit(criado); return; }
         this.router.navigate(['/stakeholders']);
       },
       error: err => {

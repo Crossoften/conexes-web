@@ -71,18 +71,16 @@
         <!-- ══ FONTE ══════════════════════════════════════════════════════ -->
         @if (activeTab === 'FONTE') {
           <h3 class="section-title">Fonte e alocação</h3>
-          <!-- item 2 (reteste 22.09): "Fonte Pagadora" removida — a fonte é determinada pelos vínculos
-               Centro de Custo → Projeto → Atividade → Categoria/Conta. -->
-          <p class="section-subtitle">A fonte é determinada pela alocação abaixo: Centro de custo → Projeto → Atividade → Categoria/Conta.</p>
+          <!-- Card #768 (item 15): cascata a partir do centro de custo. -->
+          <p class="section-subtitle">Escolha primeiro o centro de custo: Projeto, Atividade e Categoria listam só o que está vinculado a ele.</p>
           <div class="form-grid mb-8">
-            <!-- CP-19/CP-20: sequência Centro de custo → Projeto → Atividade → Categoria, com filtros dependentes -->
             <div class="form-row grid-cols-4">
               <div class="form-group">
                 <label>Centro de custo</label>
                 <div class="select-wrap">
                   <select class="form-control" formControlName="costCenterId" (change)="onCostCenterChange()">
                     <option value="">Selecione</option>
-                    @for (c of costCenters(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                    @for (c of costCenters(); track c.id) { <option [value]="c.id">{{ c.code ? c.code + ' — ' : '' }}{{ c.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
@@ -91,7 +89,7 @@
                 <label>Projeto</label>
                 <div class="select-wrap">
                   <select class="form-control" formControlName="projectId" (change)="onProjectChange()">
-                    <option value="">Selecione</option>
+                    <option value="">{{ !selectedCC() ? 'Escolha o centro de custo' : (filteredProjects().length ? 'Selecione' : 'Nenhum projeto vinculado') }}</option>
                     @for (p of filteredProjects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -101,18 +99,18 @@
                 <label>Atividade</label>
                 <div class="select-wrap">
                   <select class="form-control" formControlName="activityId">
-                    <option value="">Selecione</option>
+                    <option value="">{{ !selectedCC() ? 'Escolha o centro de custo' : (filteredActivities().length ? 'Selecione' : 'Nenhuma atividade vinculada') }}</option>
                     @for (a of filteredActivities(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
               <div class="form-group">
-                <label>Categoria/Conta</label>
+                <label>Categoria</label>
                 <div class="select-wrap">
                   <select class="form-control" formControlName="accountPlanId">
-                    <option value="">Selecione</option>
-                    @for (a of accountPlans(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
+                    <option value="">{{ !selectedCC() ? 'Escolha o centro de custo' : (filteredAccountPlans().length ? 'Selecione' : 'Nenhuma categoria vinculada') }}</option>
+                    @for (a of filteredAccountPlans(); track a.id) { <option [value]="a.id">{{ a.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
@@ -122,104 +120,117 @@
 
           <h3 class="section-title mt-4">Fornecedor e contrato</h3>
           <div class="form-grid mb-8">
-            <div class="form-row grid-cols-3">
-              <label class="checkbox-inline">
-                <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="uniqueSupplier"><span class="checkbox__box"></span></div>
-                Fornecedor único
-              </label>
-              <label class="checkbox-inline">
-                <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="exclusiveSupplier"><span class="checkbox__box"></span></div>
-                Fornecedor exclusivo
-              </label>
-              <label class="checkbox-inline">
-                <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="withoutSubsidy"><span class="checkbox__box"></span></div>
-                Sem subsídio
-              </label>
-            </div>
-
-            <!-- COMP-07: os três campos na MESMA linha e com a mesma largura. Antes cada um
-                 ficava sozinho na sua linha — Qtd. ocupando 1/3 e sobrando 2/3, Fornecedores
-                 sugeridos ocupando 1/2 — e o Contrato numa seção própria mais abaixo, com
-                 largura diferente das outras duas. -->
-            <div class="form-row grid-cols-3">
-              <div class="form-group"><label>Qtd. de Fornecedores</label><input type="number" class="form-control" placeholder="0" formControlName="supplierCount"></div>
-
-              <!-- CP-15: fornecedores sugeridos — vinculados à requisição e levados para a Cotação -->
-              <!-- COM-8/I008: ganhou busca; era preciso percorrer a lista inteira. -->
+            <!-- Card #768 (item 16): "Requisição de contrato existente?" em pílula, com o Contrato na mesma linha. -->
+            <div class="contract-row">
               <div class="form-group">
-                <label>Fornecedores sugeridos</label>
-                <input class="form-control busca-vinculo" type="text" placeholder="Buscar fornecedor…"
-                       [value]="buscaFornecedor()" (input)="buscaFornecedor.set($any($event.target).value)">
-                <div class="select-wrap">
-                  <select class="form-control" (change)="addSupplier($event)">
-                    <option value="">Selecione para adicionar…</option>
-                    @for (s of availableSuppliers(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <label>Requisição de contrato existente?</label>
+                <div class="pill-toggle" role="group" aria-label="Requisição de contrato existente?">
+                  <button type="button" [class.active]="form.get('existingContract')?.value === true" (click)="setExistingContract(true)">Sim</button>
+                  <button type="button" [class.active]="form.get('existingContract')?.value !== true" (click)="setExistingContract(false)">Não</button>
                 </div>
               </div>
-
-              <div class="form-group">
-                <!-- item 5 (reteste 22.09): contrato jurídico/de fornecedor (não Convênios/Parcerias). -->
-                <!-- COMP-09: o "+" cadastra o contrato aqui mesmo. Antes era preciso sair da
-                     requisição para Cadastros › Contratos de fornecedor e perder o preenchimento.
-                     COMP-07: ele fica na linha do RÓTULO, não ao lado do campo. Ao lado do campo
-                     ele consumia 50px e deixava este seletor mais curto que os outros dois da
-                     linha — o alinhamento se perdia na borda direita. Medido: 367px contra 417px. -->
-                <label class="label-with-add">
-                  Contrato de fornecedor
-                  <button type="button" class="btn-add" title="Cadastrar contrato de fornecedor" aria-label="Cadastrar contrato de fornecedor" (click)="openContractModal()">
+              <div class="form-group contract-row__field">
+                <label>Contrato</label>
+                <div class="search-add">
+                  <div class="search-box" [class.is-disabled]="form.get('existingContract')?.value !== true">
+                    <svg class="search-box__icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input type="text" placeholder="Buscar contrato" [disabled]="form.get('existingContract')?.value !== true"
+                      [value]="buscaContrato()" (input)="buscaContrato.set($any($event.target).value); contractListOpen.set(true)"
+                      (focus)="contractListOpen.set(true)" (blur)="closeContractListSoon()" aria-label="Buscar contrato">
+                    @if (contractListOpen() && form.get('existingContract')?.value === true) {
+                      <ul class="search-box__list" role="listbox">
+                        @for (c of availableContracts(); track c.id) {
+                          <li role="option" (mousedown)="$event.preventDefault(); pickContract(c.id!)">{{ c.name }}</li>
+                        } @empty { <li class="is-empty">Nenhum contrato encontrado. Use o + para cadastrar.</li> }
+                      </ul>
+                    }
+                  </div>
+                  <!-- Card #768 (item 17): botão de mais circular, no lugar de "+ Novo". -->
+                  <button type="button" class="btn-plus-circle" title="Cadastrar contrato" aria-label="Cadastrar contrato"
+                    [disabled]="form.get('existingContract')?.value !== true" (click)="openContractModal()">
                     <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    Novo
                   </button>
-                </label>
-                <!-- COM-8/I008: busca + seleção MÚLTIPLA. Era um select simples de um
-                     contrato só; o primeiro escolhido segue sendo o principal. -->
-                <input class="form-control busca-vinculo" type="text" placeholder="Buscar contrato…"
-                       [value]="buscaContrato()" (input)="buscaContrato.set($any($event.target).value)">
+                </div>
+                @if (selectedContracts().length) {
+                  <div class="supplier-chips">
+                    @for (c of selectedContracts(); track c.id) {
+                      <span class="supplier-chip">{{ c.name }}<button type="button" title="Remover contrato" (click)="removeContract(c.id!)">×</button></span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <hr class="fonte-sep">
+
+            <!-- Card #768 (item 14): uma única caixa de marcação. -->
+            <label class="checkbox-inline">
+              <div class="checkbox"><input type="checkbox" class="checkbox__input" formControlName="uniqueSupplier"><span class="checkbox__box"></span></div>
+              O fornecedor é único, exclusivo ou sem substituto.
+            </label>
+
+            <div class="form-row grid-cols-3 fornecedores-row">
+              <div class="form-group">
+                <label>Qtd. de Fornecedores</label>
+                <input type="number" class="form-control" [placeholder]="form.get('uniqueSupplier')?.value ? 'Não se aplica' : '0'" formControlName="supplierCount">
+              </div>
+
+              <!-- Card #768 (item 16): busca única com lupa + botão de mais circular (cadastro em pop-up). -->
+              <div class="form-group">
+                <label>Fornecedores <span class="req">*</span></label>
+                <div class="search-add">
+                  <div class="search-box">
+                    <svg class="search-box__icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input type="text" placeholder="Buscar fornecedor" [value]="buscaFornecedor()"
+                      (input)="buscaFornecedor.set($any($event.target).value); supplierListOpen.set(true)"
+                      (focus)="supplierListOpen.set(true)" (blur)="closeSupplierListSoon()" aria-label="Buscar fornecedor">
+                    @if (supplierListOpen()) {
+                      <ul class="search-box__list" role="listbox">
+                        @for (s of availableSuppliers(); track s.id) {
+                          <li role="option" (mousedown)="$event.preventDefault(); pickSupplier(s.id!)">{{ s.name }}</li>
+                        } @empty { <li class="is-empty">Nenhum fornecedor encontrado. Use o + para cadastrar.</li> }
+                      </ul>
+                    }
+                  </div>
+                  <button type="button" class="btn-plus-circle" title="Cadastrar fornecedor" aria-label="Cadastrar fornecedor" (click)="supplierPopup.set(true)">
+                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Justificativa @if (form.get('uniqueSupplier')?.value) { <span class="req">*</span> } <span class="label-hint">(caso único, exclusivo ou sem substituto)</span></label>
                 <div class="select-wrap">
-                  <select class="form-control" (change)="addContract($event)">
-                    <option value="">Selecione para adicionar…</option>
-                    @for (c of availableContracts(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  <select class="form-control" formControlName="supplierJustification"
+                    [class.is-invalid]="form.get('supplierJustification')?.invalid && form.get('supplierJustification')?.touched">
+                    <option value="">Selecione</option>
+                    @for (j of justificativas; track j) { <option [value]="j">{{ j }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
               </div>
             </div>
 
-            <!-- COM-8/I008: os contratos escolhidos, em linha cheia como os fornecedores. -->
             <div class="suppliers-help">
-              @if (selectedContracts().length) {
-                <div class="supplier-chips">
-                  @for (c of selectedContracts(); track c.id) {
-                    <span class="supplier-chip">
-                      {{ c.name }}@if ($first) { <em class="chip-principal">principal</em> }
-                      <button type="button" title="Remover" (click)="removeContract(c.id!)">×</button>
-                    </span>
-                  }
-                </div>
-              } @else {
-                <p class="suppliers-empty">Nenhum contrato vinculado.</p>
-              }
-            </div>
-
-            <!-- A dica e os fornecedores escolhidos ficam em linha cheia, abaixo dos três
-                 campos: dentro da coluna do seletor eles esticariam a linha e deixariam
-                 Qtd. e Contrato com altura sobrando — o desalinhamento de volta. -->
-            <div class="suppliers-help">
-              <small>Os fornecedores selecionados serão levados para a Cotação (uma cotação por fornecedor).</small>
+              <small>{{ form.get('uniqueSupplier')?.value ? 'Selecione um único fornecedor.' : 'Os fornecedores selecionados serão levados para a Cotação (uma cotação por fornecedor).' }}</small>
               @if (selectedSuppliers().length) {
                 <div class="supplier-chips">
                   @for (s of selectedSuppliers(); track s.id) {
-                    <span class="supplier-chip">
-                      {{ s.name }}
-                      <button type="button" title="Remover" (click)="removeSupplier(s.id!)">×</button>
-                    </span>
+                    <span class="supplier-chip">{{ s.name }}<button type="button" title="Remover fornecedor" (click)="removeSupplier(s.id!)">×</button></span>
                   }
                 </div>
               } @else {
-                <p class="suppliers-empty">Nenhum fornecedor sugerido selecionado.</p>
+                <p class="suppliers-empty">Nenhum fornecedor selecionado — é preciso ao menos um para salvar.</p>
               }
+            </div>
+
+            <div class="form-row grid-cols-1">
+              <div class="form-group">
+                <label>Outra justificativa @if (form.get('supplierJustification')?.value === 'Outra justificativa') { <span class="req">*</span> }</label>
+                <textarea class="form-control textarea" rows="3" placeholder="Descreva a justificativa" formControlName="supplierJustificationOther"
+                  [class.is-invalid]="form.get('supplierJustificationOther')?.invalid && form.get('supplierJustificationOther')?.touched"></textarea>
+                <small class="field-hint">Habilitada só quando a justificativa escolhida é "Outra justificativa".</small>
+              </div>
             </div>
           </div>
         }
@@ -240,18 +251,17 @@
                 </div>
 
                 <div class="item-card__body">
+                  <!-- Card #768 (item 18): Produto/Serviço, Fabricante e Grupo, nessa ordem; o "Nome do item"
+                       sai da linha porque vem do produto escolhido. -->
                   <div class="form-row grid-cols-3">
                     <div class="form-group">
-                      <label>Produto/Serviço</label>
-                      <!-- Menus ajustes 28.09 · #3: o <datalist> do reteste 22.09 dependia do navegador e
-                           não mostrava opções ao digitar. Agora a lista é nossa: filtra por nome ou código
-                           a cada tecla, a seta abre o cadastro inteiro (seletor) e ↑ ↓ Enter escolhem.
-                           CMP-07: "+" faz inclusão rápida sem sair da requisição. -->
+                      <label>Produto/Serviço <span class="req">*</span></label>
                       <div class="product-picker">
                         <div class="typeahead">
                           <input #productInput class="form-control" type="text" autocomplete="off"
                             role="combobox" aria-autocomplete="list" [attr.aria-expanded]="productRow() === i"
                             formControlName="productQuery"
+                            [class.is-invalid]="item.get('name')?.invalid && item.get('name')?.touched"
                             (input)="onProductQuery(i)"
                             (focus)="openProductList(i)"
                             (blur)="onProductBlur(i)"
@@ -275,14 +285,15 @@
                             </ul>
                           }
                         </div>
-                        <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar produto" (click)="quickAddProduct(i)" style="padding:8px 12px;">+</button>
+                        <button type="button" class="btn-plus-circle" title="Cadastrar produto" aria-label="Cadastrar produto" (click)="quickAddProduct(i)">
+                          <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        </button>
                       </div>
                     </div>
-                    <div class="form-group"><label>Nome do item <span class="req">*</span></label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="name" [class.is-invalid]="item.get('name')?.invalid && item.get('name')?.touched"></div>
-                    <!-- CP-28: Grupo editável — herdado do produto ou informado manualmente -->
-                    <div class="form-group"><label>Grupo</label><input type="text" class="form-control" placeholder="Herdado do produto ou digite aqui..." formControlName="group"></div>
                     <!-- CP-17: Fabricante herdado do cadastro do produto -->
                     <div class="form-group"><label>Fabricante</label><input type="text" class="form-control" placeholder="Herdado do produto" formControlName="manufacturer"></div>
+                    <!-- CP-28: Grupo editável — herdado do produto ou informado manualmente -->
+                    <div class="form-group"><label>Grupo</label><input type="text" class="form-control" placeholder="Herdado do produto" formControlName="group"></div>
                   </div>
 
                   <div class="form-row grid-cols-4 mt-4">
@@ -293,7 +304,8 @@
                     <div class="form-group"><label>Valor total (R$)</label><input type="text" class="form-control" [value]="itemTotal(i)" readonly tabindex="-1" style="background:#f4f6f9;"></div>
                   </div>
 
-                  <div class="form-row grid-cols-2 mt-4">
+                  <!-- Card #768 (item 18): Link de Referência em largura total. -->
+                  <div class="form-row grid-cols-1 mt-4">
                     <div class="form-group"><label>Link de Referência</label><input type="text" class="form-control" placeholder="Digite aqui..." formControlName="referenceLink"></div>
                   </div>
 
@@ -319,42 +331,53 @@
         <!-- ══ LOCAL ══════════════════════════════════════════════════════ -->
         @if (activeTab === 'LOCAL') {
           <h3 class="section-title">Local de Entrega / Prestação do Serviço</h3>
-          <!-- COM-8/I008: busca + seleção MÚLTIPLA. Era um select simples de um local só. -->
-          <p class="section-subtitle">Busque e selecione um ou mais locais de entrega cadastrados.</p>
+          <!-- Card #768 (item 19): um único local, busca de ponta a ponta e dados do cadastro abaixo. -->
+          <p class="section-subtitle">Busque e selecione o local de entrega cadastrado.</p>
           <div class="form-grid">
-            <div class="form-row grid-cols-2">
-              <div class="form-group">
-                <label>Local de entrega</label>
-                <input class="form-control busca-vinculo" type="text" placeholder="Buscar local…"
-                       [value]="buscaLocal()" (input)="buscaLocal.set($any($event.target).value)">
-                <!-- CMP-07: inclusão rápida de local sem sair da requisição -->
-                <div style="display:flex; gap:6px; align-items:center;">
-                <div class="select-wrap" style="flex:1;">
-                  <select class="form-control" (change)="addLocation($event)">
-                    <option value="">Selecione para adicionar…</option>
-                    @for (l of availableLocations(); track l.id) { <option [value]="l.id">{{ l.name }}</option> }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="form-group">
+              <label>Local de entrega</label>
+              <div class="search-add">
+                <div class="search-box">
+                  <svg class="search-box__icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <input type="text" placeholder="Buscar local" aria-label="Buscar local de entrega"
+                    [value]="locationListOpen() || !selectedLocation() ? buscaLocal() : selectedLocation()?.name"
+                    (input)="buscaLocal.set($any($event.target).value); locationListOpen.set(true)"
+                    (focus)="locationListOpen.set(true)" (blur)="closeLocationListSoon()">
+                  @if (selectedLocation() && !locationListOpen()) {
+                    <button type="button" class="search-box__clear" title="Limpar local" (click)="clearLocation()">×</button>
+                  }
+                  @if (locationListOpen()) {
+                    <ul class="search-box__list" role="listbox">
+                      @for (l of availableLocations(); track l.id) {
+                        <li role="option" (mousedown)="$event.preventDefault(); pickLocation(l.id!)">{{ l.name }}</li>
+                      } @empty { <li class="is-empty">Nenhum local encontrado. Use o + para cadastrar.</li> }
+                    </ul>
+                  }
                 </div>
-                <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar local" (click)="quickAddLocation()" style="padding:8px 12px;">+</button>
-                </div>
+                <button type="button" class="btn-plus-circle" title="Cadastrar local" aria-label="Cadastrar local" (click)="quickAddLocation()">
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
               </div>
             </div>
 
-            <div class="suppliers-help">
-              @if (selectedLocations().length) {
-                <div class="supplier-chips">
-                  @for (l of selectedLocations(); track l.id) {
-                    <span class="supplier-chip">
-                      {{ l.name }}@if ($first) { <em class="chip-principal">principal</em> }
-                      <button type="button" title="Remover" (click)="removeLocation(l.id!)">×</button>
-                    </span>
-                  }
+            @if (selectedLocation(); as l) {
+              <div class="local-box">
+                <h4>Dados do local selecionado</h4>
+                <p class="local-box__hint">Endereço e contato vêm do cadastro do local, sem precisar editar aqui.</p>
+                <div class="local-grid">
+                  <div><span>Responsável</span><strong>{{ l.responsible || '—' }}</strong></div>
+                  <div><span>E-mail</span><strong>{{ l.email || '—' }}</strong></div>
+                  <div><span>Telefone</span><strong>{{ l.phone || '—' }}</strong></div>
+                  <div><span>CEP</span><strong>{{ l.zipCode || '—' }}</strong></div>
+                  <div><span>Logradouro</span><strong>{{ l.address || '—' }}</strong></div>
+                  <div><span>Número / Complemento</span><strong>{{ l.number || '—' }}{{ l.complement ? ' – ' + l.complement : '' }}</strong></div>
+                  <div><span>Bairro / Distrito</span><strong>{{ l.district || '—' }}</strong></div>
+                  <div><span>Município / UF</span><strong>{{ l.city || '—' }}{{ l.state ? ' / ' + l.state : '' }}</strong></div>
                 </div>
-              } @else {
-                <p class="suppliers-empty">Nenhum local de entrega selecionado.</p>
-              }
-            </div>
+              </div>
+            } @else {
+              <p class="suppliers-empty">Nenhum local de entrega selecionado.</p>
+            }
           </div>
         }
 
@@ -400,53 +423,58 @@
      existirem duas regras de "o que é um contrato válido". Ao salvar, o contrato
      recém-criado já fica selecionado no formulário. -->
 @if (contractModal()) {
-  <div class="modal-overlay" (click)="closeContractModal()">
-    <div class="modal-content modal-content--narrow" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Novo contrato de fornecedor</h2>
-        <button type="button" class="modal-close" aria-label="Fechar" (click)="closeContractModal()">
-          <svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        @if (contractError()) { <div class="form-alert form-alert--error">{{ contractError() }}</div> }
-
-        <div class="form-grid">
-          <div class="form-row grid-cols-3">
-            <div class="form-group"><label>Número</label><input class="form-control" [(ngModel)]="novoContrato.number" [ngModelOptions]="{standalone: true}" placeholder="Ex.: CT-2026-001"></div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Objeto / Título <span class="req">*</span></label>
-              <input class="form-control" [(ngModel)]="novoContrato.title" [ngModelOptions]="{standalone: true}" placeholder="Objeto do contrato">
-            </div>
-          </div>
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>Fornecedor</label>
-              <div class="select-wrap">
-                <select class="form-control" [(ngModel)]="novoContrato.stakeholderId" [ngModelOptions]="{standalone: true}">
-                  <option [ngValue]="null">Selecione</option>
-                  @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
-                </select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-            <div class="form-group"><label>Início da vigência</label><input type="date" class="form-control" [(ngModel)]="novoContrato.startDate" [ngModelOptions]="{standalone: true}"></div>
-            <div class="form-group"><label>Fim da vigência</label><input type="date" class="form-control" [(ngModel)]="novoContrato.endDate" [ngModelOptions]="{standalone: true}"></div>
-          </div>
-          <div class="form-row grid-cols-3">
-            <div class="form-group"><label>Valor (R$)</label><input class="form-control" inputmode="decimal" [(ngModel)]="novoContrato.value" [ngModelOptions]="{standalone: true}" placeholder="0,00"></div>
-            <div class="form-group" style="grid-column: span 2;"><label>Observação</label><input class="form-control" [(ngModel)]="novoContrato.observation" [ngModelOptions]="{standalone: true}" placeholder="Condições, escopo, etc."></div>
-          </div>
+  <!-- Card #768 (item 16): cadastro do contrato em pop-up no padrão (cabeçalho roxo). -->
+  <app-popup-shell title="Novo contrato de fornecedor" subtitle="Ao salvar, o contrato já fica selecionado na requisição." icon="doc" [width]="820" (close)="closeContractModal()">
+    @if (contractError()) { <div class="form-alert form-alert--error">{{ contractError() }}</div> }
+    <div class="form-grid">
+      <div class="form-row grid-cols-3">
+        <div class="form-group"><label>Número</label><input class="form-control" [(ngModel)]="novoContrato.number" [ngModelOptions]="{standalone: true}" placeholder="Ex.: CT-2026-001"></div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Objeto / Título <span class="req">*</span></label>
+          <input class="form-control" [(ngModel)]="novoContrato.title" [ngModelOptions]="{standalone: true}" placeholder="Objeto do contrato">
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-outline btn-outline--orange" (click)="closeContractModal()">Cancelar</button>
-        <button type="button" class="btn-solid btn-solid--orange" [disabled]="savingContract() || !novoContrato.title.trim()" (click)="saveContract()">
-          {{ savingContract() ? 'Salvando…' : 'Adicionar contrato' }}
-        </button>
+      <div class="form-row grid-cols-3">
+        <div class="form-group">
+          <label>Fornecedor</label>
+          <div class="select-wrap">
+            <select class="form-control" [(ngModel)]="novoContrato.stakeholderId" [ngModelOptions]="{standalone: true}">
+              <option [ngValue]="null">Selecione</option>
+              @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="form-group"><label>Início da vigência</label><input type="date" class="form-control" [(ngModel)]="novoContrato.startDate" [ngModelOptions]="{standalone: true}"></div>
+        <div class="form-group"><label>Fim da vigência</label><input type="date" class="form-control" [(ngModel)]="novoContrato.endDate" [ngModelOptions]="{standalone: true}"></div>
+      </div>
+      <div class="form-row grid-cols-3">
+        <div class="form-group"><label>Valor (R$)</label><input class="form-control" inputmode="decimal" [(ngModel)]="novoContrato.value" [ngModelOptions]="{standalone: true}" placeholder="0,00"></div>
+        <div class="form-group" style="grid-column: span 2;"><label>Observação</label><input class="form-control" [(ngModel)]="novoContrato.observation" [ngModelOptions]="{standalone: true}" placeholder="Condições, escopo, etc."></div>
       </div>
     </div>
-  </div>
+    <div class="popup-footer">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="closeContractModal()">Cancelar</button>
+      <button type="button" class="btn-solid btn-solid--orange" [disabled]="savingContract() || !novoContrato.title.trim()" (click)="saveContract()">
+        {{ savingContract() ? 'Salvando…' : 'Salvar contrato' }}
+      </button>
+    </div>
+  </app-popup-shell>
+}
+
+<!-- Card #768 (itens 16, 18, 20): cadastros completos em pop-up, centralizados, sem sair da requisição. -->
+@if (supplierPopup()) {
+  <app-popup-shell title="Cadastro de fornecedor" subtitle="Contatos › fornecedores. Ao salvar, o fornecedor já fica selecionado." icon="user" [width]="1180" [plain]="true" (close)="supplierPopup.set(false)">
+    <app-stakeholder-new [embedded]="true" (created)="onSupplierCreated($event)" (cancelled)="supplierPopup.set(false)"></app-stakeholder-new>
+  </app-popup-shell>
+}
+@if (productPopup() !== null) {
+  <app-popup-shell title="Dados Gerais – Produtos" subtitle="Ao salvar, a lista é atualizada e o produto já fica no item." icon="box" [width]="1080" [plain]="true" (close)="productPopup.set(null)">
+    <app-purchasing-registries-new [embedded]="true" (created)="onProductCreated($event)" (cancelled)="productPopup.set(null)"></app-purchasing-registries-new>
+  </app-popup-shell>
+}
+@if (locationPopup()) {
+  <app-popup-shell title="Dados do Local" subtitle="Ao salvar, o local já fica selecionado, com endereço e contato." icon="pin" [width]="1000" [plain]="true" (close)="locationPopup.set(false)">
+    <app-delivery-location-new [embedded]="true" (created)="onLocationCreated($event)" (cancelled)="locationPopup.set(false)"></app-delivery-location-new>
+  </app-popup-shell>
 }

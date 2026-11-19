@@ -1,6 +1,6 @@
 <div class="page">
 
-  <div class="page-header">
+  <div class="page-header" [hidden]="embedded">
     <h1 class="page-title">{{ isEdit() ? 'Editar local de entrega' : 'Novo local de entrega' }}</h1>
   </div>
 
@@ -82,7 +82,7 @@
     </div>
 
     <div class="card-footer">
-      <button type="button" class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">Voltar</button>
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onBack()">{{ embedded ? 'Cancelar' : 'Voltar' }}</button>
 
       <div class="footer-actions-right">
         <button type="button" class="btn-outline btn-outline--orange" (click)="resetForm()" [disabled]="saving()">Limpar campos</button>

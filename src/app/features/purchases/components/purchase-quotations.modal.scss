@@ -89,3 +89,30 @@
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+// ── Card #768 (itens 24 e 70) ───────────────────────────────────────────────
+.q-body { padding: 0; }
+.q-hint { font-size: 13px; color: var(--text-secondary, #6B7280); margin: 0 0 12px; }
+.center { text-align: center !important; }
+.q-actions { white-space: nowrap; .q-icon { margin: 0 2px; } }
+.q-icon:disabled { opacity: .4; cursor: not-allowed; }
+.hdr-menu { position: relative; }
+.hdr-icon {
+  width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255,255,255,.18); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  &:hover { background: rgba(255,255,255,.3); }
+}
+.hdr-dropdown {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 200px; background: #fff; color: var(--text-primary, #111827);
+  border-radius: 12px; box-shadow: 0 12px 28px rgba(0,0,0,.18); padding: 6px; display: flex; flex-direction: column;
+  &--wide { min-width: 360px; }
+  > button, .hdr-dropdown__file { text-align: left; border: 0; background: none; padding: 9px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  > button:hover, .hdr-dropdown__file:hover { background: #F5F3FF; }
+}
+.hdr-dropdown__title { font-size: 12px; font-weight: 700; color: var(--text-secondary, #6B7280); padding: 10px 12px 4px; border-top: 1px solid #EEE; margin-top: 4px; }
+.batch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; font-size: 13px;
+  small { display: block; color: var(--text-secondary, #6B7280); font-size: 12px; }
+}
+.batch-del { border: 1px solid #FECACA; background: #FEF2F2; color: #DC2626; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.batch-empty { font-size: 13px; color: var(--text-secondary, #6B7280); padding: 4px 12px 8px; margin: 0; }
