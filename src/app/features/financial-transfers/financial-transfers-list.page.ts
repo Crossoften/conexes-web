@@ -70,6 +70,7 @@ export class FinancialTransfersListPage implements OnInit {
 
   // ── Card #768 (itens 30, 31, 35 e 36): formulário em pop-up ────────────────
   readonly formAberto = signal<{ titulo: string; editId: number | null; duplicate: any } | null>(null);
+  readonly formLista = computed(() => { const f = this.formAberto(); return f ? [f] : []; });
 
   abrirNovo(): void {
     this.formAberto.set({ titulo: this.newLabel(), editId: null, duplicate: null });

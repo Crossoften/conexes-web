@@ -236,7 +236,9 @@
 }
 
 <!-- Card #768 (itens 30, 31, 35 e 36): nova/editar transferência e lançamento em pop-up. -->
-@if (formAberto(); as f) {
+<!-- @for com track pela identidade: cada abertura (nova, editar, duplicar) recria o
+     formulário — senão o componente era reaproveitado com os valores da abertura anterior. -->
+@for (f of formLista(); track f) {
   <app-popup-shell [title]="f.titulo" subtitle="Preencha todas as informações necessárias." [icon]="isEntries() ? 'money' : 'transfer'" [width]="1080" (close)="fecharForm()">
     @if (isEntries()) {
       <app-financial-entry-new [embedded]="true" [editId]="f.editId" (saved)="aoSalvarForm(f.editId)" (cancelled)="fecharForm()"></app-financial-entry-new>
