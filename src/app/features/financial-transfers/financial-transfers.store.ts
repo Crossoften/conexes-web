@@ -191,7 +191,8 @@ export class FinancialTransfersStore {
 
   deleteOne(id: string): void {
     this.svc.delete(id, this.currentView).subscribe({
-      next: () => { this.notify.success('Registro excluído.'); this.load(); },
+      // Card #768 (item 43): a mensagem do servidor diz quando o movimento do extrato voltou para a conciliação.
+      next: (r: any) => { this.notify.success(r?.message ?? 'Registro excluído.'); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir o registro.'),
     });
   }

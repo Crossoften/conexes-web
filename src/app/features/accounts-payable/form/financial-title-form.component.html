@@ -1,0 +1,261 @@
+<form class="ft" [formGroup]="form" (ngSubmit)="salvar()">
+
+  @if (doExtrato) {
+    <div class="ft__aviso">Aberto a partir da conciliação bancária: histórico, datas e valor vêm do extrato. Ao salvar, o movimento fica conciliado com esta conta a {{ pagar ? 'pagar' : 'receber' }}.</div>
+  }
+  @if (erro()) { <div class="error-banner" role="alert">{{ erro() }}</div> }
+
+  <!-- ══ Dados gerais (fixos no alto de todas as abas) ══ -->
+  <section class="ft__bloco">
+    <h3 class="ft__titulo">Dados gerais</h3>
+    <div class="ft__grid ft__grid--3">
+      <div class="fg">
+        <label>{{ contraparte }}<span class="req">*</span></label>
+        <app-search-select formControlName="stakeholderId" [options]="pessoas()" [placeholder]="'Pesquisar ' + contraparte.toLowerCase() + '…'"
+                           [addButton]="true" [addTitle]="'Cadastrar ' + contraparte.toLowerCase()" (add)="cadastroPessoa.set(true)"
+                           [invalid]="!!(form.get('stakeholderId')?.invalid && form.get('stakeholderId')?.touched)"></app-search-select>
+      </div>
+      <div class="fg">
+        <label>{{ pagar ? 'Histórico da despesa' : 'Histórico da receita' }}<span class="req">*</span></label>
+        <input class="fc" formControlName="historico" placeholder="Digite aqui..." [class.is-invalid]="form.get('historico')?.invalid && form.get('historico')?.touched">
+      </div>
+      <div class="fg">
+        <label>{{ pagar ? 'Tipo de despesa' : 'Tipo de receita' }}</label>
+        <input class="fc" formControlName="tipo" [placeholder]="pagar ? 'Ex.: Serviço, Material...' : 'Ex.: Repasse, Doação, Serviço...'">
+      </div>
+    </div>
+
+    <div class="ft__grid ft__grid--5">
+      <div class="fg">
+        <label>Tipo de lançamento<span class="req">*</span></label>
+        <div class="sw"><select class="fc" formControlName="tipoLancamento">@for (t of tiposLancamento; track t) { <option [value]="t">{{ t }}</option> }</select></div>
+      </div>
+      <div class="fg">
+        <label>Tipo de documento<span class="req">*</span></label>
+        <div class="sw"><select class="fc" formControlName="tipoDocumento" [class.is-invalid]="form.get('tipoDocumento')?.invalid && form.get('tipoDocumento')?.touched">
+          <option value="">Selecione</option>
+          @for (t of tiposDocumento; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
+        </select></div>
+      </div>
+      <div class="fg">
+        <label>Nº do documento</label>
+        <input class="fc" formControlName="numeroDocumento" placeholder="Ex.: 93535">
+      </div>
+      <div class="fg">
+        <label>Competência<span class="req">*</span></label>
+        <input class="fc" type="date" formControlName="competencia" (click)="calendario($event)" [class.is-invalid]="form.get('competencia')?.invalid && form.get('competencia')?.touched">
+      </div>
+      <div class="fg">
+        <label>Data cadastro</label>
+        <input class="fc" type="date" formControlName="dataCadastro">
+      </div>
+    </div>
+
+    <div class="ft__grid ft__grid--4">
+      <div class="fg">
+        <label>Data emissão<span class="req">*</span></label>
+        <input class="fc" type="date" formControlName="dataEmissao" (click)="calendario($event)" [class.is-invalid]="form.get('dataEmissao')?.invalid && form.get('dataEmissao')?.touched">
+      </div>
+      <div class="fg">
+        <label>Vencimento<span class="req">*</span></label>
+        <input class="fc" type="date" formControlName="vencimento" (click)="calendario($event)" [class.is-invalid]="form.get('vencimento')?.invalid && form.get('vencimento')?.touched">
+      </div>
+      <div class="fg">
+        <label>Valor bruto<span class="req">*</span></label>
+        <input class="fc" type="text" appCurrencyMask formControlName="valorBruto" placeholder="0,00" [class.is-invalid]="form.get('valorBruto')?.invalid && form.get('valorBruto')?.touched">
+      </div>
+      <div class="fg">
+        <label>Valor líquido</label>
+        <input class="fc fc--calc" [value]="liquido() | number:'1.2-2':'pt-BR'" disabled>
+      </div>
+    </div>
+    @if (documentoDaPessoa()) { <p class="ft__nota">CPF/CNPJ do {{ contraparte.toLowerCase() }}: <strong>{{ documentoDaPessoa() }}</strong> (do cadastro)</p> }
+  </section>
+
+  <!-- ══ Classificação e rateio — linha única ══ -->
+  <section class="ft__bloco">
+    <div class="ft__cab">
+      <h3 class="ft__titulo">Classificação e rateio</h3>
+      <button type="button" class="btn-outline btn-outline--orange" (click)="adicionarRateio()">+ Adicionar classificação</button>
+    </div>
+    <div class="ft__rateio" formArrayName="rateios">
+      @for (l of rateios.controls; track $index; let i = $index) {
+        <div class="ft__linha" [formGroupName]="i">
+          <div class="fg"><label>Categoria<span class="req">*</span></label>
+            <div class="sw"><select class="fc" formControlName="accountPlanId"><option value="">Selecione</option>@for (p of planos(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }</select></div></div>
+          <div class="fg"><label>Centro de custo<span class="req">*</span></label>
+            <div class="sw"><select class="fc" formControlName="costCenterId"><option value="">Selecione</option>@for (c of centros(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }</select></div></div>
+          <div class="fg"><label>Projeto</label>
+            <div class="sw"><select class="fc" formControlName="projectId"><option value="">Selecione</option>@for (p of projetos(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }</select></div></div>
+          <div class="fg"><label>Atividade</label>
+            <div class="sw"><select class="fc" formControlName="activityId"><option value="">Selecione</option>@for (a of atividadesDaLinha(i); track a.id) { <option [value]="a.id">{{ a.name }}</option> }</select></div></div>
+          <div class="fg"><label>% do rateio<span class="req">*</span></label>
+            <div class="ft__pct"><input class="fc" type="number" min="0" max="100" step="0.01" formControlName="percentage">
+              <button type="button" class="btn-x" title="Remover linha" aria-label="Remover linha" [disabled]="rateios.length <= 1" (click)="removerRateio(i)">✕</button></div>
+            <span class="ft__mini">{{ valorDaLinha(i) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</span>
+          </div>
+        </div>
+      }
+      <p class="ft__soma" [class.ft__soma--erro]="somaPercentual() > 100">Soma dos percentuais: <strong>{{ somaPercentual() | number:'1.2-2':'pt-BR' }}%</strong></p>
+    </div>
+  </section>
+
+  <!-- ══ Abas ══ -->
+  <div class="ft__abas" role="tablist">
+    <button type="button" role="tab" [class.on]="aba === 'CONTRATO'" (click)="aba = 'CONTRATO'">{{ pagar ? 'Pedido e contrato' : 'Contrato e termo' }}</button>
+    <button type="button" role="tab" [class.on]="aba === 'PAGAMENTO'" (click)="aba = 'PAGAMENTO'">{{ pagar ? 'Dados de pagamento' : 'Dados de recebimento' }}</button>
+    <button type="button" role="tab" [class.on]="aba === 'PARCELAMENTO'" (click)="aba = 'PARCELAMENTO'">Parcelamento</button>
+    <button type="button" role="tab" [class.on]="aba === 'IMPOSTOS'" (click)="aba = 'IMPOSTOS'">Impostos retidos</button>
+    <button type="button" role="tab" [class.on]="aba === 'ANEXOS'" (click)="aba = 'ANEXOS'">Anexos</button>
+  </div>
+
+  <section class="ft__bloco ft__bloco--aba">
+    @switch (aba) {
+      @case ('CONTRATO') {
+        <div class="ft__grid ft__grid--3">
+          @if (pagar) {
+            <div class="fg"><label>Pedido de compra</label>
+              <app-search-select formControlName="pedido" [options]="pedidos()" placeholder="Pesquisar pelo número do pedido…" (picked)="onPedido($event)"></app-search-select></div>
+            <div class="fg"><label>Cód. Compras (do pedido)</label><input class="fc" formControlName="codCompras"></div>
+          } @else {
+            <div class="fg"><label>Termo / parceria</label>
+              <div class="sw"><select class="fc" formControlName="termo"><option value="">Nenhum</option>@for (t of termos(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></div></div>
+            <div class="fg"><label>Situação</label>
+              <div class="sw"><select class="fc" formControlName="situacao">
+                <option value="Open">Em aberto</option><option value="PartiallyPaid">Parcialmente recebido</option><option value="Paid">Recebido</option><option value="Cancelled">Cancelado</option>
+              </select></div></div>
+          }
+          <div class="fg"><label>Contrato ({{ pagar ? 'a pagar' : 'a receber' }})</label>
+            <app-search-select formControlName="contrato" [options]="contratoOpts()" placeholder="Pesquisar contrato…"></app-search-select></div>
+        </div>
+        <div class="ft__grid ft__grid--5">
+          <div class="fg"><label>Valor do contrato</label><input class="fc fc--calc" disabled [value]="contratoSel() ? brl(contratoSel()!.value) : ''"></div>
+          <div class="fg"><label>Saldo do contrato</label><input class="fc fc--calc" disabled [value]="contratoSel() ? brl(contratoSel()!.balance) : ''"></div>
+          <div class="fg"><label>Data início do contrato</label><input class="fc fc--calc" disabled [value]="contratoSel() ? dataBR(contratoSel()!.startDate) : ''"></div>
+          <div class="fg"><label>Data fim do contrato</label><input class="fc fc--calc" disabled [value]="contratoSel() ? dataBR(contratoSel()!.endDate) : ''"></div>
+          <div class="fg"><label>Tipo de serviço</label>
+            <div class="sw"><select class="fc" formControlName="servico"><option value="">Selecione</option>@for (s of servicos(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }</select></div></div>
+        </div>
+      }
+      @case ('PAGAMENTO') {
+        <div class="ft__grid ft__grid--3">
+          <div class="fg"><label>{{ pagar ? 'Meio de pagamento' : 'Meio de recebimento' }}@if (pagar) {<span class="req">*</span>}</label>
+            <div class="sw"><select class="fc" formControlName="meio" [class.is-invalid]="form.get('meio')?.invalid && form.get('meio')?.touched">
+              <option value="">Selecione</option>@for (m of meios; track m) { <option [value]="m">{{ m }}</option> }
+            </select></div></div>
+          <div class="fg"><label>{{ pagar ? 'Tipo de pagamento (meio internet)' : 'Forma de recebimento' }}</label>
+            <div class="sw"><select class="fc" formControlName="tipoPagamento" [attr.disabled]="pagar && form.get('meio')?.value !== 'Internet banking' ? true : null">
+              <option value="">Selecione</option>@for (t of tiposPagamento; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
+            </select></div>
+            @if (pagar && form.get('meio')?.value !== 'Internet banking') { <span class="ft__mini">Usado quando o meio é Internet banking.</span> }</div>
+          <div class="fg"><label>{{ pagar ? 'Conta pagadora' : 'Conta recebedora' }}</label>
+            <div class="sw"><select class="fc" formControlName="conta"><option value="">Selecione uma conta</option>@for (c of contas(); track c.id) { <option [value]="c.id">{{ c.label }}</option> }</select></div></div>
+        </div>
+        <div class="ft__grid ft__grid--2-1">
+          <div class="fg"><label>Código de barras do documento para pagamento</label><input class="fc" formControlName="codigoBarras" placeholder="Digite ou cole o código de barras"></div>
+          <div class="fg"><label>Nosso número (se houver)</label><input class="fc" formControlName="nossoNumero" placeholder="Digite aqui..."></div>
+        </div>
+      }
+      @case ('PARCELAMENTO') {
+        <div class="ft__parc">
+          <div class="fg"><label>Parcelar?<span class="req">*</span></label>
+            <div class="pill" role="radiogroup">
+              <button type="button" role="radio" [attr.aria-checked]="form.get('parcelar')?.value === 'Sim'" [class.on]="form.get('parcelar')?.value === 'Sim'" (click)="setParcelar('Sim')">Sim</button>
+              <button type="button" role="radio" [attr.aria-checked]="form.get('parcelar')?.value !== 'Sim'" [class.on]="form.get('parcelar')?.value !== 'Sim'" (click)="setParcelar('Nao')">Não</button>
+            </div></div>
+          @if (form.get('parcelar')?.value === 'Sim') {
+            <div class="fg"><label>Quantidade de parcelas<span class="req">*</span></label><input class="fc" type="number" min="2" max="60" formControlName="qtdParcelas"></div>
+            <button type="button" class="btn-outline btn-outline--orange ft__gerar" (click)="gerarParcelas()">Gerar parcelas</button>
+          }
+        </div>
+        @if (form.get('parcelar')?.value === 'Sim') {
+          <table class="ft__tab" formArrayName="parcelas">
+            <thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th></tr></thead>
+            <tbody>
+              @for (p of parcelas.controls; track $index; let i = $index) {
+                <tr [formGroupName]="i">
+                  <td>{{ i + 1 }}ª</td>
+                  <td><input class="fc fc--sm" type="date" formControlName="dueDate" (click)="calendario($event)"></td>
+                  <td class="num"><input class="fc fc--sm fc--num" type="text" appCurrencyMask formControlName="amount"></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <p class="ft__soma" [class.ft__soma--erro]="parcelas.length && somaParcelas() !== liquido()">
+            Soma das parcelas: <strong>{{ somaParcelas() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+            @if (parcelas.length && somaParcelas() !== liquido()) { — o líquido é {{ liquido() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }} }
+            @if (retido() > 0) { <span class="ft__mini"> · As parcelas somam o líquido: a retenção ({{ retido() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}) é recolhida à parte.</span> }
+          </p>
+        }
+      }
+      @case ('IMPOSTOS') {
+        <label class="ft__check"><input type="checkbox" formControlName="edicaoManual" (change)="onEdicaoManual()"> <strong>Habilitar edição manual</strong> <span>(libera a alteração dos valores retidos e das bases)</span></label>
+        <div formArrayName="impostos" class="ft__imp">
+          @for (g of impostosArr.controls; track $index; let i = $index) {
+            <div class="ft__grid ft__grid--3" [formGroupName]="i">
+              <div class="fg"><label>Alíquota % {{ impostos[i] }}</label><input class="fc" formControlName="rate" placeholder="%" inputmode="decimal"></div>
+              <div class="fg"><label>Cód. {{ impostos[i] }}</label>
+                @if (ehLivre(impostos[i])) {
+                  <input class="fc" formControlName="code" placeholder="Informe o código">
+                } @else {
+                  <div class="sw"><select class="fc" formControlName="code">
+                    <option value="">Sem código</option>
+                    @for (cd of codigosLista(impostos[i]); track cd) { <option [value]="cd">{{ cd }}</option> }
+                  </select></div>
+                }
+              </div>
+              <div class="fg"><label>Valor retido {{ impostos[i] }} {{ form.get('edicaoManual')?.value ? '' : '(calculado)' }}</label>
+                @if (form.get('edicaoManual')?.value) {
+                  <input class="fc" type="text" appCurrencyMask formControlName="amount">
+                } @else {
+                  <input class="fc fc--calc" disabled [value]="retidoDe(i) | currency:'BRL':'symbol':'1.2-2':'pt-BR'">
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <p class="ft__mini">Total retido: <strong>{{ retido() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>. O vencimento de cada retenção é o dia 20 do mês seguinte ao vencimento do título (antecipado se cair no fim de semana).</p>
+      }
+      @case ('ANEXOS') {
+        @if (!ehEdicao()) {
+          <p class="ft__mini">Salve o título para anexar a nota fiscal, os comprovantes e as CNDs.</p>
+        } @else {
+          <label class="btn-outline btn-outline--orange ft__up">{{ enviando() ? 'Enviando…' : '+ Anexar arquivo' }}<input type="file" hidden (change)="onAnexo($event)"></label>
+          <ul class="ft__anexos">
+            @for (a of anexos(); track a.id) {
+              <li><a [href]="a.fileUrl" target="_blank" rel="noopener">{{ nomeDoAnexo(a) }}</a>
+                <button type="button" class="btn-x" title="Remover" aria-label="Remover" (click)="removerAnexo(a.id)">✕</button></li>
+            }
+            @if (!anexos().length) { <li class="ft__mini">Nenhum anexo.</li> }
+          </ul>
+        }
+      }
+    }
+  </section>
+
+  <div class="fg ft__obs"><label>Observações</label><input class="fc" formControlName="observacoes" placeholder="Digite aqui..."></div>
+
+  <!-- ══ Rodapé: Valor bruto, Retido, Líquido e Parcelas ══ -->
+  <footer class="ft__pe">
+    <button type="button" class="btn-outline btn-outline--orange" (click)="voltar()">Voltar</button>
+    <div class="ft__totais">
+      <div><span>Valor bruto</span><strong>{{ bruto() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div>
+      <div><span>Retido</span><strong class="ft__ret">{{ retido() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div>
+      <div><span>Líquido</span><strong>{{ liquido() | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong></div>
+      <div><span>Parcelas</span><strong>{{ qtdParcelasResumo() }}</strong></div>
+    </div>
+    <div class="ft__acoes">
+      <button type="button" class="btn-outline btn-outline--orange" (click)="reiniciar()">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+        Reiniciar formulário
+      </button>
+      <button type="submit" class="btn-solid btn-solid--orange" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+    </div>
+  </footer>
+</form>
+
+@if (cadastroPessoa()) {
+  <app-popup-shell [title]="'Cadastro de ' + contraparte.toLowerCase()" [subtitle]="'Contatos. Ao salvar, o ' + contraparte.toLowerCase() + ' já fica selecionado.'" icon="user" [width]="1180" [plain]="true" (close)="cadastroPessoa.set(false)">
+    <app-stakeholder-new [embedded]="true" (created)="onPessoaCriada($event)" (cancelled)="cadastroPessoa.set(false)"></app-stakeholder-new>
+  </app-popup-shell>
+}

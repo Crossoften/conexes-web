@@ -2,7 +2,8 @@
 
   <div class="page-header">
     <h1 class="page-title">Contas a pagar</h1>
-    <button class="btn-novo" routerLink="new">
+    <!-- Card #768 (item 47): nova conta em pop-up. -->
+    <button class="btn-novo" type="button" (click)="abrirNovo()">
       <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
         <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -10,83 +11,78 @@
     </button>
   </div>
 
-  <div class="summary-cards-grid">
-    @for (summary of store.summaries(); track $index) {
-      <div class="summary-card">
-        @if (summary.isAccountInfo) {
-          <h3 class="summary-card__title">Dados da conta</h3>
-          <div class="summary-card__content">
-            <p class="summary-card__line summary-card__line--bold">{{ summary.bankName }}</p>
-            <p class="summary-card__line summary-card__line--bold">{{ summary.agency }}</p>
-            <p class="summary-card__line summary-card__line--bold">{{ summary.account }}</p>
-            <p class="summary-card__line summary-card__line--balance">Saldo: {{ summary.balance }}</p>
-          </div>
-        } @else {
-          <h3 class="summary-card__title summary-card__title--muted">{{ summary.title }}</h3>
-          <div class="summary-card__content">
-            <p class="summary-card__line summary-card__line--bold">Crédito</p>
-            <p class="summary-card__line summary-card__line--bold">{{ summary.credit }}</p>
-            <p class="summary-card__line summary-card__line--bold" style="margin-top: 4px;">Débito</p>
-            <p class="summary-card__line summary-card__line--bold">{{ summary.debit }}</p>
-          </div>
-        }
-      </div>
-    }
-  </div>
+  <!-- Card #768 (item 55): os cards saíram daqui — ficam no dashboard Financeiro da tela de Início. -->
 
   <div class="card">
-    
+
     <div class="card-section" style="padding-bottom: 0; border-bottom: none;">
       <h2 class="card-inner-title">Relação de contas a pagar</h2>
     </div>
 
+    <!-- Card #768 (itens 45 e 46, cenários 32 a 35): visão, filtros fixos (Data base,
+         período, Status e Fornecedor) e os botões só de ícone. -->
     <div class="card-section filter-bar toolbar-section">
-      
       <div class="view-selector-wrap">
         <label class="view-selector-label">Selecione a visão</label>
         <div class="select-wrap">
           <select class="select select--bg-gray" [value]="store.view()" (change)="store.setView($any($event.target).value)">
-            @for (opt of viewOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+            @for (opt of viewOptions; track opt.value) { <option [value]="opt.value" [selected]="opt.value === store.view()">{{ opt.label }}</option> }
           </select>
           <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
       </div>
 
-      <button class="btn-outline" (click)="openFilters()">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-        Filtros
-        <!-- CP-01: a tela não dizia que havia filtro aplicado — quem voltava nela
-             via uma lista curta sem saber por quê. -->
-        @if (store.activeFilterCount() > 0) {
-          <span class="filter-badge">{{ store.activeFilterCount() }}</span>
-        }
-      </button>
-
-      @if (store.activeFilterCount() > 0) {
-        <button type="button" class="btn-outline btn-pill" (click)="clearFilters()">Limpar filtros</button>
-      }
-
-      <div class="toolbar-actions-right">
-        <button class="btn-outline" (click)="store.exportExcel()">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Exportar excel
-        </button>
-        <!-- I071 (CP-02): os dois botões eram inertes — nenhum tinha handler e nenhum
-             seletor de arquivo abria. Os dois trazem o documento fiscal para dentro do
-             Contas a pagar, e o que o módulo importa é o XML da NF-e: ambos aceitam .xml
-             (vários de uma vez). O <label> é que abre o seletor do input escondido. -->
-        <label class="btn-outline" title="Selecionar o XML da NF-e para gerar a conta a pagar">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          {{ importBusy() ? 'Importando…' : 'Importar XML' }}
-          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
-        </label>
-        <label class="btn-outline" title="Enviar o arquivo XML da NF-e">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          {{ importBusy() ? 'Importando…' : 'Upload de arquivo' }}
-          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
-        </label>
+      <div class="select-wrap fixo">
+        <select class="select select--pill" title="Data base" (change)="store.setFiltro({ issue: $any($event.target).value })">
+          <option value="" disabled>Data base</option>
+          @for (o of optDateField; track o.value) { <option [value]="o.value" [selected]="o.value === store.filters().issue">{{ o.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
 
+      <app-period-field [start]="store.filters().dateStart" [end]="store.filters().dateEnd" (periodChange)="store.setFiltro({ dateStart: $event.start, dateEnd: $event.end })"></app-period-field>
+
+      <div class="select-wrap fixo">
+        <select class="select select--pill" title="Status" (change)="store.setFiltro({ status: $any($event.target).value })">
+          <option value="" [selected]="!store.filters().status">Status: todos</option>
+          @for (o of optStatus; track o.value) { <option [value]="o.value" [selected]="o.value === store.filters().status">{{ o.label }}</option> }
+        </select>
+        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <app-search-select class="fixo-busca" [options]="optSupplierSearch()" placeholder="Fornecedor" [ngModel]="store.filters().supplier" (ngModelChange)="store.setFiltro({ supplier: $event })"></app-search-select>
+
+      <div class="tools">
+        <button type="button" class="tool-btn" data-tip="Filtros" aria-label="Filtros" (click)="openFilters()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          @if (store.activeFilterCount() > 0) { <span class="tool-badge">{{ store.activeFilterCount() }}</span> }
+        </button>
+        <button type="button" class="tool-btn" data-tip="Renegociar (1 selecionado)" aria-label="Renegociar" (click)="barRenegociar()">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 8a6 6 0 0 1 10-2M16 12a6 6 0 0 1-10 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3M6 17v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="tool-btn" data-tip="Multiplicar (1 selecionado)" aria-label="Multiplicar" (click)="barMultiplicar()">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="tool-btn" data-tip="Remessa (selecionados)" aria-label="Remessa" (click)="barRemessa()">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M18 3L9 12M18 3l-6 15-3-6-6-3 15-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="tools__sep"></span>
+        <button type="button" class="tool-btn" data-tip="Exportar Excel" aria-label="Exportar Excel" (click)="store.exportExcel()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </button>
+        <!-- I071 (CP-02): os dois aceitam o XML da NF-e. -->
+        <label class="tool-btn" [attr.data-tip]="importBusy() ? 'Importando…' : 'Importar XML'" aria-label="Importar XML">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13l-2 2 2 2M15 13l2 2-2 2"/></svg>
+          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
+        </label>
+        <label class="tool-btn" [attr.data-tip]="importBusy() ? 'Importando…' : 'Upload de arquivo'" aria-label="Upload de arquivo">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/><line x1="5" y1="21" x2="19" y2="21"/></svg>
+          <input type="file" accept=".xml,text/xml,application/xml" multiple hidden (change)="onImportXml($event)">
+        </label>
+        @if (temFiltroFixo()) {
+          <button type="button" class="link-limpar" (click)="clearFilters()">Limpar filtros</button>
+        }
+      </div>
     </div>
 
     <!-- I071: prévia do que foi lido na nota, resultado e erro legível por arquivo. -->
@@ -99,9 +95,7 @@
         @for (r of importResultados(); track r.arquivo + r.mensagem) {
           <div class="import-xml-result__row" [class.is-error]="!r.ok">
             <div class="import-xml-result__msg"><strong>{{ r.arquivo }}</strong> — {{ r.mensagem }}</div>
-            @if (r.resumo) {
-              <div class="import-xml-result__nota">{{ r.resumo }}</div>
-            }
+            @if (r.resumo) { <div class="import-xml-result__nota">{{ r.resumo }}</div> }
           </div>
         }
       </div>
@@ -118,35 +112,22 @@
       </div>
     }
 
-    <!-- CP-10/I077: a visão "Parcelas" mostra uma linha por VENCIMENTO, com o número da
-         parcela, o quanto já foi pago e a situação de cada uma — conteúdo próprio, e não
-         a mesma tabela de títulos com outro rótulo. -->
+    <!-- CP-10/I077: a visão "Parcelas" mostra uma linha por VENCIMENTO. -->
     @if (ehVisaoParcelas()) {
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th class="th">Título</th>
-              <th class="th">Fornecedor</th>
-              <th class="th">Histórico</th>
-              <th class="th">Parcela</th>
-              <th class="th">Vencimento</th>
-              <th class="th">Valor</th>
-              <th class="th">Pago</th>
-              <th class="th">Status</th>
+              <th class="th">Título</th><th class="th">Fornecedor</th><th class="th">Histórico</th><th class="th">Parcela</th>
+              <th class="th">Vencimento</th><th class="th th--num">Valor</th><th class="th th--num">Pago</th><th class="th">Status</th>
             </tr>
           </thead>
           <tbody>
             @for (p of parcelaRows(); track p.tituloId + '-' + p.rotulo) {
               <tr class="tr">
-                <td class="td td--mono">{{ p.displayId }}</td>
-                <td class="td">{{ p.company }}</td>
-                <td class="td">{{ p.history }}</td>
-                <td class="td td--mono">{{ p.rotulo }}</td>
-                <td class="td">{{ p.dueDate }}</td>
-                <td class="td">{{ p.value }}</td>
-                <td class="td">{{ p.paid }}</td>
-                <td class="td">{{ p.status }}</td>
+                <td class="td td--mono">{{ p.displayId }}</td><td class="td">{{ p.company }}</td><td class="td">{{ p.history }}</td>
+                <td class="td td--mono">{{ p.rotulo }}</td><td class="td">{{ p.dueDate }}</td>
+                <td class="td td--num">{{ p.value }}</td><td class="td td--num">{{ p.paid }}</td><td class="td">{{ p.status }}</td>
               </tr>
             }
             @if (!store.loading() && parcelaRows().length === 0) {
@@ -154,29 +135,30 @@
                 Nenhum título desta página tem parcelas. Use "Lançamentos (um por título)" para ver as contas.
               </td></tr>
             }
-            @if (store.loading()) {
-              <tr class="tr"><td class="td" colspan="8" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
-            }
           </tbody>
         </table>
       </div>
     } @else {
-    <div class="table-wrap">
-      <table class="table">
+    <!-- Card #768 (item 45): rolagem horizontal com a coluna Ações fixa. -->
+    <div class="table-wrap table-wrap--scroll">
+      <table class="table table--wide">
         <thead>
           <tr>
             <th class="th th--check"><label class="checkbox"><input type="checkbox" class="checkbox__input" [checked]="store.allPageSelected()" [indeterminate]="store.somePageSelected()" (change)="store.toggleAllPage(store.pageItems())"><span class="checkbox__box"></span></label></th>
             <th class="th th--sortable" (click)="store.setSort('displayId')">ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('displayId')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('type')">Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('type')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('document')">Dcto <span class="sort-icon" [ngClass]="'sort--' + getSortState('document')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('company')">Empresa <span class="sort-icon" [ngClass]="'sort--' + getSortState('company')"></span></th>
+            <th class="th th--sortable" (click)="store.setSort('company')">Fornecedor <span class="sort-icon" [ngClass]="'sort--' + getSortState('company')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('history')">Histórico <span class="sort-icon" [ngClass]="'sort--' + getSortState('history')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('registrationDate')">Data cadastro <span class="sort-icon" [ngClass]="'sort--' + getSortState('registrationDate')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('issueDate')">Emissão <span class="sort-icon" [ngClass]="'sort--' + getSortState('issueDate')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('dueDate')">Vencimento <span class="sort-icon" [ngClass]="'sort--' + getSortState('dueDate')"></span></th>
-            <th class="th th--sortable" (click)="store.setSort('value')">Valor <span class="sort-icon" [ngClass]="'sort--' + getSortState('value')"></span></th>
+            <th class="th th--num th--sortable" (click)="store.setSort('valorNum')">Valor <span class="sort-icon" [ngClass]="'sort--' + getSortState('valorNum')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
-            <th class="th th--center">Ações</th>
+            <th class="th">Categoria</th>
+            <th class="th">Centro de custo</th>
+            <th class="th">CPF/CNPJ</th>
+            <th class="th th--acoes">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -186,90 +168,66 @@
               <td class="td td--mono">{{ item.displayId }}</td>
               <td class="td">{{ item.type }}</td>
               <td class="td">{{ item.document }}</td>
-              <td class="td">{{ item.company }}</td>
-              <td class="td">{{ item.history }}</td>
+              <td class="td td--strong td--clip" [title]="item.company">{{ item.company }}</td>
+              <td class="td td--clip" [title]="item.history">{{ item.history }}</td>
               <td class="td">{{ item.registrationDate }}</td>
               <td class="td">{{ item.issueDate }}</td>
               <td class="td">{{ item.dueDate }}</td>
-              <td class="td">{{ item.value }}</td>
-              <td class="td">{{ item.status }}</td>
-              
-              <td class="td td--center">
-                <!-- FIN-N6/I101 (D5): a linha oferece só o que a SITUAÇÃO do título
-                     permite. Antes todas as ações apareciam em qualquer estado — dava
-                     para mandar à remessa um título em análise, multiplicar um pago e
-                     excluir um vindo de Compras. A matriz vem do servidor, que é
-                     também quem barra: a tela não é a única trava. -->
-                <div class="action-icons">
-                  <!-- CP-03: visualizar o lançamento -->
-                  <button class="icon-btn" title="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  <!-- I101/D5: "Em análise" só tem duas saídas — conferir ou devolver.
-                       A matriz já barrava baixa e renegociação antes da conferência,
-                       mas a linha não oferecia nenhuma saída: o título ficava parado. -->
+              <td class="td td--num">
+                <strong>{{ item.value }}</strong>
+                <!-- Card #768 (item 52): as retenções (valor e vencimento) à vista na linha. -->
+                @if (item.retencoes.length) {
+                  <span class="ret" [title]="textoRetencoes(item)">Retido {{ brl(item.retidoNum) }}</span>
+                }
+              </td>
+              <td class="td">
+                {{ item.status }}
+                <!-- Card #768 (item 49): o envio para remessa aparece na lista. -->
+                @if (item.remessa) { <span class="remessa" title="Status da remessa">{{ item.remessa }}</span> }
+              </td>
+              <td class="td td--clip" [title]="item.categoria">{{ item.categoria }}</td>
+              <td class="td td--clip" [title]="item.centroCusto">{{ item.centroCusto }}</td>
+              <td class="td td--mono">{{ item.cpfCnpj }}</td>
+              <!-- Card #768 (item 45): ações em grade na coluna fixa — Visualizar, Baixar
+                   (check) e Editar em cima; Copiar e Excluir embaixo. A situação do título
+                   (matriz D5 do servidor) troca o que não cabe por conferir/comprovante. -->
+              <td class="td td--acoes">
+                <div class="acoes-grade">
+                  <button class="icon-btn" title="Visualizar" aria-label="Visualizar" (click)="openView(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
                   @if (item.acoes.conferir) {
-                    <button class="icon-btn icon-btn--ok" title="Conferir (passa para Em aberto)" aria-label="Conferir"
-                            [disabled]="conferindo() === item.id" (click)="onConferir(item)">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <button class="icon-btn icon-btn--warn" title="Devolver ao Compras (com motivo)" aria-label="Devolver"
-                            [disabled]="conferindo() === item.id" (click)="onDevolver(item)">
-                      <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5L3 10l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 10h9a5 5 0 0 1 5 5v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                  }
-                  @if (item.acoes.pagar) {
-                    <!-- FIN-01: baixa (pagamento) total ou parcial -->
-                    <button class="icon-btn" title="Baixar (pagar)" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 6h14v9H3z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10.5" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6V4.5h8V6" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  }
-                  @if (item.acoes.renegociar) {
-                    <!-- FIN-03: renegociar o saldo -->
-                    <button class="icon-btn" title="Renegociar" (click)="openRenegotiate(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 8a6 6 0 0 1 10-2M16 12a6 6 0 0 1-10 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 3v3h-3M6 17v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  }
-                  @if (item.acoes.comprovante) {
-                    <!-- D5: título pago/parcial dá acesso ao comprovante da baixa. -->
-                    <button class="icon-btn" title="Comprovante do pagamento" (click)="openComprovante(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M5 2h7l3 3v13H5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 2v3h3M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-                  }
-                  @if (item.acoes.estornar) {
-                    <!-- D5: estorno CONTROLADO — escolhe a baixa e exige motivo. -->
-                    <button class="icon-btn" title="Estornar baixa" (click)="openEstorno(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10a6 6 0 1 1 2 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 6v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  }
+                    <button class="icon-btn icon-btn--ok" title="Conferir (passa para Em aberto)" aria-label="Conferir" [disabled]="conferindo() === item.id" (click)="onConferir(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else if (item.acoes.pagar) {
+                    <button class="icon-btn icon-btn--ok" title="Baixar (pagar)" aria-label="Baixar" (click)="openPay(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10.2l2.4 2.4 4.6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else if (item.acoes.comprovante) {
+                    <button class="icon-btn" title="Comprovante do pagamento" aria-label="Comprovante" (click)="openComprovante(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M5 2h7l3 3v13H5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 2v3h3M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                  } @else { <span class="icon-vazio"></span> }
                   @if (item.acoes.editar) {
-                    <!-- CP-04: a ação Editar não existia na linha. -->
-                    <button class="icon-btn" title="Editar" (click)="onEdit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  }
+                    <button class="icon-btn" title="Editar" aria-label="Editar" (click)="onEdit(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else { <span class="icon-vazio"></span> }
                   @if (item.acoes.copiar) {
-                    <button class="icon-btn" title="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  }
-                  @if (item.acoes.multiplicar) {
-                    <button class="icon-btn" title="Multiplicar lançamento (gerar parcelas)" (click)="openMultiply(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 2l7 3.5-7 3.5-7-3.5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 10l7 3.5L17 10M3 13.5l7 3.5 7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
-                  }
-                  @if (item.acoes.remessa) {
-                    <button class="icon-btn" title="Enviar para remessa" (click)="onSendToRemittance(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M18 3L9 12M18 3l-6 15-3-6-6-3 15-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  }
+                    <button class="icon-btn" title="Copiar" aria-label="Copiar" (click)="onCopy(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="7" y="7" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4H5.5A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else { <span class="icon-vazio"></span> }
                   @if (item.acoes.excluir) {
-                    <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                  } @else if (item.acoes.motivoExcluir) {
-                    <!-- Em vez de sumir sem explicação, diz por que não dá. -->
-                    <span class="acao-bloqueada" [title]="'Não pode ser excluído: ' + item.acoes.motivoExcluir">⃠</span>
+                    <button class="icon-btn icon-btn--danger" title="Excluir" aria-label="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else {
+                    <span class="acao-bloqueada" [title]="'Não pode ser excluído: ' + (item.acoes.motivoExcluir || 'situação do título')">⃠</span>
+                  }
+                  @if (item.acoes.conferir) {
+                    <button class="icon-btn icon-btn--warn" title="Devolver ao Compras (com motivo)" aria-label="Devolver" [disabled]="conferindo() === item.id" (click)="onDevolver(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5L3 10l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 10h9a5 5 0 0 1 5 5v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  } @else if (item.acoes.estornar) {
+                    <button class="icon-btn" title="Estornar baixa" aria-label="Estornar baixa" (click)="openEstorno(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 10a6 6 0 1 1 2 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 6v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   }
                 </div>
               </td>
             </tr>
           }
           @if (!store.loading() && store.pageItems().length === 0) {
-            <tr class="tr">
-              <td class="td" colspan="12" style="text-align:center; padding:32px; color: var(--text-secondary);">
-                @if (store.error()) {
-                  {{ store.error() }}
-                } @else {
-                  Nenhuma conta a pagar cadastrada. Use "Novo lançamento" para adicionar a primeira.
-                }
-              </td>
-            </tr>
+            <tr class="tr"><td class="td" colspan="15" style="text-align:center; padding:32px; color: var(--text-secondary);">
+              @if (store.error()) { {{ store.error() }} } @else { Nenhuma conta a pagar com estes filtros. }
+            </td></tr>
           }
           @if (store.loading()) {
-            <tr class="tr">
-              <td class="td" colspan="12" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td>
-            </tr>
+            <tr class="tr"><td class="td" colspan="15" style="text-align:center; padding:32px; color: var(--text-secondary);">Carregando…</td></tr>
           }
         </tbody>
       </table>
@@ -284,197 +242,95 @@
         }
         <button class="pag-btn" aria-label="Próxima" [disabled]="store.pagination().page === totalPages()" (click)="store.setPage(store.pagination().page + 1)"><svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
-      <div class="select-wrap">
-        <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
-          @for (s of pageSizeOptions; track s) { <option [value]="s">{{ s }} / página</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <!-- Card #768 (item 55): o total da coluna Valor, conforme os filtros, ao lado das linhas por página. -->
+      <div class="pagination__right">
+        <span class="valor-total">Valor total <strong>{{ brl(store.valorTotal()) }}</strong> <small>({{ store.total() }} título(s) conforme os filtros)</small></span>
+        <div class="select-wrap">
+          <select class="select select--sm" [value]="store.pagination().pageSize" (change)="store.setPageSize(+$any($event.target).value)">
+            @for (s of pageSizeOptions; track s) { <option [value]="s" [selected]="s === store.pagination().pageSize">{{ s }} / página</option> }
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
       </div>
     </div>
   </div>
+
+  <app-icon-legend [groups]="legenda"></app-icon-legend>
 </div>
 
+<!-- Card #768 (item 46, cenário 34): os demais filtros, no padrão dos pop-ups. -->
 @if (store.isFilterModalOpen()) {
-  <div class="modal-overlay" (click)="closeFilters()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Filtros - Busca Detalhada</h2>
-        <button class="modal-close" (click)="closeFilters()">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- CP-01: os 14 campos eram selects sem opção nenhuma ou caixas de texto
-             com placeholder "Selecione". Agora carregam do cadastro e filtram. -->
-        <div class="filter-grid">
-          <div class="form-group">
-            <label>Data base</label>
-            <select class="select" [(ngModel)]="localFilters.issue">
-              @for (o of optDateField; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>De</label>
-            <input type="date" class="input" [(ngModel)]="localFilters.dateStart">
-          </div>
-          <div class="form-group">
-            <label>Até</label>
-            <input type="date" class="input" [(ngModel)]="localFilters.dateEnd">
-          </div>
-          @if (intervaloInvalido) {
-            <p class="filter-error col-span-full">A data inicial não pode ser depois da final.</p>
-          }
-
-          <div class="form-group">
-            <label>Status</label>
-            <select class="select" [(ngModel)]="localFilters.status">
-              <option value="">Todos</option>
-              @for (o of optStatus; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group col-span-2">
-            <label>Fornecedor</label>
-            <select class="select" [(ngModel)]="localFilters.supplier">
-              <option value="">Todos os fornecedores</option>
-              @for (o of optSupplier(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Status das Remessas</label>
-            <select class="select" [(ngModel)]="localFilters.remittanceStatus">
-              <option value="">Todos</option>
-              @for (o of optRemittance; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <!-- CP-01/I070: era o único campo de texto livre ("Digite parte do tipo") numa
-               janela em que todo o resto carrega as opções do sistema — quem filtrava
-               tinha de adivinhar como o tipo havia sido escrito. O tipo de despesa é
-               texto no próprio título (não há cadastro), então as opções são os tipos
-               realmente usados. -->
-          <div class="form-group">
-            <label>Tipo Despesa</label>
-            <select class="select" [(ngModel)]="localFilters.expenseType">
-              <option value="">Todos</option>
-              @for (o of optExpenseType(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tipo de Pagamento</label>
-            <select class="select" [(ngModel)]="localFilters.paymentType">
-              <option value="">Todos</option>
-              @for (o of optPayment; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Contrato</label>
-            <select class="select" [(ngModel)]="localFilters.contract">
-              <option value="">Todos</option>
-              @for (o of optContract(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Requisição</label>
-            <select class="select" [(ngModel)]="localFilters.requisition">
-              <option value="">Todas</option>
-              @for (o of optRequisition(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Conta Bancária Baixa</label>
-            <select class="select" [(ngModel)]="localFilters.writeOffAccount">
-              <option value="">Todas</option>
-              @for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Conta Pagadora</label>
-            <select class="select" [(ngModel)]="localFilters.payingAccount">
-              <option value="">Todas</option>
-              @for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-
-          <div class="form-group col-span-2">
-            <label>Categoria/Conta</label>
-            <select class="select" [(ngModel)]="localFilters.categoryAccount">
-              <option value="">Todas</option>
-              @for (o of optAccountPlan(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-          <div class="form-group col-span-2">
-            <label>Projeto/Centro de Custos</label>
-            <select class="select" [(ngModel)]="localFilters.costCenter">
-              <option value="">Todos</option>
-              <optgroup label="Centros de custo">
-                @for (o of optCostCenter(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-              </optgroup>
-              <optgroup label="Projetos">
-                @for (o of optProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-              </optgroup>
-            </select>
-          </div>
-          <div class="form-group col-span-2">
-            <label>Subprojeto</label>
-            <select class="select" [(ngModel)]="localFilters.subProject">
-              <option value="">Todos</option>
-              @for (o of optSubProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-outline" (click)="clearFilters()">Limpar filtros</button>
-        <button class="btn-solid btn-solid--purple" [disabled]="intervaloInvalido" (click)="applyFilters()">Filtrar</button>
-      </div>
+  <app-popup-shell title="Filtros" subtitle="Busca detalhada: refine a lista de contas a pagar." icon="filter" [width]="900" [closeOnBackdrop]="true" (close)="closeFilters()">
+    <div class="filtros-grid">
+      <div class="form-group"><label>Status das remessas</label>
+        <select class="select" [(ngModel)]="localFilters.remittanceStatus"><option value="">Todos</option>@for (o of optRemittance; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Tipo de despesa</label>
+        <select class="select" [(ngModel)]="localFilters.expenseType"><option value="">Todos</option>@for (o of optExpenseType(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Tipo de pagamento</label>
+        <select class="select" [(ngModel)]="localFilters.paymentType"><option value="">Todos</option>@for (o of optPayment; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Contrato (a pagar)</label>
+        <select class="select" [(ngModel)]="localFilters.contract"><option value="">Todos</option>@for (o of optContract(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Requisição</label>
+        <select class="select" [(ngModel)]="localFilters.requisition"><option value="">Todas</option>@for (o of optRequisition(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Conta bancária da baixa</label>
+        <select class="select" [(ngModel)]="localFilters.writeOffAccount"><option value="">Todas</option>@for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Conta pagadora</label>
+        <select class="select" [(ngModel)]="localFilters.payingAccount"><option value="">Todas</option>@for (o of optBankAccount(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
     </div>
-  </div>
+    <h4 class="filtros-sub">Classificação</h4>
+    <div class="filtros-grid filtros-grid--4">
+      <div class="form-group"><label>Categoria</label>
+        <select class="select" [(ngModel)]="localFilters.categoryAccount"><option value="">Todas</option>@for (o of optAccountPlan(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Centro de custo</label>
+        <select class="select" [(ngModel)]="localFilters.costCenter"><option value="">Todos</option>@for (o of optCostCenterId(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Projeto</label>
+        <select class="select" [(ngModel)]="localFilters.project"><option value="">Todos</option>@for (o of optProjectId(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+      <div class="form-group"><label>Atividade</label>
+        <select class="select" [(ngModel)]="localFilters.activity"><option value="">Todas</option>@for (o of optSubProject(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+    </div>
+    <div class="filtros-pe">
+      <button class="btn-outline btn-outline--orange" (click)="limparFiltrosPopup()">Limpar filtros</button>
+      <button class="btn-solid btn-solid--orange" (click)="applyFilters()">Filtrar</button>
+    </div>
+  </app-popup-shell>
 }
 
-@if (multiplyTarget()) {
-  <div class="modal-overlay" (click)="closeMultiply()">
-    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Multiplicar lançamento</h2>
-        <button class="modal-close" (click)="closeMultiply()">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <!-- CP-06: "gera parcelas a partir do lançamento, conforme a quantidade
-             de parcelas e o intervalo em dias informados". A versão anterior
-             criava títulos NOVOS pelo valor cheio (R$ 1.000 x3 = R$ 4.000 a
-             pagar) e eu havia trocado o rótulo para descrever isso — trocar o
-             rótulo não entrega o comportamento pedido. -->
-        <p class="modal-hint">
-          Divide o {{ multiplyTarget()?.displayId }} — <strong>{{ multiplyTarget()?.value }}</strong> —
-          em parcelas, espaçadas pelo intervalo informado. <strong>O total não muda.</strong>
-        </p>
-        <div class="filter-grid filter-grid--2">
-          <div class="form-group"><label>Quantidade de parcelas</label><input type="number" min="2" class="input" [(ngModel)]="multiplyTimes"></div>
-          <div class="form-group"><label>Intervalo (dias)</label><input type="number" min="1" class="input" [(ngModel)]="multiplyInterval"></div>
-        </div>
-        @if (multiplyTimes >= 2) {
-          <p class="modal-hint">
-            Resultado: <strong>{{ multiplyTimes }} parcelas</strong> de
-            {{ previaParcela() }}@if (previaUltima() !== previaParcela()) { <span> (a última de {{ previaUltima() }}, para fechar os centavos)</span> },
-            a cada {{ multiplyInterval }} dia(s).
-          </p>
-        } @else {
-          <p class="modal-hint modal-hint--warn">
-            Informe ao menos 2 parcelas — com uma só, não há o que parcelar.
-          </p>
-        }
-      </div>
-      <div class="modal-footer">
-        <button class="btn-outline" (click)="closeMultiply()">Cancelar</button>
-        <button class="btn-solid btn-solid--purple" [disabled]="multiplyTimes < 2 || multiplyInterval < 1" (click)="confirmMultiply()">Gerar parcelas</button>
-      </div>
+<!-- Card #768 (itens 44 e 47): visualizar e nova/editar conta em pop-up. -->
+@if (viewItem(); as p) {
+  <app-financial-title-view kind="pagar" [id]="+p.id" [podeEditar]="p.acoes.editar" [podeExcluir]="p.acoes.excluir" [podeConferir]="p.acoes.conferir"
+    (editar)="editarDaVisualizacao(p)" (excluir)="excluirDaVisualizacao(p)" (conferir)="onConferir(p); closeView()" (devolver)="onDevolver(p); closeView()" (fechar)="closeView()"></app-financial-title-view>
+}
+@for (f of formLista(); track f) {
+  <app-popup-shell [title]="f.editId ? 'Editar conta a pagar: #' + f.editId : 'Nova conta a pagar'" subtitle="Preencha todas as informações necessárias para lançar o pagamento." icon="doc" [width]="1180" (close)="fecharForm()">
+    <app-financial-title-form kind="pagar" [embedded]="true" [editId]="f.editId" (saved)="aoSalvarForm(f.editId)" (cancelled)="fecharForm()"></app-financial-title-form>
+  </app-popup-shell>
+}
+
+@if (multiplyTarget(); as m) {
+  <!-- Card #768 (item 48): multiplicar divide o lançamento em N lançamentos, que aparecem na lista. -->
+  <app-popup-shell title="Multiplicar lançamento" [subtitle]="'Divide o ' + m.displayId + ' em lançamentos na lista, com o valor dividido entre eles.'" icon="doc" [width]="620" (close)="closeMultiply()">
+    <p class="modal-hint">
+      Divide o {{ m.displayId }} — <strong>{{ m.value }}</strong> — em lançamentos espaçados pelo intervalo informado.
+      O {{ m.displayId }} fica com a 1ª parte e as demais viram lançamentos novos na lista. <strong>O total não muda.</strong>
+    </p>
+    <div class="filtros-grid filtros-grid--2">
+      <div class="form-group"><label>Quantidade de lançamentos</label><input type="number" min="2" class="input" [(ngModel)]="multiplyTimes"></div>
+      <div class="form-group"><label>Intervalo (dias)</label><input type="number" min="1" class="input" [(ngModel)]="multiplyInterval"></div>
     </div>
-  </div>
+    @if (multiplyTimes >= 2) {
+      <p class="modal-hint">
+        Resultado: <strong>{{ multiplyTimes }} lançamentos</strong> de
+        {{ previaParcela() }}@if (previaUltima() !== previaParcela()) { <span> (o último de {{ previaUltima() }}, para fechar os centavos)</span> },
+        a cada {{ multiplyInterval }} dia(s).
+      </p>
+    } @else {
+      <p class="modal-hint modal-hint--warn">Informe ao menos 2 — com um só, não há o que dividir.</p>
+    }
+    <div class="filtros-pe">
+      <button class="btn-outline btn-outline--orange" (click)="closeMultiply()">Cancelar</button>
+      <button class="btn-solid btn-solid--orange" [disabled]="multiplyTimes < 2 || multiplyInterval < 1" (click)="confirmMultiply()">Gerar lançamentos</button>
+    </div>
+  </app-popup-shell>
 }
 
 @if (bulkDateOpen()) {
@@ -561,39 +417,6 @@
                 (click)="confirmEstorno()">
           {{ estornoBusy() ? 'Estornando…' : 'Estornar' }}
         </button>
-      </div>
-    </div>
-  </div>
-}
-
-@if (viewItem(); as p) {
-  <div (click)="closeView()" style="position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;">
-    <div (click)="$event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;">
-        <h2 style="font-size:16px;font-weight:700;color:#111827;margin:0;">Conta a pagar {{ p.displayId }}</h2>
-        <button type="button" (click)="closeView()" aria-label="Fechar" style="border:none;background:transparent;font-size:15px;cursor:pointer;color:#6B7280;">✕</button>
-      </div>
-      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#111827;">
-        <div><span style="color:#6B7280;">Fornecedor:</span> {{ p.company }}</div>
-        <div><span style="color:#6B7280;">Histórico:</span> {{ p.history }}</div>
-        <div><span style="color:#6B7280;">Emissão:</span> {{ p.issueDate }}</div>
-        <div><span style="color:#6B7280;">Vencimento:</span> {{ p.dueDate }}</div>
-        <div><span style="color:#6B7280;">Valor:</span> {{ p.value }}</div>
-        <div><span style="color:#6B7280;">Saldo em aberto:</span> {{ p.balance }}</div>
-        <div><span style="color:#6B7280;">Situação:</span> {{ p.status }}</div>
-        <!-- card #720 (CM-01): conversa atrelada a esta conta (ex.: comprovante inválido) -->
-        <app-process-chat processType="account_payable" [processId]="+p.id" />
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E5E7EB;">
-        <!-- I101/D5: a conferência também sai daqui, não só da linha. Em análise só
-             tem estas duas saídas; baixa e renegociação seguem bloqueadas até conferir. -->
-        @if (p.acoes.conferir) {
-          <button type="button" class="btn-outline" [disabled]="conferindo() === p.id"
-                  (click)="onDevolver(p); closeView()">Devolver ao Compras</button>
-          <button type="button" class="btn-solid btn-solid--orange" [disabled]="conferindo() === p.id"
-                  (click)="onConferir(p); closeView()">Conferir</button>
-        }
-        <button type="button" class="btn-outline btn-outline--orange" (click)="closeView()">Fechar</button>
       </div>
     </div>
   </div>

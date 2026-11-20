@@ -49,6 +49,14 @@ export interface PayableAccount {
    * que é como as duas começariam a divergir.
    */
   acoes: PayableActions;
+  // Card #768 (itens 45, 49 e 52): o que a lista passa a mostrar.
+  cpfCnpj: string;
+  categoria: string;
+  centroCusto: string;
+  valorNum: number;
+  remessa: string | null;
+  retencoes: { tipo: string; valor: number; vencimento: string; codigo: string | null }[];
+  retidoNum: number;
 }
 
 /** D5/I101: matriz de ações permitidas para um título. */
@@ -85,6 +93,9 @@ export interface AdvancedFilters {
   categoryAccount: string;
   costCenter: string;
   subProject: string;
+  // Card #768 (item 46): classificação na ordem da hierarquia.
+  project: string;
+  activity: string;
 }
 
 /** Uma opção de select do filtro. */
