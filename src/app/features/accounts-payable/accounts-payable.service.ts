@@ -4,6 +4,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PayableAccount, SummaryCard, AdvancedFilters, FilterOption, PayableActions } from './accounts-payable.model';
+import { TIPOS_PAGAMENTO } from './form/financial-title.constants';
 
 /** Envelope de listagem padrão do back ({ data, count, pages }). */
 interface ListEnvelope<T> {
@@ -155,22 +156,9 @@ export class AccountsPayableService {
     { value: 'Rejected',  label: 'Rejeitada' },
   ];
 
-  readonly paymentMethodOptions: FilterOption[] = [
-    { value: 'EletronicTransferSameOwner',  label: 'Transferência eletrônica — mesma titularidade' },
-    { value: 'EletronicTransferOtherOwner', label: 'Transferência eletrônica — outra titularidade' },
-    { value: 'TEDSameOwner',                label: 'TED — mesma titularidade' },
-    { value: 'TEDOtherOwner',               label: 'TED — outra titularidade' },
-    { value: 'DOCSameOwner',                label: 'DOC — mesma titularidade' },
-    { value: 'DOCOtherOwner',               label: 'DOC — outra titularidade' },
-    { value: 'BoletoSameBank',              label: 'Boleto — mesmo banco' },
-    { value: 'BoletoOtherBank',             label: 'Boleto — outro banco' },
-    { value: 'UtilityBill',                 label: 'Conta de consumo' },
-    { value: 'DARFWithBarcode',             label: 'DARF com código de barras' },
-    { value: 'GARE',                        label: 'GARE' },
-    { value: 'SP_ICMS',                     label: 'ICMS — SP' },
-    { value: 'GNRE_StateTaxes',             label: 'GNRE — tributos estaduais' },
-    { value: 'GPS',                         label: 'GPS' },
-  ];
+  // Card #768 (item 47): a mesma lista do formulário (Tipo de pagamento — meio internet).
+  readonly paymentMethodOptions: FilterOption[] = TIPOS_PAGAMENTO.map(t => ({ value: t.valor, label: t.rotulo }));
+
 
   /** CP-01: requisições de compra para o filtro "Requisição". */
   getPurchaseRequests(): Observable<FilterOption[]> {

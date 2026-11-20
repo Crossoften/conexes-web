@@ -181,3 +181,8 @@
   display: flex;
   align-items: flex-end;
 }
+
+// Card #768 (item 64): rubrica em linha — Categoria, Centro de custo, Projeto, Atividade, Valor
+.grid-rubrica { display: grid; grid-template-columns: 1.4fr 1.2fr 1fr 1fr 150px 40px; gap: 12px; align-items: end; margin-bottom: 8px; }
+.btn-x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #E5E7EB; background: #fff; color: #6B7280; cursor: pointer; margin-bottom: 4px;
+  &:hover { color: #B91C1C; border-color: #FECACA; } }

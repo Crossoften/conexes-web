@@ -204,3 +204,32 @@
   cursor: pointer;
 }
 .role-check input { width: 16px; height: 16px; cursor: pointer; }
+
+// ── Card #768 (item 73, cenários 55 e 56) ─────────────────────────────────
+// Rodapé fixo: o card ocupa a altura da tela e os botões ficam no pé; a sobra de
+// espaço, quando houver, fica entre os campos e os botões.
+.card { min-height: calc(100vh - 150px); }
+.card-body { flex: 1; }
+.grid-principal { grid-template-columns: 1fr 1.4fr 1fr 0.7fr; align-items: start; }
+.grid-valores { grid-template-columns: 0.7fr 0.7fr 1.1fr 1.1fr 0.7fr; align-items: start; }
+.grid-financeiro { grid-template-columns: 0.7fr 0.7fr 3fr; align-items: start; }
+.field-hint { font-size: 12px; color: var(--text-secondary, #6B7280); margin-top: 6px; display: block; }
+.funcoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.funcao { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--surface-border-mid, #E5E7EB); border-radius: 12px; padding: 14px 16px; cursor: pointer; background: #fff; transition: border-color .15s, background .15s;
+  input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--brand-purple, #6D28D9); flex-shrink: 0; cursor: pointer; }
+  &:hover { border-color: #C4B5FD; }
+  &--on { border-color: var(--brand-purple, #6D28D9); background: #F5F3FF; }
+  &--dica { cursor: default; flex-direction: column; gap: 4px; border-style: dashed; border-color: #C4B5FD;
+    strong { color: var(--brand-purple, #6D28D9); font-size: 13px; } span { font-size: 12.5px; color: #4B5563; line-height: 1.45; }
+    &:hover { border-color: #C4B5FD; } }
+}
+.funcao__corpo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.funcao__titulo { font-weight: 700; font-size: 13.5px; color: var(--text-primary, #111827); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.funcao__etapa { font-size: 11px; font-weight: 600; background: #EDE9FE; color: #5B21B6; border-radius: 999px; padding: 2px 9px; }
+.funcao__desc { font-size: 12.5px; color: #4B5563; line-height: 1.45; }
+.quadro-financeiro { border: 1px dashed #C4B5FD; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; align-self: stretch;
+  strong { color: var(--brand-purple, #6D28D9); font-size: 13px; } span { font-size: 12.5px; color: #4B5563; } }
+@media (max-width: 1200px) {
+  .grid-principal, .grid-valores { grid-template-columns: 1fr 1fr; }
+  .funcoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

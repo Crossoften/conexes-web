@@ -2,6 +2,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { PurchaseRequest, PurchaseRequestActionLog, PurchaseFile, PurchaseRef, PURCHASE_REQUEST_STATUS_CONFIG } from '../purchases.model';
 import { PurchasesService } from '../purchases.service';
+import { Router } from '@angular/router';
 import { UploadService } from '../../../shared/services/upload.service';
 import { formatCivilDateBR } from '../../../shared/utils/format';
 import { ProcessChatComponent } from '../../../shared/components/process-chat/process-chat.component';
@@ -126,12 +127,15 @@ const EVENT_ACTIONS = new Set(['AWARD', 'ORDER_RECEIPT', 'APPROVE_LEVEL', ...QUO
 export class PurchaseRequestDetailModalComponent implements OnChanges {
   @Input() request: PurchaseRequest | null = null;
   @Input() loading = false;
+  /** Card #768 (item 65): o visualizar da requisição ganha o Editar. */
+  @Input() canEdit = true;
 
   @Output() close  = new EventEmitter<void>();
   @Output() remove = new EventEmitter<number>();
 
   private svc    = inject(PurchasesService);
   private upload = inject(UploadService);
+  private router = inject(Router);
 
   activeTab: DetailTab = 'DADOS';
 
@@ -290,6 +294,13 @@ export class PurchaseRequestDetailModalComponent implements OnChanges {
 
   onDelete(): void {
     if (this.request) this.remove.emit(this.request.id);
+  }
+
+  onEdit(): void {
+    const id = this.request?.id;
+    if (!id) return;
+    this.onClose();
+    this.router.navigate(['/quotations/edit', id]);
   }
 
   // CP-31: exporta a requisição para Excel estruturado (Blob gerado no back).

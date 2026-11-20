@@ -18,9 +18,12 @@
           <div class="error-banner" role="alert">{{ errorMsg() }}</div>
         }
 
+        <!-- Card #768 (item 73, cenários 55 e 56): campos principais na mesma linha, funções
+             em cartões com orientação e etapa, valores e escopo na mesma linha com dicas
+             curtas e, no Financeiro, o quadro de orientação da alçada financeira. -->
         <div class="form-grid">
 
-          <div class="form-row grid-cols-2">
+          <div class="form-row grid-principal">
             <div class="form-group">
               <label>Tipo de alçada <span class="req">*</span></label>
               <div class="select-wrap">
@@ -31,10 +34,8 @@
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              <span class="field-hint">Compras: aprovação de requisições. Financeiro: autorização de pagamento.</span>
             </div>
-          </div>
-
-          <div class="form-row grid-cols-2">
 
             <div class="form-group">
               <label>Descrição da alçada <span class="req">*</span></label>
@@ -47,11 +48,11 @@
             </div>
 
             <div class="form-group">
-              <label>Aprovador <span class="req">*</span></label>
+              <label>Usuário <span class="req">*</span></label>
               <div class="select-wrap">
                 <select class="form-control" formControlName="approver"
                   [class.is-invalid]="form.get('approver')?.invalid && form.get('approver')?.touched">
-                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione' }}</option>
+                  <option value="">{{ loadingLists() ? 'Carregando...' : 'Selecione o usuário' }}</option>
                   @for (u of users(); track u.id) {
                     <option [value]="u.id">{{ u.name }}{{ u.email ? ' — ' + u.email : '' }}</option>
                   }
@@ -62,10 +63,6 @@
                 <span class="field-error">Campo obrigatório</span>
               }
             </div>
-
-          </div>
-
-          <div class="form-row grid-cols-4">
 
             <div class="form-group">
               <label>Nível de alçada <span class="req">*</span></label>
@@ -79,34 +76,44 @@
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              <span class="field-hint">Ordem de aprovação</span>
               @if (form.get('tierLevel')?.invalid && form.get('tierLevel')?.touched) {
                 <span class="field-error">Campo obrigatório</span>
               }
             </div>
+          </div>
 
-            @if (isCompras) {
-              <div class="form-group">
-                <label>Funções de compra <span class="req">*</span></label>
-                <div class="roles-checkboxes">
-                  @for (opt of purchaseRoleOptions; track opt.value) {
-                    <label class="role-check">
-                      <input type="checkbox" [checked]="isRole(opt.value)" (change)="toggleRole(opt.value)">
-                      <span>{{ opt.label }}</span>
-                    </label>
-                  }
-                </div>
-                <span class="field-hint">Selecione uma ou mais funções — elas são cumulativas para a mesma pessoa.</span>
-                @if (rolesInvalid && rolesTouched()) {
-                  <span class="field-error">Selecione ao menos uma função.</span>
+          @if (isCompras) {
+            <div class="form-group">
+              <label>Funções de compra <span class="req">*</span></label>
+              <div class="funcoes">
+                @for (opt of purchaseRoleOptions; track opt.value) {
+                  <label class="funcao" [class.funcao--on]="isRole(opt.value)">
+                    <input type="checkbox" [checked]="isRole(opt.value)" (change)="toggleRole(opt.value)">
+                    <span class="funcao__corpo">
+                      <span class="funcao__titulo">{{ opt.label }} <span class="funcao__etapa">{{ opt.etapa }}</span></span>
+                      <span class="funcao__desc">{{ opt.desc }}</span>
+                    </span>
+                  </label>
                 }
+                <div class="funcao funcao--dica">
+                  <strong>Como escolher</strong>
+                  <span>Marque uma ou mais funções: elas são cumulativas para a mesma pessoa. Libere apenas o que a pessoa precisa exercer no processo de compras.</span>
+                </div>
               </div>
-            }
+              @if (rolesInvalid && rolesTouched()) {
+                <span class="field-error">Selecione ao menos uma função.</span>
+              }
+            </div>
+          }
 
+          <div class="form-row" [class.grid-valores]="isCompras" [class.grid-financeiro]="!isCompras">
             <div class="form-group">
               <label>Valor mínimo <span class="req">*</span></label>
               <input type="text" class="form-control" placeholder="0,00" appCurrencyMask
                 formControlName="minValue"
                 [class.is-invalid]="form.get('minValue')?.invalid && form.get('minValue')?.touched">
+              <span class="field-hint">Início da faixa de valor</span>
               @if (form.get('minValue')?.invalid && form.get('minValue')?.touched) {
                 <span class="field-error">Campo obrigatório</span>
               }
@@ -117,15 +124,13 @@
               <input type="text" class="form-control" placeholder="0,00" appCurrencyMask
                 formControlName="maxValue"
                 [class.is-invalid]="form.get('maxValue')?.invalid && form.get('maxValue')?.touched">
+              <span class="field-hint">Fim da faixa de valor</span>
               @if (form.get('maxValue')?.invalid && form.get('maxValue')?.touched) {
                 <span class="field-error">Campo obrigatório</span>
               }
             </div>
 
-          </div>
-
-          @if (isCompras) {
-            <div class="form-row grid-cols-3">
+            @if (isCompras) {
               <div class="form-group">
                 <label>Centro de custo</label>
                 <div class="select-wrap">
@@ -135,6 +140,7 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
+                <span class="field-hint">Em branco: vale para todos</span>
               </div>
               <div class="form-group">
                 <label>Projeto</label>
@@ -145,6 +151,7 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
+                <span class="field-hint">Em branco: vale para todos</span>
               </div>
               <div class="form-group">
                 <label>Atividade</label>
@@ -155,9 +162,15 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
+                <span class="field-hint">Em branco: vale para todas</span>
               </div>
-            </div>
-          }
+            } @else {
+              <div class="quadro-financeiro">
+                <strong>Alçada financeira</strong>
+                <span>Autoriza os pagamentos com valor dentro da faixa informada. Para valores maiores, cadastre outra alçada com a faixa seguinte.</span>
+              </div>
+            }
+          </div>
 
         </div>
 

@@ -169,3 +169,27 @@
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+// ── Card #768 (itens 61, 62, 63 e 69) ──────────────────────────────────────
+.tools { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.tool-menu__list--direita { left: auto; right: 0; }
+.th--acoes, .td--acoes { width: 120px; text-align: center; }
+.acoes-grade { display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; justify-content: center; }
+.aba-hint { font-size: 12.5px; color: #6B7280; margin: 0 20px 10px; }
+.sub { font-size: 11px; color: #6B7280; }
+.tr--total .td { font-weight: 700; background: #FAFAFE; }
+.imp { font-size: 11.5px; padding: 2px 10px; border-radius: 999px; background: #FEE2E2; color: #991B1B; &--ok { background: #DCFCE7; color: #166534; } }
+// visualizar no padrão dos pop-ups (mesmo desenho do visualizar de contas a pagar)
+.tv__abas { display: flex; gap: 2px; border-bottom: 1px solid #E5E7EB; margin: -4px 0 14px; overflow-x: auto;
+  button { border: 0; background: transparent; padding: 10px 12px; font-size: 12.5px; font-weight: 600; color: #6B7280; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+    &.on { color: var(--brand-purple, #6D28D9); border-bottom-color: var(--brand-purple, #6D28D9); } } }
+.tv__painel { background: #FAFAFE; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.tv__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; }
+.tv__f { display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  span { font-size: 11.5px; color: #6B7280; } strong { font-size: 13px; color: #111827; font-weight: 600; overflow-wrap: anywhere; }
+  &--2 { grid-column: span 2; } &--full { grid-column: 1 / -1; } }
+.tv__tab { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border-radius: 8px; overflow: hidden;
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #EEF0F6; }
+  th { font-weight: 600; color: #374151; background: #F5F3FF; } .num { text-align: right; } }
+.tv__nota { font-size: 12px; color: #6B7280; margin: 0; }
+.tv__anexos { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }

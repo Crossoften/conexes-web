@@ -43,7 +43,7 @@ export const appRoutes: Routes = [
       // transferência ficava inalcançável. Sem permissionGuard de propósito: o item não tem
       // entrada no permission-map (ver o comentário lá), e exigir permissão inexistente
       // apenas trocaria o 404 por um bloqueio.
-      { path: 'general-settings',     loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
+      { path: 'general-settings',     canActivate: [permissionGuard], data: { module: 'Configurações', subMenu: 'Configurações Gerais' }, loadChildren: () => import('./features/general-settings/general-settings.routes').then(m => m.generalSettingsRoutes) },
 
       // Entidades
       { path: 'entity-registry',    canActivate: [permissionGuard], data: { module: 'Institucional', subMenu: 'Entidades' },                 loadChildren: () => import('./features/entity-registry/entity-registry.routes').then(m => m.entityRegistryRoutes) },
@@ -87,7 +87,7 @@ export const appRoutes: Routes = [
 
       // Outros
       { path: 'dashboard',      loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes) },
-      { path: 'accountability', loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
+      { path: 'accountability', canActivate: [permissionGuard], data: { module: 'Prestação de Contas', subMenu: 'Prestações de Contas' }, loadChildren: () => import('./features/accountability/accountability.routes').then(m => m.accountabilityRoutes) },
       { path: 'profile',        loadChildren: () => import('./features/profile/profile.routes').then(m => m.profileRoutes) },
 
       // Rota desconhecida com o usuário AUTENTICADO: mostra o 404 DENTRO do shell

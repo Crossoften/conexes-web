@@ -9,8 +9,15 @@ export interface BudgetLine {
   /** Linha sem plano de contas, centro de custo nem projeto: não há como
    *  atribuir gasto a ela, então realiza zero e a tela precisa avisar. */
   semClassificacao: boolean;
+  /** Card #768 (itens 63 e 64): a classificação na ordem da hierarquia. */
+  categoria?: string | null;
+  centroCusto?: string | null;
+  projeto?: string | null;
+  atividade?: string | null;
   previsto: number;
   realizado: number;
+  comprometido?: number;
+  saldoAposComprometido?: number;
   saldo: number;
   percentual: number;
   estourou: boolean;
@@ -47,6 +54,10 @@ export interface Budget {
   percentual: number;
   estourou: boolean;
   periodoFmt: string;
+  /** Card #768 (item 63): a vigência crua, para distribuir o previsto por período. */
+  periodStart: string | null;
+  periodEnd: string | null;
+  launchType: string;
 }
 
 export const BUDGET_STATUS_CONFIG: Record<BudgetStatus, { label: string; variant: 'success' | 'danger' | 'neutral' }> = {

@@ -30,14 +30,22 @@ export class ApprovalTiersNewPage implements OnInit {
   readonly activities   = signal<ApprovalScopeOption[]>([]);
   readonly loadingLists = signal(true);
 
+  // Card #768 (item 73, cenário 55): cada função com a etapa e uma frase de orientação.
   readonly purchaseRoleOptions = [
-    { label: 'Solicitante',           value: 'Requester'          },
-    { label: 'Comprador',             value: 'Buyer'              },
-    { label: 'Supervisor de Pedidos', value: 'RequestSupervisor'  },
-    { label: 'Supervisor de Compras', value: 'PurchaseSupervisor' },
-    { label: 'Recebedor de NF',       value: 'InvoiceReceiver'    },
-    { label: 'Financeiro',            value: 'Finance'            },
-    { label: 'Gerente',               value: 'Manager'            },
+    { label: 'Solicitante',           value: 'Requester',          etapa: 'Etapa 1',
+      desc: 'Cria as requisições de compra, preenche os produtos ou serviços e envia para as próximas etapas.' },
+    { label: 'Comprador',             value: 'Buyer',              etapa: 'Etapa 3',
+      desc: 'Registra as cotações feitas com os fornecedores: informa quem foi cotado e os valores.' },
+    { label: 'Supervisor de Pedidos', value: 'RequestSupervisor',  etapa: 'Etapas 5 e 6',
+      desc: 'Gerencia os pedidos aprovados: gera contas a pagar e contrato, envia o pedido ao fornecedor e encerra o pedido.' },
+    { label: 'Supervisor de Compras', value: 'PurchaseSupervisor', etapa: 'Etapa 4',
+      desc: 'Analisa e aprova as cotações e define o fornecedor vencedor, o que libera a geração do pedido.' },
+    { label: 'Recebedor de NF',       value: 'InvoiceReceiver',    etapa: 'Etapa 5',
+      desc: 'Registra o recebimento dos produtos ou serviços e confere a nota fiscal com o pedido.' },
+    { label: 'Financeiro',            value: 'Finance',            etapa: 'Etapa 5',
+      desc: 'Faz a ligação do pedido com o financeiro e autoriza os pagamentos das contas geradas.' },
+    { label: 'Gerente',               value: 'Manager',            etapa: 'Todas as etapas',
+      desc: 'Administra todas as requisições: cancela, volta etapas, reinicia as canceladas e troca aprovadores e comprador.' },
   ];
 
   readonly typeOptions = [

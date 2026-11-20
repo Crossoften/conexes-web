@@ -5,10 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../shared/services/notification.service';
 import { FinancialReportsService, ReportFilters, ReportRow } from './financial-reports.service';
 
+import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
 @Component({
   selector: 'app-financial-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PeriodFieldComponent],
   templateUrl: './financial-reports.page.html',
   styleUrl: './financial-reports.page.scss',
 })

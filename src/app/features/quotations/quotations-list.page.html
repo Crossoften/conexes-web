@@ -358,6 +358,7 @@
     <app-purchase-request-detail-modal
       [request]="store.selected()"
       [loading]="store.detailLoading()"
+      [canEdit]="canEdit"
       (close)="store.closeDetail()"
       (remove)="store.remove($event)">
     </app-purchase-request-detail-modal>

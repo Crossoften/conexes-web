@@ -10,7 +10,7 @@ interface State {
   loading: boolean;
   error: string | null;
   activeTab: BudgetTab;
-  filters: { search: string; period: string };
+  filters: { search: string; startDate: string; endDate: string };
   sort: { column: keyof Budget | ''; direction: 'asc' | 'desc' | '' };
   pagination: { page: number; pageSize: number };
   selectedIds: Set<string>;
@@ -27,7 +27,7 @@ export class BudgetsStore {
     loading: false,
     error: null,
     activeTab: 'BUDGETS',
-    filters: { search: '', period: '' },
+    filters: { search: '', startDate: '', endDate: '' },
     sort: { column: '', direction: '' },
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
@@ -35,10 +35,11 @@ export class BudgetsStore {
 
   load(): void {
     const { page, pageSize } = this.state().pagination;
-    const search = this.state().filters.search;
+    const { search, startDate, endDate } = this.state().filters;
     this.state.update(s => ({ ...s, loading: true, error: null }));
     // `page` vai como número da página: o back usa `skip` como página, não offset.
-    this.svc.getAll(search, pageSize, page).subscribe({
+    // Card #768 (item 62): busca e período vão ao servidor.
+    this.svc.getAll(search, pageSize, page, startDate, endDate).subscribe({
       next: res => this.state.update(s => ({ ...s, items: res.items, total: res.total, loading: false })),
       error: () => this.state.update(s => ({ ...s, items: [], total: 0, loading: false, error: 'Não foi possível carregar os orçamentos.' })),
     });
@@ -96,8 +97,10 @@ export class BudgetsStore {
     this.load();
   }
 
-  setPeriod(period: string) {
-    this.state.update(s => ({ ...s, filters: { ...s.filters, period }, pagination: { ...s.pagination, page: 1 } }));
+  /** Card #768 (item 62): o período filtrava nada — agora recorta pela vigência do orçamento. */
+  setPeriodo(startDate: string, endDate: string) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, startDate, endDate }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
   }
 
   setSort(column: keyof Budget) {

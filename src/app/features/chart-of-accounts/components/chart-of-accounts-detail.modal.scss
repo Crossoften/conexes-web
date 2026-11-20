@@ -45,16 +45,9 @@
   flex-shrink: 0;
   transition: background-color 0.2s, color 0.2s;
 
-  &--edit {
-    background-color: #ffffff;
-    color: var(--text-primary, #111827);
-    border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
-
-    .action-btn--close {
-      color: var(--text-secondary, #6B7280);
-      &:hover { color: var(--text-primary, #111827); }
-    }
-  }
+  // Card #768 (item 65): o pop-up de editar mantém o cabeçalho roxo e as cores do
+  // visualizar (antes ficava todo branco, só com o X).
+  &--edit { }
 }
 
 .header-content {
@@ -102,11 +95,14 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
+    // Card #768 (item 65): Editar e Excluir em círculo laranja, como em Fornecedores
+    // (antes era um tom translúcido).
+    background-color: var(--brand-orange, #F97316);
     color: #fff;
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.35);
+      filter: brightness(1.1);
       transform: translateY(-2px);
     }
   }
@@ -124,18 +120,7 @@
   }
 }
 
-.modal-header--edit {
-  .action-btn--orange {
-    background-color: var(--brand-orange, #F97316);
-    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
-    color: #6366F1;
-
-    &:hover {
-      filter: brightness(1.1);
-      transform: translateY(-2px);
-    }
-  }
-}
+// Card #768 (item 65): o bloco que pintava o editar de outro jeito saiu.
 
 // ── Corpo ─────────────────────────────────────
 
@@ -180,7 +165,7 @@
 
   &.active,
   &--active {
-    color: var(--brand-orange, #F97316);
+    color: var(--brand-purple, #6366F1); // Card #768 (item 65): aba em roxo, como nos demais pop-ups
     svg { opacity: 1; }
 
     &::after {
@@ -190,7 +175,7 @@
       left: 0;
       width: 100%;
       height: 2px;
-      background-color: var(--brand-orange, #F97316);
+      background-color: var(--brand-purple, #6366F1);
       border-radius: 2px 2px 0 0;
     }
   }

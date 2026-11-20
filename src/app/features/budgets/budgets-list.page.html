@@ -26,41 +26,42 @@
       </div>
     </div>
 
+    <!-- Card #768 (item 62): busca e período vão ao servidor; Importar com menu
+         (modelo e arquivo); botões só de ícone com o nome ao passar o mouse (item 69). -->
     <div class="card-section filter-bar" style="border-top: none; padding-top: 0;">
-      
       <div class="search-wrap">
-        <input class="search" type="text" placeholder="Buscar" [value]="store.filters().search" (input)="onSearch($any($event.target).value)">
+        <input class="search" type="text" placeholder="Buscar por título ou descrição" [value]="store.filters().search" (input)="onSearch($any($event.target).value)">
         <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
 
-      <div class="select-wrap">
-        <select class="select select--pill" [value]="store.filters().period" (change)="store.setPeriod($any($event.target).value)">
-          @for (opt of periodOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-        </select>
-        <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="tools">
+        <app-period-field [start]="store.filters().startDate" [end]="store.filters().endDate" (periodChange)="store.setPeriodo($event.start, $event.end)"></app-period-field>
+
+        <button type="button" class="tool-btn" data-tip="Exportar (Excel)" aria-label="Exportar (Excel)" (click)="onExport()">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </button>
+        <div class="tool-menu">
+          <button type="button" class="tool-btn" data-tip="Importar" aria-label="Importar" [attr.aria-expanded]="menuImportar()" (click)="menuImportar.set(!menuImportar())">
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/><line x1="5" y1="21" x2="19" y2="21"/></svg>
+          </button>
+          @if (menuImportar()) {
+            <div class="tool-menu__list tool-menu__list--direita" role="menu">
+              <button type="button" role="menuitem" (click)="menuImportar.set(false); onBaixarModelo()">
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="17"/><polyline points="19 12 12 19 5 12"/></svg>
+                Baixar modelo
+              </button>
+              <button type="button" role="menuitem" (click)="menuImportar.set(false); fileInput.click()">
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="7"/><polyline points="5 12 12 5 19 12"/></svg>
+                Importar arquivo
+              </button>
+            </div>
+          }
+        </div>
+        <input #fileInput type="file" accept=".xlsx" hidden (change)="onImportFile($event)">
       </div>
-
-      <button class="btn-outline btn-pill" (click)="onExport()">
-        Exportar
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <polyline points="9 15 12 18 15 15"></polyline>
-        </svg>
-      </button>
-
-      <button class="btn-outline btn-pill btn-import">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        Importar
-      </button>
-
     </div>
 
+    @if (store.activeTab() === 'BUDGETS') {
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -78,7 +79,7 @@
             <th class="th th--num">% Execução</th>
             <th class="th th--sortable" (click)="store.setSort('periodicity')">Periodicidade <span class="sort-icon" [ngClass]="'sort--' + getSortState('periodicity')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
-            <th class="th th--center">Ações</th>
+            <th class="th th--acoes">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -118,13 +119,14 @@
                 </span>
               </td>
 
-              <td class="td td--center">
-                <button class="icon-btn" title="Ver acompanhamento linha a linha" (click)="abrirAcompanhamento(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-                <div class="action-icons">
-                  <button class="icon-btn" title="Visualizar"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
-                  <button class="icon-btn" title="Anexo"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
-                  <button class="icon-btn" title="Duplicar"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-                  <button class="icon-btn icon-btn--danger" title="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <!-- Card #768 (item 61): as cinco ações na mesma grade, alinhadas, e todas respondendo. -->
+              <td class="td td--acoes">
+                <div class="acoes-grade">
+                  <button class="icon-btn" title="Visualizar" aria-label="Visualizar" (click)="abrirVisualizar(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+                  <button class="icon-btn" title="Acompanhar" aria-label="Acompanhar" (click)="abrirAcompanhamento(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+                  <button class="icon-btn" title="Anexar" aria-label="Anexar" (click)="abrirAnexos(item)"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
+                  <button class="icon-btn" title="Duplicar" aria-label="Duplicar" (click)="onDuplicar(item)"><svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                  <button class="icon-btn icon-btn--danger" title="Excluir" aria-label="Excluir" (click)="onDelete(item)"><svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 </div>
               </td>
             </tr>
@@ -140,6 +142,101 @@
         </tbody>
       </table>
     </div>
+
+    }
+
+    <!-- Card #768 (item 63): Planejamento — o previsto de cada rubrica, na ordem
+         Categoria, Centro de custo, Projeto e Atividade, distribuído pela periodicidade. -->
+    @if (store.activeTab() === 'PLANNING') {
+      <p class="aba-hint">Planejamento das rubricas dos orçamentos desta página: quanto foi previsto e como o valor se distribui em cada período da vigência.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Orçamento</th>
+              <th class="th">Categoria</th>
+              <th class="th">Centro de custo</th>
+              <th class="th">Projeto</th>
+              <th class="th">Atividade</th>
+              <th class="th">Vigência</th>
+              <th class="th">Periodicidade</th>
+              <th class="th th--num">Previsto</th>
+              <th class="th th--num">Por período</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of linhasRubrica(); track r.budget.id + '-' + r.linha.itemId) {
+              <tr class="tr">
+                <td class="td td--name">{{ r.budget.displayId }} — {{ r.budget.title }}</td>
+                <td class="td">{{ r.linha.categoria || '—' }}</td>
+                <td class="td">{{ r.linha.centroCusto || '—' }}</td>
+                <td class="td">{{ r.linha.projeto || '—' }}</td>
+                <td class="td">{{ r.linha.atividade || '—' }}</td>
+                <td class="td">{{ r.budget.periodoFmt }}</td>
+                <td class="td">{{ r.budget.periodicity }}@if (r.periodos) { <span class="sub">({{ r.periodos }}×)</span> }</td>
+                <td class="td td--num">{{ r.linha.previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                <td class="td td--num">@if (r.periodos) { {{ r.porPeriodo | currency:'BRL':'symbol':'1.2-2':'pt-BR' }} <span class="sub">/ {{ rotuloPeriodo(r.budget) }}</span> } @else { — }</td>
+              </tr>
+            }
+            @if (!store.loading() && linhasRubrica().length === 0) {
+              <tr class="tr"><td class="td" colspan="9" style="text-align:center; padding:32px; color: var(--text-secondary);">Nenhuma rubrica nos orçamentos desta página.</td></tr>
+            }
+          </tbody>
+          @if (linhasRubrica().length) {
+            <tfoot><tr class="tr tr--total"><td class="td" colspan="7">Total previsto</td><td class="td td--num">{{ totaisRubrica().previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td class="td"></td></tr></tfoot>
+          }
+        </table>
+      </div>
+    }
+
+    <!-- Card #768 (item 63): Acompanhamento — previsto × realizado × comprometido por rubrica. -->
+    @if (store.activeTab() === 'TRACKING') {
+      <p class="aba-hint">Execução de cada rubrica: realizado é o que foi pago; comprometido é o que já está lançado e ainda não foi pago.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">Orçamento</th>
+              <th class="th">Rubrica (Categoria · Centro de custo · Projeto · Atividade)</th>
+              <th class="th th--num">Previsto</th>
+              <th class="th th--num">Realizado</th>
+              <th class="th th--num">Comprometido</th>
+              <th class="th th--num">Saldo</th>
+              <th class="th th--num">% Execução</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of linhasRubrica(); track r.budget.id + '-' + r.linha.itemId) {
+              <tr class="tr">
+                <td class="td td--name">{{ r.budget.displayId }} — {{ r.budget.title }}</td>
+                <td class="td">{{ r.linha.descricao }}@if (r.linha.semClassificacao) { <span class="tag-aviso">sem classificação</span> }</td>
+                <td class="td td--num">{{ r.linha.previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                <td class="td td--num">{{ r.linha.realizado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                <td class="td td--num">{{ (r.linha.comprometido ?? 0) | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                <td class="td td--num" [class.td--estouro]="r.linha.estourou">{{ r.linha.saldo | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                <td class="td td--num">
+                  <div class="exec">
+                    <div class="exec__barra" [class.exec__barra--estouro]="r.linha.estourou"><span [style.width.%]="r.linha.percentual > 100 ? 100 : r.linha.percentual"></span></div>
+                    <span class="exec__num">{{ r.linha.percentual }}%</span>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (!store.loading() && linhasRubrica().length === 0) {
+              <tr class="tr"><td class="td" colspan="7" style="text-align:center; padding:32px; color: var(--text-secondary);">Nenhuma rubrica nos orçamentos desta página.</td></tr>
+            }
+          </tbody>
+          @if (linhasRubrica().length) {
+            <tfoot><tr class="tr tr--total"><td class="td" colspan="2">Total</td>
+              <td class="td td--num">{{ totaisRubrica().previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td class="td td--num">{{ totaisRubrica().realizado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td class="td td--num">{{ totaisRubrica().comprometido | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td class="td td--num">{{ totaisRubrica().saldo | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+              <td class="td"></td></tr></tfoot>
+          }
+        </table>
+      </div>
+    }
 
     <div class="pagination">
       <div class="pagination__nav">
@@ -158,6 +255,8 @@
     </div>
 
   </div>
+
+  <app-icon-legend [groups]="legenda"></app-icon-legend>
 </div>
 
 @if (acompTarget(); as b) {
@@ -197,7 +296,7 @@
           <table class="table table--compacta">
             <thead>
               <tr>
-                <th class="th">Rubrica</th>
+                <th class="th">Rubrica (Categoria · Centro de custo · Projeto · Atividade)</th>
                 <th class="th th--num">Previsto</th>
                 <th class="th th--num">Realizado</th>
                 <th class="th th--num">Saldo</th>
@@ -249,4 +348,106 @@
       </div>
     </div>
   </div>
+}
+
+<!-- Card #768 (item 61): Visualizar no padrão dos pop-ups (cabeçalho roxo, abas, quadro lavanda). -->
+@if (verTarget(); as b) {
+  <app-popup-shell [title]="'Orçamento: ' + b.displayId" subtitle="Acompanhe todas as informações cadastradas para o orçamento." icon="chart" [width]="1000" [closeOnBackdrop]="true" (close)="verTarget.set(null)">
+    <ng-container popup-actions>
+      <button type="button" class="ps-acao" title="Excluir" aria-label="Excluir" (click)="onDelete(b)">
+        <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </ng-container>
+    <div class="tv__abas" role="tablist">
+      <button type="button" [class.on]="verAba === 'DADOS'" (click)="verAba = 'DADOS'">Dados do orçamento</button>
+      <button type="button" [class.on]="verAba === 'RUBRICAS'" (click)="verAba = 'RUBRICAS'">Rubricas e acompanhamento</button>
+      <button type="button" [class.on]="verAba === 'ANEXOS'" (click)="verAba = 'ANEXOS'">Anexos</button>
+    </div>
+    <div class="tv__painel">
+      @switch (verAba) {
+        @case ('DADOS') {
+          <div class="tv__grid">
+            <div class="tv__f tv__f--2"><span>Título</span><strong>{{ b.title }}</strong></div>
+            <div class="tv__f"><span>Status</span><strong>{{ statusConfig[b.status].label }}</strong></div>
+            <div class="tv__f"><span>Exercício</span><strong>{{ b.fiscalYear }}</strong></div>
+            <div class="tv__f"><span>Periodicidade</span><strong>{{ b.periodicity }}</strong></div>
+            <div class="tv__f"><span>Tipo de lançamento</span><strong>{{ b.launchType }}</strong></div>
+            <div class="tv__f"><span>Vigência</span><strong>{{ b.periodoFmt }}</strong></div>
+            <div class="tv__f"><span>Rubricas</span><strong>{{ b.rubricas }}</strong></div>
+            <div class="tv__f"><span>Previsto</span><strong>{{ b.previstoFmt }}</strong></div>
+            <div class="tv__f tv__f--full"><span>Descrição</span><strong>{{ b.description }}</strong></div>
+          </div>
+        }
+        @case ('RUBRICAS') {
+          <table class="tv__tab">
+            <thead><tr><th>Categoria</th><th>Centro de custo</th><th>Projeto</th><th>Atividade</th><th class="num">Previsto</th><th class="num">Realizado</th><th class="num">Saldo</th><th class="num">%</th></tr></thead>
+            <tbody>
+              @for (l of b.tracking?.linhas ?? []; track l.itemId) {
+                <tr>
+                  <td>{{ l.categoria || '—' }}</td><td>{{ l.centroCusto || '—' }}</td><td>{{ l.projeto || '—' }}</td><td>{{ l.atividade || '—' }}</td>
+                  <td class="num">{{ l.previsto | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="num">{{ l.realizado | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="num">{{ l.saldo | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                  <td class="num">{{ l.percentual }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @case ('ANEXOS') {
+          @if (anexos().length) {
+            <ul class="tv__anexos">
+              @for (f of anexos(); track f.id) { <li><a [href]="f.fileUrl" target="_blank" rel="noopener">{{ nomeArquivo(f) }}</a></li> }
+            </ul>
+          } @else { <p class="tv__nota">Nenhum anexo neste orçamento. Use a ação Anexar na lista.</p> }
+        }
+      }
+    </div>
+  </app-popup-shell>
+}
+
+<!-- Card #768 (item 61): Anexar — enviar, abrir e remover arquivos do orçamento. -->
+@if (anexoTarget(); as b) {
+  <app-popup-shell [title]="'Anexos do orçamento ' + b.displayId" [subtitle]="b.title" icon="doc" [width]="720" [closeOnBackdrop]="true" (close)="anexoTarget.set(null)">
+    <div class="tv__painel">
+      @if (anexos().length) {
+        <table class="tv__tab">
+          <thead><tr><th>Arquivo</th><th>Enviado em</th><th class="num">Ações</th></tr></thead>
+          <tbody>
+            @for (f of anexos(); track f.id) {
+              <tr>
+                <td><a [href]="f.fileUrl" target="_blank" rel="noopener">{{ nomeArquivo(f) }}</a></td>
+                <td>{{ f.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="num"><button type="button" class="icon-btn icon-btn--danger" title="Remover anexo" aria-label="Remover anexo" (click)="removerAnexo(f)"><svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else { <p class="tv__nota">Nenhum anexo neste orçamento.</p> }
+      <div>
+        <button type="button" class="btn-outline btn-outline--orange" [disabled]="enviando()" (click)="anexoInput.click()">{{ enviando() ? 'Enviando…' : '+ Anexar arquivo' }}</button>
+        <input #anexoInput type="file" hidden (change)="onAnexoEscolhido($event)">
+      </div>
+    </div>
+  </app-popup-shell>
+}
+
+<!-- Card #768 (item 62): o resultado da importação, orçamento a orçamento. -->
+@if (resultadoImportacao(); as r) {
+  <app-popup-shell title="Importação de orçamentos" [subtitle]="r.success + ' importado(s), ' + r.failed + ' com erro'" icon="doc" [width]="760" [closeOnBackdrop]="true" (close)="resultadoImportacao.set(null)">
+    <div class="tv__painel">
+      <table class="tv__tab">
+        <thead><tr><th>Orçamento</th><th>Resultado</th><th>Detalhe</th></tr></thead>
+        <tbody>
+          @for (x of r.results; track $index) {
+            <tr>
+              <td>{{ x.titulo }}@if (x.budgetId) { <span class="sub"> (#{{ x.budgetId }})</span> }</td>
+              <td><span class="imp" [class.imp--ok]="x.status === 'success'">{{ x.status === 'success' ? 'Importado' : 'Com erro' }}</span></td>
+              <td>{{ x.message }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-popup-shell>
 }

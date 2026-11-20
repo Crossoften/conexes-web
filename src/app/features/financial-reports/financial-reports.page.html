@@ -8,13 +8,10 @@
 
   <!-- Filtros -->
   <div class="filters">
+    <!-- Card #768 (item 68): o período num campo só, com as opções e o calendário. -->
     <div class="filters__field">
-      <label>De (vencimento/emissão)</label>
-      <input type="date" class="input" [(ngModel)]="startDate">
-    </div>
-    <div class="filters__field">
-      <label>Até</label>
-      <input type="date" class="input" [(ngModel)]="endDate">
+      <label>Período (vencimento/emissão)</label>
+      <app-period-field [start]="startDate" [end]="endDate" (periodChange)="startDate = $event.start; endDate = $event.end"></app-period-field>
     </div>
     <div class="filters__field">
       <label>Status</label>

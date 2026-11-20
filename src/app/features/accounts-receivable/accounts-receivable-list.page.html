@@ -112,8 +112,8 @@
             <th class="th th--num th--sortable" (click)="store.setSort('balanceNum')">Saldo <span class="sort-icon" [ngClass]="'sort--' + getSortState('balanceNum')"></span></th>
             <th class="th th--sortable" (click)="store.setSort('status')">Status <span class="sort-icon" [ngClass]="'sort--' + getSortState('status')"></span></th>
             <th class="th">CPF/CNPJ</th>
-            <th class="th">Centro de custo</th>
             <th class="th">Categoria</th>
+            <th class="th">Centro de custo</th>
             <th class="th th--acoes">Ações</th>
           </tr>
         </thead>
@@ -134,8 +134,8 @@
               <td class="td td--num">{{ item.balance }}</td>
               <td class="td">{{ item.status }}</td>
               <td class="td td--mono">{{ item.cpfCnpj }}</td>
-              <td class="td td--clip" [title]="item.centroCusto">{{ item.centroCusto }}</td>
               <td class="td td--clip" [title]="item.categoria">{{ item.categoria }}</td>
+              <td class="td td--clip" [title]="item.centroCusto">{{ item.centroCusto }}</td>
               <!-- Card #768 (item 56): Visualizar, Receber (check), Editar / Copiar, Emitir nota fiscal, Excluir.
                    Parcelar saiu da lista: fica no formulário. -->
               <td class="td td--acoes">
