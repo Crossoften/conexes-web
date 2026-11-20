@@ -173,7 +173,13 @@
 // ── Card #768 (itens 61, 62, 63 e 69) ──────────────────────────────────────
 .tools { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
 .tool-menu__list--direita { left: auto; right: 0; }
-.th--acoes, .td--acoes { width: 120px; text-align: center; }
+// a coluna Ações fica fixa à direita (a tabela rola por baixo dela), como em Contas a pagar
+.th--acoes, .td--acoes { width: 120px; min-width: 120px; text-align: center; position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -8px rgba(17,24,39,.25); }
+.th--acoes { background: #FAFAFE; }
+.tr--selected .td--acoes { background: #F5F3FF; }
+.table .td--name { min-width: 220px; }
+.table .td { white-space: nowrap; }
+.table .td--name { white-space: normal; }
 .acoes-grade { display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; justify-content: center; }
 .aba-hint { font-size: 12.5px; color: #6B7280; margin: 0 20px 10px; }
 .sub { font-size: 11px; color: #6B7280; }
