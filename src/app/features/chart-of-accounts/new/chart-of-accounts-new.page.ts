@@ -36,8 +36,9 @@ export class ChartOfAccountsNewPage implements OnInit {
   readonly errorMsg = signal<string | null>(null);
 
   projects: ProjectOption[] = [];
-  /** Contas candidatas a "pai" de uma subconta (Totalizadora/Sintética). */
-  parents: Account[] = [];
+  /** Card #768 (item 2): contas candidatas a "pai" — todas abaixo do limite de níveis. */
+  parents: (Account & { level: number; label: string })[] = [];
+  maxLevels = 5;
 
   /** B2: modal de criação inline de Centro de Custo. */
   readonly showCcModal = signal(false);
@@ -69,15 +70,32 @@ export class ChartOfAccountsNewPage implements OnInit {
     if (parentId) {
       this.form.patchValue({ parentId: Number(parentId) });
       this.parentName.set(this.route.snapshot.queryParamMap.get('parentName'));
+      // Card #768: sugere o número da subconta a partir do pai (1.1.1 → 1.1.1.).
+      const parentCode = this.route.snapshot.queryParamMap.get('parentCode');
+      if (parentCode) this.form.patchValue({ categoryCode: `${parentCode}.` });
       // Subconta de uma sintética é, por padrão, Analítica (recebe lançamento).
       this.form.patchValue({ accountType: 'Analitica' });
     }
   }
 
-  /** Carrega as contas que podem ser "conta superior" (Totalizadora/Sintética). */
+  /** Card #768 (item 2): qualquer conta, de qualquer nível, desde que caiba mais um nível. */
   private loadParents(): void {
-    this.svc.getAll().subscribe({
-      next: list => { this.parents = list.filter(a => a.categoryType === 'Totalizadora' || a.accountType === 'Sintetica'); },
+    this.svc.maxLevels().subscribe({ next: n => this.maxLevels = n, error: () => {} });
+    this.svc.flat().subscribe({
+      next: list => {
+        this.parents = list;
+        // Card #768 (item 2): a subconta herda natureza, grupo e centro de custo da conta superior.
+        const pid = this.form.get('parentId')?.value;
+        const pai = list.find(a => a.id === pid);
+        if (pai) {
+          const v = this.form.value;
+          this.form.patchValue({
+            categoryType:  v.categoryType  || pai.categoryType  || '',
+            categoryGroup: v.categoryGroup || pai.categoryGroup || '',
+            costCenter:    v.costCenter    || (pai.category ?? ''),
+          });
+        }
+      },
       error: ()   => { this.parents = []; },
     });
   }
@@ -86,10 +104,11 @@ export class ChartOfAccountsNewPage implements OnInit {
    * PC-01: conta superior filtrada pela natureza selecionada — subconta de Entrada
    * só lista pais de Entrada (ou Totalizadora); Saída idem.
    */
-  filteredParents(): Account[] {
+  filteredParents() {
     const nature = this.form.get('categoryType')?.value;
-    if (!nature) return this.parents;
-    return this.parents.filter(p => p.categoryType === nature || p.categoryType === 'Totalizadora');
+    const cabe = this.parents.filter(p => p.level < this.maxLevels || p.id === this.form.get('parentId')?.value);
+    if (!nature) return cabe;
+    return cabe.filter(p => !p.categoryType || p.categoryType === nature || p.categoryType === 'Totalizadora' || p.id === this.form.get('parentId')?.value);
   }
 
   private loadProjects(): void {
@@ -140,6 +159,10 @@ export class ChartOfAccountsNewPage implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Card #768: o Salvar diz o que falta em vez de ficar sem resposta.
+      const rot: Record<string, string> = { categoryType: 'Natureza', categoryGroup: 'Grupo da categoria', costCenter: 'Centro de custo', categoryCode: 'Código', categoryTitle: 'Título' };
+      const faltam = Object.keys(rot).filter(k => this.form.get(k)?.invalid).map(k => rot[k]);
+      this.errorMsg.set(`Preencha os campos obrigatórios: ${faltam.join(', ')}.`);
       return;
     }
 

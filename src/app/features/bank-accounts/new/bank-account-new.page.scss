@@ -184,3 +184,9 @@
 
 // card #720 (CD-02): padrão de erro dos obrigatórios, igual ao cadastro de fornecedor
 .field-error { display: block; margin-top: 4px; font-size: 11.5px; color: #EF4444; }
+
+// Card #768: dentro do pop-up o cartão ocupa o quadro lavanda, sem a moldura da página.
+:host(.is-embedded) {
+  .page { padding: 0; }
+  .card { box-shadow: none; border: 0; }
+}

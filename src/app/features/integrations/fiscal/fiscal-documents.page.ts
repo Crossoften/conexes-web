@@ -32,12 +32,13 @@ const TYPE_LABEL: Record<string, string> = {
   NFSE_INBOUND: 'NFS-e Recebida',
 };
 
+import { PeriodFieldComponent } from '../../../shared/components/period-field/period-field.component';
 @Component({
   selector: 'app-fiscal-documents',
   standalone: true,
   // D3/I031-I032: FormsModule para o intervalo da sincronização; RouterLink para
   // o atalho à origem única da configuração (Configurações gerais).
-  imports: [NgClass, DatePipe, DecimalPipe, ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [NgClass, DatePipe, DecimalPipe, ReactiveFormsModule, FormsModule, RouterLink, PeriodFieldComponent],
   templateUrl: './fiscal-documents.page.html',
   styleUrls: ['../integrations.shared.scss'],
 })

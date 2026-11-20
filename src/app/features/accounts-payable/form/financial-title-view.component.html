@@ -1,0 +1,147 @@
+<app-popup-shell [title]="(pagar ? 'Conta a pagar: #' : 'Conta a receber: #') + id"
+                 [subtitle]="pagar ? 'Acompanhe todas as informações cadastradas para a conta a pagar.' : 'Acompanhe todas as informações cadastradas para a conta a receber.'"
+                 icon="doc" [width]="1060" [closeOnBackdrop]="true" (close)="fechar.emit()">
+  <ng-container popup-actions>
+    @if (podeEditar) {
+      <button type="button" class="ps-acao" title="Editar" aria-label="Editar" (click)="editar.emit()">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+      </button>
+    }
+    @if (podeExcluir) {
+      <button type="button" class="ps-acao" title="Excluir" aria-label="Excluir" (click)="excluir.emit()">
+        <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    }
+  </ng-container>
+
+  <div class="tv__abas" role="tablist">
+    <button type="button" [class.on]="aba === 'GERAIS'" (click)="aba = 'GERAIS'">Dados gerais</button>
+    <button type="button" [class.on]="aba === 'CONTRATO'" (click)="aba = 'CONTRATO'">Competência e contrato</button>
+    <button type="button" [class.on]="aba === 'SERVICO'" (click)="aba = 'SERVICO'">Classificação do serviço</button>
+    <button type="button" [class.on]="aba === 'PAGAMENTO'" (click)="aba = 'PAGAMENTO'">{{ pagar ? 'Dados de pagamento' : 'Dados de recebimento' }}</button>
+    <button type="button" [class.on]="aba === 'RATEIO'" (click)="aba = 'RATEIO'">Rateio e parcelamento</button>
+    <button type="button" [class.on]="aba === 'IMPOSTOS'" (click)="aba = 'IMPOSTOS'">Impostos retidos</button>
+    <button type="button" [class.on]="aba === 'ANEXOS'" (click)="aba = 'ANEXOS'">Anexos</button>
+  </div>
+
+  @if (erro()) { <p class="tv__erro">{{ erro() }}</p> }
+  @if (t(); as t) {
+    <div class="tv__painel">
+      @switch (aba) {
+        @case ('GERAIS') {
+          <div class="tv__grid">
+            <div class="tv__f"><span>{{ pagar ? 'Fornecedor' : 'Cliente' }}</span><strong>{{ t.stakeholder?.name || '—' }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Histórico da despesa' : 'Histórico da receita' }}</span><strong>{{ (pagar ? (t.history || t.description) : t.description) || '—' }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Tipo de despesa' : 'Tipo de receita' }}</span><strong>{{ (pagar ? t.expenseType : t.revenueType) || '—' }}</strong></div>
+            <div class="tv__f"><span>CPF / CNPJ</span><strong>{{ t.stakeholder?.document || '—' }}</strong></div>
+            <div class="tv__f"><span>Data de cadastro</span><strong>{{ dt(t.registrationDate || t.createdAt) }}</strong></div>
+            <div class="tv__f"><span>Data de emissão</span><strong>{{ dt(t.issueDate) }}</strong></div>
+            <div class="tv__f"><span>Vencimento</span><strong>{{ dt(t.dueDate) }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Valor bruto da despesa' : 'Valor bruto' }}</span><strong>{{ brl(valor(t)) }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Valor líquido da despesa' : 'Valor líquido' }}</span><strong>{{ brl(liquido(t)) }}</strong></div>
+            <div class="tv__f"><span>Tipo e documento</span><strong>{{ t.type || '—' }}{{ t.document ? ' · ' + t.document : '' }}</strong></div>
+            <div class="tv__f"><span>Saldo em aberto</span><strong>{{ brl(saldo(t)) }}</strong></div>
+            <div class="tv__f"><span>Situação</span><strong><span class="tv__badge">{{ status(t.status) }}</span></strong></div>
+            <div class="tv__f"><span>Tipo de lançamento</span><strong>{{ t.entryKind || '—' }}</strong></div>
+            @if (pagar) { <div class="tv__f"><span>Remessa</span><strong>{{ remessa(t.remittanceStatus) }}</strong></div> }
+            @else { <div class="tv__f"><span>Termo / parceria</span><strong>{{ termo(t.partnershipId) }}</strong></div> }
+          </div>
+          @if (pagar) {
+            <div class="tv__chat"><app-process-chat processType="account_payable" [processId]="id" /></div>
+          } @else {
+            <!-- card #720 (PG-01): quem lança precisa saber se a cobrança saiu — link ou motivo -->
+            <div class="tv__f tv__f--full" data-testid="asaas-cobranca"><span>Cobrança Asaas</span>
+              @if (t.asaasInvoiceUrl) { <strong>Gerada · <a [href]="t.asaasInvoiceUrl" target="_blank" rel="noopener">Abrir cobrança</a></strong> }
+              @else if (t.asaasPaymentId) { <strong>Registrada ({{ t.asaasPaymentId }}), sem link de pagamento.</strong> }
+              @else if (t.asaasChargeError) { <strong class="tv__erro">Não gerada: {{ t.asaasChargeError }}</strong> }
+              @else { <strong>Não gerada.</strong> }
+              @if (!t.asaasPaymentId && (t.status === 'Open' || t.status === 'PartiallyPaid')) {
+                <button type="button" class="btn-outline btn-outline--orange tv__cobrar" [disabled]="cobrando()" (click)="gerarCobranca()">{{ cobrando() ? 'Gerando…' : 'Gerar cobrança' }}</button>
+              }
+            </div>
+          }
+        }
+        @case ('CONTRATO') {
+          <div class="tv__grid">
+            <div class="tv__f"><span>Competência</span><strong>{{ dt(t.competencyDate) }}</strong></div>
+            @if (pagar) { <div class="tv__f"><span>Pedido de compra (Cód. Compras)</span><strong>{{ t.orderCode || (t.orderId ? '#' + t.orderId : '—') }}</strong></div> }
+            <div class="tv__f"><span>Contrato</span><strong>{{ contratoNome(t.contractId) }}</strong></div>
+            <div class="tv__f"><span>Valor do contrato</span><strong>{{ contrato(t.contractId) ? brl(contrato(t.contractId).value) : '—' }}</strong></div>
+            <div class="tv__f"><span>Saldo do contrato</span><strong>{{ contrato(t.contractId) ? brl(contrato(t.contractId).balanceValue) : '—' }}</strong></div>
+            <div class="tv__f"><span>Vigência</span><strong>{{ contrato(t.contractId) ? dt(contrato(t.contractId).startDate) + ' a ' + dt(contrato(t.contractId).endDate) : '—' }}</strong></div>
+          </div>
+        }
+        @case ('SERVICO') {
+          <div class="tv__grid">
+            <div class="tv__f"><span>Tipo de serviço</span><strong>{{ servico(t.serviceId) }}</strong></div>
+            <div class="tv__f"><span>Tipo de documento</span><strong>{{ tipoDoc(t.type) }}</strong></div>
+            <div class="tv__f"><span>Nº do documento</span><strong>{{ t.document || '—' }}</strong></div>
+          </div>
+        }
+        @case ('PAGAMENTO') {
+          <div class="tv__grid">
+            <div class="tv__f"><span>{{ pagar ? 'Meio de pagamento' : 'Meio de recebimento' }}</span><strong>{{ t.paymentMeans || '—' }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Tipo de pagamento' : 'Forma de recebimento' }}</span><strong>{{ tipoPag(pagar ? t.paymentMethod : t.receiptMethod) }}</strong></div>
+            <div class="tv__f"><span>{{ pagar ? 'Conta pagadora' : 'Conta recebedora' }}</span><strong>{{ conta(pagar ? t.bankAccountId : t.receivingBankAccountId) }}</strong></div>
+            <div class="tv__f tv__f--2"><span>Código de barras do documento para pagamento</span><strong>{{ t.barcode || '—' }}</strong></div>
+            <div class="tv__f"><span>Nosso número</span><strong>{{ t.ourNumber || '—' }}</strong></div>
+          </div>
+        }
+        @case ('RATEIO') {
+          <div class="tv__f tv__f--full"><span>Rateio por classificação</span>
+            @if (t.rateios?.length) {
+              <table class="tv__tab">
+                <thead><tr><th>Categoria</th><th>Centro de custo</th><th>Projeto</th><th>Atividade</th><th class="num">%</th><th class="num">Valor</th></tr></thead>
+                <tbody>
+                  @for (r of t.rateios; track $index) {
+                    <tr><td>{{ plano(r.accountPlanId) }}</td><td>{{ centro(r.costCenterId) }}</td><td>{{ projeto(r.projectId) }}</td><td>{{ projeto(r.subProjectId) }}</td><td class="num">{{ r.percentage }}%</td><td class="num">{{ brl(r.amount) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            } @else { <strong>Nenhuma linha. Sem rateio, o título é classificado inteiro (100%) pela categoria e centro de custo.</strong> }
+          </div>
+          <div class="tv__f tv__f--full"><span>Parcelar</span>
+            @if (t.installments?.length) {
+              <table class="tv__tab">
+                <thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th><th class="num">{{ pagar ? 'Pago' : 'Recebido' }}</th><th>Situação</th></tr></thead>
+                <tbody>
+                  @for (p of t.installments; track $index) {
+                    <tr><td>{{ p.installment }}ª</td><td>{{ dt(p.dueDate) }}</td><td class="num">{{ brl(p.amount) }}</td><td class="num">{{ brl(pagar ? p.amountPaid : p.amountReceived) }}</td><td>{{ status(p.status) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            } @else { <strong>Não</strong> }
+          </div>
+          <div class="tv__f tv__f--full"><span>Observações</span><strong>{{ t.observation || '—' }}</strong></div>
+        }
+        @case ('IMPOSTOS') {
+          <table class="tv__tab">
+            <thead><tr><th>Imposto</th><th>Alíquota %</th><th>Código</th><th>Vencimento da retenção</th><th class="num">Valor retido</th></tr></thead>
+            <tbody>
+              @for (tp of impostos; track tp) {
+                <tr><td><strong>{{ tp }}</strong></td><td>{{ imposto(t, tp)?.rate ?? '—' }}</td><td>{{ imposto(t, tp)?.code || 'Sem código' }}</td>
+                  <td>{{ imposto(t, tp)?.dueDate ? dt(imposto(t, tp).dueDate) : '—' }}</td><td class="num">{{ brl(imposto(t, tp)?.amount ?? 0) }}</td></tr>
+              }
+            </tbody>
+          </table>
+          <p class="tv__nota">Total retido sobre o valor bruto: <strong>{{ brl(retido(t)) }}</strong>. O valor líquido é ajustado automaticamente.
+            Edição manual: <strong>{{ t.manualTaxEdit ? 'Sim' : 'Não' }}</strong></p>
+        }
+        @case ('ANEXOS') {
+          <ul class="tv__anexos">
+            @for (a of anexos(); track a.id) { <li><a [href]="a.fileUrl" target="_blank" rel="noopener">{{ nomeDoAnexo(a) }}</a></li> }
+            @if (!anexos().length) { <li class="tv__nota">Nenhum anexo.</li> }
+          </ul>
+        }
+      }
+    </div>
+    @if (podeConferir) {
+      <div class="tv__pe">
+        <button type="button" class="btn-outline btn-outline--orange" (click)="devolver.emit()">Devolver ao Compras</button>
+        <button type="button" class="btn-solid btn-solid--orange" (click)="conferir.emit()">Conferir</button>
+      </div>
+    }
+  } @else if (!erro()) {
+    <p class="tv__nota">Carregando…</p>
+  }
+</app-popup-shell>

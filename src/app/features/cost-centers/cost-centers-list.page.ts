@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CostCentersStore } from './cost-centers.store';
-import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG, COST_CENTER_TYPE_LABELS, resolveEntityType } from './cost-centers.model';
+import { CostCenter, CostCenterStatus, COST_CENTER_STATUS_CONFIG, COST_CENTER_TYPE_LABELS, resolveEntityType, entityKindOf } from './cost-centers.model';
 import { CostCentersDetailModalComponent } from './components/cost-centers-detail.modal';
 import { CostCentersService } from './cost-centers.service';
 
@@ -40,6 +40,10 @@ export class CostCentersListPage implements OnInit {
   typeLabel(type: string): string {
     return COST_CENTER_TYPE_LABELS[type] ?? type;
   }
+
+  /** Card #768: o Tipo exibido é o nível real (tabela), não o texto livre `type`. */
+  kindOf(item: CostCenter) { return entityKindOf(item); }
+  kindLabel(item: CostCenter): string { return COST_CENTER_TYPE_LABELS[entityKindOf(item)]; }
 
   readonly pageSizeOptions = [10, 25, 50];
 

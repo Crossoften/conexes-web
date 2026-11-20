@@ -1,5 +1,5 @@
 // src/app/features/purchasing-registries/new/delivery-location-new.page.ts
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, NonNullableFormBuilder, Validators } from '@angular/forms';
 import { PurchasingRegistriesService } from '../purchasing-registries.service';
@@ -13,6 +13,15 @@ import { ApiDeliveryLocation, DeliveryLocationPayload } from '../purchasing-regi
   styleUrl: './purchasing-registries-new.page.scss',
 })
 export class DeliveryLocationNewPage {
+  /**
+   * Card #768: a mesma tela de cadastro abre em pop-up a partir da requisição
+   * (e de Contas a pagar). Em pop-up ela não navega: devolve o registro criado para
+   * quem abriu, que já o seleciona — o usuário continua onde estava.
+   */
+  @Input() embedded = false;
+  @Output() created   = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  @HostBinding('class.is-embedded') get isEmbedded() { return this.embedded; }
   private fb     = inject(NonNullableFormBuilder);
   private svc    = inject(PurchasingRegistriesService);
   private router = inject(Router);
@@ -93,12 +102,21 @@ export class DeliveryLocationNewPage {
       : this.svc.createLocation(payload);
 
     req$.subscribe({
-      next: () => { this.saving.set(false); this.router.navigate(['/purchasing-registries']); },
+      next: (criado: any) => {
+        this.saving.set(false);
+        if (this.embedded) { this.created.emit(criado); return; }
+        this.router.navigate(['/purchasing-registries']);
+      },
       error: err => {
         this.saving.set(false);
         const msg = err?.error?.message ?? 'Erro ao salvar o local de entrega.';
         this.errorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
       },
     });
+  }
+
+  onBack(): void {
+    if (this.embedded) { this.cancelled.emit(); return; }
+    this.router.navigate(['/purchasing-registries']);
   }
 }

@@ -18,6 +18,7 @@ interface Configuracoes {
   organizacao: string;
   transferDescriptionMode: string;
   opcoesDescricao: { valor: string; rotulo: string }[];
+  accountPlanMaxLevels?: number;
 }
 
 @Component({
@@ -56,6 +57,31 @@ interface Configuracoes {
           </div>
           <div class="card-footer">
             <button type="button" class="btn-solid btn-solid--orange" [disabled]="salvando()" (click)="salvar()">
+              {{ salvando() ? 'Salvando…' : 'Salvar' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Card #768 (item 2): limite de níveis do plano de contas, da organização. -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Plano de contas</h2>
+            <p class="card-subtitle">Vale para {{ c.organizacao }}. Define até quantos níveis as subcontas podem ser criadas.</p>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Quantidade de níveis do plano de contas</label>
+              <div class="select-wrap">
+                <select class="form-control" [(ngModel)]="niveis">
+                  @for (n of [2,3,4,5]; track n) { <option [ngValue]="n">{{ n }} níveis ({{ exemploNivel(n) }})</option> }
+                </select>
+                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <small class="hint">O botão <strong>+</strong> (adicionar subconta) aparece em qualquer conta, sintética ou analítica, até este nível.</small>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button type="button" class="btn-solid btn-solid--orange" [disabled]="salvando()" (click)="salvarNiveis()">
               {{ salvando() ? 'Salvando…' : 'Salvar' }}
             </button>
           </div>
@@ -119,6 +145,8 @@ export class GeneralSettingsPage {
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
   modo = 'Manual';
+  niveis = 5;
+  exemploNivel(n: number): string { return ['1', '1.1', '1.1.1', '1.1.1.1', '1.1.1.1.1'].slice(0, n).pop()!; }
 
   // ── COM-Captura / I031 (D3): a captura de notas é configurada AQUI, uma vez ──
   readonly habilitando = signal(false);
@@ -150,8 +178,17 @@ export class GeneralSettingsPage {
 
   private carregar(): void {
     this.http.get<Configuracoes>(this.base).subscribe({
-      next: c => { this.cfg.set(c); this.modo = c.transferDescriptionMode || 'Manual'; },
+      next: c => { this.cfg.set(c); this.modo = c.transferDescriptionMode || 'Manual'; this.niveis = c.accountPlanMaxLevels || 5; },
       error: e => this.erro.set(e?.error?.message ?? 'Não foi possível carregar as configurações.'),
+    });
+  }
+
+  salvarNiveis(): void {
+    this.salvando.set(true);
+    this.erro.set(null);
+    this.http.patch<Configuracoes>(this.base, { accountPlanMaxLevels: Number(this.niveis) }).subscribe({
+      next: c => { this.salvando.set(false); this.cfg.set(c); this.notify.success('Níveis do plano de contas salvos.'); },
+      error: e => { this.salvando.set(false); this.erro.set(e?.error?.message ?? 'Não foi possível salvar.'); },
     });
   }
 

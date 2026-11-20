@@ -220,8 +220,8 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <input type="text" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10"
-                      formControlName="dueDate" (input)="applyDateMask($event, row.get('dueDate'))">
+                    <!-- Card #768 (item 68): data por calendário, sem digitar dd/mm/aaaa. -->
+                    <input type="date" class="form-control" formControlName="dueDate">
                   </div>
                   <div class="form-group">
                     <input type="text" class="form-control" placeholder="R$ 0,00" formControlName="value">

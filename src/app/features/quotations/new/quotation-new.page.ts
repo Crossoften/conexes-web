@@ -13,13 +13,17 @@ import {
 } from '../../purchases/purchases.model';
 import { maskMoney, formatDecimalBR, parseDecimalBR } from '../../../shared/utils/format';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { PopupShellComponent } from '../../../shared/components/popup-shell/popup-shell.component';
+import { PurchasingRegistriesNewPage } from '../../purchasing-registries/new/purchasing-registries-new.page';
+import { DeliveryLocationNewPage } from '../../purchasing-registries/new/delivery-location-new.page';
+import { StakeholderNewPage } from '../../stakeholders/new/stakeholder-new.page';
 
 type QuotationTab = 'DADOS' | 'FONTE' | 'ITENS' | 'LOCAL' | 'ANEXOS';
 
 @Component({
   selector: 'app-quotation-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, FormsModule],
+  imports: [RouterLink, ReactiveFormsModule, FormsModule, PopupShellComponent, PurchasingRegistriesNewPage, DeliveryLocationNewPage, StakeholderNewPage],
   templateUrl: './quotation-new.page.html',
   styleUrl: './quotation-new.page.scss',
 })
@@ -50,24 +54,46 @@ export class QuotationNewPage {
   // CP-20: cascata Centro de custo → Projeto → Atividade (signals reativos).
   readonly selectedCC   = signal<number | null>(null);
   readonly selectedProj = signal<number | null>(null);
+  /**
+   * Card #768 (item 15): seleção em cascata a partir do centro de custo. Projeto,
+   * Atividade e Categoria listam SÓ o que está vinculado ao centro escolhido e ficam
+   * acinzentados quando não há vínculo (ou enquanto o centro não foi escolhido).
+   */
   readonly filteredProjects = computed(() => {
     const cc = this.selectedCC();
-    return cc ? this.projects().filter(p => p.costCenterId === cc) : this.projects();
+    return cc ? this.projects().filter(p => p.costCenterId === cc) : [];
   });
   readonly filteredActivities = computed(() => {
     const pr = this.selectedProj();
-    return pr ? this.activities().filter(a => a.parentProjectId === pr) : this.activities();
+    if (pr) return this.activities().filter(a => a.parentProjectId === pr);
+    const doCentro = new Set(this.filteredProjects().map(p => p.id));
+    return this.activities().filter(a => a.parentProjectId != null && doCentro.has(a.parentProjectId));
+  });
+  readonly filteredAccountPlans = computed(() => {
+    const cc = this.selectedCC();
+    return cc ? this.accountPlans().filter(a => a.costCenterId === cc) : [];
   });
 
   onCostCenterChange(): void {
     this.selectedCC.set(Number(this.form.get('costCenterId')?.value) || null);
     this.form.get('projectId')?.setValue('');
     this.form.get('activityId')?.setValue('');
+    this.form.get('accountPlanId')?.setValue('');
     this.selectedProj.set(null);
+    this.syncCascadeState();
+  }
+
+  /** Acinzenta Projeto/Atividade/Categoria sem vínculo com o centro escolhido. */
+  private syncCascadeState(): void {
+    const set = (k: string, on: boolean) => on ? this.form.get(k)?.enable({ emitEvent: false }) : this.form.get(k)?.disable({ emitEvent: false });
+    set('projectId', this.filteredProjects().length > 0);
+    set('activityId', this.filteredActivities().length > 0);
+    set('accountPlanId', this.filteredAccountPlans().length > 0);
   }
   onProjectChange(): void {
     this.selectedProj.set(Number(this.form.get('projectId')?.value) || null);
     this.form.get('activityId')?.setValue('');
+    this.syncCascadeState();
   }
   readonly contracts        = signal<PurchaseRef[]>([]);
   readonly products         = signal<PurchaseRef[]>([]);
@@ -112,19 +138,40 @@ export class QuotationNewPage {
   readonly selectedContracts = computed(() => this.comoEscolhidos(this.selectedContractIds(), this.contracts()));
   readonly selectedLocations = computed(() => this.comoEscolhidos(this.selectedLocationIds(), this.deliveryLocations()));
 
+  /** Card #768 (item 16): um único campo de busca; a lista abre ao focar/digitar. */
+  readonly supplierListOpen = signal(false);
+  pickSupplier(id: number): void {
+    if (!id) return;
+    // Com "fornecedor único, exclusivo ou sem substituto", só um fornecedor (substitui).
+    if (this.form.get('uniqueSupplier')?.value) this.selectedSupplierIds.set([id]);
+    else if (!this.selectedSupplierIds().includes(id)) this.selectedSupplierIds.update(l => [...l, id]);
+    this.buscaFornecedor.set('');
+    this.supplierListOpen.set(false);
+  }
+  closeSupplierListSoon(): void { setTimeout(() => this.supplierListOpen.set(false), 150); }
   addSupplier(event: Event): void {
     const el = event.target as HTMLSelectElement;
-    const id = Number(el.value);
-    if (id) {
-      // COMP-06: com Fornecedor único, só um fornecedor sugerido é aceito (substitui).
-      if (this.form.get('uniqueSupplier')?.value) this.selectedSupplierIds.set([id]);
-      else if (!this.selectedSupplierIds().includes(id)) this.selectedSupplierIds.update(l => [...l, id]);
-    }
+    this.pickSupplier(Number(el.value));
     el.value = '';
   }
   removeSupplier(id: number): void {
     this.selectedSupplierIds.update(l => l.filter(x => x !== id));
   }
+
+  /** Card #768 (item 16): "Requisição de contrato existente?" Sim/Não e um único contrato. */
+  readonly contractListOpen = signal(false);
+  setExistingContract(sim: boolean): void {
+    this.form.get('existingContract')?.setValue(sim);
+    if (!sim) { this.selectedContractIds.set([]); this.sincronizarPrincipais(); this.buscaContrato.set(''); }
+  }
+  pickContract(id: number): void {
+    if (!id) return;
+    this.selectedContractIds.set([id]);
+    this.sincronizarPrincipais();
+    this.buscaContrato.set('');
+    this.contractListOpen.set(false);
+  }
+  closeContractListSoon(): void { setTimeout(() => this.contractListOpen.set(false), 150); }
 
   addContract(event: Event): void {
     const el = event.target as HTMLSelectElement;
@@ -138,6 +185,33 @@ export class QuotationNewPage {
   removeContract(id: number): void {
     this.selectedContractIds.update(l => l.filter(x => x !== id));
     this.sincronizarPrincipais();
+  }
+
+  /** Card #768 (item 19): um único local de entrega, com os dados do cadastro ao lado. */
+  readonly locationsFull = signal<any[]>([]);
+  readonly locationListOpen = signal(false);
+  readonly selectedLocation = computed(() => {
+    const id = this.selectedLocationIds()[0];
+    return id != null ? (this.locationsFull().find(l => l.id === id) ?? null) : null;
+  });
+  pickLocation(id: number): void {
+    if (!id) return;
+    this.selectedLocationIds.set([id]);
+    this.sincronizarPrincipais();
+    this.buscaLocal.set('');
+    this.locationListOpen.set(false);
+  }
+  clearLocation(): void { this.selectedLocationIds.set([]); this.sincronizarPrincipais(); }
+  closeLocationListSoon(): void { setTimeout(() => this.locationListOpen.set(false), 150); }
+  private loadLocations(selectId?: number): void {
+    this.svc.getDeliveryLocationsFull().subscribe({
+      next: list => {
+        this.locationsFull.set(list);
+        this.deliveryLocations.set(list.map((l: any) => ({ id: Number(l.id), name: String(l.name ?? l.id) })));
+        if (selectId) this.pickLocation(selectId);
+      },
+      error: () => {},
+    });
   }
 
   addLocation(event: Event): void {
@@ -165,6 +239,46 @@ export class QuotationNewPage {
     this.form.get('contractId')?.setValue(c != null ? String(c) : '');
     this.form.get('deliveryLocationId')?.setValue(l != null ? String(l) : '');
   }
+
+  // ── Card #768: cadastros em pop-up sem sair da requisição ─────────────────────
+  readonly supplierPopup = signal(false);
+  readonly productPopup  = signal<number | null>(null);   // índice do item que pediu o cadastro
+  readonly locationPopup = signal(false);
+
+  onSupplierCreated(s: any): void {
+    this.supplierPopup.set(false);
+    this.svc.getSuppliersOnlyLookup().subscribe({
+      next: v => { this.suppliers.set(v); if (s?.id != null) this.pickSupplier(Number(s.id)); },
+      error: () => {},
+    });
+    this.notify.success('Fornecedor cadastrado e selecionado na requisição.');
+  }
+
+  onProductCreated(p: any): void {
+    const index = this.productPopup();
+    this.productPopup.set(null);
+    this.svc.getProductsServicesLookup().subscribe({
+      next: v => {
+        this.products.set(v);
+        const novo = v.find(x => x.id === Number(p?.id));
+        if (novo && index != null) this.pickProduct(index, novo);
+      },
+      error: () => {},
+    });
+    this.notify.success('Produto cadastrado e selecionado no item.');
+  }
+
+  onLocationCreated(l: any): void {
+    this.locationPopup.set(false);
+    this.loadLocations(Number(l?.id) || undefined);
+    this.notify.success('Local cadastrado e selecionado na requisição.');
+  }
+
+  /** Justificativas do fornecedor único/exclusivo/sem substituto (item 14). */
+  readonly justificativas = [
+    'Compatibilidade técnica', 'Condições comerciais específicas', 'Contrato pré-existente',
+    'Exclusividade técnica', 'Padronização', 'Urgência na aquisição', 'Outra justificativa',
+  ];
 
   // ── COMP-09: cadastrar o contrato de fornecedor sem sair da requisição ────────
   // Antes era preciso ir a Cadastros › Contratos de fornecedor, cadastrar e voltar —
@@ -214,9 +328,10 @@ export class QuotationNewPage {
               name: [c.number, c.title].filter(Boolean).join(' — ') + (c.stakeholder?.name ? ` (${c.stakeholder.name})` : ''),
             })));
             // COM-8/I008: entra na seleção múltipla (e vira o principal se for o primeiro).
-            if (criado?.id != null && !this.selectedContractIds().includes(criado.id)) {
-              this.selectedContractIds.update(l => [...l, criado.id!]);
-              this.sincronizarPrincipais();
+            if (criado?.id != null) {
+              // Card #768 (item 16): um único contrato; o recém-cadastrado é o escolhido.
+              this.form.get('existingContract')?.setValue(true);
+              this.pickContract(criado.id);
             }
           },
           error: () => {},
@@ -254,6 +369,11 @@ export class QuotationNewPage {
     exclusiveSupplier:     [false],
     withoutSubsidy:        [false],
     supplierCount:         [''],
+    // Card #768 (item 14): justificativa do fornecedor único/exclusivo/sem substituto.
+    supplierJustification:      [{ value: '', disabled: true }],
+    supplierJustificationOther: [{ value: '', disabled: true }],
+    // Card #768 (item 16): "Requisição de contrato existente?"
+    existingContract:      [false as boolean | null],
     contractId:            [''],
     deliveryLocationId:    [''],
     items:                 this.fb.array([this.newItem()]),
@@ -269,26 +389,41 @@ export class QuotationNewPage {
     // §10.4: em criação, "Data da Requisição" é automática (hoje), campo readonly.
     else this.form.patchValue({ requestDate: this.todayInput() });
     this.setupExclusiveSupplier();
+    this.syncCascadeState();
   }
 
   // COMP-06: Fornecedor único / exclusivo / sem subsídio são excludentes (só um por vez).
   // Com "Fornecedor único": Qtd. de Fornecedores não se aplica e só 1 fornecedor sugerido.
+  /**
+   * Card #768 (item 14): uma única caixa "O fornecedor é único, exclusivo ou sem
+   * substituto." (gravada em uniqueSupplier). Marcada: quantidade indisponível, um só
+   * fornecedor e Justificativa obrigatória (Outra justificativa abre o texto). Desmarcada:
+   * Justificativa e Outra justificativa acinzentadas.
+   */
   private setupExclusiveSupplier(): void {
-    const flags = ['uniqueSupplier', 'exclusiveSupplier', 'withoutSubsidy'];
-    for (const name of flags) {
-      this.form.get(name)?.valueChanges.subscribe(val => {
-        if (val) for (const other of flags) if (other !== name) this.form.get(other)?.setValue(false, { emitEvent: false });
-      });
-    }
-    this.form.get('uniqueSupplier')?.valueChanges.subscribe(val => {
+    const just  = this.form.get('supplierJustification');
+    const outra = this.form.get('supplierJustificationOther');
+    const aplicar = (val: boolean) => {
       const qtd = this.form.get('supplierCount');
       if (val) {
         qtd?.setValue('', { emitEvent: false }); qtd?.disable({ emitEvent: false });
         const ids = this.selectedSupplierIds();
         if (ids.length > 1) this.selectedSupplierIds.set([ids[0]]);
+        just?.enable({ emitEvent: false }); just?.setValidators([Validators.required]);
       } else {
         qtd?.enable({ emitEvent: false });
+        just?.setValue('', { emitEvent: false }); just?.clearValidators(); just?.disable({ emitEvent: false });
+        outra?.setValue('', { emitEvent: false }); outra?.clearValidators(); outra?.disable({ emitEvent: false });
       }
+      just?.updateValueAndValidity({ emitEvent: false });
+      this.form.get('exclusiveSupplier')?.setValue(false, { emitEvent: false });
+      this.form.get('withoutSubsidy')?.setValue(false, { emitEvent: false });
+    };
+    this.form.get('uniqueSupplier')?.valueChanges.subscribe(val => aplicar(!!val));
+    just?.valueChanges.subscribe(v => {
+      if (v === 'Outra justificativa') { outra?.enable({ emitEvent: false }); outra?.setValidators([Validators.required]); }
+      else { outra?.setValue('', { emitEvent: false }); outra?.clearValidators(); outra?.disable({ emitEvent: false }); }
+      outra?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -301,6 +436,7 @@ export class QuotationNewPage {
     return this.fb.group({
       productId:          [''],
       productQuery:       [''],   // texto da busca de produto (#3) — não vai no payload
+      // Card #768 (item 18): o nome do item vem do produto escolhido (campo sai da tela).
       name:               ['', Validators.required],
       quantity:           ['', Validators.required],
       unit:               ['', Validators.required],
@@ -325,17 +461,17 @@ export class QuotationNewPage {
       },
       error: () => {},
     });
-    this.svc.getProjectsLookup().subscribe({ next: v => this.projects.set(v), error: () => {} });
-    this.svc.getActivitiesLookup().subscribe({ next: v => this.activities.set(v), error: () => {} });
+    this.svc.getProjectsLookup().subscribe({ next: v => { this.projects.set(v); this.syncCascadeState(); }, error: () => {} });
+    this.svc.getActivitiesLookup().subscribe({ next: v => { this.activities.set(v); this.syncCascadeState(); }, error: () => {} });
     // card #720 (AC-04): quem tem centros de custo vinculados só vê esses (o back recusa os demais).
     const permitidos = this.auth.user()?.role === 'Master' ? [] : (this.auth.user()?.costCenterIds ?? []);
     this.svc.getCostCentersLookup().subscribe({
       next: v => this.costCenters.set(permitidos.length ? v.filter(c => permitidos.includes(Number(c.id))) : v),
       error: () => {},
     });
-    this.svc.getAccountPlansLookup().subscribe({ next: v => this.accountPlans.set(v), error: () => {} });
+    this.svc.getAccountPlansLookup().subscribe({ next: v => { this.accountPlans.set(v); this.syncCascadeState(); }, error: () => {} });
     this.svc.getProductsServicesLookup().subscribe({ next: v => { this.products.set(v); this.syncProductQueries(); }, error: () => {} });
-    this.svc.getDeliveryLocationsLookup().subscribe({ next: v => this.deliveryLocations.set(v), error: () => {} });
+    this.loadLocations();
     // CP-15: fornecedores tipo Supplier para o seletor de sugeridos.
     this.svc.getSuppliersOnlyLookup().subscribe({ next: v => this.suppliers.set(v), error: () => {} });
     // item 5 (reteste 22.09): "Contrato" traz os contratos de FORNECEDOR (Contract),
@@ -373,9 +509,10 @@ export class QuotationNewPage {
       activityId:            this.activities().find(a => a.name === (r as any).activity)?.id?.toString() ?? '',
       costCenterId:          r.costCenterId != null ? String(r.costCenterId) : '',
       accountPlanId:         r.accountPlanId != null ? String(r.accountPlanId) : '',
-      uniqueSupplier:        r.uniqueSupplier ?? false,
-      exclusiveSupplier:     r.exclusiveSupplier ?? false,
-      withoutSubsidy:        r.withoutSubsidy ?? false,
+      // Card #768 (item 14): as três caixas antigas viram a caixa única.
+      uniqueSupplier:        !!(r.uniqueSupplier || r.exclusiveSupplier || r.withoutSubsidy),
+      exclusiveSupplier:     false,
+      withoutSubsidy:        false,
       supplierCount:         r.supplierCount != null ? String(r.supplierCount) : '',
       // item 5: o select reflete o contrato de fornecedor vinculado (contractId).
       contractId:            r.contractId != null ? String(r.contractId) : '',
@@ -390,6 +527,13 @@ export class QuotationNewPage {
       ?? (r.deliveryLocationId != null ? [r.deliveryLocationId] : []);
     this.selectedContractIds.set([...new Set<number>(contratosSalvos)]);
     this.selectedLocationIds.set([...new Set<number>(locaisSalvos)]);
+
+    this.form.patchValue({
+      supplierJustification:      (r as any).supplierJustification ?? '',
+      supplierJustificationOther: (r as any).supplierJustificationOther ?? '',
+      existingContract:           (r as any).existingContract ?? (contratosSalvos.length > 0),
+    });
+    this.syncCascadeState();
 
     // item 1: exibe o nº de referência já gerado ao editar.
     this.refNumber.set(r.referenceNumber ?? null);
@@ -643,8 +787,24 @@ export class QuotationNewPage {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const fonteInvalida = ['supplierJustification', 'supplierJustificationOther'].some(k => this.form.get(k)?.invalid);
       if (this.items.invalid) this.activeTab = 'ITENS';
+      else if (fonteInvalida) this.activeTab = 'FONTE';
       else this.activeTab = 'DADOS';
+      this.errorMsg.set(fonteInvalida
+        ? 'Escolha a Justificativa do fornecedor único, exclusivo ou sem substituto (e descreva quando for "Outra justificativa").'
+        : 'Preencha os campos obrigatórios destacados.');
+      return;
+    }
+    // Card #768 (item 23): pelo menos um fornecedor para salvar.
+    if (!this.selectedSupplierIds().length) {
+      this.activeTab = 'FONTE';
+      this.errorMsg.set('Informe pelo menos um fornecedor para salvar a requisição.');
+      return;
+    }
+    if (this.form.get('uniqueSupplier')?.value && this.selectedSupplierIds().length !== 1) {
+      this.activeTab = 'FONTE';
+      this.errorMsg.set('Com "O fornecedor é único, exclusivo ou sem substituto." marcado, selecione um único fornecedor.');
       return;
     }
 
@@ -706,7 +866,11 @@ export class QuotationNewPage {
   }
 
   // ── CMP-07: inclusão rápida de produto/local sem sair da requisição ───────
+  /** Card #768 (item 18): o "+" abre o cadastro completo de produtos em pop-up. */
   quickAddProduct(index: number): void {
+    this.productPopup.set(index);
+  }
+  private quickAddProductLegacy(index: number): void {
     const typed = String(this.items.at(index)?.get('productQuery')?.value ?? '').trim();
     const name = (prompt('Nome do novo produto/serviço:', typed) || '').trim();
     if (!name) return;
@@ -722,7 +886,11 @@ export class QuotationNewPage {
       error: err => this.errorMsg.set(err?.error?.message ?? 'Falha ao criar o produto.'),
     });
   }
+  /** Card #768 (item 20): o "+" abre o cadastro completo do local em pop-up. */
   quickAddLocation(): void {
+    this.locationPopup.set(true);
+  }
+  private quickAddLocationLegacy(): void {
     const name = (prompt('Nome do novo local de entrega:') || '').trim();
     if (!name) return;
     this.svc.createLocationQuick(name).subscribe({
@@ -775,9 +943,12 @@ export class QuotationNewPage {
       // CP-19: Atividade (nível abaixo de Projeto) — enviada como texto no campo activity.
       activity:              this.activities().find(a => String(a.id) === String(v.activityId))?.name || undefined,
       uniqueSupplier:        v.uniqueSupplier,
-      exclusiveSupplier:     v.exclusiveSupplier,
-      withoutSubsidy:        v.withoutSubsidy,
+      exclusiveSupplier:     false,
+      withoutSubsidy:        false,
       supplierCount:         this.num(v.supplierCount),
+      supplierJustification:      v.uniqueSupplier ? (v.supplierJustification || null) : null,
+      supplierJustificationOther: v.uniqueSupplier && v.supplierJustification === 'Outra justificativa' ? (v.supplierJustificationOther || null) : null,
+      existingContract:      !!v.existingContract,
       // item 5: "Contrato" referencia o contrato de fornecedor → contractId.
       contractId:            this.num(v.contractId),
       deliveryLocationId:    this.num(v.deliveryLocationId),

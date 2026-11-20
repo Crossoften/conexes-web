@@ -40,16 +40,9 @@
   flex-shrink: 0;
   transition: background-color 0.2s, color 0.2s;
 
-  &--edit {
-    background-color: #ffffff;
-    color: var(--text-primary, #111827);
-    border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
-
-    .action-btn--close {
-      color: var(--text-secondary, #6B7280);
-      &:hover { color: var(--text-primary, #111827); }
-    }
-  }
+  // Card #768 (item 65): o pop-up de editar mantém o cabeçalho roxo e as cores do
+  // visualizar (antes ficava todo branco, só com o X).
+  &--edit { }
 }
 
 .header-content {

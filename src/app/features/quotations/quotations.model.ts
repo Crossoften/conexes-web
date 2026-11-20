@@ -13,6 +13,7 @@ export interface Quotation {
   title:        string;
   costCenter:   string;
   group:        string;
+  project?:     string;   // Card #768 (item 21)
   requester:    string;
   buyer:        string;
   requestDate:  string;

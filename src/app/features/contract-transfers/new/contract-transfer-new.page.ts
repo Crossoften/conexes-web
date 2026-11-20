@@ -379,7 +379,7 @@ export class ContractTransferNewPage implements OnInit {
         this.payables.push(this.newPayable(
           p.installment ?? i + 1,
           p.competency ?? '',
-          this.dbr(p.dueDate),
+          String(p.dueDate ?? '').slice(0, 10), // Card #768 (item 68): campo de calendário (yyyy-mm-dd)
           this.nstr(p.value),
         ));
       });

@@ -53,4 +53,7 @@ export interface ReconciliationItem {
   stakeholderId?: number | null;
   costCenterId?: number | null;
   reconciled?: boolean;
+  // Card #768 (itens 38 e 42): a linha veio do extrato (importação/Open Finance).
+  fromStatement?: boolean;
+  bankAccountId?: number;
 }

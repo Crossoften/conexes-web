@@ -195,3 +195,9 @@
   border-radius: var(--radius-md, 10px); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px;
   &--error { background: #FEF2F2; border: 1.5px solid #FECACA; color: #B91C1C; }
 }
+
+// Card #768: dentro do pop-up, sem a moldura da página.
+:host(.is-embedded) {
+  .page { padding: 0; }
+  .card { box-shadow: none; border: 0; }
+}

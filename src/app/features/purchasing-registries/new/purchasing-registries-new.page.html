@@ -1,6 +1,6 @@
 <div class="page">
 
-  <div class="page-header">
+  <div class="page-header" [hidden]="embedded">
     <h1 class="page-title">{{ viewOnly() ? 'Visualizar produto/serviço' : (isEdit() ? 'Editar produto/serviço' : 'Cadastro de produtos e serviços') }}</h1>
   </div>
 
@@ -50,7 +50,8 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
-                <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar fabricante" (click)="quickCreateManufacturer()" style="padding:8px 12px;">+</button>
+                <!-- Card #768 (item 18): botão de mais circular, padrão do sistema. -->
+                <button type="button" class="btn-plus-circle" title="Cadastrar fabricante" aria-label="Cadastrar fabricante" (click)="quickCreateManufacturer()"><svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
               </div>
             </div>
             }
@@ -66,7 +67,7 @@
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
-                <button type="button" class="btn-outline btn-outline--orange" title="Cadastrar grupo" (click)="quickCreateGroup()" style="padding:8px 12px;">+</button>
+                <button type="button" class="btn-plus-circle" title="Cadastrar grupo" aria-label="Cadastrar grupo" (click)="quickCreateGroup()"><svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
               </div>
             </div>
           </div>
@@ -134,7 +135,7 @@
     </div>
 
     <div class="card-footer">
-      <button type="button" class="btn-outline btn-outline--orange" routerLink="/purchasing-registries">Voltar</button>
+      <button type="button" class="btn-outline btn-outline--orange" (click)="onBack()">{{ embedded ? 'Cancelar' : 'Voltar' }}</button>
 
       <div class="footer-actions-right">
         @if (!viewOnly()) {

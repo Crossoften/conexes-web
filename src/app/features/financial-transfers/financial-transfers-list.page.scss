@@ -235,3 +235,41 @@
   margin: 8px 0 0; padding-left: 20px; font-size: 12px; color: var(--text-secondary);
   li { margin-bottom: 3px; }
 }
+
+// ── Card #768 (itens 34 e 36, cenários 20 e 23) ───────────────────────────────
+.select--view { min-width: 150px; background: var(--surface-primary); border-color: var(--surface-border-mid); border-radius: 50px; font-weight: 500; }
+.filter-bar .select { min-width: 140px; }
+.tools { display: inline-flex; align-items: center; gap: 6px; }  // colados no período, sem intervalo
+.link-limpar { border: 0; background: transparent; color: var(--brand-purple, #6D28D9); font-size: 12.5px; cursor: pointer; text-decoration: underline; margin-left: 6px; }
+
+// colunas mais próximas: checkbox, ID e descrição
+.table--std {
+  .th, .td { padding: 12px 10px; }
+  .th--check, .td--check { width: 36px; padding-left: 16px; padding-right: 4px; }
+  .th--id, .td--id { width: 64px; white-space: nowrap; }
+  .td--id { font-size: 12.5px; color: var(--text-muted); }
+  .td--num { color: var(--text-primary); font-weight: 600; }
+  // coluna fixa de ações (fica visível ao rolar a tabela na horizontal)
+  .th--acoes, .td--acoes { position: sticky; right: 0; width: 84px; text-align: center; background: #fff; box-shadow: -6px 0 8px -8px rgba(17,24,39,.25); }
+  .th--acoes { background: #FAFAFE; }
+  .tr--selected .td--acoes { background: #F5F3FF; }
+}
+.action-grid { display: grid; grid-template-columns: repeat(2, 30px); gap: 2px; justify-content: center; }
+
+// pop-up de visualizar: quadro lavanda com as informações em três colunas
+.vgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; }
+.vfield { display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  span { font-size: 12px; color: #6B7280; }
+  strong { font-size: 13.5px; color: #111827; font-weight: 600; overflow-wrap: anywhere; }
+  &--full { grid-column: 1 / -1; }
+}
+.vrateio { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 4px; background: #fff; border-radius: 8px; overflow: hidden;
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #EEF0F6; }
+  th { font-weight: 600; color: #374151; background: #F5F3FF; }
+  .num { text-align: right; }
+}
+// barra numa linha só: seletores com largura contida (o nome longo da conta corta com reticências)
+.filter-bar { flex-wrap: wrap; gap: 8px; }
+.filter-bar .search-wrap { flex: 0 1 200px; }
+.filter-bar .select-wrap .select { width: 190px; min-width: 0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+.filter-bar .select-wrap .select--view { width: 160px; }

@@ -43,7 +43,9 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
 
   projects: ProjectOption[] = [];
   /** Contas candidatas a "pai" (Totalizadora/Sintética), exceto a própria. */
-  parents: Account[] = [];
+  /** Card #768 (item 2): todas as contas (todos os níveis), exceto a própria e as subcontas dela. */
+  parents: (Account & { level: number; label: string })[] = [];
+  maxLevels = 5;
 
   /** B2: modal de criação inline de Centro de Custo. */
   readonly showCcModal = signal(false);
@@ -108,10 +110,12 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
    * PC-01: conta superior filtrada pela natureza selecionada.
    * Uma subconta de Entrada só lista pais de Entrada (ou Totalizadora); Saída idem.
    */
-  filteredParents(): Account[] {
+  filteredParents() {
     const nature = this.form.get('categoryType')?.value;
-    if (!nature) return this.parents;
-    return this.parents.filter(p => p.categoryType === nature || p.categoryType === 'Totalizadora');
+    const atual = this.form.get('parentId')?.value;
+    const cabe = this.parents.filter(p => p.level < this.maxLevels || p.id === atual);
+    if (!nature) return cabe;
+    return cabe.filter(p => !p.categoryType || p.categoryType === nature || p.categoryType === 'Totalizadora' || p.id === atual);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -151,11 +155,18 @@ export class ChartOfAccountsDetailModalComponent implements OnChanges {
 
   /** Contas que podem ser "conta superior" (Totalizadora/Sintética), exceto a própria. */
   private loadParents(): void {
-    this.svc.getAll().subscribe({
+    this.svc.maxLevels().subscribe({ next: n => this.maxLevels = n, error: () => {} });
+    this.svc.flat().subscribe({
       next: list => {
-        this.parents = list.filter(a =>
-          a.id !== this.account?.id &&
-          (a.categoryType === 'Totalizadora' || a.accountType === 'Sintetica'));
+        // Exclui a própria conta e todas as suas subcontas (não pode ser pai de si mesma).
+        const self = this.account?.id;
+        const excluded = new Set<number>(self ? [self] : []);
+        let grew = true;
+        while (grew) {
+          grew = false;
+          for (const a of list) if (a.parentId != null && excluded.has(a.parentId) && !excluded.has(a.id)) { excluded.add(a.id); grew = true; }
+        }
+        this.parents = list.filter(a => !excluded.has(a.id));
       },
       error: () => { this.parents = []; },
     });

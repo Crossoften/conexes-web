@@ -84,57 +84,27 @@
           </div>
         </div>
 
-        <h3 class="section-title">Projeto/Centro de custo</h3>
+        <!-- Card #768 (itens 60, 64 e 67): a classificação na ordem da hierarquia —
+             Categoria, Centro de custo, Projeto e Atividade —, sem Subprojeto e sem
+             "Conta (plano de contas)". O padrão vale para as rubricas que deixarem o campo em branco. -->
+        <h3 class="section-title">Classificação padrão</h3>
         <div class="form-grid mb-8">
-          <div class="form-row grid-cols-3">
-            <div class="form-group">
-              <label>Projeto / Centro de Custo</label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="projetoCentroCusto"><option value="">Selecione</option>@for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }</select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Subprojeto</label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="subprojeto"><option value="">Selecione</option>@for (p of projetos; track p.id) { @if (p.id.startsWith('pr:')) { <option [value]="p.id">{{ p.nome }}</option> } }</select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Atividade</label>
-              <div class="select-wrap">
-                <select class="form-control" formControlName="atividade"><option value="">Selecione</option>@for (a of atividades; track a.id) { <option [value]="a.id">{{ a.nome }}</option> }</select>
-                <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
+          <div class="form-row grid-cols-4">
+            <div class="form-group"><label>Categoria</label><div class="select-wrap"><select class="form-control" formControlName="categoriaPadrao"><option value="">Selecione</option>@for (c of contas; track c.id) { <option [value]="c.id">{{ c.code + ' — ' + c.title }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+            <div class="form-group"><label>Centro de custo</label><div class="select-wrap"><select class="form-control" formControlName="centroPadrao"><option value="">Selecione</option>@for (o of centros; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+            <div class="form-group"><label>Projeto</label><div class="select-wrap"><select class="form-control" formControlName="projetoPadrao"><option value="">Selecione</option>@for (o of projetos; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+            <div class="form-group"><label>Atividade</label><div class="select-wrap"><select class="form-control" formControlName="atividadePadrao"><option value="">Selecione</option>@for (o of atividades; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
           </div>
         </div>
 
         <h3 class="section-title">Itens do orçamento (rubricas)</h3>
         <div class="form-grid mb-8" formArrayName="itens">
           @for (item of itens.controls; track $index; let i = $index) {
-            <div class="form-row grid-cols-4" [formGroupName]="i">
-              <div class="form-group">
-                <label>Conta (plano de contas)</label>
-                <div class="select-wrap">
-                  <select class="form-control" formControlName="contaPlano">
-                    <option value="">Selecione</option>
-                    @for (c of contas; track c.id) { <option [value]="c.id">{{ c.code }} — {{ c.title }}</option> }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Projeto / Centro de custo</label>
-                <div class="select-wrap">
-                  <select class="form-control" formControlName="projetoItem">
-                    <option value="">(usar o padrão)</option>
-                    @for (p of projetos; track p.id) { <option [value]="p.id">{{ p.nome }}</option> }
-                  </select>
-                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-              </div>
+            <div class="form-row grid-rubrica" [formGroupName]="i">
+              <div class="form-group"><label>Categoria</label><div class="select-wrap"><select class="form-control" formControlName="categoria"><option value="">(usar o padrão)</option>@for (c of contas; track c.id) { <option [value]="c.id">{{ c.code + ' — ' + c.title }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+              <div class="form-group"><label>Centro de custo</label><div class="select-wrap"><select class="form-control" formControlName="centro"><option value="">(usar o padrão)</option>@for (o of centros; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+              <div class="form-group"><label>Projeto</label><div class="select-wrap"><select class="form-control" formControlName="projeto"><option value="">(usar o padrão)</option>@for (o of projetos; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+              <div class="form-group"><label>Atividade</label><div class="select-wrap"><select class="form-control" formControlName="atividade"><option value="">(usar o padrão)</option>@for (o of atividades; track o.id) { <option [value]="o.id">{{ o.nome }}</option> }</select><svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
               <div class="form-group">
                 <label>Valor <span class="req">*</span></label>
                 <input type="text" inputmode="numeric" class="form-control" appCurrencyMask formControlName="valor"
@@ -142,7 +112,7 @@
               </div>
               <div class="form-group form-group--action">
                 @if (itens.length > 1) {
-                  <button type="button" class="btn-outline btn-outline--orange" (click)="removeItem(i)">Remover</button>
+                  <button type="button" class="btn-x" title="Remover rubrica" aria-label="Remover rubrica" (click)="removeItem(i)">✕</button>
                 }
               </div>
             </div>
@@ -155,39 +125,15 @@
         <h3 class="section-title">Formas de acompanhamento</h3>
         <div class="form-grid mb-8">
           <div class="form-row grid-cols-4">
-            
-            <label class="form-control-pill" [class.checked]="form.get('acompCategoria')?.value">
-              <div class="checkbox">
-                <input type="checkbox" class="checkbox__input" formControlName="acompCategoria">
-                <span class="checkbox__box"></span>
-              </div>
-              Categoria/Conta
-            </label>
-
-            <label class="form-control-pill" [class.checked]="form.get('acompProjeto')?.value">
-              <div class="checkbox">
-                <input type="checkbox" class="checkbox__input" formControlName="acompProjeto">
-                <span class="checkbox__box"></span>
-              </div>
-              Projeto/Centro de custo
-            </label>
-
-            <label class="form-control-pill" [class.checked]="form.get('acompSubprojeto')?.value">
-              <div class="checkbox">
-                <input type="checkbox" class="checkbox__input" formControlName="acompSubprojeto">
-                <span class="checkbox__box"></span>
-              </div>
-              Subprojeto
-            </label>
-
-            <label class="form-control-pill" [class.checked]="form.get('acompAtividade')?.value">
-              <div class="checkbox">
-                <input type="checkbox" class="checkbox__input" formControlName="acompAtividade">
-                <span class="checkbox__box"></span>
-              </div>
-              Atividade
-            </label>
-
+            @for (f of formasAcompanhamento; track f.ctrl) {
+              <label class="form-control-pill" [class.checked]="form.get(f.ctrl)?.value">
+                <div class="checkbox">
+                  <input type="checkbox" class="checkbox__input" [formControlName]="f.ctrl">
+                  <span class="checkbox__box"></span>
+                </div>
+                {{ f.rotulo }}
+              </label>
+            }
           </div>
         </div>
 

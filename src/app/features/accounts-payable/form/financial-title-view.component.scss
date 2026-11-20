@@ -1,0 +1,27 @@
+// Card #768 (item 44 — cenários 28, 29, 30 e 39)
+.tv__abas { display: flex; gap: 2px; border-bottom: 1px solid #E5E7EB; margin: -4px 0 14px; overflow-x: auto;
+  button { border: 0; background: transparent; padding: 10px 12px; font-size: 12.5px; font-weight: 600; color: #6B7280; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+    &.on { color: var(--brand-purple, #6D28D9); border-bottom-color: var(--brand-purple, #6D28D9); } }
+}
+.tv__painel { background: #FAFAFE; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.tv__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; }
+.tv__f { display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  span { font-size: 11.5px; color: #6B7280; }
+  strong { font-size: 13px; color: #111827; font-weight: 600; overflow-wrap: anywhere; }
+  &--2 { grid-column: span 2; }
+  &--full { grid-column: 1 / -1; }
+}
+.tv__badge { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #EDE9FE; color: #5B21B6; font-size: 11.5px; }
+.tv__tab { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border-radius: 8px; overflow: hidden; margin-top: 4px;
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #EEF0F6; }
+  th { font-weight: 600; color: #374151; background: #F5F3FF; }
+  .num { text-align: right; }
+}
+.tv__nota { font-size: 12px; color: #6B7280; margin: 0; }
+.tv__erro { color: #B91C1C; font-size: 13px; }
+.tv__chat { margin-top: 6px; }
+.tv__anexos { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.tv__pe { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+@media (max-width: 900px) { .tv__grid { grid-template-columns: 1fr 1fr; } }
+
+.tv__cobrar { align-self: flex-start; margin-top: 6px; }

@@ -1,5 +1,5 @@
 // src/app/features/bank-accounts/new/bank-account-new.page.ts
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -25,6 +25,16 @@ export interface Entity {
   styleUrl: './bank-account-new.page.scss',
 })
 export class BankAccountNewPage implements OnInit {
+  /**
+   * Card #768 (item 7): a mesma tela de cadastro abre em pop-up a partir de outro
+   * formulário (Composição de contas vinculadas do centro de custo). Em pop-up não
+   * navega: devolve a conta criada para quem abriu e o usuário segue onde estava.
+   */
+  @Input() embedded = false;
+  @Output() created   = new EventEmitter<any>();
+  @Output() cancelled = new EventEmitter<void>();
+  @HostBinding('class.is-embedded') get isEmbedded() { return this.embedded; }
+
   private fb    = inject(FormBuilder);
   private router = inject(Router);
   private svc   = inject(BankAccountsService);
@@ -230,8 +240,9 @@ export class BankAccountNewPage implements OnInit {
     };
 
     this.svc.create(payload).subscribe({
-      next: () => {
+      next: (createdAccount: any) => {
         this.loading.set(false);
+        if (this.embedded) { this.created.emit(createdAccount); return; }
         this.router.navigate(['/bank-accounts']);
       },
       error: err => {
@@ -246,5 +257,10 @@ export class BankAccountNewPage implements OnInit {
         }
       },
     });
+  }
+
+  onBack(): void {
+    if (this.embedded) { this.cancelled.emit(); return; }
+    this.router.navigate(['/bank-accounts']);
   }
 }

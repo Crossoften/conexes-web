@@ -6,16 +6,21 @@ import { AccountsPayableStore } from './accounts-payable.store';
 import { AccountsPayableService } from './accounts-payable.service';
 import { PayableAccount, AdvancedFilters, FilterOption } from './accounts-payable.model';
 import { PurchasesService } from '../purchases/purchases.service';
-import { Router, RouterLink } from "@angular/router";
+import { Router } from "@angular/router";
+import { PopupShellComponent } from '../../shared/components/popup-shell/popup-shell.component';
+import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
+import { IconLegendComponent, IconLegendGroup } from '../../shared/components/icon-legend/icon-legend.component';
+import { SearchSelectComponent, SearchOption } from '../../shared/components/search-select/search-select.component';
+import { FinancialTitleFormComponent } from './form/financial-title-form.component';
+import { FinancialTitleViewComponent } from './form/financial-title-view.component';
 import { BaixaModalComponent, BaixaResult, BaixaParcela } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
-import { ProcessChatComponent } from '../../shared/components/process-chat/process-chat.component';
 
 @Component({
   selector: 'app-accounts-payable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, RouterLink, BaixaModalComponent, RenegotiateModalComponent, ProcessChatComponent],
+  imports: [FormsModule, NgClass, BaixaModalComponent, RenegotiateModalComponent, PopupShellComponent, PeriodFieldComponent, IconLegendComponent, SearchSelectComponent, FinancialTitleFormComponent, FinancialTitleViewComponent],
   providers: [AccountsPayableStore],
   templateUrl: './accounts-payable-list.page.html',
   styleUrl: './accounts-payable-list.page.scss',
@@ -49,6 +54,92 @@ export class AccountsPayableListPage implements OnInit {
   readonly optProject     = signal<FilterOption[]>([]);
   /** Subprojeto é o nível abaixo de Projeto: a atividade. */
   readonly optSubProject  = signal<FilterOption[]>([]);
+  // Card #768 (item 46): centro de custo e projeto como filtros separados (sem prefixo).
+  readonly optCostCenterId = signal<FilterOption[]>([]);
+  readonly optProjectId    = signal<FilterOption[]>([]);
+  /** Card #768 (item 46): fornecedor fixo na barra, com busca e lupa. */
+  readonly optSupplierSearch = signal<SearchOption[]>([]);
+
+  // Card #768 (cenário 35): legenda dos ícones.
+  readonly legenda: IconLegendGroup[] = [
+    { title: 'Barra de filtros', items: [
+      { icon: 'filter', name: 'Filtros', desc: 'Abre os filtros adicionais: classificação, contrato, requisição e contas.' },
+      { icon: 'R', name: 'Renegociar', desc: 'Renegocia o título selecionado.' },
+      { icon: 'M', name: 'Multiplicar', desc: 'Divide o lançamento selecionado em lançamentos na lista.' },
+      { icon: '➤', name: 'Remessa', desc: 'Envia os lançamentos selecionados para a remessa bancária.' },
+      { icon: 'excel', name: 'Exportar Excel', desc: 'Exporta a lista, com os filtros aplicados, em Excel.' },
+      { icon: 'XML', name: 'Importar XML', desc: 'Importa a nota fiscal em XML e cria a conta a pagar.' },
+      { icon: 'upload', name: 'Upload de arquivo', desc: 'Envia um arquivo para importação.' },
+      { icon: 'calendar', name: 'Período', desc: 'Todo o período, Este mês, Mês passado, Últimos 90 dias, Este ano ou o intervalo personalizado.' },
+    ] },
+    { title: 'Ações da linha (coluna fixa)', items: [
+      { icon: 'eye', name: 'Visualizar', desc: 'Abre o título em pop-up, só para consulta.' },
+      { icon: 'check', name: 'Baixar', desc: 'Registra o pagamento do título.' },
+      { icon: 'edit', name: 'Editar', desc: 'Altera as informações do título.' },
+      { icon: 'copy', name: 'Copiar', desc: 'Cria um novo título a partir deste.' },
+      { icon: 'trash', name: 'Excluir', desc: 'Exclui o título, com confirmação.' },
+    ] },
+  ];
+
+  brl(v: number | null | undefined): string { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0); }
+
+  /** Card #768 (item 52): IRRF, PCC… com valor e vencimento, no título da linha. */
+  textoRetencoes(item: PayableAccount): string {
+    return item.retencoes.map(r => `${r.tipo}${r.codigo ? ' (' + r.codigo + ')' : ''}: ${this.brl(r.valor)} — vence ${r.vencimento}`).join('\n');
+  }
+
+  // ── Card #768 (itens 44 e 47): nova/editar em pop-up ───────────────────────
+  readonly formAberto = signal<{ editId: number | null } | null>(null);
+  readonly formLista = computed(() => { const f = this.formAberto(); return f ? [f] : []; });
+  abrirNovo(): void { this.formAberto.set({ editId: null }); }
+  fecharForm(): void { this.formAberto.set(null); }
+  aoSalvarForm(editId: number | null): void {
+    this.formAberto.set(null);
+    this.notify.success(editId ? 'Conta a pagar atualizada.' : 'Conta a pagar cadastrada com sucesso.');
+    this.store.load();
+  }
+  editarDaVisualizacao(p: PayableAccount): void { this.viewItem.set(null); this.onEdit(p); }
+  excluirDaVisualizacao(p: PayableAccount): void { this.viewItem.set(null); this.onDelete(p); }
+
+  // ── Card #768 (item 45): Renegociar, Multiplicar e Remessa na barra ────────
+  private selecionados(): PayableAccount[] {
+    const ids = this.store.selectedIds();
+    return this.store.pageItems().filter(i => ids.has(i.id));
+  }
+  private umSelecionado(acao: string): PayableAccount | null {
+    const sel = this.selecionados();
+    if (sel.length !== 1) { this.notify.info(`Selecione um lançamento na lista para ${acao}.`); return null; }
+    return sel[0];
+  }
+  barRenegociar(): void {
+    const item = this.umSelecionado('renegociar');
+    if (!item) return;
+    if (!item.acoes.renegociar) { this.notify.error(`O ${item.displayId} não pode ser renegociado na situação ${item.status}.`); return; }
+    this.openRenegotiate(item);
+  }
+  barMultiplicar(): void {
+    const item = this.umSelecionado('multiplicar');
+    if (!item) return;
+    if (!item.acoes.multiplicar) { this.notify.error(`O ${item.displayId} não pode ser multiplicado (só título em aberto e sem baixa).`); return; }
+    this.openMultiply(item);
+  }
+  barRemessa(): void {
+    const sel = this.selecionados();
+    if (!sel.length) { this.notify.info('Selecione os lançamentos que vão para a remessa.'); return; }
+    const barrados = sel.filter(i => !i.acoes.remessa);
+    if (barrados.length) { this.notify.error(`Não podem ir para a remessa: ${barrados.map(b => b.displayId).join(', ')} (só título em aberto).`); return; }
+    this.store.sendSelectedToRemittance();
+  }
+
+  readonly temFiltroFixo = computed(() => {
+    const f = this.store.filters();
+    return !!(f.status || f.dateStart || f.dateEnd || f.supplier || this.store.activeFilterCount());
+  });
+
+  limparFiltrosPopup(): void {
+    this.store.clearPopupFilters();
+    this.localFilters = { ...this.store.filters() };
+  }
 
   /** Carrega as listas dos filtros. Falha de uma não derruba as outras. */
   private carregarOpcoesDeFiltro(): void {
@@ -56,7 +147,11 @@ export class AccountsPayableListPage implements OnInit {
       v.map(r => ({ value: String(r.id), label: r.name }));
 
     this.lookups.getSuppliersLookup().subscribe({
-      next: v => this.optSupplier.set(comoOpcao(v as any)), error: () => this.optSupplier.set([]),
+      next: v => {
+        this.optSupplier.set(comoOpcao(v as any));
+        this.optSupplierSearch.set((v as any[]).map(r => ({ id: String(r.id), label: r.name })));
+      },
+      error: () => this.optSupplier.set([]),
     });
     this.lookups.getAccountPlansLookup().subscribe({
       next: v => this.optAccountPlan.set(comoOpcao(v as any)), error: () => this.optAccountPlan.set([]),
@@ -73,17 +168,23 @@ export class AccountsPayableListPage implements OnInit {
     // então oferecê-la seria mais uma opção que nunca devolve nada — que é
     // justamente o defeito que o CP-01 relata.
     this.lookups.getCostCentersLookup().subscribe({
-      next: v => this.optCostCenter.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `cc:${r.id}`, label: r.name }))),
+      next: v => {
+        this.optCostCenter.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `cc:${r.id}`, label: r.name })));
+        this.optCostCenterId.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: String(r.id), label: r.name })));
+      },
       error: () => this.optCostCenter.set([]),
     });
     this.lookups.getProjectsLookup().subscribe({
-      next: v => this.optProject.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `pj:${r.id}`, label: r.name }))),
+      next: v => {
+        this.optProject.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: `pj:${r.id}`, label: r.name })));
+        this.optProjectId.set(this.lookups.apenasAnaliticas(v).map(r => ({ value: String(r.id), label: r.name })));
+      },
       error: () => this.optProject.set([]),
     });
     this.lookups.getActivitiesLookup().subscribe({
       next: v => this.optSubProject.set(comoOpcao(v as any)), error: () => this.optSubProject.set([]),
     });
-    this.svc.getContracts().subscribe({
+    this.svc.getContracts('Pagar').subscribe({
       next: v => this.optContract.set(v.map(c => ({ value: String(c.id), label: c.label }))),
       error: () => this.optContract.set([]),
     });
@@ -332,7 +433,7 @@ export class AccountsPayableListPage implements OnInit {
   localFilters: AdvancedFilters = {
     issue: 'dueDate', status: '', dateStart: '', dateEnd: '', supplier: '', remittanceStatus: '',
     expenseType: '', paymentType: '', contract: '', requisition: '', writeOffAccount: '',
-    payingAccount: '', categoryAccount: '', costCenter: '', subProject: ''
+    payingAccount: '', categoryAccount: '', costCenter: '', subProject: '', project: '', activity: '',
   };
 
   /** CP-01: o intervalo precisa fechar — de depois de até não filtra nada. */
@@ -400,9 +501,9 @@ export class AccountsPayableListPage implements OnInit {
     this.store.copyOne(item.id);
   }
 
-  /** CP-04: abre o título no formulário, em modo edição. */
+  /** CP-04: abre o título no formulário, em modo edição — Card #768: em pop-up. */
   onEdit(item: PayableAccount) {
-    this.router.navigate(['/accounts-payable', item.id, 'edit']);
+    this.formAberto.set({ editId: Number(item.id) });
   }
 
   onSendToRemittance(item: PayableAccount) {

@@ -50,6 +50,13 @@
 
     </div>
 
+    @if (store.notice(); as n) {
+      <div class="notice" [class.notice--error]="n.kind === 'error'" role="alert">
+        <span>{{ n.text }}</span>
+        <button type="button" class="notice__close" title="Fechar aviso" (click)="store.clearNotice()">×</button>
+      </div>
+    }
+
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -59,7 +66,7 @@
               Número <span class="sort-icon" [ngClass]="'sort--' + getSortState('code')"></span>
             </th>
             <th class="th th--sortable" (click)="store.setSort('name')">
-              Nome projeto/centro de custo <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span>
+              Nome <span class="sort-icon" [ngClass]="'sort--' + getSortState('name')"></span>
             </th>
             <th class="th th--sortable" (click)="store.setSort('type')">
               Tipo <span class="sort-icon" [ngClass]="'sort--' + getSortState('type')"></span>
@@ -121,13 +128,13 @@
                 <td class="td td--mono" [style.paddingLeft.px]="row.depth * 22 + 16">{{ row.node.code }}</td>
                 <td class="td td--name">{{ row.node.name || row.node.title }}</td>
                 <td class="td">
-                  {{ typeLabel(row.node.type) }}
+                  {{ kindLabel(row.node) }}
                   @if (row.node.classification) {
                     <span class="class-tag" [class.class-tag--sint]="row.node.classification === 'Sintetica'">{{ row.node.classification === 'Sintetica' ? 'Sintética' : 'Analítica' }}</span>
                   }
                 </td>
                 <td class="td">{{ row.node.restrictBudget ? 'Sim' : 'Não' }}</td>
-                <td class="td">{{ row.node.description }}</td>
+                <td class="td">{{ row.node.description || row.node.name || row.node.title }}</td>
 
                 <td class="td">
                   <span class="status-badge" [ngClass]="'status-badge--' + statusConfig[row.node.status].variant">
@@ -148,18 +155,20 @@
                     <button class="icon-btn" title="Editar" (click)="onEdit(row.node)">
                       <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    @if (row.node.type === 'centro_de_custo') {
-                      <a class="icon-btn" title="Adicionar subnível (projeto)"
+                    <!-- Card #768 (itens 3 e 5): o subnível segue o nível REAL do registro.
+                         Centro de custo → centro de custo ou projeto; Projeto → atividade. -->
+                    @if (kindOf(row.node) === 'centro_de_custo') {
+                      <a class="icon-btn" title="Adicionar subnível"
                         [routerLink]="['/cost-centers/new']"
-                        [queryParams]="{ type: 'projeto', parentId: row.node.id, parentName: row.node.name || row.node.title }">
+                        [queryParams]="{ type: row.node.classification === 'Sintetica' ? 'centro_de_custo' : 'projeto', parentId: row.node.id, parentName: row.node.name || row.node.title, parentCode: row.node.code, parentClassification: row.node.classification }">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                       </a>
                     }
-                    <!-- Só Projeto recebe subnível: o back recusa Atividade como pai de Atividade. -->
-                    @if (row.node.type === 'projeto') {
+                    <!-- Só Projeto recebe Atividade: o back recusa Atividade como pai de Atividade. -->
+                    @if (kindOf(row.node) === 'projeto') {
                       <a class="icon-btn" title="Adicionar subnível (atividade)"
                         [routerLink]="['/cost-centers/new']"
-                        [queryParams]="{ type: 'atividade', parentProjectId: row.node.id, parentName: row.node.name || row.node.title }">
+                        [queryParams]="{ type: 'atividade', parentProjectId: row.node.id, parentName: row.node.name || row.node.title, parentCode: row.node.code }">
                         <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                       </a>
                     }

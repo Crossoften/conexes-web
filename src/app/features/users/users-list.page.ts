@@ -63,8 +63,12 @@ export class UsersListPage implements OnInit {
   }
 
   // US-fix: a coluna "Módulos" conta módulos distintos, não linhas de permissão (uma por submenu).
+  // Card #768 (item 77): conta só os módulos HABILITADOS — com ao menos um acesso
+  // (visualizar, criar, editar, excluir ou sem limite). O perfil grava todas as linhas
+  // do catálogo, inclusive as marcadas como Não, e a coluna mostrava 6 para todo perfil.
   moduleCount(item: PermissionProfile): number {
-    return new Set((item.permissions ?? []).map(p => p.module)).size;
+    const habilitada = (p: any) => !!(p.canView || p.canCreate || p.canEdit || p.canDelete || p.isUnlimited);
+    return new Set((item.permissions ?? []).filter(habilitada).map(p => p.module)).size;
   }
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;

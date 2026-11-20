@@ -34,9 +34,9 @@
                 <select class="form-control" formControlName="projectType"
                   [class.is-invalid]="form.get('projectType')?.invalid && form.get('projectType')?.touched">
                   <option value="">Selecione</option>
-                  <option value="centro_de_custo">Centro de Custo</option>
-                  <option value="projeto">Projeto</option>
-                  <option value="atividade">Atividade</option>
+                  @if (allowedTypes().includes('centro_de_custo')) { <option value="centro_de_custo">Centro de Custo</option> }
+                  @if (allowedTypes().includes('projeto')) { <option value="projeto">Projeto</option> }
+                  @if (allowedTypes().includes('atividade')) { <option value="atividade">Atividade</option> }
                 </select>
                 <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
@@ -70,6 +70,24 @@
                     <option [ngValue]="null">Selecione o projeto</option>
                     @for (p of projects(); track p.id) {
                       <option [ngValue]="p.id">{{ p.name }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Card #768: superior escolhido no cadastro avulso (no subnível ele já vem do pai). -->
+          @if (!parentLocked() && (form.get('projectType')?.value === 'centro_de_custo' || form.get('projectType')?.value === 'projeto')) {
+            <div class="form-row grid-cols-3">
+              <div class="form-group">
+                <label>{{ form.get('projectType')?.value === 'centro_de_custo' ? 'Centro de custo superior (sintético)' : 'Centro de custo' }}</label>
+                <div class="select-wrap">
+                  <select class="form-control" formControlName="costCenterId">
+                    <option [ngValue]="null">{{ form.get('projectType')?.value === 'centro_de_custo' ? 'Nenhum (primeiro nível)' : 'Selecione' }}</option>
+                    @for (c of parentOptions(); track c.id) {
+                      <option [ngValue]="c.id">{{ c.code }} — {{ c.name }}</option>
                     }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -190,7 +208,7 @@
             </div>
 
             <div class="linked-box__actions">
-              <!-- CC-02: abre o cadastro de Contas Bancárias em nova aba. -->
+              <!-- Card #768 (item 7): cadastro de Contas Bancárias em pop-up. -->
               <button type="button" class="btn-square-outline" title="Cadastrar nova conta bancária" (click)="openBankAccountRegister()">
                 <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               </button>
@@ -207,8 +225,9 @@
                 <div class="linked-list__item">
                   <span class="linked-list__origin">{{ linked.origin }}</span>
                   <span class="linked-list__account">{{ getAccountLabel(linked.bankAccountId) }}</span>
-                  <button type="button" class="icon-btn" title="Remover" (click)="removeLinkedAccount($index)">
-                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5L5 9M5 5l4 4"/><circle cx="7" cy="7" r="5.5"/></svg>
+                  <!-- Card #768 (item 6): excluir visível, no padrão da lixeira das listas. -->
+                  <button type="button" class="linked-list__remove" title="Excluir conta da composição" aria-label="Excluir conta da composição" (click)="removeLinkedAccount($index)">
+                    <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
                 </div>
               }
@@ -219,6 +238,11 @@
 
       </form>
     </div>
+
+    @if (errorMsg()) {
+      <!-- Card #768 (item 8): o motivo aparece também junto do botão Salvar. -->
+      <div class="error-banner error-banner--footer" role="alert">{{ errorMsg() }}</div>
+    }
 
     <div class="card-footer">
       <button class="btn-outline btn-outline--orange" routerLink="/cost-centers">
@@ -241,3 +265,9 @@
 
   </div>
 </div>
+
+@if (showBankPopup()) {
+  <app-popup-shell title="Cadastro de conta bancária" subtitle="Preencha os dados da conta. Ao salvar, ela já fica selecionada na composição." icon="bank" [width]="1100" [plain]="true" (close)="closeBankPopup()">
+    <app-bank-account-new [embedded]="true" (created)="onBankAccountCreated($event)" (cancelled)="closeBankPopup()"></app-bank-account-new>
+  </app-popup-shell>
+}

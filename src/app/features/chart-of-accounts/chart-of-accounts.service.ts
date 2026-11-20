@@ -46,6 +46,31 @@ export class ChartOfAccountsService {
     return this.http.get<any[]>(`${this.base}/tree`);
   }
 
+  /**
+   * Card #768 (item 2): todas as contas, de todos os níveis, com o nível de cada uma.
+   * O `getAll()` só traz as contas raiz (o back pagina pela raiz), por isso a
+   * "Conta superior" mostrava só o primeiro nível e ficava em branco nos subníveis.
+   */
+  flat(): Observable<(Account & { level: number; label: string })[]> {
+    return this.tree().pipe(map(roots => {
+      const out: (Account & { level: number; label: string })[] = [];
+      const walk = (nodes: any[], level: number) => {
+        for (const n of nodes ?? []) {
+          out.push({ ...n, level, label: `${'\u00A0\u00A0'.repeat(level - 1)}${n.code} — ${n.title}` });
+          walk(n.children, level + 1);
+        }
+      };
+      walk(roots ?? [], 1);
+      return out;
+    }));
+  }
+
+  /** Card #768 (item 2): limite de níveis definido em Configurações gerais (padrão 5). */
+  maxLevels(): Observable<number> {
+    return this.http.get<{ accountPlanMaxLevels?: number }>(`${environment.apiUrl}/v1/general-settings`)
+      .pipe(map(r => Number(r?.accountPlanMaxLevels) || 5));
+  }
+
   // PC-03: importação por planilha.
   importSpreadsheet(file: File): Observable<{ message: string; criadas: number; total: number; results: { line: number; code: string; status: string }[] }> {
     const form = new FormData();

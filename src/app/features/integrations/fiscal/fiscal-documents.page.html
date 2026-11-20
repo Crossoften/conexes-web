@@ -11,14 +11,8 @@
     <div class="header-actions">
       <!-- COM-Sincronizar / I032 (decisão D3): a sincronização PEDE INTERVALO.
            O botão trazia "as últimas 20" sem dizer de qual período vinham. -->
-      <label class="sync-periodo">
-        <span>De</span>
-        <input type="date" class="input-date" [(ngModel)]="periodoDe" [ngModelOptions]="{standalone: true}">
-      </label>
-      <label class="sync-periodo">
-        <span>Até</span>
-        <input type="date" class="input-date" [(ngModel)]="periodoAte" [ngModelOptions]="{standalone: true}">
-      </label>
+      <!-- Card #768 (item 68): o período num campo só, com as opções e o calendário. -->
+      <app-period-field [start]="periodoDe" [end]="periodoAte" (periodChange)="periodoDe = $event.start; periodoAte = $event.end"></app-period-field>
       <button type="button" class="btn-outline btn-outline--orange"
               [disabled]="busy() || periodoIncompleto || periodoInvalido"
               [title]="periodoIncompleto ? 'Informe o período para sincronizar' : (periodoInvalido ? 'A data inicial não pode ser depois da final' : 'Sincronizar as notas recebidas no período')"

@@ -7,6 +7,8 @@ import { CostCentersService } from '../cost-centers.service';
 import { CostCenterPayload, LinkedAccount, ENTITY_KINDS } from '../cost-centers.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { PopupShellComponent } from '../../../shared/components/popup-shell/popup-shell.component';
+import { BankAccountNewPage } from '../../bank-accounts/new/bank-account-new.page';
 
 interface AccountPlanItem {
   id:    number;
@@ -23,7 +25,7 @@ interface EntityItem {
 @Component({
   selector: 'app-cost-centers-new',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, FormsModule, NgClass],
+  imports: [RouterLink, ReactiveFormsModule, FormsModule, NgClass, PopupShellComponent, BankAccountNewPage],
   templateUrl: './cost-centers-new.page.html',
   styleUrl: './cost-centers-new.page.scss',
 })
@@ -38,6 +40,12 @@ export class CostCentersNewPage implements OnInit {
   readonly errorMsg     = signal<string | null>(null);
   readonly accountPlans = signal<AccountPlanItem[]>([]);
   readonly projects     = signal<{ id: number; name: string }[]>([]);   // CC-03: projetos p/ escolher o pai de uma Atividade avulsa
+  /** Card #768: centros de custo para o campo "Centro de custo superior". */
+  readonly costCenters  = signal<{ id: number; code: string; name: string; classification: string }[]>([]);
+  /** Card #768 (item 7): cadastro de conta bancária em pop-up, sem sair do formulário. */
+  readonly showBankPopup = signal(false);
+  /** Card #768 (itens 3 e 5): tipos permitidos no subnível, conforme o pai. */
+  readonly allowedTypes = signal<string[]>(['centro_de_custo', 'projeto', 'atividade']);
   readonly bankAccounts = signal<any[]>([]);                            // CC-04: contas bancárias p/ a composição vinculada
   readonly entities     = signal<EntityItem[]>([]);
   readonly loadingLists = signal(true);
@@ -84,15 +92,23 @@ export class CostCentersNewPage implements OnInit {
       });
       this.parentName.set(qp.get('parentName'));
       this.parentLocked.set(true);
+      this.allowedTypes.set(['atividade']);
     } else if (parentId) {
-      // Subnível Projeto: vinculado ao Centro de Custo pai via costCenterId.
+      // Card #768 (itens 3 e 5): subnível de um Centro de Custo pode ser outro
+      // Centro de Custo (quando o pai é sintético) ou um Projeto. O pai segue em
+      // `costCenterId` — o back usa como superior do centro de custo ou do projeto.
+      const parentSint = qp.get('parentClassification') === 'Sintetica';
+      this.allowedTypes.set(parentSint ? ['centro_de_custo', 'projeto'] : ['projeto']);
       this.form.patchValue({
-        projectType:  qp.get('type') ?? 'projeto',
+        projectType:  qp.get('type') ?? (parentSint ? 'centro_de_custo' : 'projeto'),
         costCenterId: Number(parentId),
       });
       this.parentName.set(qp.get('parentName'));
       this.parentLocked.set(true);
     }
+    // Sugere o número do subnível a partir do número do pai (ex.: 01.01 → 01.01.).
+    const parentCode = qp.get('parentCode');
+    if (parentCode && !this.form.get('projectCode')?.value) this.form.patchValue({ projectCode: `${parentCode}.` });
 
     // CC-03: Atividade avulsa exige o Projeto pai; nos demais tipos o campo nem existe.
     this.form.get('projectType')?.valueChanges.subscribe(() => this.syncParentValidator());
@@ -130,12 +146,36 @@ export class CostCentersNewPage implements OnInit {
     });
 
     // CC-04: contas bancárias para a composição de contas vinculadas.
+    this.loadBankAccounts();
+
+    // Card #768: centros de custo para o "Centro de custo superior" (cadastro avulso).
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/projects`, { params: { type: 'centro_de_custo', take: '1000' } },
+    ).subscribe({
+      next: res => {
+        const list = Array.isArray(res) ? res : res?.data ?? [];
+        this.costCenters.set(list.map((c: any) => ({ id: Number(c.id), code: c.code, name: c.name ?? c.title, classification: c.classification })));
+      },
+      error: () => {},
+    });
+  }
+
+  private loadBankAccounts(selectId?: number): void {
     this.http.get<any[] | { data?: any[] }>(
       `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
     ).subscribe({
-      next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
+      next: res => {
+        this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []);
+        if (selectId) this.selectedLinkedAccount = String(selectId);
+      },
       error: () => {},
     });
+  }
+
+  /** Superior possível para o tipo escolhido: CC → só sintéticos; Projeto → qualquer CC. */
+  parentOptions() {
+    const t = this.form.get('projectType')?.value;
+    return t === 'centro_de_custo' ? this.costCenters().filter(c => c.classification === 'Sintetica') : this.costCenters();
   }
 
   /** CC-03: "Projeto pai" só é obrigatório na Atividade avulsa (sem pai na query string). */
@@ -169,13 +209,15 @@ export class CostCentersNewPage implements OnInit {
   }
 
   /**
-   * CC-02: o "+" ao lado de "Selecionar conta" abre o cadastro de Contas
-   * Bancárias em nova aba, preservando o formulário do Centro de Custo em
-   * andamento (o app usa hash routing).
+   * Card #768 (item 7): o "+" abre o cadastro de Contas Bancárias em pop-up, por
+   * cima do formulário. Ao salvar, a lista é recarregada e a conta nova já fica
+   * selecionada — sem sair do cadastro do centro de custo nem atualizar a página.
    */
-  openBankAccountRegister(): void {
-    const base = window.location.href.split('#')[0];
-    window.open(`${base}#/bank-accounts/new`, '_blank');
+  openBankAccountRegister(): void { this.showBankPopup.set(true); }
+  closeBankPopup(): void { this.showBankPopup.set(false); }
+  onBankAccountCreated(acc: any): void {
+    this.showBankPopup.set(false);
+    this.loadBankAccounts(acc?.id);
   }
 
   removeLinkedAccount(index: number): void {
@@ -200,10 +242,22 @@ export class CostCentersNewPage implements OnInit {
     this.errorMsg.set(null);
   }
 
+  /** Card #768 (item 8): o Salvar nunca fica mudo — diz o que falta, perto do botão. */
+  private readonly labels: Record<string, string> = {
+    projectType: 'Tipo', classification: 'Classificação contábil', projectCode: 'Código', projectTitle: 'Título', parentProjectId: 'Projeto pai',
+  };
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const faltam = Object.keys(this.labels).filter(k => this.form.get(k)?.invalid).map(k =>
+        k === 'projectCode' && this.form.get(k)?.hasError('pattern') ? 'Código (só números e pontos)' : this.labels[k]);
+      this.errorMsg.set(`Preencha os campos obrigatórios: ${faltam.join(', ')}.`);
       return;
+    }
+    if (this.selectedLinkedAccount) {
+      // Conta escolhida mas não confirmada no ✓: entra na composição ao salvar.
+      this.addLinkedAccount();
     }
 
     this.loading.set(true);

@@ -25,10 +25,11 @@
           <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar" aria-label="Editar cadastro">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir" aria-label="Excluir cadastro">
+        }
+        <!-- Card #768 (item 65): Excluir também no editar; ordem Editar, Excluir, Fechar. -->
+        <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir" aria-label="Excluir cadastro">
             <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-        }
         <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar" aria-label="Fechar">
           <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -410,6 +411,11 @@
               <!-- FE-S6: Endereço de faturamento (exclusivo de clientes) -->
               @if (isClient) {
                 <h3 class="edit-section-title">Endereço de faturamento</h3>
+                          <!-- Card #768 (item 13): reaproveita o endereço do cliente preenchido acima. -->
+                          <label class="same-address">
+                            <input type="checkbox" [checked]="sameAddress()" (change)="toggleSameAddress($any($event.target).checked)">
+                            <span>Mesmo endereço do cliente</span>
+                          </label>
                 <div class="edit-grid">
                   <div class="field">
                     <label class="field-label">CEP</label>

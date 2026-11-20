@@ -17,13 +17,15 @@ interface State {
   pagination: { page: number; pageSize: number };
   selectedIds: Set<string>;
   isFilterModalOpen: boolean;
+  /** Card #768 (item 55): soma da coluna Valor com os filtros, para o rodapé. */
+  valorTotal: number;
 }
 
 const INITIAL_FILTERS: AdvancedFilters = {
   // CP-01: a data-base começa em Vencimento — é sobre ela que a tela já filtrava.
   issue: 'dueDate', status: '', dateStart: '', dateEnd: '', supplier: '', remittanceStatus: '',
   expenseType: '', paymentType: '', contract: '', requisition: '', writeOffAccount: '',
-  payingAccount: '', categoryAccount: '', costCenter: '', subProject: ''
+  payingAccount: '', categoryAccount: '', costCenter: '', subProject: '', project: '', activity: '',
 };
 
 @Injectable()
@@ -44,6 +46,7 @@ export class AccountsPayableStore {
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
     isFilterModalOpen: false,
+    valorTotal: 0,
   });
 
   // Carrega a página atual do back (base limpa => lista vazia, sem mock).
@@ -64,11 +67,11 @@ export class AccountsPayableStore {
         error: 'Não foi possível carregar as contas a pagar.',
       })),
     });
-    // FIN-N04: resumo agregado no servidor — soma a base filtrada inteira,
-    // não apenas a página exibida. Falha no resumo não derruba a listagem.
-    this.svc.getSummary(filters).subscribe({
-      next: summaries => this.state.update(s => ({ ...s, summaries })),
-      error: () => this.state.update(s => ({ ...s, summaries: [] })),
+    // Card #768 (item 55): os cards saíram da lista (vão para o dashboard Financeiro);
+    // fica o total da coluna Valor, somado no servidor sobre a base filtrada inteira.
+    this.svc.getTotal(filters).subscribe({
+      next: t => this.state.update(s => ({ ...s, valorTotal: t.total ?? 0 })),
+      error: () => this.state.update(s => ({ ...s, valorTotal: 0 })),
     });
   }
 
@@ -83,6 +86,7 @@ export class AccountsPayableStore {
   readonly pagination = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
+  readonly valorTotal = computed(() => this.state().valorTotal);
 
   /**
    * CP-01: quantos filtros estão de fato valendo. `issue` sozinho não conta —
@@ -90,8 +94,10 @@ export class AccountsPayableStore {
    */
   readonly activeFilterCount = computed(() => {
     const f = this.state().filters;
+    // Card #768 (item 46): conta só os filtros do pop-up — os fixos estão à vista na barra.
+    const fixos: (keyof AdvancedFilters)[] = ['issue', 'status', 'dateStart', 'dateEnd', 'supplier'];
     return (Object.keys(f) as (keyof AdvancedFilters)[])
-      .filter(k => k !== 'issue' && !!f[k]).length;
+      .filter(k => !fixos.includes(k) && !!f[k]).length;
   });
 
   // A filtragem e a paginação são feitas no BACK (query params). O front só ordena
@@ -132,6 +138,22 @@ export class AccountsPayableStore {
   
   applyFilters(newFilters: AdvancedFilters) {
     this.state.update(s => ({ ...s, filters: newFilters, isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  /** Card #768 (item 46): os filtros fixos da barra aplicam na hora. */
+  setFiltro(parcial: Partial<AdvancedFilters>) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, ...parcial }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  /** Card #768 (item 46): limpa só os filtros do pop-up, mantendo os fixos. */
+  clearPopupFilters() {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...INITIAL_FILTERS, issue: s.filters.issue, status: s.filters.status, dateStart: s.filters.dateStart, dateEnd: s.filters.dateEnd, supplier: s.filters.supplier },
+      isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 },
+    }));
     this.load();
   }
 
@@ -207,17 +229,26 @@ export class AccountsPayableStore {
 
   multiplyOne(id: string, times: number, intervalDays: number): void {
     this.svc.multiply(Number(id), times, intervalDays).subscribe({
-      // CP-06: a mensagem dizia "parcela(s)" para uma ação que cria lançamentos
-      // novos pelo valor cheio — repetia em palavras a promessa errada da tela.
-      next: () => { this.notify.success(`${times} lançamento(s) criado(s) a partir deste.`); this.load(); },
+      // Card #768 (item 48): a mensagem do servidor diz quais lançamentos ficaram na lista.
+      next: (r: any) => { this.notify.success(r?.message ?? `Lançamento dividido em ${times}.`); this.clearSelection(); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao multiplicar o lançamento.'),
     });
   }
 
   sendToRemittance(id: string): void {
     this.svc.sendToRemittance(Number(id)).subscribe({
-      next: () => { this.notify.success('Enviado para remessa.'); this.load(); },
+      next: () => { this.notify.success('Enviado para remessa — a linha mostra "Na fila da remessa".'); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao enviar para remessa.'),
+    });
+  }
+
+  /** Card #768 (item 45): Remessa na barra — envia os selecionados. */
+  sendSelectedToRemittance(): void {
+    const ids = [...this.state().selectedIds];
+    if (!ids.length) return;
+    forkJoin(ids.map(id => this.svc.sendToRemittance(Number(id)))).subscribe({
+      next: () => { this.notify.success(`${ids.length} lançamento(s) enviado(s) para remessa — a lista mostra "Na fila da remessa".`); this.clearSelection(); this.load(); },
+      error: err => { this.notify.error(err?.error?.message ?? 'Erro ao enviar para remessa.'); this.load(); },
     });
   }
 

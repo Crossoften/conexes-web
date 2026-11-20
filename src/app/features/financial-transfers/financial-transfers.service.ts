@@ -86,6 +86,7 @@ export class FinancialTransfersService {
       rawAmount: r.amount ?? undefined,
       rawDate: r.operationDate ?? undefined,
       observation: r.observation ?? undefined,
+      raw: r,
     };
   }
 
@@ -101,6 +102,12 @@ export class FinancialTransfersService {
       value: brl.format(r.amount ?? 0),
       status: r.reconciled ? 'COMPLETED' : 'PENDING',
       type: 'TED',
+      bankAccountId: r.bankAccountId ?? undefined,
+      entryType: isCredit ? 'Credit' : 'Debit',
+      rawAmount: r.amount ?? undefined,
+      rawDate: r.date ?? undefined,
+      observation: r.observation ?? undefined,
+      raw: r,
     };
   }
 
@@ -122,6 +129,26 @@ export class FinancialTransfersService {
   /** FIN-001: cria a transferência (POST /v1/banking/transfers). */
   createTransfer(payload: CreateBankTransferPayload): Observable<unknown> {
     return this.http.post<unknown>(this.base, payload);
+  }
+
+  /** Card #768 (item 31): a transferência gravada, para editar. */
+  getTransfer(id: string | number): Observable<any> {
+    return this.http.get<any>(`${this.base}/${id}`);
+  }
+
+  /** Card #768 (item 31): salva a edição da transferência. */
+  updateTransfer(id: string | number, payload: Partial<CreateBankTransferPayload>): Observable<unknown> {
+    return this.http.patch<unknown>(`${this.base}/${id}`, payload);
+  }
+
+  /** Card #768 (item 38): transferência lançada a partir da linha do extrato (a linha vira a perna). */
+  createTransferFromStatement(transactionId: number, payload: CreateBankTransferPayload): Observable<unknown> {
+    return this.http.post<unknown>(`${this.baseBanking}/reconciliation/${transactionId}/transfer`, payload);
+  }
+
+  /** Card #768 (item 38): lança a linha do extrato como lançamento bancário, com a classificação. */
+  launchStatementEntry(transactionId: number, payload: Partial<CreateBankEntryPayload>): Observable<unknown> {
+    return this.http.post<unknown>(`${this.baseBanking}/reconciliation/${transactionId}/entry`, payload);
   }
 
   /** Lançamento avulso (POST /v1/banking/entries). */

@@ -19,6 +19,23 @@ export interface FinancialTransfer {
   rawAmount?: number;
   rawDate?: string;
   observation?: string;
+  // Card #768 (itens 30 e 36): o pop-up de visualizar mostra todos os campos.
+  raw?: any;
+  bankAccountId?: number;
+  entryType?: 'Credit' | 'Debit';
+}
+
+/**
+ * Card #768 (item 38): dados da linha do extrato que abrem o pop-up de novo
+ * lançamento/transferência já preenchido, sem sair da conciliação.
+ */
+export interface StatementPrefill {
+  transactionId: number;
+  bankAccountId: number;
+  type: 'Credit' | 'Debit';
+  amount: number;
+  date: string;        // ISO
+  description: string;
 }
 
 // ── FIN-001: cadastro de transferência (POST /v1/banking/transfers) ───────────
@@ -69,6 +86,8 @@ export interface CreateBankEntryPayload {
   observation?:  string;
   stakeholderId?: number;         // LB-12: fornecedor (opcional)
   accountPlanId?: number;         // LB-04: conta do plano de contas
+  costCenterId?:  number;
+  resourceNature?: string;        // Card #768 (item 35): natureza do recurso
   rateios?:       BankMovementRateio[];  // LB-05
 }
 

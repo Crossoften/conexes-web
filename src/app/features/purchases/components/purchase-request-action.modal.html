@@ -39,7 +39,8 @@
           <div class="info-item"><span class="info-label">Demandante</span><span class="info-value">{{ fmtText(request?.requester?.name) }}</span></div>
           <div class="info-item"><span class="info-label">Área do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.area ?? request?.area) }}</span></div>
           <div class="info-item"><span class="info-label">E-mail do solicitante</span><span class="info-value">{{ fmtText(request?.requester?.email) }}</span></div>
-          <div class="info-item"><span class="info-label">Projeto / Centro de Custo</span><span class="info-value">{{ fmtText((request?.project?.title ?? request?.project?.name) ?? (request?.costCenter?.name ?? request?.costCenter?.title)) }}</span></div>
+          <div class="info-item"><span class="info-label">Centro de custo</span><span class="info-value">{{ fmtText(request?.costCenter?.name ?? request?.costCenter?.title) }}</span></div>
+          <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request?.project?.title ?? request?.project?.name) }}</span></div>
         </div>
       </div>
 

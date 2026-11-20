@@ -46,17 +46,9 @@
   transition: background-color 0.2s, color 0.2s;
 
   // Modo edição: fundo branco com borda inferior
-  &--edit {
-    background-color: #ffffff;
-    color: var(--text-primary, #111827);
-    border-bottom: 1px solid var(--surface-border-mid, #E5E7EB);
-
-    .action-btn--close {
-      color: var(--text-secondary, #6B7280);
-
-      &:hover { color: var(--text-primary, #111827); }
-    }
-  }
+  // Card #768 (item 65): o pop-up de editar mantém o cabeçalho roxo e as cores do
+  // visualizar (antes ficava todo branco, só com o X).
+  &--edit { }
 }
 
 .header-content {
@@ -560,4 +552,10 @@
   background: var(--brand-purple-light, #EEF2FF); border-radius: 8px;
   font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .15s;
   &:hover { background: #E0E7FF; }
+}
+
+// Card #768 (item 13)
+.same-address {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 14px; cursor: pointer;
+  input { width: 16px; height: 16px; accent-color: var(--brand-purple, #6366F1); }
 }

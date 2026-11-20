@@ -3,7 +3,7 @@ import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { NgClass, CurrencyPipe } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import { AccountsReceivableStore } from './accounts-receivable.store';
 import { AccountsReceivableService } from './accounts-receivable.service';
@@ -12,11 +12,17 @@ import { ReceivableAccount, ReceivableFilters, FilterOption } from './accounts-r
 import { BaixaModalComponent, BaixaResult } from '../../shared/components/baixa-modal/baixa-modal.component';
 import { RenegotiateModalComponent, RenegotiateResult } from '../../shared/components/renegotiate-modal/renegotiate-modal.component';
 import { NotificationService } from '../../shared/services/notification.service';
+import { PopupShellComponent } from '../../shared/components/popup-shell/popup-shell.component';
+import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
+import { IconLegendComponent, IconLegendGroup } from '../../shared/components/icon-legend/icon-legend.component';
+import { SearchSelectComponent, SearchOption } from '../../shared/components/search-select/search-select.component';
+import { FinancialTitleFormComponent } from '../accounts-payable/form/financial-title-form.component';
+import { FinancialTitleViewComponent } from '../accounts-payable/form/financial-title-view.component';
 
 @Component({
   selector: 'app-accounts-receivable-list',
   standalone: true,
-  imports: [FormsModule, NgClass, CurrencyPipe, BaixaModalComponent, RenegotiateModalComponent],
+  imports: [FormsModule, NgClass, BaixaModalComponent, RenegotiateModalComponent, PopupShellComponent, PeriodFieldComponent, IconLegendComponent, SearchSelectComponent, FinancialTitleFormComponent, FinancialTitleViewComponent],
   providers: [AccountsReceivableStore],
   templateUrl: './accounts-receivable-list.page.html',
   styleUrl: './accounts-receivable-list.page.scss',
@@ -45,6 +51,64 @@ export class AccountsReceivableListPage implements OnInit {
   readonly optAccountPlan = signal<FilterOption[]>([]);
   readonly optProject     = signal<FilterOption[]>([]);
   readonly optCostCenter  = signal<FilterOption[]>([]);
+  /** Card #768 (item 59): atividade, que faltava, e o cliente com busca na barra. */
+  readonly optActivity    = signal<FilterOption[]>([]);
+  readonly optClienteSearch = signal<SearchOption[]>([]);
+
+  // Card #768 (item 56, cenário 35): legenda dos ícones.
+  readonly legenda: IconLegendGroup[] = [
+    { title: 'Barra de filtros', items: [
+      { icon: 'filter', name: 'Filtros', desc: 'Abre os filtros adicionais: termo, contrato a receber e classificação.' },
+      { icon: 'R', name: 'Renegociar', desc: 'Renegocia o título selecionado.' },
+      { icon: 'excel', name: 'Exportar Excel', desc: 'Exporta a lista, com os filtros aplicados, em Excel.' },
+      { icon: 'XML', name: 'Importar XML', desc: 'Importa a nota fiscal em XML.' },
+      { icon: 'upload', name: 'Upload de arquivo', desc: 'Envia um arquivo para importação.' },
+      { icon: 'calendar', name: 'Período', desc: 'Todo o período, Este mês, Mês passado, Últimos 90 dias, Este ano ou o intervalo personalizado.' },
+    ] },
+    { title: 'Ações da linha (coluna fixa)', items: [
+      { icon: 'eye', name: 'Visualizar', desc: 'Abre o título em pop-up, só para consulta.' },
+      { icon: 'check', name: 'Receber', desc: 'Registra o recebimento do título.' },
+      { icon: 'edit', name: 'Editar', desc: 'Altera as informações do título (inclusive o parcelamento).' },
+      { icon: 'copy', name: 'Copiar', desc: 'Cria um novo título a partir deste.' },
+      { icon: 'NF', name: 'Emitir nota fiscal', desc: 'Abre a emissão já com os dados do título.' },
+      { icon: 'trash', name: 'Excluir', desc: 'Exclui o título, com confirmação.' },
+    ] },
+  ];
+
+  textoRetencoes(item: ReceivableAccount): string {
+    return item.retencoes.map(r => `${r.tipo}${r.codigo ? ' (' + r.codigo + ')' : ''}: ${this.dinheiro(r.valor)} — vence ${r.vencimento}`).join('\n');
+  }
+
+  // ── Card #768 (item 58): nova/editar em pop-up, com o formulário unificado ──
+  readonly formAberto = signal<{ editId: number | null } | null>(null);
+  readonly formLista = computed(() => { const f = this.formAberto(); return f ? [f] : []; });
+  abrirNovo(): void { this.formAberto.set({ editId: null }); }
+  fecharForm(): void { this.formAberto.set(null); }
+  aoSalvarForm(editId: number | null): void {
+    this.formAberto.set(null);
+    this.notify.success(editId ? 'Conta a receber atualizada com sucesso.' : 'Conta a receber cadastrada com sucesso.');
+    this.store.load();
+  }
+  editarDaVisualizacao(r: ReceivableAccount): void { this.viewItem.set(null); this.onEdit(r); }
+  excluirDaVisualizacao(r: ReceivableAccount): void { this.viewItem.set(null); this.onDelete(r); }
+
+  /** Card #768 (item 56): Renegociar na barra, sobre o título selecionado. */
+  barRenegociar(): void {
+    const ids = this.store.selectedIds();
+    const sel = this.store.pageItems().filter(i => ids.has(i.id));
+    if (sel.length !== 1) { this.notify.info('Selecione um título na lista para renegociar.'); return; }
+    if (!sel[0].canReceive) { this.notify.error(`O ${sel[0].code} não pode ser renegociado na situação ${sel[0].status}.`); return; }
+    this.openRenegotiate(sel[0]);
+  }
+
+  readonly temFiltroFixo = computed(() => {
+    const f = this.store.filters();
+    return !!(f.status || f.dateStart || f.dateEnd || f.contractor || this.store.activeFilterCount());
+  });
+  limparFiltrosPopup(): void {
+    this.store.clearPopupFilters();
+    this.localFilters = { ...this.store.filters() };
+  }
 
   // FA-09: cadastro manual de conta a receber.
   goNew(): void { this.router.navigate(['/accounts-receivable/new']); }
@@ -106,8 +170,12 @@ export class AccountsReceivableListPage implements OnInit {
     });
     // CR-02: contratantes para o filtro, que era uma caixa de texto.
     this.svc.getContractors().subscribe({
-      next: v => this.optContractor.set(v),
+      next: v => { this.optContractor.set(v); this.optClienteSearch.set(v.map(o => ({ id: o.value, label: o.label }))); },
       error: () => this.optContractor.set([]),
+    });
+    this.lookups.getActivitiesLookup().subscribe({
+      next: v => this.optActivity.set((v as any[]).map(r => ({ value: String(r.id), label: r.name }))),
+      error: () => this.optActivity.set([]),
     });
     // CR-02/I092: termos/parcerias para o novo campo do filtro.
     this.svc.getPartnerships().subscribe({
@@ -128,7 +196,8 @@ export class AccountsReceivableListPage implements OnInit {
       next: v => this.optCostCenter.set(this.lookups.apenasAnaliticas(v as any).map((r: any) => ({ value: String(r.id), label: r.name }))),
       error: () => this.optCostCenter.set([]),
     });
-    this.http.get<any>(`${environment.apiUrl}/v1/purchases/contracts?take=500`).subscribe({
+    // Card #768 (item 57): só os contratos a receber.
+    this.http.get<any>(`${environment.apiUrl}/v1/purchases/contracts?take=500&nature=Receber`).subscribe({
       next: res => {
         const rows: any[] = Array.isArray(res) ? res : (res?.data ?? []);
         this.optContract.set(rows.map(c => ({ value: String(c.id), label: [c.number, c.title].filter(Boolean).join(' — ') || `Contrato #${c.id}` })));
@@ -167,7 +236,7 @@ export class AccountsReceivableListPage implements OnInit {
 
   localFilters: ReceivableFilters = {
     status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: '',
-    contract: '', accountPlan: '', project: '', costCenter: ''
+    contract: '', accountPlan: '', project: '', costCenter: '', activity: '',
   };
 
   /** CR-02: o intervalo precisa fechar — de depois de até não filtra nada. */
@@ -224,41 +293,17 @@ export class AccountsReceivableListPage implements OnInit {
     if (typeof p === 'number') this.store.setPage(p);
   }
 
-  /** CR-04: abre o título no formulário, em modo edição — a ação não existia. */
+  /** CR-04: abre o título no formulário, em modo edição — Card #768: em pop-up. */
   onEdit(item: ReceivableAccount) {
-    this.router.navigate(['/accounts-receivable', item.id, 'edit']);
+    this.formAberto.set({ editId: Number(item.id) });
   }
 
   // ── CR-01 / I091: as duas ações que Contas a pagar tinha e aqui faltavam ────
 
-  /** Visualizar o título sem abrir o formulário de edição. */
-  readonly viewItem = signal<any | null>(null);
-  readonly viewBusy = signal(false);
-
-  openView(item: ReceivableAccount): void {
-    this.viewBusy.set(true);
-    this.viewItem.set(null);
-    this.svc.getOne(Number(item.id)).subscribe({
-      next: r => { this.viewItem.set(r); this.viewBusy.set(false); },
-      error: err => { this.viewBusy.set(false); this.notify.error(err?.error?.message ?? 'Não foi possível abrir o título.'); },
-    });
-  }
+  /** Card #768 (item 56): visualizar no pop-up com abas (o mesmo de Contas a pagar). */
+  readonly viewItem = signal<ReceivableAccount | null>(null);
+  openView(item: ReceivableAccount): void { this.viewItem.set(item); }
   closeView(): void { this.viewItem.set(null); }
-
-  // card #720 (PG-01): tentar de novo a cobrança Asaas e mostrar o resultado no próprio detalhe.
-  readonly cobrancaBusy = signal(false);
-  gerarCobranca(r: any): void {
-    this.cobrancaBusy.set(true);
-    this.svc.retryAsaasCharge(r.id).subscribe({
-      next: atualizado => {
-        this.cobrancaBusy.set(false);
-        this.viewItem.set({ ...r, ...atualizado });
-        if (atualizado?.asaasInvoiceUrl) this.notify.success('Cobrança gerada no Asaas.');
-        else this.notify.error(`Cobrança não gerada: ${atualizado?.asaasChargeError ?? 'motivo não informado'}`);
-      },
-      error: err => { this.cobrancaBusy.set(false); this.notify.error(err?.error?.message ?? 'Não foi possível gerar a cobrança.'); },
-    });
-  }
 
   /**
    * COM-Emitir / I033 (decisão D3): a emissão de nota fiscal fica em Contas a

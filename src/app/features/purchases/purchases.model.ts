@@ -283,6 +283,10 @@ export interface PurchaseRequestItemPayload {
 }
 
 export interface CreatePurchaseRequestPayload {
+  // Card #768 (itens 14 e 16)
+  supplierJustification?: string | null;
+  supplierJustificationOther?: string | null;
+  existingContract?: boolean | null;
   title: string;
   area?: string;
   referenceNumber?: string;
@@ -351,6 +355,8 @@ export interface CreateContractPayload {
   status?: PurchaseContractStatus;
   observation?: string;
   stakeholderId?: number;
+  /** Card #768 (item 57): Pagar (fornecedor) ou Receber (cliente). */
+  nature?: string;
 }
 
 export type UpdateContractPayload = Partial<CreateContractPayload>;

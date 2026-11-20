@@ -1,40 +1,54 @@
 <!-- src/app/features/purchases/components/purchase-quotations.modal.html -->
-<div class="modal-overlay" (click)="onClose()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-
-    <!-- ── Header ─────────────────────────────────────────────────────────── -->
-    <div class="modal-header">
-      <div class="header-text">
-        <h2>Cotações</h2>
-        <p>Propostas de fornecedores para a requisição {{ requestCode }}.</p>
+<!-- Card #768 (itens 24 e 70): pop-up de Cotações no padrão (cabeçalho roxo com ícone,
+     ações só com ícone e texto ao passar o mouse, X branco). -->
+<app-popup-shell title="Cotações" [subtitle]="'Propostas dos fornecedores da requisição ' + requestCode + '.'" icon="chart" [width]="1100" [plain]="true" (close)="onClose()">
+  <ng-container popup-actions>
+    @if (canRegister) {
+      <div class="hdr-menu">
+        <button type="button" class="hdr-icon" appTooltip="Importar propostas" aria-label="Importar propostas" (click)="toggleMenu('import')">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/><path d="M4 21h16"/></svg>
+        </button>
+        @if (menu() === 'import') {
+          <div class="hdr-dropdown hdr-dropdown--wide">
+            <button type="button" (click)="downloadQuotTemplate(); menu.set(null)">Baixar modelo</button>
+            <label class="hdr-dropdown__file">
+              {{ importing() ? 'Importando…' : 'Importar propostas (Excel)' }}
+              <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImportQuotations($event); menu.set(null)" [disabled]="importing()">
+            </label>
+            <div class="hdr-dropdown__title">Lotes de upload</div>
+            @for (b of batches(); track b.id) {
+              <div class="batch-row">
+                <span><strong>{{ b.fileName || 'Importação' }}</strong><small>{{ fmtDateTime(b.createdAt) }} · {{ b.summary }}</small></span>
+                <button type="button" class="batch-del" title="Excluir lote (desfaz a importação)" aria-label="Excluir lote" (click)="removeBatch(b)">
+                  <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+            } @empty { <p class="batch-empty">Nenhuma importação nesta requisição.</p> }
+          </div>
+        }
       </div>
-      <!-- DOC-COT + item 18: exportar o documento/mapa da cotação -->
-      <button type="button" class="btn-outline btn-outline--orange" style="padding:7px 12px; margin-right:8px;" (click)="downloadCotacaoPdf()" [disabled]="exportingPdf()">
-        {{ exportingPdf() ? 'Gerando…' : 'Exportar cotação (PDF)' }}
+    }
+    <div class="hdr-menu">
+      <button type="button" class="hdr-icon" appTooltip="Exportar cotação" aria-label="Exportar cotação" (click)="toggleMenu('export')">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/><path d="M4 21h16"/></svg>
       </button>
-      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      @if (menu() === 'export') {
+        <div class="hdr-dropdown">
+          <button type="button" (click)="downloadCotacaoPdf(); menu.set(null)" [disabled]="exportingPdf()">{{ exportingPdf() ? 'Gerando…' : 'Baixar PDF' }}</button>
+          <button type="button" (click)="downloadCotacaoXls(); menu.set(null)" [disabled]="exportingXls()">{{ exportingXls() ? 'Gerando…' : 'Baixar XLS (Excel)' }}</button>
+        </div>
+      }
     </div>
+  </ng-container>
 
-    <div class="modal-body">
-
+    <div class="q-body">
       @if (error()) {
         <div class="modal-error"><p>{{ error() }}</p></div>
       }
 
       <!-- ── Ação: registrar proposta (Etapa 3) ─────────────────────────── -->
       @if (canRegister) {
-        <div class="q-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <!-- item 12/16: a proposta é registrada pela ação na linha de cada fornecedor da requisição (sem lista geral). -->
-          <span style="font-size:13px; color:var(--text-secondary,#6B7280); margin-right:auto;">Registre a proposta pela ação na linha de cada fornecedor.</span>
-          <!-- CP-36: importar propostas por planilha -->
-          <button type="button" class="btn-outline btn-outline--orange" (click)="downloadQuotTemplate()" style="padding:8px 12px;">Baixar modelo</button>
-          <label class="btn-outline btn-outline--orange" style="padding:8px 12px; cursor:pointer;">
-            {{ importing() ? 'Importando…' : 'Importar propostas (Excel)' }}
-            <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="onImportQuotations($event)" [disabled]="importing()">
-          </label>
-        </div>
+        <p class="q-hint">Registre a proposta pelo lápis na linha de cada fornecedor; copie o link do portal ou envie por e-mail.</p>
 
         @if (showForm()) {
           <form class="q-form" [formGroup]="form" (ngSubmit)="submit()">
@@ -109,8 +123,8 @@
                 <th class="right">Desconto</th>
                 <th>Prazo</th>
                 <th>Condições</th>
-                <th>Status</th>
-                @if (canApproveQuote || canRegister) { <th class="right">Ações</th> }
+                <th class="center">Status</th>
+                @if (canApproveQuote || canRegister) { <th class="center">Ações</th> }
               </tr>
             </thead>
             <tbody>
@@ -123,13 +137,20 @@
                   <td class="right">{{ q.discount != null ? fmtCurrency(q.discount) : '—' }}</td>
                   <td>{{ q.deliveryTime || '—' }}</td>
                   <td>{{ q.paymentConditions || '—' }}</td>
-                  <td><span class="q-badge q-badge--{{ rowStatusVariant(q) }}">{{ rowStatusLabel(q) }}</span></td>
+                  <td class="center"><span class="q-badge q-badge--{{ rowStatusVariant(q) }}">{{ rowStatusLabel(q) }}</span></td>
                   @if (canApproveQuote || canRegister) {
-                    <td class="right">
+                    <td class="center q-actions">
                       <!-- item 16: registrar/editar a proposta do fornecedor da linha (Etapa 3). -->
                       @if (canRegister) {
-                        <button type="button" class="q-icon q-icon--ok" [title]="isAwaitingProposal(q) ? 'Registrar proposta' : 'Editar proposta'" (click)="openProposal(q)">
+                        <button type="button" class="q-icon" [appTooltip]="isAwaitingProposal(q) ? 'Registrar proposta' : 'Editar proposta'" [attr.aria-label]="isAwaitingProposal(q) ? 'Registrar proposta' : 'Editar proposta'" (click)="openProposal(q)">
                           <svg viewBox="0 0 20 20" fill="none" width="15" height="15"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <!-- Card #768 (item 24): link do portal de cotação deste fornecedor. -->
+                        <button type="button" class="q-icon" appTooltip="Copiar link do portal" aria-label="Copiar link do portal" (click)="copyLink(q)" [disabled]="!inviteOf(q)">
+                          <svg viewBox="0 0 24 24" fill="none" width="15" height="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </button>
+                        <button type="button" class="q-icon" [appTooltip]="inviteOf(q)?.emailedAt ? 'Reenviar o portal por e-mail' : 'Enviar o portal por e-mail'" aria-label="Enviar o portal por e-mail" (click)="emailLink(q)" [disabled]="!inviteOf(q) || sendingInvite() === q.supplierId">
+                          <svg viewBox="0 0 24 24" fill="none" width="15" height="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
                         </button>
                       }
                       <!-- COM-Adjudicação/I017 (D1): aprovar a proposta a torna ELEGÍVEL
@@ -156,5 +177,4 @@
         </div>
       }
     </div>
-  </div>
-</div>
+</app-popup-shell>

@@ -193,9 +193,15 @@ export class ChartOfAccountsListPage implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+  /** Card #768 (item 2): níveis permitidos (Configurações gerais). */
+  readonly maxLevels = signal(5);
+  levelOf(node: any): number { return String(node?.levelNumber ?? node?.code ?? '').split('.').filter(Boolean).length || 1; }
+  canAddChild(node: any): boolean { return this.levelOf(node) < this.maxLevels(); }
+
   ngOnInit(): void {
     this.loadTree();
     this.loadCostCenters();
+    this.svc.maxLevels().subscribe({ next: n => this.maxLevels.set(n), error: () => {} });
   }
 
   // ── Search ────────────────────────────────────────────────────────────────

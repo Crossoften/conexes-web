@@ -58,8 +58,16 @@ export class BudgetNewPage implements OnInit {
   // Card #720 (FN-07): /v1/projects devolve centros de custo E projetos, de tabelas diferentes
   // (ids podem coincidir). O valor da opção leva o tipo — "cc:22" / "pr:18" — e o envio separa
   // costCenterId de projectId; antes o centro de custo ia como projectId e a API dava 400.
+  // Card #768 (item 64): centro de custo, projeto e atividade em campos próprios.
+  centros: { id: string; nome: string }[] = [];
   projetos: { id: string; nome: string }[] = [];
   atividades: { id: string; nome: string }[] = [];
+  readonly formasAcompanhamento = [
+    { ctrl: 'acompCategoria', rotulo: 'Categoria' },
+    { ctrl: 'acompCentro', rotulo: 'Centro de custo' },
+    { ctrl: 'acompProjeto', rotulo: 'Projeto' },
+    { ctrl: 'acompAtividade', rotulo: 'Atividade' },
+  ];
   readonly errorMsg = signal<string | null>(null);
   // OR-01: contas analíticas do plano de contas, para as rubricas do orçamento.
   contas: AccountPlanOption[] = [];
@@ -78,15 +86,16 @@ export class BudgetNewPage implements OnInit {
       mesFim: ['', Validators.required],
       anoFim: ['', Validators.required],
 
-      // Projeto/Centro de custo (padrão aplicado às rubricas que não especificarem)
-      projetoCentroCusto: [''],
-      subprojeto: [''],
-      atividade: [''],
+      // Card #768 (item 64): classificação padrão aplicada às rubricas que não especificarem
+      categoriaPadrao: [''],
+      centroPadrao: [''],
+      projetoPadrao: [''],
+      atividadePadrao: [''],
 
       // Formas de acompanhamento
       acompCategoria: [false],
+      acompCentro: [false],
       acompProjeto: [false],
-      acompSubprojeto: [false],
       acompAtividade: [false],
 
       // Restringir movimentações
@@ -108,8 +117,10 @@ export class BudgetNewPage implements OnInit {
 
   private newItem(): FormGroup {
     return this.fb.group({
-      contaPlano: [''],
-      projetoItem: [''],
+      categoria: [''],
+      centro: [''],
+      projeto: [''],
+      atividade: [''],
       valor: [null, [Validators.required, Validators.min(0.01)]],
     });
   }
@@ -123,25 +134,16 @@ export class BudgetNewPage implements OnInit {
   }
 
   ngOnInit(): void {
-    // FA-10: carrega Projeto/Centro de Custo e Atividade do cadastro existente.
+    // Card #768 (item 64): centro de custo, projeto e atividade, cada um no seu campo.
     this.http.get<any>(`${environment.apiUrl}/v1/projects?take=1000`).subscribe({
       next: (res) => {
         const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
         const nome = (p: any) => `${p.code ? p.code + ' — ' : ''}${p.name ?? p.title ?? `#${p.id}`}`;
         // CC-01: só as analíticas recebem lançamento (o back recusa a sintética com 400).
         const analitica = (p: any) => p.classification !== 'Sintetica';
-        this.projetos = [
-          ...list.filter(p => p._entityType === 'cost_center' && analitica(p))
-            .map(p => ({ id: `cc:${p.id}`, nome: `Centro de custo: ${nome(p)}` })),
-          ...list.filter(p => p._entityType === 'project' && analitica(p))
-            .map(p => ({ id: `pr:${p.id}`, nome: `Projeto: ${nome(p)}` })),
-          // atividade também é registro de projeto (kind Atividade) e já era aceita como projectId
-          ...list.filter(p => p._entityType === 'activity' && analitica(p))
-            .map(p => ({ id: `pr:${p.id}`, nome: `Atividade: ${nome(p)}` })),
-        ];
-        this.atividades = list
-          .filter(p => p._entityType === 'activity' && analitica(p))
-          .map(p => ({ id: `pr:${p.id}`, nome: nome(p) }));
+        this.centros = list.filter(p => p._entityType === 'cost_center' && analitica(p)).map(p => ({ id: String(p.id), nome: nome(p) }));
+        this.projetos = list.filter(p => p._entityType === 'project' && analitica(p)).map(p => ({ id: String(p.id), nome: nome(p) }));
+        this.atividades = list.filter(p => p._entityType === 'activity' && analitica(p)).map(p => ({ id: String(p.id), nome: nome(p) }));
       },
       error: () => {},
     });
@@ -156,8 +158,8 @@ export class BudgetNewPage implements OnInit {
   resetForm() {
     this.form.reset({
       acompCategoria: false,
+      acompCentro: false,
       acompProjeto: false,
-      acompSubprojeto: false,
       acompAtividade: false,
       restringirMovimentacoes: false,
     });
@@ -173,19 +175,23 @@ export class BudgetNewPage implements OnInit {
     const anoF = Number(v.anoFim), mesF = Number(v.mesFim);
     const lastDay = new Date(anoF, mesF, 0).getDate(); // último dia do mês fim
 
+    // Card #768 (item 64): cada rubrica leva Categoria, Centro de custo, Projeto e
+    // Atividade; em branco, vale a classificação padrão.
     const items = this.itens.controls.map((c) => {
       const iv = c.value;
       const item: any = { amount: Number(iv.valor) || 0 };
-      const conta = Number(iv.contaPlano);
-      if (conta) item.accountPlanId = conta;
-      const [tipo, idTxt] = String(iv.projetoItem || v.projetoCentroCusto || '').split(':');
-      const alvo = Number(idTxt);
-      if (alvo && tipo === 'cc') item.costCenterId = alvo;
-      if (alvo && tipo === 'pr') item.projectId = alvo;
-      const [subTipo, subId] = String(v.subprojeto || '').split(':');
-      if (subTipo === 'pr' && Number(subId)) item.subProjectId = Number(subId);
-      const atv = this.atividades.find((a) => String(a.id) === String(v.atividade));
-      if (atv) item.activity = atv.nome;
+      const num = (x: any) => (x ? Number(x) : undefined);
+      const categoria = num(iv.categoria || v.categoriaPadrao);
+      const centro = num(iv.centro || v.centroPadrao);
+      const projeto = num(iv.projeto || v.projetoPadrao);
+      const atividade = num(iv.atividade || v.atividadePadrao);
+      if (categoria) item.accountPlanId = categoria;
+      if (centro) item.costCenterId = centro;
+      if (projeto) item.projectId = projeto;
+      if (atividade) {
+        item.subProjectId = atividade;
+        item.activity = this.atividades.find(a => Number(a.id) === atividade)?.nome;
+      }
       return item;
     });
 

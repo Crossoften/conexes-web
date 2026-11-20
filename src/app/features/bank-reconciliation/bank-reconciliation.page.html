@@ -2,99 +2,42 @@
 
   <h1 class="page-title">Conciliação bancária</h1>
 
+  <!-- Card #768 (item 37, cenários 24 e 25): a conta fica como está; o período vira
+       um campo só; Conciliar automaticamente, Importar extrato, Importar do banco e
+       Lotes de upload viram ícones com o nome ao passar o mouse. -->
   <div class="global-filters">
     <div class="select-wrap">
       <select class="select select--pill" [value]="store.selectedAccountId()" (change)="store.selectAccount(+$any($event.target).value)">
         @if (store.accounts().length === 0) { <option value="">Nenhuma conta bancária</option> }
         @for (a of store.accounts(); track a.id) {
-          <option [value]="a.id">{{ a.name }} — {{ a.pendingCount }} pendente(s)</option>
+          <option [value]="a.id" [selected]="a.id === store.selectedAccountId()">{{ a.name }} — {{ a.pendingCount }} pendente(s)</option>
         }
       </select>
     </div>
 
-    <div class="select-wrap">
-      <select class="select select--pill" [value]="store.filters().period" (change)="aoEscolherAtalho($any($event.target).value)">
-        @for (opt of periodOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-      </select>
-    </div>
+    <app-period-field [start]="store.filters().customStart" [end]="store.filters().customEnd" (periodChange)="store.setPeriodo($event.start, $event.end)"></app-period-field>
 
-      <!-- CB-05 / I061: um calendário SÓ, de intervalo — um clique marca o início, o
-           seguinte marca o fim e o período é aplicado quando o intervalo fecha.
-           O calendário fica sempre à mão: antes era preciso escolher "Personalizado"
-           no seletor para ele aparecer, e essa etapa é justamente o que o pedido
-           dispensa ("não há etapa de período personalizado"). O seletor ao lado
-           continua existindo só como atalho (este mês, mês passado...). -->
-      <div class="range-wrap">
-        <button type="button" class="select select--pill range-btn" (click)="abrirCalendario()" aria-label="Escolher intervalo de datas">
-          <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <span>{{ rotuloIntervalo() }}</span>
-        </button>
-
-        @if (calendarioAberto()) {
-          <div class="range-cal">
-            <div class="range-cal__head">
-              <button type="button" class="range-cal__nav" (click)="mesAnterior()" aria-label="Mês anterior">‹</button>
-              <span class="range-cal__mes">{{ rotuloMes() }}</span>
-              <button type="button" class="range-cal__nav" (click)="mesProximo()" aria-label="Próximo mês">›</button>
-            </div>
-            <div class="range-cal__semana">
-              @for (d of diasSemana; track $index) { <span>{{ d }}</span> }
-            </div>
-            <div class="range-cal__grid">
-              @for (d of diasDoMes(); track d.iso) {
-                <button type="button" class="range-cal__dia"
-                        [class.range-cal__dia--fora]="!d.noMes"
-                        [class.range-cal__dia--hoje]="d.hoje"
-                        [class.range-cal__dia--ini]="d.inicio"
-                        [class.range-cal__dia--fim]="d.fim"
-                        [class.range-cal__dia--entre]="d.entre"
-                        (click)="clicarDia(d.iso)">{{ d.dia }}</button>
-              }
-            </div>
-            <div class="range-cal__pe">
-              <span class="range-cal__resumo">
-                {{ inicioSel() ? dataBR(inicioSel()) : 'Data inicial' }} → {{ fimSel() ? dataBR(fimSel()) : 'Data final' }}
-              </span>
-              <button type="button" class="btn-outline btn-sm" (click)="limparIntervalo()">Limpar</button>
-            </div>
-          </div>
-        }
-      </div>
-
-    <div class="select-wrap">
-      <select class="select select--pill" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
-        @for (opt of typeOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
-      </select>
-    </div>
-
-    <!-- CB-07/I063, CB-08/I064 e CB-09/I065: o "Conciliar automaticamente" não tinha
-         ação nenhuma, e não havia como trazer extrato (nem arquivo, nem do banco). -->
-    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.painelAuto()" (click)="store.abrirPainelAuto()">
-      Conciliar automaticamente
+    <button type="button" class="tool-btn" data-tip="Conciliar automaticamente" aria-label="Conciliar automaticamente" (click)="store.abrirPainelAuto()">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8l1.4 1.4M17.8 6.2l1.4-1.4M12.2 6.2l-1.4-1.4"/><path d="M15 9l-12 12"/></svg>
     </button>
-
-    <label class="btn-outline btn-pill btn-pill--file">
-      {{ store.importBusy() ? 'Importando extrato…' : 'Importar extrato (OFX/Excel)' }}
+    <label class="tool-btn" [attr.data-tip]="store.importBusy() ? 'Importando extrato…' : 'Importar extrato (OFX/Excel)'" aria-label="Importar extrato (OFX/Excel)">
+      @if (store.importBusy()) { <span class="spin" aria-hidden="true"></span> }
+      @else { <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/><line x1="5" y1="21" x2="19" y2="21"/></svg> }
       <input type="file" accept=".ofx,.OFX,.qfx,.xls,.xlsx" hidden (change)="onImportarExtrato($event)">
     </label>
-
-    <button type="button" class="btn-outline btn-pill" [disabled]="store.bancoBusy()" (click)="store.importarDoBanco()">
-      {{ store.bancoBusy() ? 'Consultando o banco…' : 'Importar do banco (período)' }}
+    <button type="button" class="tool-btn" [attr.data-tip]="store.bancoBusy() ? 'Consultando o banco…' : 'Importar do banco (período)'" aria-label="Importar do banco (período)" [disabled]="store.bancoBusy()" (click)="store.importarDoBanco()">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 20h18"/></svg>
     </button>
-
-    <button type="button" class="btn-outline btn-pill" [class.btn-pill--on]="store.lotesVisiveis()" (click)="store.alternarLotes()">
-      Importações
+    <button type="button" class="tool-btn" data-tip="Lotes de upload" aria-label="Lotes de upload" (click)="store.alternarLotes()">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><polyline points="3 3 3 8 8 8"/><polyline points="12 7 12 12 15 14"/></svg>
     </button>
   </div>
 
   <!-- CB-07 / I063: a regra aparece ANTES de executar — era o que faltava para o
        usuário saber por qual critério o sistema ia casar extrato e títulos. -->
   @if (store.painelAuto()) {
-    <div class="card painel">
-      <div class="painel__head">
-        <h3 class="painel__titulo">{{ store.regraAuto()?.titulo || 'Conciliação automática' }}</h3>
-        <button type="button" class="painel__fechar" (click)="store.fecharPainelAuto()" aria-label="Fechar">×</button>
-      </div>
+    <app-popup-shell title="Conciliar automaticamente" [subtitle]="store.regraAuto()?.titulo || 'Como a conciliação automática decide'" icon="default" [width]="760" [closeOnBackdrop]="true" (close)="store.fecharPainelAuto()">
+      <div class="painel painel--popup">
 
       @if (store.regraAuto()) {
         <ol class="painel__regra">
@@ -134,7 +77,8 @@
           </ul>
         }
       }
-    </div>
+      </div>
+    </app-popup-shell>
   }
 
   <!-- CB-08 / I064: o resultado da importação do banco, inclusive quando a conta
@@ -145,56 +89,43 @@
     </div>
   }
 
-  <!-- CB-09 / I065: resultado da importação de arquivo, linha por linha. -->
-  @if (store.importResultado(); as imp) {
-    <div class="card painel">
-      <div class="painel__head">
-        <h3 class="painel__titulo">Extrato importado — {{ imp.arquivo }} ({{ imp.formato }})</h3>
-        @if (imp.batchId) {
-          <button type="button" class="btn-outline btn-sm" [disabled]="store.loteBusy() === imp.batchId" (click)="store.desfazerLote(imp.batchId!)">
-            {{ store.loteBusy() === imp.batchId ? 'Desfazendo…' : 'Desfazer esta importação' }}
-          </button>
-        }
-      </div>
-      <p class="painel__mensagem">
-        {{ imp.total }} movimento(s) no arquivo · {{ imp.success }} importado(s) · {{ imp.failed }} não importado(s).
-      </p>
-      @if (imp.results.length) {
-        <ul class="painel__lista">
-          @for (l of imp.results; track $index) {
-            <li [class.painel__linha--erro]="l.status !== 'success'">Linha {{ l.row }}: {{ l.message }}</li>
-          }
-        </ul>
-      }
-    </div>
-  }
-
-  <!-- CB-09 / I065: os lotes de extrato e o Desfazer (mesma infra de lote do TR-14). -->
+  <!-- Card #768 (item 37, cenário 26): Lotes de upload em pop-up — a última importação
+       e a lista de extratos importados (antes eram dois quadros repetidos na tela). -->
   @if (store.lotesVisiveis()) {
-    <div class="card painel">
-      <div class="painel__head">
-        <h3 class="painel__titulo">Extratos importados</h3>
-        <button type="button" class="painel__fechar" (click)="store.alternarLotes()" aria-label="Fechar">×</button>
-      </div>
+    <app-popup-shell title="Lotes de upload" subtitle="Extratos importados: veja e desfaça as importações." icon="doc" [width]="900" [closeOnBackdrop]="true" (close)="store.alternarLotes()">
+      @if (store.importResultado(); as imp) {
+        <div class="ultima">
+          <h4 class="ultima__titulo">Última importação: {{ imp.arquivo }} ({{ imp.formato }})</h4>
+          <p class="ultima__resumo">{{ imp.total }} movimento(s) no arquivo · {{ imp.success }} importado(s) · {{ imp.failed }} não importado(s)</p>
+          @if (imp.results.length) {
+            <ul class="ultima__lista">
+              @for (l of imp.results; track $index) {
+                <li [class.ultima__erro]="l.status !== 'success'">Linha {{ l.row }}: {{ l.message }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
       @if (store.lotes().length) {
         <table class="painel__tabela">
           <thead>
-            <tr><th>#</th><th>Arquivo</th><th>Quando</th><th>Quem</th><th>Importados</th><th>Restantes</th><th></th></tr>
+            <tr><th>#</th><th>Arquivo</th><th>Quando</th><th>Quem</th><th>Importados</th><th>Restantes</th><th class="acoes">Ações</th></tr>
           </thead>
           <tbody>
             @for (l of store.lotes(); track l.id) {
               <tr>
                 <td>{{ l.id }}</td>
-                <td>{{ l.fileName }}</td>
+                <td><strong>{{ l.fileName }}</strong></td>
                 <td>{{ dataBR(l.createdAt) }}</td>
                 <td>{{ l.user?.name || '—' }}</td>
                 <td>{{ l.success }} de {{ l.total }}</td>
                 <td>{{ l.restantes }}</td>
-                <td>
-                  <button type="button" class="btn-outline btn-sm"
+                <td class="acoes">
+                  <button type="button" class="tool-btn tool-btn--sm" [attr.data-tip]="l.restantes === 0 ? 'Já desfeito' : 'Desfazer a importação'"
+                          [attr.aria-label]="'Desfazer a importação ' + l.id"
                           [disabled]="store.loteBusy() === l.id || l.restantes === 0"
-                          (click)="store.desfazerLote(l.id)">
-                    {{ store.loteBusy() === l.id ? 'Desfazendo…' : (l.restantes === 0 ? 'Já desfeito' : 'Desfazer') }}
+                          (click)="desfazer(l.id)">
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </button>
                 </td>
               </tr>
@@ -204,49 +135,8 @@
       } @else {
         <p class="painel__nota">Nenhum extrato importado nesta empresa ainda.</p>
       }
-    </div>
+    </app-popup-shell>
   }
-
-  <!-- CB-01/I058: "A posição das contas lista as contas com o conciliado, o pendente
-       e a contagem de pendências." A tela mostrava só a conta selecionada e o saldo;
-       a contagem aparecia apenas no nome dentro do seletor. Agora cada conta tem a
-       sua linha, com os três números, e clicar na linha abre a conta. -->
-  <div class="card posicao-contas">
-    <h3 class="posicao-contas__titulo">Posição das contas</h3>
-    <div class="table-wrap">
-      <table class="table posicao-contas__tabela">
-        <thead>
-          <tr>
-            <th class="th">Conta</th>
-            <th class="th th--num">Conciliado</th>
-            <th class="th th--num">Pendente</th>
-            <th class="th th--num">Pendências</th>
-            <th class="th th--num">Saldo</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (a of store.accounts(); track a.id) {
-            <tr class="tr posicao-contas__linha"
-                [class.posicao-contas__linha--ativa]="a.id === store.selectedAccountId()"
-                (click)="store.selectAccount(a.id)">
-              <td class="td">{{ a.name }}</td>
-              <td class="td td--num">{{ dinheiro(a.conciliated) }}</td>
-              <td class="td td--num">{{ dinheiro(a.pending) }}</td>
-              <td class="td td--num">
-                <span class="posicao-contas__badge" [class.posicao-contas__badge--zero]="!a.pendingCount">
-                  {{ a.pendingCount }}
-                </span>
-              </td>
-              <td class="td td--num">{{ dinheiro(a.balance) }}</td>
-            </tr>
-          }
-          @if (!store.accounts().length) {
-            <tr class="tr"><td class="td" colspan="5" style="text-align:center;padding:24px;color:var(--text-secondary);">Nenhuma conta bancária cadastrada.</td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
 
   <div class="summary-cards-grid">
     <div class="summary-card">
@@ -283,10 +173,21 @@
       <button class="tab-btn" [class.active]="store.activeTab() === 'MOVEMENTS'" (click)="store.setTab('MOVEMENTS')">Movimentações</button>
     </div>
 
+    <!-- Card #768 (item 40): filtro de tipo e de status ao lado da busca. -->
     <div class="inner-search-section">
       <div class="search-wrap">
         <input class="search search--bg-gray" type="text" placeholder="Buscar lançamento" [value]="store.filters().itemSearch" (input)="onItemSearch($any($event.target).value)">
         <svg class="search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="select-wrap">
+        <select class="select select--pill" title="Tipo" [value]="store.filters().type" (change)="store.setType($any($event.target).value)">
+          @for (opt of typeOptions; track opt.value) { <option [value]="opt.value" [selected]="opt.value === store.filters().type">{{ opt.label }}</option> }
+        </select>
+      </div>
+      <div class="select-wrap">
+        <select class="select select--pill" title="Status" [value]="store.filters().status" (change)="store.setStatus($any($event.target).value)">
+          @for (opt of statusOptions; track opt.value) { <option [value]="opt.value" [selected]="opt.value === store.filters().status">{{ opt.label }}</option> }
+        </select>
       </div>
     </div>
 
@@ -300,11 +201,16 @@
               <div class="accordion-left">
                 <span class="accordion-date">{{ item.date }}</span>
                 <span class="accordion-day">{{ item.dayOfWeek }}</span>
-                @if (store.activeTab() === 'MOVEMENTS' || store.expandedIds().has(item.id)) {
-                  <span class="accordion-desc">{{ item.description }}</span>
-                }
+                <!-- Card #768 (cenário 24): a descrição do extrato aparece já na linha recolhida. -->
+                <span class="accordion-desc">{{ item.description }}</span>
               </div>
               <div class="accordion-right">
+                <span class="tipo-badge" [class.tipo-badge--credito]="item.type === 'Credit'" [class.tipo-badge--debito]="item.type !== 'Credit'">
+                  {{ item.type === 'Credit' ? 'Crédito (entrada)' : 'Débito (saída)' }}
+                </span>
+                @if (store.activeTab() === 'MOVEMENTS') {
+                  <span class="status-badge" [class.status-badge--ok]="item.reconciled">{{ item.reconciled ? 'Conciliado' : 'Não conciliado' }}</span>
+                }
                 <span class="accordion-amount">{{ item.amount }}</span>
                 <button class="accordion-chevron" [class.open]="store.expandedIds().has(item.id)">
                   <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -328,8 +234,21 @@
                       <div class="form-header">
                         <h4 class="form-title">Lançamento Conex3s</h4>
                         <div class="form-header-actions">
-                          <button class="btn-outline btn-outline--orange btn-sm" (click)="goNewEntry()">Novo lançamento</button>
-                          <button class="btn-outline btn-outline--orange btn-sm" (click)="goNewTransfer()">Nova transferência</button>
+                          @if (item.fromStatement) {
+                            <button class="btn-outline btn-outline--orange btn-sm" (click)="abrirLancamento(item)">Novo lançamento</button>
+                            <button class="btn-outline btn-outline--orange btn-sm" (click)="abrirTransferencia(item)">Nova transferência</button>
+                          }
+                          <!-- Card #768 (item 39): seta para baixo (débito) → Contas a pagar;
+                               seta para cima (crédito) → Contas a receber. -->
+                          @if (item.type === 'Credit') {
+                            <button type="button" class="tool-btn tool-btn--sm" data-tip="Lançar em Contas a receber" aria-label="Lançar em Contas a receber" (click)="abrirConta(item)">
+                              <svg viewBox="0 0 24 24" fill="none" width="15" height="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                            </button>
+                          } @else {
+                            <button type="button" class="tool-btn tool-btn--sm" data-tip="Lançar em Contas a pagar" aria-label="Lançar em Contas a pagar" (click)="abrirConta(item)">
+                              <svg viewBox="0 0 24 24" fill="none" width="15" height="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            </button>
+                          }
                         </div>
                       </div>
 
@@ -500,4 +419,19 @@
       </div>
     </div>
   </div>
+
+  <app-icon-legend [groups]="legenda"></app-icon-legend>
 </div>
+
+<!-- Card #768 (item 38, cenário 27): os pop-ups abrem sem sair da conciliação, já
+     preenchidos com os dados do extrato. -->
+@if (popupLancamento(); as p) {
+  <app-popup-shell title="Novo lançamento bancário" subtitle="Preencha todas as informações necessárias." icon="money" [width]="1080" (close)="popupLancamento.set(null)">
+    <app-financial-entry-new [embedded]="true" [prefill]="p" (saved)="aoLancar('Lançamento salvo e movimento conciliado.')" (cancelled)="popupLancamento.set(null)"></app-financial-entry-new>
+  </app-popup-shell>
+}
+@if (popupTransferencia(); as p) {
+  <app-popup-shell title="Nova transferência" subtitle="Preencha todas as informações necessárias." icon="transfer" [width]="1080" (close)="popupTransferencia.set(null)">
+    <app-financial-transfer-new [embedded]="true" [prefill]="p" [statementTransactionId]="p.transactionId" (saved)="aoLancar('Transferência salva e movimento conciliado.')" (cancelled)="popupTransferencia.set(null)"></app-financial-transfer-new>
+  </app-popup-shell>
+}

@@ -49,6 +49,8 @@ function toRow(r: PurchaseRequest): Quotation {
     title:        r.title,
     costCenter:   r.costCenter?.name ?? '—',
     group:        '—',
+    // Card #768 (item 21): o projeto da requisição, para o filtro "Selecione o projeto".
+    project:      (r as any).project?.title ?? (r as any).project?.name ?? '',
     requester:    r.requester?.name ?? '—',
     buyer:        r.buyer?.name ?? '—',
     requestDate:  formatDate(r.requestDate),
@@ -101,8 +103,8 @@ export class QuotationsStore {
     return this.state().items.filter(q =>
       (!search    || q.title.toLowerCase().includes(s) || q.typeId.toLowerCase().includes(s)) &&
       (!status    || q.reqStatus === status) &&
-      (!requester || q.requester.toLowerCase().includes(requester.toLowerCase())) &&
-      (!project   || q.group.toLowerCase().includes(project.toLowerCase())),
+      (!requester || q.requester === requester) &&
+      (!project   || q.project === project),
     );
   });
 
@@ -236,6 +238,26 @@ export class QuotationsStore {
 
   /** Após adjudicar, a requisição migra de etapa — recarrega a lista. */
   onAwarded(): void { this.awardFor.set(null); this.reload(); }
+
+  // ── Card #768 (item 25): tela única de análise e adjudicação da Etapa 4 ─────────
+  readonly analysisFor = signal<{ id: number; code: string } | null>(null);
+  openAnalysis(item: Quotation): void { this.analysisFor.set({ id: item.apiId, code: item.typeId }); }
+  closeAnalysis(): void { this.analysisFor.set(null); }
+  onAnalysisAwarded(): void { this.analysisFor.set(null); this.reload(); }
+
+  // ── Card #768 (item 21): opções dos filtros de requisitante e projeto ──────────
+  readonly requesterOptions = signal<string[]>([]);
+  readonly projectOptions   = signal<string[]>([]);
+  loadFilterOptions(): void {
+    this.svc.getUsersLookup().subscribe({
+      next: u => this.requesterOptions.set([...new Set(u.map(x => x.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))),
+      error: () => {},
+    });
+    this.svc.getProjectsLookup().subscribe({
+      next: p => this.projectOptions.set([...new Set(p.map(x => x.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))),
+      error: () => {},
+    });
+  }
 
   // ── Modal do Mapa de Cotação (I023) ──────────────────────────────────────────
   // O mapa abre DENTRO de Cotações, como modal, sem trocar de tela. A rota

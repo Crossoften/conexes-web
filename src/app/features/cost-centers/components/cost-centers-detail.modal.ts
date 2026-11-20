@@ -3,7 +3,9 @@ import { Component, EventEmitter, Input, Output, OnChanges, OnInit, inject, sign
 import { NgClass, SlicePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, LinkedAccount, resolveEntityType, ENTITY_KINDS } from '../cost-centers.model';
+import { CostCenter, CostCenterPayload, CostCenterStatus, COST_CENTER_STATUS_CONFIG, COST_CENTER_TYPE_LABELS, LinkedAccount, resolveEntityType, entityKindOf, ENTITY_KINDS } from '../cost-centers.model';
+import { PopupShellComponent } from '../../../shared/components/popup-shell/popup-shell.component';
+import { BankAccountNewPage } from '../../bank-accounts/new/bank-account-new.page';
 import { CostCentersService } from '../cost-centers.service';
 import { environment } from '../../../../environments/environment';
 
@@ -22,7 +24,7 @@ interface EntityItem {
 @Component({
   selector: 'app-cost-centers-detail-modal',
   standalone: true,
-  imports: [NgClass, SlicePipe, ReactiveFormsModule, FormsModule],
+  imports: [NgClass, SlicePipe, ReactiveFormsModule, FormsModule, PopupShellComponent, BankAccountNewPage],
   templateUrl: './cost-centers-detail.modal.html',
   styleUrl: './cost-centers-detail.modal.scss',
 })
@@ -48,6 +50,10 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   readonly bankAccounts  = signal<any[]>([]);   // CC-04: contas bancárias p/ a composição vinculada
   readonly entities      = signal<EntityItem[]>([]);
   readonly loadingLists  = signal(true);
+  /** Card #768: superiores possíveis (centros de custo e projetos) e pop-up de conta bancária. */
+  readonly costCenters   = signal<{ id: number; code: string; name: string; classification: string }[]>([]);
+  readonly projects      = signal<{ id: number; code: string; name: string }[]>([]);
+  readonly showBankPopup = signal(false);
 
   // Contas vinculadas no modo edição
   linkedAccounts: LinkedAccount[] = [];
@@ -87,10 +93,17 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     });
 
     // CC-04: contas bancárias para a composição de contas vinculadas.
-    this.http.get<any[] | { data?: any[] }>(
-      `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
-    ).subscribe({
-      next: res => { this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []); },
+    this.loadBankAccounts();
+
+    // Card #768: listas para o campo "superior" (centro de custo / projeto pai).
+    this.http.get<any[] | { data?: any[] }>(`${environment.apiUrl}/v1/projects`, { params: { take: '2000' } }).subscribe({
+      next: res => {
+        const all = Array.isArray(res) ? res : res?.data ?? [];
+        this.costCenters.set(all.filter((r: any) => r._entityType === 'cost_center')
+          .map((c: any) => ({ id: Number(c.id), code: c.code, name: c.name ?? c.title, classification: c.classification })));
+        this.projects.set(all.filter((r: any) => r._entityType === 'project')
+          .map((c: any) => ({ id: Number(c.id), code: c.code, name: c.title ?? c.name })));
+      },
       error: () => {},
     });
 
@@ -128,9 +141,47 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
 
   // ── Form ──────────────────────────────────────────────────────────────────
 
+  private loadBankAccounts(selectId?: number): void {
+    this.http.get<any[] | { data?: any[] }>(
+      `${environment.apiUrl}/v1/institutional/bank-accounts`, { params: { take: '500' } },
+    ).subscribe({
+      next: res => {
+        this.bankAccounts.set(Array.isArray(res) ? res : res?.data ?? []);
+        if (selectId) this.selectedLinkedAccount = String(selectId);
+      },
+      error: () => {},
+    });
+  }
+
+  /** Card #768: nível real do registro e o rótulo do Tipo para a visualização. */
+  get kindLabel(): string { return COST_CENTER_TYPE_LABELS[entityKindOf(this.item)]; }
+  get parentLabel(): string {
+    const c = this.item;
+    if (!c) return '—';
+    const kind = entityKindOf(c);
+    if (kind === 'atividade') { const p = this.projects().find(x => x.id === c.parentProjectId); return p ? `${p.code} — ${p.name}` : '—'; }
+    const ccId = kind === 'centro_de_custo' ? c.parentId : c.costCenterId;
+    const cc = this.costCenters().find(x => x.id === ccId);
+    return cc ? `${cc.code} — ${cc.name}` : '—';
+  }
+
+  /** Opções do campo superior para o Tipo escolhido na edição. */
+  parentCostCenters() {
+    const t = this.form.get('projectType')?.value;
+    const self = entityKindOf(this.item) === 'centro_de_custo' ? this.item?.id : null;
+    const list = this.costCenters().filter(c => c.id !== self);
+    return t === 'centro_de_custo' ? list.filter(c => c.classification === 'Sintetica') : list;
+  }
+  parentProjects() {
+    const self = entityKindOf(this.item) !== 'centro_de_custo' ? this.item?.id : null;
+    return this.projects().filter(p => p.id !== self);
+  }
+
   private patchForm(c: CostCenter): void {
+    const kind = entityKindOf(c);
     this.form.patchValue({
-      projectType:         c.type               ?? '',
+      // Card #768 (itens 4 e 11): o Tipo mostrado é o nível real do registro.
+      projectType:         kind,
       classification:      c.classification === 'Sintetica' ? 'Sintetica' : 'Analitica',
       projectCode:         c.code               ?? '',
       projectTitle:        c.name ?? c.title      ?? '',
@@ -140,7 +191,7 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
       categoryDescription: c.categoryDescription ?? '',
       restrictInterest:    !!c.restrictInterestFine,
       budgetRestriction:   !!c.restrictBudget,
-      costCenterId:        c.costCenterId        ?? null,
+      costCenterId:        (kind === 'centro_de_custo' ? c.parentId : c.costCenterId) ?? null,
       parentProjectId:     c.parentProjectId     ?? null,
       status:              c.status              ?? 'Active',
     });
@@ -175,10 +226,12 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
     this.linkedAccounts = this.linkedAccounts.filter((_, i) => i !== index);
   }
 
-  /** CC-02: abre o cadastro de Contas Bancárias em nova aba (hash routing). */
-  openBankAccountRegister(): void {
-    const base = window.location.href.split('#')[0];
-    window.open(`${base}#/bank-accounts/new`, '_blank');
+  /** Card #768 (item 7): cadastro de Contas Bancárias em pop-up, sem sair da edição. */
+  openBankAccountRegister(): void { this.showBankPopup.set(true); }
+  closeBankPopup(): void { this.showBankPopup.set(false); }
+  onBankAccountCreated(acc: any): void {
+    this.showBankPopup.set(false);
+    this.loadBankAccounts(acc?.id);
   }
 
   getAccountLabel(id: number | undefined): string {
@@ -228,9 +281,11 @@ export class CostCentersDetailModalComponent implements OnChanges, OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMsg.set('Preencha os campos obrigatórios destacados (Tipo, Classificação, Código e Título).');
       return;
     }
     if (!this.item) return;
+    if (this.selectedLinkedAccount) this.addLinkedAccount();
 
     this.loading.set(true);
     this.errorMsg.set(null);

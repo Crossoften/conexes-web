@@ -128,6 +128,12 @@ export class FinancialTransfersStore {
     this.load();
   }
 
+  /** Card #768 (cenário 25): o período chega de um só campo — uma carga só. */
+  setPeriodo(startDate: string, endDate: string) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, startDate, endDate }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
   limparFiltros() {
     this.state.update(s => ({ ...s, filters: { view: s.filters.view, ...FILTROS_VAZIOS }, pagination: { ...s.pagination, page: 1 } }));
     this.load();
@@ -185,7 +191,8 @@ export class FinancialTransfersStore {
 
   deleteOne(id: string): void {
     this.svc.delete(id, this.currentView).subscribe({
-      next: () => { this.notify.success('Registro excluído.'); this.load(); },
+      // Card #768 (item 43): a mensagem do servidor diz quando o movimento do extrato voltou para a conciliação.
+      next: (r: any) => { this.notify.success(r?.message ?? 'Registro excluído.'); this.load(); },
       error: err => this.notify.error(err?.error?.message ?? 'Erro ao excluir o registro.'),
     });
   }
@@ -204,7 +211,15 @@ export class FinancialTransfersStore {
   importFile(file: File): void {
     this.state.update(s => ({ ...s, loading: true }));
     this.svc.importFile(file, this.currentView).subscribe({
-      next: () => { this.notify.success('Planilha importada com sucesso.'); this.load(); },
+      // Card #768 (item 32): o resumo diz quantas linhas entraram e o motivo das que não entraram.
+      next: (r: any) => {
+        const ok = r?.success ?? 0, falhas = r?.failed ?? 0;
+        const erros = (r?.results ?? []).filter((x: any) => x.status === 'error').slice(0, 3).map((x: any) => `linha ${x.row}: ${x.message}`);
+        if (falhas && !ok) this.notify.error(`Nenhuma linha importada. ${erros.join(' · ')}`);
+        else if (falhas) this.notify.info(`${ok} linha(s) importada(s), ${falhas} com erro. ${erros.join(' · ')}`);
+        else this.notify.success(`${ok} linha(s) importada(s) com sucesso.`);
+        this.load();
+      },
       error: err => {
         this.state.update(s => ({ ...s, loading: false }));
         this.notify.error(err?.error?.message ?? 'Não foi possível importar a planilha.');

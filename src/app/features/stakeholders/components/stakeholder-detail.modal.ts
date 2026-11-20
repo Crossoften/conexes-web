@@ -40,6 +40,27 @@ export class StakeholderDetailModalComponent implements OnChanges, OnInit {
 
   mode: 'view' | 'edit' = 'view';
   activeTab: ModalTab   = 'GERAIS';
+
+  /** Card #768 (item 13): "Mesmo endereço do cliente" no Endereço de faturamento. */
+  readonly sameAddress = signal(false);
+  private sameAddrSub?: { unsubscribe(): void };
+  private static readonly ADDR_PAIRS: [string, string][] = [
+    ['addrZipCode', 'billZipCode'], ['addrStreet', 'billStreet'], ['addrNumber', 'billNumber'],
+    ['addrComplement', 'billComplement'], ['addrDistrict', 'billDistrict'], ['addrCity', 'billCity'], ['addrState', 'billState'],
+  ];
+
+  toggleSameAddress(on: boolean): void {
+    this.sameAddress.set(on);
+    this.sameAddrSub?.unsubscribe();
+    const c = this.form.controls as any;
+    const copy = () => {
+      for (const [from, to] of StakeholderDetailModalComponent.ADDR_PAIRS) c[to]?.setValue(c[from]?.value ?? '', { emitEvent: false });
+    };
+    if (on) {
+      copy();
+      this.sameAddrSub = this.form.valueChanges.subscribe(() => copy());
+    }
+  }
   bankError: string | null = null;
 
   readonly statusConfig  = STAKEHOLDER_STATUS_CONFIG;

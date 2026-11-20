@@ -14,9 +14,11 @@
 //   Parcerias e Repasses : Parcerias, Planos de Trabalho
 //   Institucional        : Entidades, Órgãos de Governança, Colaboradores
 //   Usuários e Permissões: Usuários, Perfis de Permissão
+//   Prestação de Contas  : Prestações de Contas       (card #768, item 78)
+//   Configurações        : Configurações Gerais       (card #768, item 78)
 //
 // Regras:
-//  • Rota AUSENTE deste mapa → visível a todos (ex.: Início, Perfil, Prestação de contas,
+//  • Rota AUSENTE deste mapa → visível a todos (ex.: Início, Perfil,
 //    Documentos/Notas fiscais — tela compartilhada por Compras e Financeiro).
 //  • subMenu ausente → checagem em nível de MÓDULO (telas-visão/gerais do módulo).
 //  • Master ignora tudo (bypass no PermissionsService).
@@ -34,9 +36,12 @@ export const ROUTE_PERMISSIONS: Record<string, RoutePermission> = {
   '/taxes':                 { module: 'Financeiro', subMenu: 'Impostos e Retenções' },
   '/users':                 { module: 'Usuários e Permissões', subMenu: 'Usuários' },
   '/approval-tiers':        { module: 'Compras', subMenu: 'Alçadas de Aprovação' },
-  // '/general-settings' fica de fora de propósito: a tela existe (TR-08) e é aberta a quem
-  // enxerga o menu. Não há módulo/subMenu correspondente no cadastro de permissões, então
-  // mapeá-la aqui bloquearia o acesso em vez de controlá-lo.
+  // Card #768 (item 78): Configurações gerais e Prestação de contas passam a ser
+  // controladas pelo perfil — o catálogo do back ganhou os módulos "Configurações" e
+  // "Prestação de Contas", e sem estas linhas as duas telas apareciam para todo perfil.
+  // "Tributos e retenções" (/taxes) é a mesma tela de Financeiro › Impostos e Retenções.
+  '/general-settings':      { module: 'Configurações', subMenu: 'Configurações Gerais' },
+  '/accountability':        { module: 'Prestação de Contas', subMenu: 'Prestações de Contas' },
 
   // ── Minha Organização ──────────────────────────────────────────────────────
   '/entity-registry':       { module: 'Institucional', subMenu: 'Entidades' },

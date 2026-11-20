@@ -62,6 +62,16 @@ export interface NotaDetail {
 }
 export interface ReviewDetail { nota: NotaDetail; pedido: OrderDetail | null; }
 
+/** Card #768 (item 28): cada recebimento do pedido é uma nota fiscal a faturar. */
+export interface OrderNote {
+  receiptId: number;
+  invoiceNumber: string | null;
+  receivedAt: string;
+  amount: number;
+  accountPayableId: number | null;
+  items: { orderItemId: number; name: string; quantity: number; unitValue: number; total: number }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class InvoiceReviewService {
   private http = inject(HttpClient);
@@ -78,8 +88,13 @@ export class InvoiceReviewService {
     }));
   }
 
-  createFromOrder(orderId: number): Observable<unknown> {
-    return this.http.post(`${this.ap}/from-order/${orderId}`, {});
+  createFromOrder(orderId: number, receiptIds?: number[]): Observable<any> {
+    return this.http.post(`${this.ap}/from-order/${orderId}`, receiptIds?.length ? { receiptIds } : {});
+  }
+
+  /** Card #768 (item 28): as notas (recebimentos) do pedido, com valor, data e se já foram faturadas. */
+  orderNotes(orderId: number): Observable<OrderNote[]> {
+    return this.http.get<OrderNote[]>(`${this.ap}/from-order/${orderId}/notes`).pipe(catchError(() => of([] as OrderNote[])));
   }
   validate(id: number): Observable<unknown> { return this.http.patch(`${this.ap}/${id}/validate`, {}); }
   returnToPurchasing(id: number, reason: string): Observable<unknown> { return this.http.patch(`${this.ap}/${id}/return`, { reason }); }

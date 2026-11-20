@@ -8,6 +8,8 @@ import { Directive, ElementRef, HostListener, Input, OnDestroy, Renderer2, injec
 @Directive({
   selector: '[appTooltip]',
   standalone: true,
+  // Card #768 (item 69): marca o elemento para a dica global (title) não duplicar esta.
+  host: { 'data-has-tooltip': '' },
 })
 export class TooltipDirective implements OnDestroy {
   @Input('appTooltip') text = '';

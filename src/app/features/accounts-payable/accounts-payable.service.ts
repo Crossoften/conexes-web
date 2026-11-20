@@ -4,6 +4,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PayableAccount, SummaryCard, AdvancedFilters, FilterOption, PayableActions } from './accounts-payable.model';
+import { TIPOS_PAGAMENTO } from './form/financial-title.constants';
 
 /** Envelope de listagem padrão do back ({ data, count, pages }). */
 interface ListEnvelope<T> {
@@ -28,7 +29,10 @@ interface ApiAccountPayable {
   amount?: number | null;
   amountPaid?: number | null;
   status?: string | null;
-  stakeholder?: { name?: string | null } | null;
+  stakeholder?: { name?: string | null; document?: string | null } | null;
+  remittanceStatus?: string | null;
+  taxes?: { taxType: string; amount: number; dueDate?: string | null; code?: string | null }[] | null;
+  classificacao?: { categoria?: string | null; centroCusto?: string | null } | null;
   /** CP-10/I077: findAll já devolve as parcelas (include installments). */
   installments?: {
     installment?: number | null; dueDate?: string | null;
@@ -115,9 +119,13 @@ export class AccountsPayableService {
     // diferentes. O valor carrega o prefixo da entidade (`cc:` / `pj:`) para o
     // back saber em qual coluna do rateio procurar.
     if (filters.costCenter) {
-      const [tipo, id] = filters.costCenter.split(':');
+      // Card #768 (item 46): centro de custo e projeto são filtros separados; o
+      // prefixo antigo ("cc:"/"pj:") continua aceito.
+      const [tipo, id] = filters.costCenter.includes(':') ? filters.costCenter.split(':') : ['cc', filters.costCenter];
       if (id) params = params.set(tipo === 'pj' ? 'projectId' : 'costCenterId', id);
     }
+    if (filters.project)          params = params.set('projectId', filters.project);
+    if (filters.activity)         params = params.set('activityId', filters.activity);
     // CP-01: o intervalo De–Até, que era um texto livre solto, e a data sobre a
     // qual ele incide (o antigo select "Emissão", que não filtrava nada).
     if (filters.dateStart)        params = params.set('startDate', filters.dateStart);
@@ -148,22 +156,9 @@ export class AccountsPayableService {
     { value: 'Rejected',  label: 'Rejeitada' },
   ];
 
-  readonly paymentMethodOptions: FilterOption[] = [
-    { value: 'EletronicTransferSameOwner',  label: 'Transferência eletrônica — mesma titularidade' },
-    { value: 'EletronicTransferOtherOwner', label: 'Transferência eletrônica — outra titularidade' },
-    { value: 'TEDSameOwner',                label: 'TED — mesma titularidade' },
-    { value: 'TEDOtherOwner',               label: 'TED — outra titularidade' },
-    { value: 'DOCSameOwner',                label: 'DOC — mesma titularidade' },
-    { value: 'DOCOtherOwner',               label: 'DOC — outra titularidade' },
-    { value: 'BoletoSameBank',              label: 'Boleto — mesmo banco' },
-    { value: 'BoletoOtherBank',             label: 'Boleto — outro banco' },
-    { value: 'UtilityBill',                 label: 'Conta de consumo' },
-    { value: 'DARFWithBarcode',             label: 'DARF com código de barras' },
-    { value: 'GARE',                        label: 'GARE' },
-    { value: 'SP_ICMS',                     label: 'ICMS — SP' },
-    { value: 'GNRE_StateTaxes',             label: 'GNRE — tributos estaduais' },
-    { value: 'GPS',                         label: 'GPS' },
-  ];
+  // Card #768 (item 47): a mesma lista do formulário (Tipo de pagamento — meio internet).
+  readonly paymentMethodOptions: FilterOption[] = TIPOS_PAGAMENTO.map(t => ({ value: t.valor, label: t.rotulo }));
+
 
   /** CP-01: requisições de compra para o filtro "Requisição". */
   getPurchaseRequests(): Observable<FilterOption[]> {
@@ -312,8 +307,11 @@ export class AccountsPayableService {
   }
 
   /** CP-17: contratos com valor, saldo e vigência (o saldo vem calculado do back). */
-  getContracts(): Observable<{ id: number; label: string; value: number; balance: number; startDate: string; endDate: string }[]> {
-    return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/contracts`, { params: new HttpParams().set('take', 500) }).pipe(
+  getContracts(nature?: 'Pagar' | 'Receber'): Observable<{ id: number; label: string; value: number; balance: number; startDate: string; endDate: string }[]> {
+    // Card #768 (item 57): cada tela lista só os contratos da sua natureza.
+    let params = new HttpParams().set('take', 500);
+    if (nature) params = params.set('nature', nature);
+    return this.http.get<unknown>(`${environment.apiUrl}/v1/purchases/contracts`, { params }).pipe(
       map(res => {
         const rows: any[] = Array.isArray(res) ? res : (res as { data?: any[] })?.data ?? [];
         return rows.map(r => ({
@@ -344,6 +342,11 @@ export class AccountsPayableService {
   /** D9: a exportação leva os mesmos filtros da tela — antes baixava a base inteira. */
   exportExcel(filters: AdvancedFilters = {} as AdvancedFilters): Observable<Blob> {
     return this.http.get(`${this.base}/export/excel`, { params: this.filterParams(filters), responseType: 'blob' });
+  }
+
+  /** Card #768 (item 55): o total da coluna Valor com os filtros da tela (para o rodapé). */
+  getTotal(filters: AdvancedFilters = {} as AdvancedFilters): Observable<{ total: number; count: number }> {
+    return this.http.get<PayableSummary>(`${this.base}/summary`, { params: this.filterParams(filters) }).pipe(map(s => s.total));
   }
 
   // ── Resumo: vem agregado do back (respeita filtros e não só a página atual) ──
@@ -401,6 +404,16 @@ export class AccountsPayableService {
       excluir: !!r.acoes?.excluir,
       motivoExcluir: r.acoes?.motivoExcluir ?? null,
     },
+    // Card #768 (itens 45, 49 e 52)
+    cpfCnpj: r.stakeholder?.document ?? '—',
+    categoria: r.classificacao?.categoria ?? '—',
+    centroCusto: r.classificacao?.centroCusto ?? '—',
+    valorNum: r.netAmount ?? r.amount ?? 0,
+    remessa: r.remittanceStatus && r.remittanceStatus !== 'NotSent'
+      ? ({ Queued: 'Na fila da remessa', Sent: 'Enviada à remessa', Processed: 'Remessa processada', Rejected: 'Remessa rejeitada' } as Record<string, string>)[r.remittanceStatus] ?? r.remittanceStatus
+      : null,
+    retencoes: (r.taxes ?? []).filter(t => (t.amount ?? 0) > 0.005).map(t => ({ tipo: t.taxType, valor: t.amount, vencimento: fmtDate(t.dueDate), codigo: t.code ?? null })),
+    retidoNum: (r.taxes ?? []).reduce((s, t) => s + (t.amount ?? 0), 0),
     // CP-10/I077: ordenadas pelo número, que é como a parcela é lida.
     installments: [...(r.installments ?? [])]
       .sort((a, b) => (a.installment ?? 0) - (b.installment ?? 0))

@@ -30,6 +30,8 @@ interface CostCentersState {
   pagination: CostCenterPagination;
   loading:    boolean;
   error:      string | null;
+  /** Card #768: aviso de ação (exclusão) que não substitui a lista. */
+  notice:     { kind: 'success' | 'error'; text: string } | null;
 }
 
 /**
@@ -50,6 +52,7 @@ const initialState: CostCentersState = {
   pagination: { page: 1, pageSize: 10, total: 0 },
   loading:    false,
   error:      null,
+  notice:     null,
 };
 
 interface TreeRow {
@@ -93,25 +96,31 @@ export const CostCentersStore = signalStore(
       const byCostCenter    = new Map<number, CostCenter[]>();
       const byParentProject = new Map<number, CostCenter[]>();
       // Só é raiz quem NÃO tem pai na lista; os demais entram pela expansão do pai.
-      const childIds = new Set<number>();
+      // Ids de CC e de projeto vêm de tabelas diferentes: a marcação usa a chave.
+      const childKeys = new Set<string>();
+      const push = (map: Map<number, CostCenter[]>, parent: number, i: CostCenter) => {
+        const arr = map.get(parent) ?? []; arr.push(i); map.set(parent, arr); childKeys.add(key(i));
+      };
 
       for (const i of all) {
-        if (isCC(i)) continue;
-        if (i.parentProjectId != null && projectIds.has(i.parentProjectId)) {
-          const arr = byParentProject.get(i.parentProjectId) ?? []; arr.push(i); byParentProject.set(i.parentProjectId, arr);
-          childIds.add(i.id);
-        } else if (i.costCenterId != null && ccIds.has(i.costCenterId)) {
-          const arr = byCostCenter.get(i.costCenterId) ?? []; arr.push(i); byCostCenter.set(i.costCenterId, arr);
-          childIds.add(i.id);
+        if (isCC(i)) {
+          // Card #768: centro de custo dentro de centro de custo (1 → 1.1 → 1.1.01).
+          if (i.parentId != null && ccIds.has(i.parentId) && i.parentId !== i.id) push(byCostCenter, i.parentId, i);
+          continue;
         }
+        if (i.parentProjectId != null && projectIds.has(i.parentProjectId)) push(byParentProject, i.parentProjectId, i);
+        else if (i.costCenterId != null && ccIds.has(i.costCenterId)) push(byCostCenter, i.costCenterId, i);
       }
 
-      const childrenOf = (n: CostCenter): CostCenter[] =>
-        isCC(n) ? (byCostCenter.get(n.id) ?? []) : (byParentProject.get(n.id) ?? []);
+      // Dentro do pai, os subníveis seguem a numeração (1.1.01, 1.1.02 …).
+      const byCode = (a: CostCenter, b: CostCenter) => String(a.code ?? '').localeCompare(String(b.code ?? ''), 'pt-BR', { numeric: true });
+      const childrenOf = (n: CostCenter): CostCenter[] => {
+        const kids = isCC(n) ? (byCostCenter.get(n.id) ?? []) : (byParentProject.get(n.id) ?? []);
+        return sort().direction ? kids : [...kids].sort(byCode);
+      };
 
-      // Raízes = Centros de Custo + não-CC sem pai carregado (órfãos reais),
-      // na mesma ordem em que o back devolveu.
-      const roots = all.filter(i => isCC(i) || !childIds.has(i.id));
+      // Raízes = quem não tem pai carregado, na mesma ordem em que o back devolveu.
+      const roots = all.filter(i => !childKeys.has(key(i)));
 
       return { roots, childrenOf, key };
     });
@@ -170,6 +179,16 @@ export const CostCentersStore = signalStore(
             },
             loading: false,
           }));
+          // Card #768: a árvore abre expandida na primeira carga (como na tela esperada).
+          if (store.expanded().size === 0) {
+            const keys = new Set<string>();
+            for (const i of store.items()) {
+              if (resolveEntityType(i) === 'cost_center') { if (i.parentId != null) keys.add(`cost_center:${i.parentId}`); }
+              else if (i.parentProjectId != null) keys.add(`project:${i.parentProjectId}`);
+              else if (i.costCenterId != null) keys.add(`cost_center:${i.costCenterId}`);
+            }
+            patchState(store, { expanded: keys });
+          }
           // Recarregar (ex.: após salvar no modal) pode encurtar a lista — mantém a
           // página atual sempre dentro do intervalo válido em vez de mostrar vazio.
           const last = Math.max(1, Math.ceil(store.totalRoots() / store.pagination().pageSize));
@@ -196,17 +215,25 @@ export const CostCentersStore = signalStore(
         }));
       },
 
+      /**
+       * Card #768 (item 12): a falha de exclusão vira um aviso — antes ela era gravada
+       * em `error`, que substitui a lista inteira por "Erro ao carregar dados".
+       */
       deleteById(id: number, entityType: 'cost_center' | 'project') {
+        patchState(store, { notice: null });
         svc.delete(id, entityType).subscribe({
-          next: () => patchState(store, s => ({
-            items: s.items.filter(c => c.id !== id),
-            pagination: { ...s.pagination, total: Math.max(0, s.pagination.total - 1) },
-          })),
-          error: err => patchState(store, {
-            error: err?.error?.message ?? 'Erro ao excluir registro.',
-          }),
+          next: () => {
+            patchState(store, { notice: { kind: 'success', text: 'Registro excluído.' } });
+            fetch();
+          },
+          error: err => {
+            const msg = err?.error?.message ?? 'Não foi possível excluir o registro.';
+            patchState(store, { notice: { kind: 'error', text: Array.isArray(msg) ? msg.join(', ') : msg } });
+          },
         });
       },
+
+      clearNotice() { patchState(store, { notice: null }); },
 
       // ── Filters ──────────────────────────────────────────────────────────
 

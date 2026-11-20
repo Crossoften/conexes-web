@@ -32,7 +32,12 @@ interface ApiAccountReceivable {
   asaasInvoiceUrl?: string | null;
   asaasPaymentId?: string | null;
   asaasChargeError?: string | null;
-  stakeholder?: { name?: string | null } | null;
+  stakeholder?: { name?: string | null; document?: string | null } | null;
+  type?: string | null;
+  createdAt?: string | null;
+  netAmount?: number | null;
+  taxes?: { taxType: string; amount: number; dueDate?: string | null; code?: string | null }[] | null;
+  classificacao?: { categoria?: string | null; centroCusto?: string | null } | null;
   /** E2: parcelas, quando o título já foi dividido. */
   installments?: { id: number; installment: number; dueDate?: string | null; amount?: number | null; amountReceived?: number | null; status?: string | null }[] | null;
 }
@@ -69,6 +74,7 @@ export class AccountsReceivableService {
     if (filters.accountPlan) params = params.set('accountPlanId', filters.accountPlan);
     if (filters.project)     params = params.set('projectId', filters.project);
     if (filters.costCenter)  params = params.set('costCenterId', filters.costCenter);
+    if (filters.activity)    params = params.set('activityId', filters.activity);
     // CR-01: o campo "Período" era texto livre e nunca chegava ao servidor.
     if (filters.dateStart)  params = params.set('startDate', filters.dateStart);
     if (filters.dateEnd)    params = params.set('endDate', filters.dateEnd);
@@ -94,6 +100,11 @@ export class AccountsReceivableService {
         raw: res?.data ?? [],
       })),
     );
+  }
+
+  /** Card #768 (item 55): o total da coluna Valor com os filtros (para o rodapé). */
+  getTotal(filters: ReceivableFilters = {} as ReceivableFilters): Observable<{ total: number; count: number }> {
+    return this.http.get<ReceivableSummary>(`${this.base}/summary`, { params: this.filterParams(filters) }).pipe(map(s => s.total));
   }
 
   getById(id: number): Observable<ApiAccountReceivable> {
@@ -278,6 +289,17 @@ export class AccountsReceivableService {
     balanceNum: Math.max(0, (r.amount ?? 0) - (r.amountReceived ?? 0)),
     balance: brl.format(Math.max(0, (r.amount ?? 0) - (r.amountReceived ?? 0))),
     canReceive: (r.status === 'Open' || r.status === 'PartiallyPaid'),
+    // Card #768 (itens 52, 55 e 56)
+    type: r.type ?? '—',
+    document: r.document ?? '—',
+    history: r.description ?? '—',
+    registrationDate: fmtDate(r.createdAt),
+    cpfCnpj: r.stakeholder?.document ?? '—',
+    categoria: r.classificacao?.categoria ?? '—',
+    centroCusto: r.classificacao?.centroCusto ?? '—',
+    valorNum: r.amount ?? 0,
+    retencoes: (r.taxes ?? []).filter(t => (t.amount ?? 0) > 0.005).map(t => ({ tipo: t.taxType, valor: t.amount, vencimento: fmtDate(t.dueDate), codigo: t.code ?? null })),
+    retidoNum: (r.taxes ?? []).reduce((s, t) => s + (t.amount ?? 0), 0),
   });
 }
 

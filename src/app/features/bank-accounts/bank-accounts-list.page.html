@@ -94,6 +94,8 @@
                   <span class="checkbox__box"></span>
                 </label>
               </th>
+              <!-- Card #768 (item 33): o ID da conta, o mesmo pedido na planilha de importação. -->
+              <th class="th th--sortable" (click)="store.setSort('id')" title="Identificador da conta — use na planilha de importação">ID <span class="sort-icon" [ngClass]="'sort--' + getSortState('id')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('nickname')">Apelido <span class="sort-icon" [ngClass]="'sort--' + getSortState('nickname')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('agency')">Agência <span class="sort-icon" [ngClass]="'sort--' + getSortState('agency')"></span></th>
               <th class="th th--sortable" (click)="store.setSort('account')">Conta <span class="sort-icon" [ngClass]="'sort--' + getSortState('account')"></span></th>
@@ -126,18 +128,18 @@
         <tbody>
           @if (store.loading()) {
             @for (i of [1,2,3,4,5]; track i) {
-              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4"><div class="skeleton"></div></td></tr>
+              <tr class="tr--skeleton"><td [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 12 : 4"><div class="skeleton"></div></td></tr>
             }
           } @else if (store.error()) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 12 : 4">
                 <p class="empty-title">Erro ao carregar dados</p>
                 <span class="empty-desc">{{ store.error() }}</span>
               </td>
             </tr>
           } @else if (store.pageItems().length === 0) {
             <tr>
-              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 11 : 4">
+              <td class="td--empty" [attr.colspan]="store.activeTab() === 'ACCOUNTS' ? 12 : 4">
                 <p class="empty-title">Nenhum registro encontrado</p>
                 <span class="empty-desc">Tente ajustar os filtros aplicados</span>
               </td>
@@ -153,6 +155,7 @@
                     <span class="checkbox__box"></span>
                   </label>
                 </td>
+                <td class="td td--mono">#{{ item.id }}</td>
                 <td class="td td--name">{{ item.nickname }}</td>
                 <td class="td td--mono">{{ item.agency }}</td>
                 <td class="td td--mono">{{ item.account }}</td>

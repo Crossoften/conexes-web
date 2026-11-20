@@ -18,9 +18,13 @@
       </div>
 
       <div class="header-actions">
-        <button class="action-btn action-btn--orange" (click)="onExportExcel()" [disabled]="exporting()" title="Exportar para Excel">
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 13v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2M10 3v9M6.5 8.5 10 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <!-- Card #768 (item 65): Editar, Excluir e Fechar, como em Fornecedores. A exportação
+             para Excel continua na lista (menu Exportar), por isso saiu daqui. -->
+        @if (canEdit) {
+          <button class="action-btn action-btn--orange" (click)="onEdit()" title="Editar" aria-label="Editar">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.5 3.5a2.121 2.121 0 0 1 3 3L7 16H4v-3L13.5 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        }
         <button class="action-btn action-btn--orange" (click)="onDelete()" title="Excluir">
           <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 5h12M6 5V3c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2M7 5v12c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -90,9 +94,10 @@
             <h3 class="section-title">Fonte e alocação</h3>
             <div class="info-box">
               <div class="info-grid info-grid--3">
-                <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request.project?.title ?? request.project?.name) }}</span></div>
+                <!-- Card #768 (item 67): Categoria, Centro de custo, Projeto e Atividade, nessa ordem. -->
+                <div class="info-item"><span class="info-label">Categoria</span><span class="info-value">{{ fmtText(request.accountPlan?.title ?? request.accountPlan?.name) }}</span></div>
                 <div class="info-item"><span class="info-label">Centro de custo</span><span class="info-value">{{ fmtText(request.costCenter?.name ?? request.costCenter?.title) }}</span></div>
-                <div class="info-item"><span class="info-label">Categoria (plano de contas)</span><span class="info-value">{{ fmtText(request.accountPlan?.title ?? request.accountPlan?.name) }}</span></div>
+                <div class="info-item"><span class="info-label">Projeto</span><span class="info-value">{{ fmtText(request.project?.title ?? request.project?.name) }}</span></div>
                 <div class="info-item"><span class="info-label">Atividade</span><span class="info-value">{{ fmtText(request.activity) }}</span></div>
               </div>
             </div>
