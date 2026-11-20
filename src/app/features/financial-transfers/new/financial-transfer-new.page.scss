@@ -214,6 +214,8 @@
   // Categoria, Centro de custo, Projeto, Atividade e o % no fim da linha
   &__linha { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr 1fr 150px; gap: 12px; align-items: start;
     .form-control { padding: 10px 14px; }
+    select.form-control { padding-right: 34px; text-overflow: ellipsis; }
+    .select-chevron { right: 12px; }
   }
   &__pct { display: flex; gap: 6px; align-items: center; }
   &__valor { font-size: 12px; color: #6B7280; text-align: right; }

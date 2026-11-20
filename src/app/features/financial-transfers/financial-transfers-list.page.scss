@@ -268,3 +268,8 @@
   th { font-weight: 600; color: #374151; background: #F5F3FF; }
   .num { text-align: right; }
 }
+// barra numa linha só: seletores com largura contida (o nome longo da conta corta com reticências)
+.filter-bar { flex-wrap: wrap; gap: 8px; }
+.filter-bar .search-wrap { flex: 0 1 200px; }
+.filter-bar .select-wrap .select { width: 190px; min-width: 0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+.filter-bar .select-wrap .select--view { width: 160px; }

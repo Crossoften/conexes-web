@@ -73,7 +73,7 @@ export class FinancialTransfersListPage implements OnInit {
   readonly formLista = computed(() => { const f = this.formAberto(); return f ? [f] : []; });
 
   abrirNovo(): void {
-    this.formAberto.set({ titulo: this.newLabel(), editId: null, duplicate: null });
+    this.formAberto.set({ titulo: this.isEntries() ? 'Novo lançamento bancário' : 'Nova transferência', editId: null, duplicate: null });
   }
   abrirEdicao(item: FinancialTransfer): void {
     this.formAberto.set({ titulo: this.isEntries() ? 'Editar lançamento bancário' : 'Editar transferência', editId: Number(item.id), duplicate: null });
