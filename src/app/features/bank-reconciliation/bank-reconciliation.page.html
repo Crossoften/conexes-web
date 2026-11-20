@@ -201,9 +201,8 @@
               <div class="accordion-left">
                 <span class="accordion-date">{{ item.date }}</span>
                 <span class="accordion-day">{{ item.dayOfWeek }}</span>
-                @if (store.activeTab() === 'MOVEMENTS' || store.expandedIds().has(item.id)) {
-                  <span class="accordion-desc">{{ item.description }}</span>
-                }
+                <!-- Card #768 (cenário 24): a descrição do extrato aparece já na linha recolhida. -->
+                <span class="accordion-desc">{{ item.description }}</span>
               </div>
               <div class="accordion-right">
                 <span class="tipo-badge" [class.tipo-badge--credito]="item.type === 'Credit'" [class.tipo-badge--debito]="item.type !== 'Credit'">
