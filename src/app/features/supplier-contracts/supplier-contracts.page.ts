@@ -28,16 +28,28 @@ import { PurchaseContract, PurchaseRef } from '../purchases/purchases.model';
         <div class="card-body">
           <div class="form-grid">
             <div class="form-row grid-cols-3">
+              <!-- Card #768 (item 57): a natureza diz em qual tela o contrato aparece —
+                   Contas a pagar lista os a pagar; Contas a receber, os a receber. -->
+              <div class="form-group">
+                <label>Natureza <span class="req">*</span></label>
+                <div class="select-wrap">
+                  <select class="form-control" [(ngModel)]="f.nature">
+                    <option value="Pagar">A pagar (fornecedor)</option>
+                    <option value="Receber">A receber (cliente)</option>
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
               <div class="form-group"><label>Número</label><input class="form-control" [(ngModel)]="f.number" placeholder="Ex.: CT-2026-001"></div>
-              <div class="form-group" style="grid-column: span 2;"><label>Objeto / Título <span class="req">*</span></label><input class="form-control" [(ngModel)]="f.title" placeholder="Objeto do contrato"></div>
+              <div class="form-group"><label>Objeto / Título <span class="req">*</span></label><input class="form-control" [(ngModel)]="f.title" placeholder="Objeto do contrato"></div>
             </div>
             <div class="form-row grid-cols-3">
               <div class="form-group">
-                <label>Fornecedor</label>
+                <label>{{ f.nature === 'Receber' ? 'Cliente' : 'Fornecedor' }}</label>
                 <div class="select-wrap">
                   <select class="form-control" [(ngModel)]="f.stakeholderId">
                     <option [ngValue]="null">Selecione</option>
-                    @for (s of suppliers(); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
+                    @for (s of (f.nature === 'Receber' ? clientes() : suppliers()); track s.id) { <option [ngValue]="s.id">{{ s.name }}</option> }
                   </select>
                   <svg class="select-chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
@@ -63,15 +75,16 @@ import { PurchaseContract, PurchaseRef } from '../purchases/purchases.model';
         <div class="card-header"><h2 class="card-title">Contratos cadastrados</h2></div>
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th class="th">Número</th><th class="th">Objeto</th><th class="th">Fornecedor</th><th class="th">Vigência</th><th class="th right">Valor</th><th class="th th--center">Ações</th></tr></thead>
+            <thead><tr><th class="th">Natureza</th><th class="th">Número</th><th class="th">Objeto</th><th class="th">Fornecedor / cliente</th><th class="th">Vigência</th><th class="th right">Valor</th><th class="th th--center">Ações</th></tr></thead>
             <tbody>
               @if (loading()) {
-                <tr><td class="td--empty" colspan="6">Carregando…</td></tr>
+                <tr><td class="td--empty" colspan="7">Carregando…</td></tr>
               } @else if (contracts().length === 0) {
-                <tr><td class="td--empty" colspan="6">Nenhum contrato cadastrado.</td></tr>
+                <tr><td class="td--empty" colspan="7">Nenhum contrato cadastrado.</td></tr>
               } @else {
                 @for (c of contracts(); track c.id) {
                   <tr class="tr">
+                    <td class="td"><span class="natureza" [class.natureza--receber]="$any(c).nature === 'Receber'">{{ $any(c).nature === 'Receber' ? 'A receber' : 'A pagar' }}</span></td>
                     <td class="td td--mono">{{ c.number || '—' }}</td>
                     <td class="td td--name">{{ c.title }}</td>
                     <td class="td">{{ c.stakeholder?.name || '—' }}</td>
@@ -97,16 +110,18 @@ export class SupplierContractsPage {
 
   readonly contracts = signal<PurchaseContract[]>([]);
   readonly suppliers = signal<PurchaseRef[]>([]);
+  readonly clientes  = signal<PurchaseRef[]>([]);
   readonly loading   = signal(false);
   readonly saving    = signal(false);
   readonly error     = signal<string | null>(null);
 
   editingId: number | null = null;
-  f = { number: '', title: '', stakeholderId: null as number | null, startDate: '', endDate: '', value: '', observation: '' };
+  f = { nature: 'Pagar', number: '', title: '', stakeholderId: null as number | null, startDate: '', endDate: '', value: '', observation: '' };
 
   constructor() {
     this.load();
     this.svc.getSuppliersOnlyLookup().subscribe({ next: s => this.suppliers.set(s), error: () => {} });
+    this.svc.getSuppliersLookup().subscribe({ next: s => this.clientes.set(s), error: () => {} });
   }
 
   load(): void {
@@ -123,6 +138,7 @@ export class SupplierContractsPage {
   edit(c: PurchaseContract): void {
     this.editingId = c.id;
     this.f = {
+      nature: (c as any).nature ?? 'Pagar',
       number: c.number ?? '', title: c.title ?? '', stakeholderId: c.stakeholderId ?? null,
       startDate: this.toDateInput(c.startDate), endDate: this.toDateInput(c.endDate),
       value: c.value != null ? String(c.value).replace('.', ',') : '', observation: c.observation ?? '',
@@ -132,13 +148,14 @@ export class SupplierContractsPage {
 
   resetForm(): void {
     this.editingId = null;
-    this.f = { number: '', title: '', stakeholderId: null, startDate: '', endDate: '', value: '', observation: '' };
+    this.f = { nature: 'Pagar', number: '', title: '', stakeholderId: null, startDate: '', endDate: '', value: '', observation: '' };
   }
 
   save(): void {
     const title = this.f.title.trim();
     if (!title || this.saving()) return;
     const payload = {
+      nature: this.f.nature,
       title,
       number: this.f.number.trim() || undefined,
       stakeholderId: this.f.stakeholderId ? Number(this.f.stakeholderId) : undefined,

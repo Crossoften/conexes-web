@@ -1,69 +1,31 @@
 // src/app/features/dashboard/dashboard.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface DashboardSummary {
-  stakeholders:      number;
-  partnerships:      number;
-  payablesOpen:      number;
-  payablesOpenValue: number;
-  accountabilities:  number;
-}
+export interface DashboardFiltros { startDate: string; endDate: string; costCenterId: string; projectId: string; }
 
-export interface DashboardAccountability {
-  id:     number;
-  title:  string;
-  status: string;
-}
-
+/**
+ * Card #768 (item 72): o dashboard da tela de Início, em abas. Cada aba tem o seu
+ * endpoint, agregado no servidor sobre os dados reais (antes a tela somava no
+ * navegador as contas a pagar em aberto, e o Financeiro não tinha dashboard).
+ */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
-  private api  = `${environment.apiUrl}/v1`;
+  private api = `${environment.apiUrl}/v1/dashboard`;
 
-  /** Cada contador é isolado: uma falha vira 0 e não derruba o painel. */
-  summary(): Observable<DashboardSummary> {
-    return forkJoin({
-      stakeholders:      this.count(`${this.api}/stakeholders?take=1`),
-      partnerships:      this.count(`${this.api}/partnerships?take=1`),
-      payablesOpen:      this.count(`${this.api}/accounts-payable?status=Open&take=1`),
-      payablesOpenValue: this.sumAmount(`${this.api}/accounts-payable?status=Open&take=100000`),
-      accountabilities:  this.count(`${this.api}/accountability`),
-    });
+  private params(f?: Partial<DashboardFiltros>): HttpParams {
+    let p = new HttpParams();
+    for (const [k, v] of Object.entries(f ?? {})) if (v) p = p.set(k, String(v));
+    return p;
   }
 
-  /** Soma o valor das contas em aberto no front (não há endpoint de agregação no back). */
-  private sumAmount(url: string): Observable<number> {
-    return this.http.get<any>(url).pipe(
-      map(res => {
-        const rows: any[] = Array.isArray(res) ? res : res?.data ?? [];
-        return rows.reduce((acc, r) => acc + (Number(r?.netAmount ?? r?.amount ?? r?.grossAmount) || 0), 0);
-      }),
-      catchError(() => of(0)),
-    );
-  }
-
-  recentAccountabilities(): Observable<DashboardAccountability[]> {
-    return this.http.get<any>(`${this.api}/accountability`).pipe(
-      map(res => (Array.isArray(res) ? res : res?.data ?? [])
-        .slice(0, 5)
-        .map((r: any) => ({ id: r.id, title: r.title ?? '—', status: r.status ?? '—' }))),
-      catchError(() => of([])),
-    );
-  }
-
-  private count(url: string): Observable<number> {
-    return this.http.get<any>(url).pipe(
-      map(res => {
-        if (Array.isArray(res)) return res.length;
-        if (typeof res?.count === 'number') return res.count;
-        if (Array.isArray(res?.data)) return res.data.length;
-        return 0;
-      }),
-      catchError(() => of(0)),
-    );
+  inicio(): Observable<any> { return this.http.get<any>(`${this.api}/inicio`); }
+  financeiro(f: Partial<DashboardFiltros>): Observable<any> { return this.http.get<any>(`${this.api}/financeiro`, { params: this.params(f) }); }
+  compras(f: Partial<DashboardFiltros>): Observable<any> { return this.http.get<any>(`${this.api}/compras`, { params: this.params(f) }); }
+  exportar(aba: 'financeiro' | 'compras', f: Partial<DashboardFiltros>): Observable<Blob> {
+    return this.http.get(`${this.api}/export`, { params: this.params({ ...f, aba } as any), responseType: 'blob' });
   }
 }

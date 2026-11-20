@@ -355,6 +355,8 @@ export interface CreateContractPayload {
   status?: PurchaseContractStatus;
   observation?: string;
   stakeholderId?: number;
+  /** Card #768 (item 57): Pagar (fornecedor) ou Receber (cliente). */
+  nature?: string;
 }
 
 export type UpdateContractPayload = Partial<CreateContractPayload>;

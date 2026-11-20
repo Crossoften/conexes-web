@@ -31,6 +31,17 @@ export interface ReceivableAccount {
   /** CR-01/I091: as parcelas do título, para a visão "Parcelas (uma por vencimento)",
    *  no mesmo padrão de Contas a pagar. */
   installments: ReceivableInstallmentRow[];
+  // Card #768 (itens 52, 55 e 56): as colunas na ordem e com os nomes de Contas a pagar.
+  type: string;
+  document: string;
+  history: string;
+  registrationDate: string;
+  cpfCnpj: string;
+  categoria: string;
+  centroCusto: string;
+  valorNum: number;
+  retencoes: { tipo: string; valor: number; vencimento: string; codigo: string | null }[];
+  retidoNum: number;
 }
 
 /** CR-01/I091: uma parcela na visão "Parcelas". */
@@ -63,6 +74,8 @@ export interface ReceivableFilters {
   accountPlan: string;
   project: string;
   costCenter: string;
+  /** Card #768 (item 59): o filtro de atividade, que faltava. */
+  activity: string;
 }
 
 /** Uma opção de select do filtro. */

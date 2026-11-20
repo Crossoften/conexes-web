@@ -97,8 +97,18 @@ export class FinancialTitleViewComponent implements OnInit {
   contratoNome(id: any): string { const c = this.contrato(id); return c ? ([c.number, c.title].filter(Boolean).join(' — ') || `#${id}`) : (id ? `#${id}` : '—'); }
   valor(t: any): number { return this.pagar ? (t.grossAmount ?? t.amount ?? 0) : (t.amount ?? 0); }
   liquido(t: any): number { return this.pagar ? (t.netAmount ?? t.amount ?? 0) : (t.netAmount ?? t.amount ?? 0); }
-  saldo(t: any): number { return Math.max(0, this.liquido(t) - (this.pagar ? (t.amountPaid ?? 0) : (t.amountReceived ?? 0))); }
+  // a baixa de pagar abate o líquido; o recebimento de receber anda sobre o valor do título (como no servidor)
+  saldo(t: any): number { return Math.max(0, this.pagar ? this.liquido(t) - (t.amountPaid ?? 0) : (t.amount ?? 0) - (t.amountReceived ?? 0)); }
   retido(t: any): number { return (t.taxes ?? []).reduce((s: number, x: any) => s + (x.amount ?? 0), 0); }
   imposto(t: any, tipo: string): any { return (t.taxes ?? []).find((x: any) => x.taxType === tipo) ?? null; }
+  /** card #720 (PG-01): gerar de novo a cobrança Asaas do título a receber. */
+  readonly cobrando = signal(false);
+  gerarCobranca(): void {
+    this.cobrando.set(true);
+    this.arSvc.retryAsaasCharge(this.id).subscribe({
+      next: (r: any) => { this.cobrando.set(false); this.t.set({ ...this.t(), ...r }); },
+      error: (e: any) => { this.cobrando.set(false); this.erro.set(e?.error?.message ?? 'Não foi possível gerar a cobrança.'); },
+    });
+  }
   nomeDoAnexo(a: any): string { const b = a.fileKey || a.fileUrl || ''; try { return decodeURIComponent(String(b).split('?')[0].split('/').pop() || 'arquivo'); } catch { return 'arquivo'; } }
 }

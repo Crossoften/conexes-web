@@ -136,3 +136,33 @@
 .td--center:last-child { background: var(--surface-primary); }
 .tr:hover .td--center:last-child { background: #FAFAFE; }
 .tr--selected .td--center:last-child { background: #F5F3FF; }
+
+// ── Card #768 (itens 55, 56 e 59 — mesmo padrão de Contas a pagar) ──────────────────
+.toolbar-section { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+.fixo .select { min-width: 150px; }
+.fixo-busca { width: 220px; }
+.tools { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; }
+.tools__sep { width: 1px; height: 22px; background: #E5E7EB; margin: 0 2px; }
+.tool-badge { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--brand-orange, #F97316); color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; }
+.link-limpar { border: 0; background: transparent; color: var(--brand-purple, #6D28D9); font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+.table-wrap--scroll { overflow-x: auto; }
+.table--wide { min-width: 1500px;
+  .th, .td { padding: 11px 10px; white-space: nowrap; }
+  .td--clip { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+  .td--strong { color: var(--text-primary); font-weight: 600; }
+  .th--num, .td--num { text-align: right; }
+  .th--acoes, .td--acoes { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -8px rgba(17,24,39,.25); width: 108px; text-align: center; }
+  .th--acoes { background: #FAFAFE; }
+  .tr--selected .td--acoes { background: #F5F3FF; }
+}
+.acoes-grade { display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; justify-content: center; }
+.icon-vazio { width: 30px; height: 30px; }
+.ret { display: block; font-size: 11px; color: #B91C1C; font-weight: 600; cursor: help; }
+.remessa { display: block; margin-top: 3px; width: max-content; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #E0F2FE; color: #075985; }
+.pagination__right { display: flex; align-items: center; gap: 16px; }
+.valor-total { font-size: 13px; color: var(--text-secondary); strong { color: var(--text-primary); font-size: 14px; margin-left: 4px; } small { color: #9CA3AF; margin-left: 4px; } }
+.filtros-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; .form-group { display: flex; flex-direction: column; gap: 6px; label { font-size: 12.5px; font-weight: 600; } } }
+.filtros-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.filtros-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.filtros-sub { margin: 18px 0 10px; font-size: 13px; font-weight: 700; padding-top: 12px; border-top: 1px solid #EEF0F6; }
+.filtros-pe { display: flex; justify-content: space-between; margin-top: 18px; }

@@ -17,13 +17,14 @@ interface State {
   pagination: { page: number; pageSize: number };
   selectedIds: Set<string>;
   isFilterModalOpen: boolean;
+  valorTotal: number;
 }
 
 const INITIAL_FILTERS: ReceivableFilters = {
   // CR-01: a data-base começa em Vencimento — é a pergunta de uma tela de cobrança.
   status: '', dateField: 'dueDate', dateStart: '', dateEnd: '', contractor: '', partnership: '',
   // CR-02/I092: filtros equivalentes aos de Contas a pagar.
-  contract: '', accountPlan: '', project: '', costCenter: ''
+  contract: '', accountPlan: '', project: '', costCenter: '', activity: '',
 };
 
 @Injectable()
@@ -43,6 +44,7 @@ export class AccountsReceivableStore {
     pagination: { page: 1, pageSize: 10 },
     selectedIds: new Set(),
     isFilterModalOpen: false,
+    valorTotal: 0,
   });
 
   load(): void {
@@ -62,9 +64,11 @@ export class AccountsReceivableStore {
     });
     // CR-01: o resumo vem agregado do servidor — soma a base filtrada inteira,
     // não apenas a página exibida. Falha no resumo não derruba a listagem.
-    this.svc.getSummary(filters).subscribe({
-      next: summaries => this.state.update(s => ({ ...s, summaries })),
-      error: () => this.state.update(s => ({ ...s, summaries: [] })),
+    // Card #768 (item 55): os cards saíram (vão para o dashboard Financeiro); fica o
+    // total da coluna Valor no rodapé, somado no servidor com os filtros.
+    this.svc.getTotal(filters).subscribe({
+      next: t => this.state.update(s => ({ ...s, valorTotal: t.total ?? 0 })),
+      error: () => this.state.update(s => ({ ...s, valorTotal: 0 })),
     });
   }
 
@@ -78,6 +82,7 @@ export class AccountsReceivableStore {
   readonly pagination = computed(() => this.state().pagination);
   readonly selectedIds = computed(() => this.state().selectedIds);
   readonly isFilterModalOpen = computed(() => this.state().isFilterModalOpen);
+  readonly valorTotal = computed(() => this.state().valorTotal);
 
   /**
    * CR-02: quantos filtros estão de fato valendo. `dateField` sozinho não conta —
@@ -85,8 +90,10 @@ export class AccountsReceivableStore {
    */
   readonly activeFilterCount = computed(() => {
     const f = this.state().filters;
+    // Card #768 (item 59): conta só os filtros do pop-up — os fixos estão à vista na barra.
+    const fixos: (keyof ReceivableFilters)[] = ['dateField', 'status', 'dateStart', 'dateEnd', 'contractor'];
     return (Object.keys(f) as (keyof ReceivableFilters)[])
-      .filter(k => k !== 'dateField' && !!f[k]).length;
+      .filter(k => !fixos.includes(k) && !!f[k]).length;
   });
 
   readonly filteredItems = computed(() => {
@@ -126,6 +133,21 @@ export class AccountsReceivableStore {
   
   applyFilters(newFilters: ReceivableFilters) {
     this.state.update(s => ({ ...s, filters: newFilters, isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  /** Card #768 (item 59): filtros fixos da barra aplicam na hora. */
+  setFiltro(parcial: Partial<ReceivableFilters>) {
+    this.state.update(s => ({ ...s, filters: { ...s.filters, ...parcial }, pagination: { ...s.pagination, page: 1 } }));
+    this.load();
+  }
+
+  clearPopupFilters() {
+    this.state.update(s => ({
+      ...s,
+      filters: { ...INITIAL_FILTERS, dateField: s.filters.dateField, status: s.filters.status, dateStart: s.filters.dateStart, dateEnd: s.filters.dateEnd, contractor: s.filters.contractor },
+      isFilterModalOpen: false, pagination: { ...s.pagination, page: 1 },
+    }));
     this.load();
   }
 

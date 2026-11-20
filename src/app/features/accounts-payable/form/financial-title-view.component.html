@@ -48,6 +48,17 @@
           </div>
           @if (pagar) {
             <div class="tv__chat"><app-process-chat processType="account_payable" [processId]="id" /></div>
+          } @else {
+            <!-- card #720 (PG-01): quem lança precisa saber se a cobrança saiu — link ou motivo -->
+            <div class="tv__f tv__f--full" data-testid="asaas-cobranca"><span>Cobrança Asaas</span>
+              @if (t.asaasInvoiceUrl) { <strong>Gerada · <a [href]="t.asaasInvoiceUrl" target="_blank" rel="noopener">Abrir cobrança</a></strong> }
+              @else if (t.asaasPaymentId) { <strong>Registrada ({{ t.asaasPaymentId }}), sem link de pagamento.</strong> }
+              @else if (t.asaasChargeError) { <strong class="tv__erro">Não gerada: {{ t.asaasChargeError }}</strong> }
+              @else { <strong>Não gerada.</strong> }
+              @if (!t.asaasPaymentId && (t.status === 'Open' || t.status === 'PartiallyPaid')) {
+                <button type="button" class="btn-outline btn-outline--orange tv__cobrar" [disabled]="cobrando()" (click)="gerarCobranca()">{{ cobrando() ? 'Gerando…' : 'Gerar cobrança' }}</button>
+              }
+            </div>
           }
         }
         @case ('CONTRATO') {
