@@ -1,18 +1,8 @@
 <!-- src/app/features/purchasing-orders/components/order-detail.modal.html -->
-<div class="modal-overlay" (click)="onClose()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-
-    <div class="modal-header">
-      <div class="header-text">
-        <h2>{{ code }}</h2>
-        <p>Detalhes do pedido de compra.</p>
-      </div>
-      <button class="action-btn action-btn--close" (click)="onClose()" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <div class="modal-body">
+<!-- Card #768 (item 66): o visualizar do pedido segue o padrão dos pop-ups (cabeçalho roxo com ícone, título e subtítulo). -->
+<app-popup-shell [title]="'Pedido: ' + code" subtitle="Acompanhe todas as informações cadastradas para o pedido de compra."
+                 icon="doc" [width]="860" [closeOnBackdrop]="true" (close)="onClose()">
+<div class="order-view">
       @if (loading) {
         <p class="modal-loading">Carregando pedido…</p>
       } @else if (order) {
@@ -154,6 +144,5 @@
       } @else {
         <p class="modal-loading">Pedido não encontrado.</p>
       }
-    </div>
-  </div>
 </div>
+</app-popup-shell>

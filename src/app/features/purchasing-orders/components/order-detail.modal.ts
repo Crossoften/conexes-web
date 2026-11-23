@@ -5,6 +5,7 @@ import { PurchaseOrder, PurchaseOrderItem } from '../../purchases/purchases.mode
 import { PurchasesService } from '../../purchases/purchases.service';
 import { ORDER_STATUS_CONFIG } from '../purchasing-orders.model';
 import { formatCivilDateBR } from '../../../shared/utils/format';
+import { PopupShellComponent } from '../../../shared/components/popup-shell/popup-shell.component';
 
 // CP-33: linha do formulário de recebimento (uma por item do pedido).
 interface ReceiveLine {
@@ -19,7 +20,7 @@ interface ReceiveLine {
 @Component({
   selector: 'app-order-detail-modal',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, PopupShellComponent],
   templateUrl: './order-detail.modal.html',
   styleUrl: './order-detail.modal.scss',
 })
