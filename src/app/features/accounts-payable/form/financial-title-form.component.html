@@ -79,7 +79,9 @@
       <button type="button" class="btn-outline btn-outline--orange" (click)="adicionarRateio()">+ Adicionar classificação</button>
     </div>
     <div class="ft__rateio" formArrayName="rateios">
-      @for (l of rateios.controls; track $index; let i = $index) {
+      <!-- track pelo próprio controle: ao reabrir/editar o array é recriado (clear + push) e, com
+           track $index, os campos continuavam ligados às linhas descartadas e o Salvar acusava rateio vazio -->
+      @for (l of rateios.controls; track l; let i = $index) {
         <div class="ft__linha" [formGroupName]="i">
           <div class="fg"><label>Categoria<span class="req">*</span></label>
             <div class="sw"><select class="fc" formControlName="accountPlanId"><option value="">Selecione</option>@for (p of planos(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }</select></div></div>
@@ -172,7 +174,7 @@
           <table class="ft__tab" formArrayName="parcelas">
             <thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th></tr></thead>
             <tbody>
-              @for (p of parcelas.controls; track $index; let i = $index) {
+              @for (p of parcelas.controls; track p; let i = $index) {
                 <tr [formGroupName]="i">
                   <td>{{ i + 1 }}ª</td>
                   <td><input class="fc fc--sm" type="date" formControlName="dueDate" (click)="calendario($event)"></td>
