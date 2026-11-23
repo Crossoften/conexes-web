@@ -9,7 +9,9 @@
       <button type="button" role="tab" [class.on]="aba() === 'inicio'" (click)="irPara('inicio')">Início</button>
       <button type="button" role="tab" [class.on]="aba() === 'compras'" (click)="irPara('compras')">Compras</button>
       <button type="button" role="tab" [class.on]="aba() === 'financeiro'" (click)="irPara('financeiro')">Financeiro</button>
-      <button type="button" role="tab" class="abas__breve" disabled title="Em desenvolvimento">Prestação de contas <span>Em breve</span></button>
+      @if (podeVer('/accountability')) {
+        <button type="button" role="tab" class="abas__breve" disabled title="Em desenvolvimento">Prestação de contas <span>Em breve</span></button>
+      }
     </nav>
   </header>
 
@@ -36,7 +38,7 @@
     <section class="panel">
       <h2 class="panel__title">Atalhos rápidos</h2>
       <div class="shortcut-grid">
-        @for (s of shortcuts; track s.route) {
+        @for (s of atalhos(); track s.route) {
           <a class="shortcut" [routerLink]="s.route">
             <span class="shortcut__icon">{{ s.icon }}</span>
             <span class="shortcut__text"><span class="shortcut__label">{{ s.label }}</span><span class="shortcut__desc">{{ s.desc }}</span></span>
@@ -53,10 +55,12 @@
             <h3 class="panel__sub">Cadastros e parcerias</h3>
             <div class="kpis"><div class="k"><span>Contatos</span><strong>{{ i.cadastros.contatos }}</strong></div><div class="k"><span>Convênios e parcerias</span><strong>{{ i.cadastros.parcerias }}</strong></div></div>
           </section>
+          @if (podeVer('/accountability')) {
           <section class="panel">
             <h3 class="panel__sub">Prestação de contas</h3>
             <div class="kpis"><div class="k"><span>Prestações de contas</span><strong>{{ i.prestacao.emAndamento }}</strong><small>{{ i.prestacao.emAndamento ? 'em andamento' : 'Nenhuma prestação em andamento' }}</small></div></div>
           </section>
+          }
           <section class="panel">
             <div class="panel__cab"><h3 class="panel__sub">Compras</h3><button type="button" class="link" (click)="irPara('compras')">Abrir Compras →</button></div>
             <div class="kpis"><div class="k"><span>Requisições em andamento</span><strong>{{ i.compras.emAndamento }}</strong><small>de {{ i.compras.total }} no total</small></div>
@@ -105,9 +109,11 @@
               </div>
             } @empty { <p class="vazio">Nenhuma requisição ainda.</p> }
           </div>
-          <p class="mini">Prestações recentes</p>
-          @for (p of i.prestacoesRecentes; track p.id) { <a class="req req--link" [routerLink]="['/accountability', p.id]"><strong class="req__tit">{{ p.title }}</strong></a> }
-          @empty { <p class="vazio">Nenhuma prestação de contas ainda. <a routerLink="/accountability">Ir para prestação de contas</a></p> }
+          @if (podeVer('/accountability')) {
+            <p class="mini">Prestações recentes</p>
+            @for (p of i.prestacoesRecentes; track p.id) { <a class="req req--link" [routerLink]="['/accountability', p.id]"><strong class="req__tit">{{ p.title }}</strong></a> }
+            @empty { <p class="vazio">Nenhuma prestação de contas ainda. <a routerLink="/accountability">Ir para prestação de contas</a></p> }
+          }
         </section>
       </div>
     </div>

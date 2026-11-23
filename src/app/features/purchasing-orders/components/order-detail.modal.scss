@@ -24,7 +24,10 @@
   &--close:hover { background: #F3F4F6; color: var(--text-primary, #111827); }
 }
 
-.modal-body { padding: 20px 24px; overflow-y: auto; }
+.order-view { display: block; }
+.info-box { background: #fff; }
+.items-wrap { background: #fff; }
+.receipt-item { background: #fff; }
 .modal-loading { font-size: 14px; color: var(--text-muted, #6B7280); padding: 24px 0; text-align: center; }
 
 .info-box { border: 1px solid var(--surface-border, #EEF0F5); border-radius: 12px; padding: 16px; margin-bottom: 18px; }

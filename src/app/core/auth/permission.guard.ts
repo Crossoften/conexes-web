@@ -10,10 +10,12 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { PermissionsService } from './permissions.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
-export const permissionGuard: CanActivateFn = (route) => {
+export const permissionGuard: CanActivateFn = (route, state) => {
   const perms  = inject(PermissionsService);
   const router = inject(Router);
+  const notify = inject(NotificationService);
 
   const module  = route.data?.['module']  as string | undefined;
   const subMenu = route.data?.['subMenu'] as string | undefined;
@@ -24,6 +26,12 @@ export const permissionGuard: CanActivateFn = (route) => {
   if (perms.canView(module, subMenu)) return true;
 
   // Sem acesso: volta para o Início (Dashboard) preservando a sessão.
+  // Card #768 (item 78): avisa o bloqueio, com a tela e o endereço tentados — antes
+  // o usuário caía no Início sem saber por quê.
+  notify.error(
+    `Seu perfil não tem acesso a "${subMenu ?? module}" (${state.url}). ` +
+    'Peça ao administrador para liberar a tela em Usuários e permissões.',
+  );
   router.navigate(['/dashboard']);
   return false;
 };
