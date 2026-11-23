@@ -7,6 +7,8 @@ import { DashboardService, DashboardFiltros } from './dashboard.service';
 import { PurchasesService } from '../purchases/purchases.service';
 import { PeriodFieldComponent } from '../../shared/components/period-field/period-field.component';
 import { NotificationService } from '../../shared/services/notification.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
+import { resolveRoutePermission } from '../../layout/sidebar/permission-map';
 
 type Aba = 'inicio' | 'compras' | 'financeiro';
 interface Shortcut { label: string; desc: string; icon: string; route: string; }
@@ -39,6 +41,7 @@ export class DashboardComponent implements OnInit {
   private svc = inject(DashboardService);
   private lookups = inject(PurchasesService);
   private notify = inject(NotificationService);
+  private perms = inject(PermissionsService);
 
   readonly user = this.auth.user;
   readonly String = String;
@@ -67,6 +70,13 @@ export class DashboardComponent implements OnInit {
     { label: 'Plano de trabalho', desc: 'Parcerias e planos de aplicação', icon: '▦', route: '/work-plans' },
     { label: 'Conciliação bancária', desc: 'Conferir extratos e lançamentos', icon: '⇄', route: '/bank-reconciliation' },
   ];
+
+  /** Card #768 (item 78): o perfil decide também os atalhos e o painel de Prestação de contas do Início. */
+  podeVer(route: string): boolean {
+    const p = resolveRoutePermission('/' + route.split('/').filter(Boolean)[0]);
+    return !p || this.perms.canView(p.module, p.subMenu);
+  }
+  readonly atalhos = computed(() => (this.user(), this.shortcuts.filter(s => this.podeVer(s.route))));
 
   get firstName(): string { return (this.user()?.name ?? '').split(' ')[0] || 'usuário'; }
 
