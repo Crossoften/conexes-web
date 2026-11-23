@@ -303,7 +303,9 @@ export class FinancialTitleFormComponent implements OnInit {
     const ext = this.doExtrato;
     if (ext) {
       const dia = (ext.date ?? '').slice(0, 10);
-      this.form.patchValue({ historico: ext.description ?? '', dataEmissao: dia, vencimento: dia, competencia: dia, valorBruto: Math.abs(Number(ext.amount ?? 0)) });
+      // Card #768 (item 39): a conta do extrato vira a conta pagadora/recebedora do título.
+      this.form.patchValue({ historico: ext.description ?? '', dataEmissao: dia, vencimento: dia, competencia: dia, valorBruto: Math.abs(Number(ext.amount ?? 0)),
+        conta: ext.bankAccountId ? String(ext.bankAccountId) : '' });
     }
   }
 
