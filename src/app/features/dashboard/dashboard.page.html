@@ -109,9 +109,11 @@
               </div>
             } @empty { <p class="vazio">Nenhuma requisição ainda.</p> }
           </div>
-          <p class="mini">Prestações recentes</p>
-          @for (p of i.prestacoesRecentes; track p.id) { <a class="req req--link" [routerLink]="['/accountability', p.id]"><strong class="req__tit">{{ p.title }}</strong></a> }
-          @empty { <p class="vazio">Nenhuma prestação de contas ainda. <a routerLink="/accountability">Ir para prestação de contas</a></p> }
+          @if (podeVer('/accountability')) {
+            <p class="mini">Prestações recentes</p>
+            @for (p of i.prestacoesRecentes; track p.id) { <a class="req req--link" [routerLink]="['/accountability', p.id]"><strong class="req__tit">{{ p.title }}</strong></a> }
+            @empty { <p class="vazio">Nenhuma prestação de contas ainda. <a routerLink="/accountability">Ir para prestação de contas</a></p> }
+          }
         </section>
       </div>
     </div>
