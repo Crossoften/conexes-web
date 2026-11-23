@@ -38,8 +38,8 @@ export class AccountsPayableNewPage {
     if (!this.editId && ext && salvo?.id) {
       // a linha do extrato fica conciliada com o título recém-criado
       this.http.patch(`${environment.apiUrl}/v1/banking/reconciliation/${ext.txId}/match`, { accountPayableId: salvo.id }).subscribe({
-        next: () => { this.notify.success('Movimento do extrato conciliado com a conta a pagar.'); this.router.navigate(['/bank-reconciliation']); },
-        error: () => { this.notify.error('Conta a pagar salva, mas não foi possível conciliar o movimento do extrato.'); this.router.navigate(['/bank-reconciliation']); },
+        next: () => { this.notify.success('Movimento do extrato conciliado com a conta a pagar.'); this.voltarConciliacao(); },
+        error: () => { this.notify.error('Conta a pagar salva, mas não foi possível conciliar o movimento do extrato.'); this.voltarConciliacao(); },
       });
       return;
     }
@@ -47,6 +47,13 @@ export class AccountsPayableNewPage {
   }
 
   voltar(): void {
-    this.router.navigate([this.doExtrato ? '/bank-reconciliation' : '/accounts-payable']);
+    if (this.doExtrato) { this.voltarConciliacao(); return; }
+    this.router.navigate(['/accounts-payable']);
+  }
+
+  /** Card #768 (item 39): volta para a conciliação na MESMA conta do extrato. */
+  private voltarConciliacao(): void {
+    const conta = this.doExtrato?.bankAccountId;
+    this.router.navigate(['/bank-reconciliation'], conta ? { queryParams: { conta } } : {});
   }
 }

@@ -2,7 +2,7 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BankReconciliationStore } from './bank-reconciliation.store';
 import { ReconciliationItem } from './bank-reconciliation.model';
 import { LedgerCandidate } from './bank-reconciliation.service';
@@ -49,6 +49,7 @@ function primeiroDoMes(d: Date): Date { return new Date(d.getFullYear(), d.getMo
 export class BankReconciliationPage implements OnInit {
   readonly store = inject(BankReconciliationStore);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   private notify = inject(NotificationService);
 
@@ -105,7 +106,7 @@ export class BankReconciliationPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.store.load();
+    this.store.load(Number(this.route.snapshot.queryParamMap.get('conta')) || null);
   }
 
   /**
