@@ -118,7 +118,9 @@ export class BankReconciliationStore {
   });
 
   // Carrega as contas e a conciliação da primeira conta (ou vazio se não houver conta).
-  load(): void {
+  // Card #768 (item 39): `contaPreferida` reabre a conta de onde o usuário saiu
+  // (volta da Nova conta a pagar/receber aberta pelo extrato).
+  load(contaPreferida?: number | null): void {
     this.state.update(s => ({ ...s, loading: true, error: null }));
     this.carregarLookups();   // CB-12: os seletores do painel da pendência
     this.svc.getAccounts().subscribe({
@@ -128,7 +130,7 @@ export class BankReconciliationStore {
           this.state.update(s => ({ ...s, loading: false, accountInfo: EMPTY_ACCOUNT, pendingItems: [], movementItems: [] }));
           return;
         }
-        this.selectAccount(accounts[0].id);
+        this.selectAccount(accounts.find(a => a.id === contaPreferida)?.id ?? accounts[0].id);
       },
       error: () => this.state.update(s => ({ ...s, loading: false, error: 'Não foi possível carregar a conciliação.' })),
     });
